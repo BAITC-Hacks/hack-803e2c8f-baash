@@ -1,0 +1,14 @@
+{
+  "artifact_version": "1.0.0",
+  "dataset_id": "pulse109-synthetic-m3-baseline",
+  "dataset_sha256": "a165305c9ad0718bae19e7e9c39853a267aff0c8ca1800cf93f80dbd9f4f5e74",
+  "feature_allowlist": [
+    "text",
+    "language",
+    "region_id",
+    "channel"
+  ],
+  "model_sha256": "7b04a12b8c38d350f55906fd2451d2578712150dd475b909f9bed12f726b416f",
+  "synthetic_only": true,
+  "temperature": 0.25
+}

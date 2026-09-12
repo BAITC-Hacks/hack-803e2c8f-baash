@@ -1,0 +1,2 @@
+{"source_system":"synthetic-crm","source_request_id":"REQ-001","region_id":"ALA","export_id":"EXP-001","channel":"web","language":"kk","received_at":"2026-09-10T10:00:00+05:00","source_timezone":"Asia/Almaty","raw_text_ref":"private://synthetic/REQ-001","pii_flags":["free_text"]}
+{"source_system":"synthetic-crm","source_request_id":"REQ-002","region_id":"AST","export_id":"EXP-001","channel":"import","language":"mixed","received_at":"2026-09-10","source_timezone":"Asia/Almaty","raw_text_ref":null,"pii_flags":["none"]}

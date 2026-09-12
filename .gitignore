@@ -1,0 +1,17 @@
+.env
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+dist/
+build/
+*.egg-info/
+node_modules/
+.next/
+*.tsbuildinfo
+coverage.xml
+htmlcov/
+data/reports/*.tmp

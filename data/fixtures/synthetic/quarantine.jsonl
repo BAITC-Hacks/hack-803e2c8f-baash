@@ -1,0 +1,3 @@
+{"source_system":"synthetic-crm","source_request_id":"REQ-003","region_id":"ALA","channel":"web","language":"ru","received_at":"2026-09-10T10:00:00+05:00","new_column":"drift"}
+{"source_system":"synthetic-crm","source_request_id":"REQ-004","region_id":"ALA","channel":"fax","language":"ru","received_at":"2026-09-10T10:00:00+05:00"}
+{"source_system":"synthetic-crm","source_request_id":"REQ-005","region_id":"ALA","channel":"web","language":"ru","received_at":"not-a-date"}

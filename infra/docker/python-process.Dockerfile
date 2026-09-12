@@ -1,0 +1,23 @@
+FROM ghcr.io/astral-sh/uv:0.11.28 AS uv
+
+FROM python:3.12.8-slim-bookworm
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PATH="/app/.venv/bin:${PATH}"
+
+RUN groupadd --system --gid 10001 pulse109 \
+    && useradd --system --uid 10001 --gid pulse109 --home-dir /nonexistent pulse109
+
+WORKDIR /app
+COPY --from=uv /uv /uvx /bin/
+COPY pyproject.toml uv.lock README.md ./
+COPY services ./services
+COPY adapters ./adapters
+COPY contracts ./contracts
+RUN uv sync --frozen --no-dev
+
+USER pulse109
+EXPOSE 8080
+CMD ["uvicorn", "pulse109.main:app", "--host", "0.0.0.0", "--port", "8080"]
+

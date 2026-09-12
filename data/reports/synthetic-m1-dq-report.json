@@ -1,0 +1,36 @@
+{
+  "accepted": 3,
+  "accepted_with_warnings": 2,
+  "canonical_contract_version": "1.0.0",
+  "date_only_business_time": 1,
+  "duplicates": 0,
+  "error_counts": {
+    "SCHEMA_DRIFT": 2,
+    "TIME_INVALID": 1
+  },
+  "expected_regions": [
+    "ALA",
+    "AST",
+    "KAR"
+  ],
+  "input_rows": 6,
+  "mapping_version": "synthetic-source/1.0.0",
+  "missing_business_time": 1,
+  "missing_regions": [
+    "KAR"
+  ],
+  "observed_at": "2026-09-11T12:00:00Z",
+  "parser_version": "pulse109-jsonl/1.0.0",
+  "quarantined": 3,
+  "raw_payload_sha256": "b0bd6ccfb9d80ecf6d36256cf46d6ae7daa1fe3a4e0c3cee6d4be54c759f70fd",
+  "regions_present": [
+    "ALA",
+    "AST"
+  ],
+  "report_version": "1.0.0",
+  "run_id": "synthetic-m1-20260911",
+  "schema_drift": 2,
+  "source_system": "synthetic-crm",
+  "source_timezone_assumed": 0,
+  "synthetic_only": true
+}

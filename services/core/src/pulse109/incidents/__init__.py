@@ -1,0 +1,1 @@
+"""Incident ownership boundary."""

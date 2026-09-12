@@ -1,0 +1,1217 @@
+openapi: 3.1.0
+info:
+  title: Pulse 109 Platform API
+  version: 1.0.0
+  description: >-
+    Contract-first API for intake, operator assistance, incident management,
+    analytics and regional system adapters. All timestamps use RFC 3339 with
+    an explicit UTC offset. Human confirmation remains mandatory for routing,
+    priority changes, duplicate merges and generated replies.
+servers:
+  - url: https://pulse109.example.gov.kz
+    description: Production placeholder. Replace after infrastructure approval.
+tags:
+  - name: Requests
+  - name: Decisions
+  - name: Incidents
+  - name: Analytics
+  - name: Reports
+  - name: Catalog
+  - name: Operations
+paths:
+  /v1/requests:
+    post:
+      tags: [Requests]
+      summary: Create or import an appeal
+      operationId: createRequest
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/RegionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRequest'
+      responses:
+        '201':
+          description: Appeal created
+          headers:
+            X-Correlation-Id:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Appeal'
+        '200':
+          description: Existing appeal returned for a repeated idempotency key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Appeal'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /v1/requests/{request_id}:
+    get:
+      tags: [Requests]
+      summary: Get the current appeal snapshot and lifecycle timeline
+      operationId: getRequest
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+        - $ref: '#/components/parameters/CorrelationId'
+      responses:
+        '200':
+          description: Appeal snapshot
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppealDetail'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/requests/{request_id}/classifications:
+    post:
+      tags: [Requests]
+      summary: Produce a versioned AI recommendation
+      operationId: classifyRequest
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/CorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClassificationInput'
+      responses:
+        '200':
+          description: Recommendation created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClassificationRecommendation'
+        '202':
+          description: Request accepted for asynchronous inference
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /v1/requests/{request_id}/decisions:
+    post:
+      tags: [Decisions]
+      summary: Confirm or correct the recommendation
+      operationId: recordDecision
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/CorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OperatorDecision'
+      responses:
+        '201':
+          description: Human decision recorded in the audit trail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DecisionReceipt'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /v1/requests/{request_id}/assignments:
+    post:
+      tags: [Decisions]
+      summary: Assign or reassign an appeal to a service
+      operationId: createAssignment
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/CorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignmentCommand'
+      responses:
+        '202':
+          description: Assignment stored and queued for external synchronization
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncReceipt'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /v1/requests/{request_id}/status-events:
+    post:
+      tags: [Requests]
+      summary: Append a status event from an operator or source system
+      operationId: appendStatusEvent
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/CorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StatusEventInput'
+      responses:
+        '201':
+          description: Event appended
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleEvent'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /v1/requests/{request_id}/similar:
+    get:
+      tags: [Requests]
+      summary: Find similar resolved appeals and evidence-backed outcomes
+      operationId: findSimilarRequests
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+        - $ref: '#/components/parameters/CorrelationId'
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+        - name: service_id
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Ranked candidates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SimilarRequest'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /v1/requests/{request_id}/duplicate-candidates:
+    get:
+      tags: [Incidents]
+      summary: Find duplicate or incident membership candidates
+      operationId: findDuplicateCandidates
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+        - $ref: '#/components/parameters/CorrelationId'
+      responses:
+        '200':
+          description: Ranked duplicate candidates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DuplicateCandidate'
+  /v1/incidents:
+    post:
+      tags: [Incidents]
+      summary: Create a city incident without deleting member appeals
+      operationId: createIncident
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/RegionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateIncident'
+      responses:
+        '201':
+          description: Incident created in proposed state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+  /v1/incidents/{incident_id}/members:
+    post:
+      tags: [Incidents]
+      summary: Add an appeal to an incident after human review
+      operationId: addIncidentMember
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IncidentId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/CorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [request_id, decision, reason_code]
+              properties:
+                request_id:
+                  type: string
+                  format: uuid
+                decision:
+                  type: string
+                  enum: [confirm, reject]
+                reason_code:
+                  type: string
+                note:
+                  type: string
+                  maxLength: 1000
+      responses:
+        '201':
+          description: Membership decision recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IncidentMember'
+  /v1/incidents/{incident_id}/confirm:
+    post:
+      tags: [Incidents]
+      summary: Confirm or reject a proposed incident
+      operationId: confirmIncident
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IncidentId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [decision, reason_code]
+              properties:
+                decision:
+                  type: string
+                  enum: [confirm, reject]
+                reason_code:
+                  type: string
+                note:
+                  type: string
+                  maxLength: 1000
+      responses:
+        '200':
+          description: Incident state updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+  /v1/alerts:
+    get:
+      tags: [Analytics]
+      summary: List actionable anomaly and incident alerts
+      operationId: listAlerts
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/RegionId'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [new, acknowledged, resolved, dismissed]
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Alert list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Alert'
+  /v1/analytics/query:
+    post:
+      tags: [Analytics]
+      summary: Execute a governed query against the semantic metric layer
+      operationId: queryAnalytics
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnalyticsQuery'
+      responses:
+        '200':
+          description: Metric result with provenance
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalyticsResult'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /v1/reports:
+    post:
+      tags: [Reports]
+      summary: Create a PDF or XLSX report asynchronously
+      operationId: createReport
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/CorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportRequest'
+      responses:
+        '202':
+          description: Report job created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+  /v1/jobs/{job_id}:
+    get:
+      tags: [Operations]
+      summary: Get an asynchronous job status
+      operationId: getJob
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Current job state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/catalog/services:
+    get:
+      tags: [Catalog]
+      summary: Get the versioned regional service catalog
+      operationId: listServices
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/RegionId'
+        - name: effective_at
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Effective service definitions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ServiceDefinition'
+  /v1/health/live:
+    get:
+      tags: [Operations]
+      summary: Process liveness probe
+      operationId: getLiveness
+      security: []
+      responses:
+        '200':
+          description: Process is alive
+  /v1/health/ready:
+    get:
+      tags: [Operations]
+      summary: Critical dependency readiness probe
+      operationId: getReadiness
+      security: []
+      responses:
+        '200':
+          description: Critical path is ready
+        '503':
+          description: A critical dependency is unavailable
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT issued by the approved government identity provider.
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        minLength: 16
+        maxLength: 128
+    CorrelationId:
+      name: X-Correlation-Id
+      in: header
+      required: false
+      schema:
+        type: string
+        maxLength: 128
+    RegionId:
+      name: X-Region-Id
+      in: header
+      required: true
+      schema:
+        type: string
+        pattern: '^[A-Z0-9_-]{2,32}$'
+    RequestId:
+      name: request_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    IncidentId:
+      name: incident_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  headers:
+    CorrelationId:
+      schema:
+        type: string
+  responses:
+    BadRequest:
+      description: Malformed request
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Conflict:
+      description: Version, idempotency or state conflict
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    NotFound:
+      description: Resource not found or not visible to this principal
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Unprocessable:
+      description: Business validation failed
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    ServiceUnavailable:
+      description: Optional AI or retrieval dependency is unavailable
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+  schemas:
+    CreateRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - source_system
+        - source_request_id
+        - region_id
+        - received_at
+        - channel
+      properties:
+        source_system:
+          type: string
+          maxLength: 64
+        source_request_id:
+          type: string
+          maxLength: 128
+        region_id:
+          type: string
+        received_at:
+          type: string
+          format: date-time
+        channel:
+          type: string
+          enum: [phone, web, mobile, telegram, whatsapp, email, walk_in, import, other]
+        language:
+          type: string
+          enum: [kk, ru, mixed, unknown]
+          default: unknown
+        text:
+          type: string
+          maxLength: 20000
+        transcript_ref:
+          type: string
+        media_refs:
+          type: array
+          maxItems: 20
+          items:
+            type: string
+        location:
+          $ref: '#/components/schemas/LocationInput'
+        citizen_token:
+          type: string
+          description: Pseudonymous token. Direct identifiers are stored outside this API domain.
+        source_payload_ref:
+          type: string
+        consent_or_legal_basis:
+          type: string
+          maxLength: 128
+    LocationInput:
+      type: object
+      additionalProperties: false
+      properties:
+        address_text_private_ref:
+          type: string
+        geo_id:
+          type: string
+        object_id:
+          type: string
+        latitude:
+          type: number
+          minimum: -90
+          maximum: 90
+        longitude:
+          type: number
+          minimum: -180
+          maximum: 180
+        precision_m:
+          type: number
+          minimum: 0
+    Appeal:
+      allOf:
+        - $ref: '#/components/schemas/CreateRequest'
+        - type: object
+          required: [request_id, created_at, version, status]
+          properties:
+            request_id:
+              type: string
+              format: uuid
+            created_at:
+              type: string
+              format: date-time
+            version:
+              type: integer
+              minimum: 1
+            status:
+              type: string
+              enum: [new, triage, assigned, in_progress, resolved, closed, reopened, cancelled]
+    AppealDetail:
+      allOf:
+        - $ref: '#/components/schemas/Appeal'
+        - type: object
+          properties:
+            current_decision:
+              $ref: '#/components/schemas/OperatorDecision'
+            incident_id:
+              type: [string, 'null']
+              format: uuid
+            timeline:
+              type: array
+              items:
+                $ref: '#/components/schemas/LifecycleEvent'
+            synchronization:
+              $ref: '#/components/schemas/SyncState'
+    ClassificationInput:
+      type: object
+      additionalProperties: false
+      required: [request_version]
+      properties:
+        request_version:
+          type: integer
+          minimum: 1
+        force_model_alias:
+          type: string
+          enum: [champion, challenger]
+        return_similar:
+          type: boolean
+          default: false
+    ClassificationRecommendation:
+      type: object
+      required:
+        - recommendation_id
+        - request_id
+        - request_version
+        - model_version
+        - taxonomy_version
+        - top_topics
+        - top_services
+        - priority
+        - confidence_band
+        - requires_human_confirmation
+      properties:
+        recommendation_id:
+          type: string
+          format: uuid
+        request_id:
+          type: string
+          format: uuid
+        request_version:
+          type: integer
+        model_version:
+          type: string
+        taxonomy_version:
+          type: string
+        top_topics:
+          type: array
+          minItems: 1
+          maxItems: 3
+          items:
+            $ref: '#/components/schemas/RankedLabel'
+        top_services:
+          type: array
+          minItems: 1
+          maxItems: 3
+          items:
+            $ref: '#/components/schemas/RankedLabel'
+        priority:
+          type: string
+          enum: [routine, elevated, urgent, emergency_handoff]
+        confidence_band:
+          type: string
+          enum: [high, medium, low, out_of_domain]
+        out_of_domain_score:
+          type: number
+          minimum: 0
+          maximum: 1
+        rule_hits:
+          type: array
+          items:
+            type: string
+        missing_fields:
+          type: array
+          items:
+            type: string
+        explanation:
+          type: array
+          items:
+            type: string
+        requires_human_confirmation:
+          const: true
+        produced_at:
+          type: string
+          format: date-time
+    RankedLabel:
+      type: object
+      required: [id, score]
+      properties:
+        id:
+          type: string
+        score:
+          type: number
+          minimum: 0
+          maximum: 1
+        display_name:
+          type: string
+    OperatorDecision:
+      type: object
+      additionalProperties: false
+      required:
+        - request_version
+        - topic_id
+        - service_id
+        - priority
+        - action
+      properties:
+        request_version:
+          type: integer
+          minimum: 1
+        recommendation_id:
+          type: [string, 'null']
+          format: uuid
+        topic_id:
+          type: string
+        service_id:
+          type: string
+        priority:
+          type: string
+          enum: [routine, elevated, urgent, emergency_handoff]
+        action:
+          type: string
+          enum: [accepted, corrected, manual]
+        correction_reason:
+          type: [string, 'null']
+          maxLength: 1000
+        operator_note:
+          type: [string, 'null']
+          maxLength: 2000
+    DecisionReceipt:
+      type: object
+      required: [decision_id, request_id, new_version, audit_event_id]
+      properties:
+        decision_id:
+          type: string
+          format: uuid
+        request_id:
+          type: string
+          format: uuid
+        new_version:
+          type: integer
+        audit_event_id:
+          type: string
+          format: uuid
+    AssignmentCommand:
+      type: object
+      additionalProperties: false
+      required: [request_version, service_id, reason_code]
+      properties:
+        request_version:
+          type: integer
+        service_id:
+          type: string
+        assignee_unit_id:
+          type: string
+        reason_code:
+          type: string
+        expected_due_at:
+          type: [string, 'null']
+          format: date-time
+        policy_version:
+          type: string
+    StatusEventInput:
+      type: object
+      additionalProperties: false
+      required: [source_event_id, status, occurred_at, source_system]
+      properties:
+        source_event_id:
+          type: string
+          maxLength: 128
+        status:
+          type: string
+          enum: [new, triage, assigned, accepted, in_progress, waiting, resolved, closed, reopened, cancelled]
+        occurred_at:
+          type: string
+          format: date-time
+        observed_at:
+          type: string
+          format: date-time
+        source_system:
+          type: string
+        reason_code:
+          type: string
+        evidence_refs:
+          type: array
+          items:
+            type: string
+    LifecycleEvent:
+      type: object
+      required: [event_id, event_type, occurred_at, observed_at, actor_type]
+      properties:
+        event_id:
+          type: string
+          format: uuid
+        event_type:
+          type: string
+        occurred_at:
+          type: [string, 'null']
+          format: date-time
+        occurred_at_quality:
+          type: string
+          enum: [exact, source_tz_assumed, date_only, missing]
+        observed_at:
+          type: string
+          format: date-time
+        actor_type:
+          type: string
+          enum: [citizen, operator, supervisor, service, source_system, model, rule, system]
+        actor_id_token:
+          type: string
+        payload:
+          type: object
+          additionalProperties: true
+    SimilarRequest:
+      type: object
+      required: [request_id, score, evidence_type]
+      properties:
+        request_id:
+          type: string
+          format: uuid
+        score:
+          type: number
+          minimum: 0
+          maximum: 1
+        evidence_type:
+          type: string
+          enum: [resolved_appeal, knowledge_article, service_definition]
+        matched_fields:
+          type: array
+          items:
+            type: string
+        outcome_summary:
+          type: string
+        outcome_ref:
+          type: string
+    DuplicateCandidate:
+      type: object
+      required: [candidate_type, candidate_id, score, reasons, needs_human_confirmation]
+      properties:
+        candidate_type:
+          type: string
+          enum: [request, incident]
+        candidate_id:
+          type: string
+          format: uuid
+        score:
+          type: number
+          minimum: 0
+          maximum: 1
+        reasons:
+          type: array
+          items:
+            type: string
+        distance_m:
+          type: [number, 'null']
+        time_delta_minutes:
+          type: [number, 'null']
+        needs_human_confirmation:
+          const: true
+    CreateIncident:
+      type: object
+      additionalProperties: false
+      required: [region_id, topic_id, member_request_ids, proposal_source]
+      properties:
+        region_id:
+          type: string
+        topic_id:
+          type: string
+        service_id:
+          type: string
+        member_request_ids:
+          type: array
+          minItems: 2
+          uniqueItems: true
+          items:
+            type: string
+            format: uuid
+        proposal_source:
+          type: string
+          enum: [operator, rule, model]
+        geo_id:
+          type: string
+        window_started_at:
+          type: string
+          format: date-time
+        window_ended_at:
+          type: string
+          format: date-time
+        rationale:
+          type: array
+          items:
+            type: string
+    Incident:
+      type: object
+      required: [incident_id, state, region_id, topic_id, member_count, version]
+      properties:
+        incident_id:
+          type: string
+          format: uuid
+        state:
+          type: string
+          enum: [proposed, confirmed, rejected, monitoring, resolved, closed]
+        region_id:
+          type: string
+        topic_id:
+          type: string
+        service_id:
+          type: string
+        member_count:
+          type: integer
+          minimum: 0
+        version:
+          type: integer
+          minimum: 1
+    IncidentMember:
+      type: object
+      required: [incident_id, request_id, decision, decided_at]
+      properties:
+        incident_id:
+          type: string
+          format: uuid
+        request_id:
+          type: string
+          format: uuid
+        decision:
+          type: string
+          enum: [confirm, reject]
+        decided_at:
+          type: string
+          format: date-time
+    Alert:
+      type: object
+      required: [alert_id, type, region_id, severity, status, detected_at, evidence]
+      properties:
+        alert_id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [volume_spike, incident_growth, sla_risk, data_quality, model_drift]
+        region_id:
+          type: string
+        severity:
+          type: string
+          enum: [info, warning, high, critical]
+        status:
+          type: string
+          enum: [new, acknowledged, resolved, dismissed]
+        detected_at:
+          type: string
+          format: date-time
+        evidence:
+          type: object
+          additionalProperties: true
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+    AnalyticsQuery:
+      type: object
+      additionalProperties: false
+      required: [metric_id, time_range]
+      properties:
+        metric_id:
+          type: string
+        dimensions:
+          type: array
+          maxItems: 5
+          items:
+            type: string
+        filters:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+        time_range:
+          type: object
+          required: [from, to]
+          properties:
+            from:
+              type: string
+              format: date-time
+            to:
+              type: string
+              format: date-time
+        granularity:
+          type: string
+          enum: [hour, day, week, month]
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 5000
+          default: 1000
+    AnalyticsResult:
+      type: object
+      required: [metric_id, metric_version, columns, rows, computed_at, data_cutoff]
+      properties:
+        metric_id:
+          type: string
+        metric_version:
+          type: string
+        columns:
+          type: array
+          items:
+            type: object
+            required: [name, type]
+            properties:
+              name:
+                type: string
+              type:
+                type: string
+        rows:
+          type: array
+          items:
+            type: array
+            items: {}
+        computed_at:
+          type: string
+          format: date-time
+        data_cutoff:
+          type: string
+          format: date-time
+        provenance:
+          type: array
+          items:
+            type: string
+    ReportRequest:
+      type: object
+      additionalProperties: false
+      required: [format, template_id, query]
+      properties:
+        format:
+          type: string
+          enum: [pdf, xlsx]
+        template_id:
+          type: string
+        query:
+          $ref: '#/components/schemas/AnalyticsQuery'
+        locale:
+          type: string
+          enum: [kk-KZ, ru-KZ]
+    Job:
+      type: object
+      required: [job_id, type, status, created_at]
+      properties:
+        job_id:
+          type: string
+          format: uuid
+        type:
+          type: string
+        status:
+          type: string
+          enum: [queued, running, succeeded, failed, cancelled]
+        created_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: [string, 'null']
+          format: date-time
+        result_ref:
+          type: [string, 'null']
+        error_code:
+          type: [string, 'null']
+    SyncReceipt:
+      type: object
+      required: [outbox_event_id, status]
+      properties:
+        outbox_event_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [queued, delivered, retrying, failed_permanent]
+        next_attempt_at:
+          type: [string, 'null']
+          format: date-time
+    SyncState:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [not_required, queued, delivered, retrying, failed_permanent]
+        source_system:
+          type: string
+        last_attempt_at:
+          type: [string, 'null']
+          format: date-time
+        external_id:
+          type: [string, 'null']
+    ServiceDefinition:
+      type: object
+      required: [service_id, region_id, version, effective_from, display_name, active]
+      properties:
+        service_id:
+          type: string
+        region_id:
+          type: string
+        version:
+          type: string
+        effective_from:
+          type: string
+          format: date-time
+        effective_to:
+          type: [string, 'null']
+          format: date-time
+        display_name:
+          type: object
+          required: [kk, ru]
+          properties:
+            kk:
+              type: string
+            ru:
+              type: string
+        topic_ids:
+          type: array
+          items:
+            type: string
+        required_fields:
+          type: array
+          items:
+            type: string
+        active:
+          type: boolean
+    Problem:
+      type: object
+      required: [type, title, status, trace_id]
+      properties:
+        type:
+          type: string
+          format: uri-reference
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        code:
+          type: string
+        trace_id:
+          type: string
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string

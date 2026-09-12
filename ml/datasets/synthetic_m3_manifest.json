@@ -1,0 +1,53 @@
+{
+  "manifest_version": "1.0.0",
+  "dataset_id": "pulse109-synthetic-m3-baseline",
+  "synthetic_only": true,
+  "purpose": "Contract and evaluation workflow test fixture; not a quality claim.",
+  "source": "generated-in-repository",
+  "generator": "pulse109.synthetic_m3.v1",
+  "approval_or_legal_ref": "synthetic-test-fixture-only",
+  "data_cutoff": "2026-03-31T23:59:59+05:00",
+  "code_revision": "working-tree; bind to the release commit in release evidence",
+  "dependency_lock_sha256": "075f6ce90c5affec3089fe200bfe061cc20cc1db4b9db74f37fe6c407e54e067",
+  "seed": 109,
+  "dataset_path": "ml/datasets/synthetic_m3.jsonl",
+  "dataset_sha256": "a165305c9ad0718bae19e7e9c39853a267aff0c8ca1800cf93f80dbd9f4f5e74",
+  "record_count": 27,
+  "label_field": "topic_id",
+  "label_policy": "Synthetic labels authored with the fixture; no production or organizer labels.",
+  "group_field": "group_id",
+  "time_field": "observed_at",
+  "feature_allowlist": ["text", "language", "region_id", "channel"],
+  "post_decision_fields": [
+    "operator_decision",
+    "assigned_service",
+    "status",
+    "resolution_code",
+    "resolved_at",
+    "closed_at",
+    "execution_outcome"
+  ],
+  "exclusions": [
+    "unknown or ambiguous business time",
+    "non-synthetic records",
+    "post-decision and execution fields",
+    "direct identifiers and unredacted production text"
+  ],
+  "split_policy": {
+    "type": "grouped_temporal",
+    "train_end": "2026-01-31T23:59:59+05:00",
+    "calibration_end": "2026-02-28T23:59:59+05:00",
+    "test_start": "2026-03-01T00:00:00+05:00",
+    "group_disjoint": true,
+    "shuffle": false,
+    "seed": 109
+  },
+  "model": {
+    "vectorizer": "TfidfVectorizer",
+    "analyzer": "char",
+    "ngram_range": [3, 5],
+    "classifier": "LogisticRegression",
+    "classifier_solver": "lbfgs",
+    "calibration": "deterministic_temperature_grid"
+  }
+}

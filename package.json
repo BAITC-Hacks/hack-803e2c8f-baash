@@ -1,0 +1,16 @@
+{
+  "name": "pulse109-workspace",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@10.33.2",
+  "scripts": {
+    "build": "pnpm --filter @pulse109/web build",
+    "format": "prettier --write \"apps/web/**/*.{ts,tsx,css,json,mjs}\" \"package.json\" \"pnpm-workspace.yaml\" \".github/workflows/*.yml\" \"infra/compose/*.yml\" \"contracts/*.json\" \"data/**/*.json\" \"README.md\" \"IMPLEMENTATION_STATUS.md\"",
+    "format:check": "prettier --check \"apps/web/**/*.{ts,tsx,css,json,mjs}\" \"package.json\" \"pnpm-workspace.yaml\" \".github/workflows/*.yml\" \"infra/compose/*.yml\" \"contracts/*.json\" \"data/**/*.json\" \"README.md\" \"IMPLEMENTATION_STATUS.md\"",
+    "lint": "pnpm --filter @pulse109/web lint",
+    "typecheck": "pnpm --filter @pulse109/web typecheck"
+  },
+  "devDependencies": {
+    "prettier": "3.6.2"
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pulse109.example.gov.kz/schemas/event-envelope/1.0.0",
+  "title": "Pulse 109 Integration Event Envelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_id",
+    "event_type",
+    "event_version",
+    "occurred_at",
+    "occurred_at_quality",
+    "observed_at",
+    "producer",
+    "correlation_id",
+    "region_id",
+    "subject_id",
+    "payload",
+    "data_classification"
+  ],
+  "properties": {
+    "event_id": { "type": "string", "format": "uuid" },
+    "event_type": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+\\.v[1-9][0-9]*$"
+    },
+    "event_version": { "type": "integer", "minimum": 1 },
+    "occurred_at": { "type": ["string", "null"], "format": "date-time" },
+    "occurred_at_quality": {
+      "enum": ["exact", "source_tz_assumed", "date_only", "missing"]
+    },
+    "observed_at": { "type": "string", "format": "date-time" },
+    "producer": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "correlation_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "causation_id": { "type": ["string", "null"], "maxLength": 128 },
+    "region_id": { "type": "string", "pattern": "^[A-Z0-9_-]{2,32}$" },
+    "subject_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "payload": { "type": "object" },
+    "data_classification": {
+      "enum": ["public", "internal", "confidential", "restricted", "security"]
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "occurred_at_quality": { "const": "missing" } } },
+      "then": { "properties": { "occurred_at": { "type": "null" } } }
+    }
+  ]
+}

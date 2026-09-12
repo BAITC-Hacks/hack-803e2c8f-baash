@@ -1,0 +1,474 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pulse109.example.gov.kz/schemas/canonical-request/1.0.0",
+  "title": "Pulse 109 Canonical Request",
+  "description": "Canonical appeal envelope shared by regional adapters. Direct identifiers remain in the private identity zone and are referenced by opaque tokens.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "request_id",
+    "source",
+    "intake",
+    "time",
+    "governance",
+    "ingestion"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "request_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "source": {
+      "$ref": "#/$defs/source"
+    },
+    "intake": {
+      "$ref": "#/$defs/intake"
+    },
+    "time": {
+      "$ref": "#/$defs/time"
+    },
+    "location": {
+      "$ref": "#/$defs/location"
+    },
+    "prediction": {
+      "$ref": "#/$defs/prediction"
+    },
+    "decision": {
+      "$ref": "#/$defs/decision"
+    },
+    "execution": {
+      "$ref": "#/$defs/execution"
+    },
+    "incident": {
+      "$ref": "#/$defs/incident"
+    },
+    "governance": {
+      "$ref": "#/$defs/governance"
+    },
+    "ingestion": {
+      "$ref": "#/$defs/ingestion"
+    },
+    "extensions": {
+      "type": "object",
+      "description": "Namespaced source-specific data that has not yet entered the canonical contract.",
+      "propertyNames": {
+        "pattern": "^[a-z0-9_-]+:[a-z0-9_.-]+$"
+      },
+      "additionalProperties": true
+    }
+  },
+  "$defs": {
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["system", "request_id", "region_id"],
+      "properties": {
+        "system": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "request_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "region_id": {
+          "type": "string",
+          "pattern": "^[A-Z0-9_-]{2,32}$"
+        },
+        "export_id": {
+          "type": ["string", "null"]
+        },
+        "source_record_checksum": {
+          "type": ["string", "null"],
+          "pattern": "^[a-fA-F0-9]{64}$"
+        }
+      }
+    },
+    "intake": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["channel", "language"],
+      "properties": {
+        "channel": {
+          "enum": [
+            "phone",
+            "web",
+            "mobile",
+            "telegram",
+            "whatsapp",
+            "email",
+            "walk_in",
+            "import",
+            "other"
+          ]
+        },
+        "language": {
+          "enum": ["kk", "ru", "mixed", "unknown"]
+        },
+        "raw_text_ref": {
+          "type": ["string", "null"]
+        },
+        "transcript_ref": {
+          "type": ["string", "null"]
+        },
+        "media_refs": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {
+            "type": "string"
+          }
+        },
+        "citizen_token": {
+          "type": ["string", "null"],
+          "description": "Stable pseudonymous token only where a lawful repeat-contact use case exists."
+        },
+        "selected_attributes": {
+          "type": "object",
+          "additionalProperties": {
+            "type": ["string", "number", "boolean", "null"]
+          }
+        }
+      }
+    },
+    "time": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["received_at", "received_at_quality", "observed_at"],
+      "properties": {
+        "received_at": {
+          "type": ["string", "null"],
+          "format": "date-time"
+        },
+        "received_at_quality": {
+          "enum": ["exact", "source_tz_assumed", "date_only", "missing"]
+        },
+        "source_timezone": {
+          "type": ["string", "null"],
+          "description": "IANA timezone or an explicit fixed offset when the source cannot supply IANA names."
+        },
+        "observed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "closed_at": {
+          "type": ["string", "null"],
+          "format": "date-time"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "received_at_quality": {
+                "const": "missing"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "received_at": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "location": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "address_private_ref": {
+          "type": ["string", "null"]
+        },
+        "geo_id": {
+          "type": ["string", "null"]
+        },
+        "object_id": {
+          "type": ["string", "null"]
+        },
+        "latitude": {
+          "type": ["number", "null"],
+          "minimum": -90,
+          "maximum": 90
+        },
+        "longitude": {
+          "type": ["number", "null"],
+          "minimum": -180,
+          "maximum": 180
+        },
+        "precision_m": {
+          "type": ["number", "null"],
+          "minimum": 0
+        },
+        "normalization_status": {
+          "enum": ["exact", "approximate", "ambiguous", "missing"]
+        }
+      }
+    },
+    "prediction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model_version",
+        "taxonomy_version",
+        "top_topics",
+        "top_services",
+        "confidence_band"
+      ],
+      "properties": {
+        "model_version": {
+          "type": "string"
+        },
+        "taxonomy_version": {
+          "type": "string"
+        },
+        "top_topics": {
+          "$ref": "#/$defs/ranked_labels"
+        },
+        "top_services": {
+          "$ref": "#/$defs/ranked_labels"
+        },
+        "priority_assist": {
+          "enum": ["routine", "elevated", "urgent", "emergency_handoff"]
+        },
+        "confidence_band": {
+          "enum": ["high", "medium", "low", "out_of_domain"]
+        },
+        "out_of_domain_score": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "rule_hits": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "feature_snapshot_id": {
+          "type": "string"
+        },
+        "produced_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "ranked_labels": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "score"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "score": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      }
+    },
+    "decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "topic_id",
+        "service_id",
+        "priority",
+        "action",
+        "decided_at"
+      ],
+      "properties": {
+        "recommendation_id": {
+          "type": ["string", "null"],
+          "format": "uuid"
+        },
+        "topic_id": {
+          "type": "string"
+        },
+        "service_id": {
+          "type": "string"
+        },
+        "priority": {
+          "enum": ["routine", "elevated", "urgent", "emergency_handoff"]
+        },
+        "action": {
+          "enum": ["accepted", "corrected", "manual"]
+        },
+        "correction_reason_code": {
+          "type": ["string", "null"]
+        },
+        "operator_id_token": {
+          "type": "string"
+        },
+        "decided_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "current_status": {
+          "enum": [
+            "new",
+            "triage",
+            "assigned",
+            "accepted",
+            "in_progress",
+            "waiting",
+            "resolved",
+            "closed",
+            "reopened",
+            "cancelled"
+          ]
+        },
+        "sla_policy_version": {
+          "type": ["string", "null"]
+        },
+        "due_at": {
+          "type": ["string", "null"],
+          "format": "date-time"
+        },
+        "contractor_id": {
+          "type": ["string", "null"]
+        },
+        "result_ref": {
+          "type": ["string", "null"]
+        },
+        "evidence_refs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "incident": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "incident_id": {
+          "type": ["string", "null"],
+          "format": "uuid"
+        },
+        "membership_state": {
+          "enum": ["none", "proposed", "confirmed", "rejected"]
+        },
+        "duplicate_score": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "proposal_reason_codes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "governance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "legal_basis",
+        "retention_class",
+        "pii_flags",
+        "access_scope"
+      ],
+      "properties": {
+        "legal_basis": {
+          "type": "string"
+        },
+        "retention_class": {
+          "type": "string"
+        },
+        "pii_flags": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "name",
+              "phone",
+              "email",
+              "address",
+              "voice",
+              "image",
+              "identifier",
+              "free_text",
+              "none"
+            ]
+          }
+        },
+        "access_scope": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "redaction_version": {
+          "type": ["string", "null"]
+        },
+        "deletion_due_at": {
+          "type": ["string", "null"],
+          "format": "date-time"
+        }
+      }
+    },
+    "ingestion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "adapter_id",
+        "adapter_version",
+        "ingested_at",
+        "raw_payload_ref",
+        "validation_status"
+      ],
+      "properties": {
+        "adapter_id": {
+          "type": "string"
+        },
+        "adapter_version": {
+          "type": "string"
+        },
+        "schema_mapping_version": {
+          "type": "string"
+        },
+        "ingested_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "raw_payload_ref": {
+          "type": "string"
+        },
+        "validation_status": {
+          "enum": ["accepted", "accepted_with_warnings", "quarantined"]
+        },
+        "warning_codes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

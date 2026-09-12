@@ -1,0 +1,21 @@
+{
+  "event_id": "6e432590-6f31-43ca-a668-cb035a588293",
+  "event_type": "data.batch.validated.v1",
+  "event_version": 1,
+  "occurred_at": null,
+  "occurred_at_quality": "missing",
+  "observed_at": "2026-09-11T12:00:00Z",
+  "producer": "pulse109-ingestion/0.1.0",
+  "correlation_id": "synthetic-m1-run",
+  "causation_id": null,
+  "region_id": "ASTANA",
+  "subject_id": "synthetic-batch-001",
+  "payload": {
+    "accepted": 2,
+    "warning": 1,
+    "quarantined": 2,
+    "contract_version": "1.0.0"
+  },
+  "data_classification": "internal"
+}
+

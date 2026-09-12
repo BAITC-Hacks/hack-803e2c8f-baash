@@ -1,0 +1,13 @@
+{
+  "adapter_version": "1.0.0",
+  "expected_regions": ["ALA", "AST", "KAR"],
+  "generator_version": "1.0.0",
+  "manifest_version": "1.0.0",
+  "observed_at": "2026-09-11T12:00:00Z",
+  "purpose": "M1 contract, quarantine, provenance and time-quality tests only",
+  "run_id": "synthetic-m1-20260911",
+  "seed": 109,
+  "source_system": "synthetic-crm",
+  "source_registry_region": "MULTI",
+  "synthetic_only": true
+}

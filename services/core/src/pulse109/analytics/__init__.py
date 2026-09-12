@@ -1,0 +1,1 @@
+"""Governed analytics ownership boundary."""

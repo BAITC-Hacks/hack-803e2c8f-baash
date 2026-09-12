@@ -1,0 +1,75 @@
+[build-system]
+requires = ["hatchling==1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pulse109"
+version = "0.1.0"
+description = "Pulse 109 contract-first modular backend and ingestion foundation"
+readme = "README.md"
+requires-python = ">=3.10,<3.14"
+dependencies = [
+  "alembic==1.16.5",
+  "fastapi==0.116.1",
+  "httpx==0.28.1",
+  "jsonschema[format]==4.25.1",
+  "psycopg[binary,pool]==3.2.10",
+  "pydantic-settings==2.10.1",
+  "python-dateutil==2.9.0.post0",
+  "pyyaml==6.0.2",
+  "scikit-learn==1.7.2",
+  "sqlalchemy==2.0.43",
+  "uvicorn[standard]==0.35.0",
+]
+
+[dependency-groups]
+dev = [
+  "hypothesis==6.138.15",
+  "mypy==1.17.1",
+  "openapi-spec-validator==0.7.2",
+  "pytest==8.4.2",
+  "pytest-asyncio==1.1.0",
+  "ruff==0.12.12",
+  "types-jsonschema==4.26.0.20260518",
+  "types-pyyaml==6.0.12.20250822",
+]
+
+[project.scripts]
+pulse109-ingest = "pulse109.ingestion.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = [
+  "services/core/src/pulse109",
+  "services/inference/src/pulse109_inference",
+  "services/worker/src/pulse109_worker",
+  "adapters/replay/src/pulse109_replay",
+]
+
+[tool.pytest.ini_options]
+addopts = "-ra --strict-config --strict-markers --import-mode=importlib"
+testpaths = ["services/core/tests", "services/inference/tests", "services/worker/tests", "adapters/replay/tests", "tests"]
+pythonpath = ["services/core/src", "services/inference/src", "services/worker/src", "adapters/replay/src"]
+markers = [
+  "integration: requires local PostgreSQL services",
+]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+extend-exclude = ["services/core/migrations/versions", "services/inference/main.py", "services/worker/main.py", "adapters/replay/main.py"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "ASYNC", "S", "RUF"]
+ignore = ["S101"]
+
+[tool.ruff.lint.per-file-ignores]
+"services/core/migrations/**/*.py" = ["E501"]
+"tests/**/*.py" = ["S101"]
+"services/**/tests/**/*.py" = ["S101"]
+"adapters/**/tests/**/*.py" = ["S101"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+mypy_path = ["services/core/src", "services/inference/src", "services/worker/src", "adapters/replay/src"]
+packages = ["pulse109", "pulse109_inference", "pulse109_worker", "pulse109_replay"]
