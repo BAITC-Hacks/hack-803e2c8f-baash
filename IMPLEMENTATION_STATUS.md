@@ -4,8 +4,8 @@
 
 - Milestone: M0, M1 and synthetic-only M3 routing assistance
 - Objective: repository/data foundation plus a governed routing baseline and feedback boundary
-- Status: implementation complete; clean-run container evidence pending CI because local Docker Desktop is broken
-- Working tree: `codex/m0-m1-foundation`
+- Status: implementation and clean-run acceptance evidence complete
+- Working tree: `codex/m0-m1-m3-foundation`
 
 ## Delivered Behavior
 
@@ -35,18 +35,22 @@
 
 ## Verification
 
-| Command              | Result  | Evidence or note                                                               |
-| -------------------- | ------- | ------------------------------------------------------------------------------ |
-| `make lint`          | passed  | PowerShell equivalent; Ruff, Prettier and ESLint pass.                         |
-| `make typecheck`     | passed  | Strict mypy and TypeScript checks pass.                                        |
-| `make test`          | passed  | 32 passed; 2 PostgreSQL tests skipped because the local engine is unavailable. |
-| `make contract-test` | passed  | 5 passed; OpenAPI remains 18 operations/26 schemas.                            |
-| `make e2e`           | passed  | 2 passed: health and no-ML manual intake/decision/queued assignment.           |
-| `make build`         | passed  | Python wheel/sdist and Next.js production build.                               |
-| `make up`            | blocked | Docker Desktop 4.70 crashes on its stale `dockerInference` reparse point.      |
-| `make dq-report`     | passed  | Deterministic synthetic fixture only.                                          |
-| `make model-eval`    | passed  | Deterministic synthetic baseline/evaluation artifacts reproduced.              |
-| Browser E2E          | passed  | Desktop/mobile; OOD manual decision and recommendation confirmation work.      |
+| Command              | Result         | Evidence or note                                                               |
+| -------------------- | -------------- | ------------------------------------------------------------------------------ |
+| `make lint`          | passed         | PowerShell equivalent; Ruff, Prettier and ESLint pass.                         |
+| `make typecheck`     | passed         | Strict mypy and TypeScript checks pass.                                        |
+| `make test`          | passed         | 33 passed; 2 PostgreSQL tests skipped only in the host-only run.                |
+| `make contract-test` | passed         | 5 passed; OpenAPI remains 18 operations/26 schemas.                            |
+| `make e2e`           | passed         | 2 passed: health and no-ML manual intake/decision/queued assignment.           |
+| `make build`         | passed         | Python wheel/sdist and Next.js production build.                               |
+| Compose startup      | passed in CI   | All services healthy; public health endpoints returned success.                |
+| PostgreSQL checks    | passed in CI   | PostGIS, pgvector, migration head and 2 persistent-import tests passed.         |
+| Local `make up`      | host-blocked   | Docker Desktop 4.70 crashes on its stale `dockerInference` reparse point.      |
+| `make dq-report`     | passed         | Deterministic synthetic fixture only.                                          |
+| `make model-eval`    | passed         | Deterministic synthetic baseline/evaluation artifacts reproduced.              |
+| Browser E2E          | passed         | Desktop/mobile; OOD manual decision and recommendation confirmation work.      |
+
+Clean-run CI evidence: <https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/34681097162>.
 
 ## Known Limitations And External Blockers
 
@@ -58,7 +62,7 @@
 - The M2 runtime repository is currently in-memory. Migrations define the durable tables, but the
   production transaction/repository wiring is not complete.
 - Local container execution is blocked by a host Docker Desktop socket failure unrelated to this repo;
-  CI now performs Compose startup, health, extension and migration-head checks on every push.
+  CI performs Compose startup, public health, extension, migration-head and PostgreSQL import checks.
 
 ## Decisions Recorded
 
