@@ -1,6 +1,6 @@
 param(
     [Parameter(Mandatory = $true, Position = 0)]
-    [ValidateSet("bootstrap", "format", "lint", "typecheck", "test", "contract-test", "e2e", "build", "up", "down", "migrate", "dq-report", "model-eval")]
+    [ValidateSet("bootstrap", "format", "lint", "typecheck", "test", "contract-test", "e2e", "build", "up", "down", "migrate", "dq-report", "model-eval", "retrieval-eval")]
     [string]$Task
 )
 
@@ -36,7 +36,7 @@ switch ($Task) {
         Invoke-Checked "pnpm" @("typecheck")
     }
     "test" {
-        Invoke-Checked "uv" @("run", "pytest", "services/core/tests", "services/inference/tests", "services/worker/tests", "adapters/replay/tests", "tests/architecture", "tests/integration", "tests/model", "-q")
+        Invoke-Checked "uv" @("run", "pytest", "services/core/tests", "services/inference/tests", "services/worker/tests", "adapters/replay/tests", "tests/architecture", "tests/integration", "tests/model", "tests/retrieval", "tests/resilience", "-q")
     }
     "contract-test" { Invoke-Checked "uv" @("run", "pytest", "tests/contract", "-q") }
     "e2e" { Invoke-Checked "uv" @("run", "pytest", "tests/e2e", "-q") }
@@ -49,4 +49,5 @@ switch ($Task) {
     "migrate" { Invoke-Checked "uv" @("run", "alembic", "-c", "services/core/alembic.ini", "upgrade", "head") }
     "dq-report" { Invoke-Checked "uv" @("run", "pulse109-ingest", "data/fixtures/synthetic/import_batch.jsonl", "--manifest", "data/manifests/synthetic-m1.json", "--schema", "contracts/canonical_request.schema.json", "--accepted", "data/reports/synthetic-m1-accepted.jsonl", "--quarantine", "data/reports/synthetic-m1-quarantine.jsonl", "--report", "data/reports/synthetic-m1-dq-report.json") }
     "model-eval" { Invoke-Checked "uv" @("run", "python", "-m", "ml.training.synthetic_baseline", "--manifest", "ml/datasets/synthetic_m3_manifest.json", "--output-dir", "ml/evaluation/synthetic_m3") }
+    "retrieval-eval" { Invoke-Checked "uv" @("run", "python", "-m", "ml.evaluation.m4_retrieval_eval", "--output", "ml/evaluation/synthetic_m4/retrieval_report.json") }
 }

@@ -7,6 +7,8 @@ repository without changing the application service contract.
 
 from .models import (
     AssignmentCommand,
+    ClassificationInput,
+    ClassificationRecommendation,
     CreateRequest,
     OperatorDecision,
     StatusEventInput,
@@ -17,6 +19,8 @@ from .service import ManualPathService
 
 __all__ = [
     "AssignmentCommand",
+    "ClassificationInput",
+    "ClassificationRecommendation",
     "CreateRequest",
     "InMemoryManualRepository",
     "ManualPathService",

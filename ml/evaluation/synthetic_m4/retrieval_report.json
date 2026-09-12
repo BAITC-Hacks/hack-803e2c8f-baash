@@ -1,0 +1,20 @@
+{
+  "duplicate_pair": {
+    "all_require_human_confirmation": true,
+    "candidate_count": 1,
+    "candidate_ids": [
+      "10000000-0000-0000-0000-000000000002"
+    ]
+  },
+  "fallback": "deterministic hash vector plus lexical overlap; no external model",
+  "judged_queries": 2,
+  "latency_ms": {
+    "count": 2,
+    "max": 0.30149996746331453,
+    "mean": 0.21455000387504697
+  },
+  "mrr": 1.0,
+  "recall_at_10": 1.0,
+  "synthetic_only": true,
+  "warning": "Fixture diagnostics only; no real-world quality claim."
+}

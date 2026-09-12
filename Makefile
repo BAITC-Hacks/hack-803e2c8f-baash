@@ -1,4 +1,4 @@
-.PHONY: bootstrap format lint typecheck test contract-test e2e build up down migrate dq-report model-eval
+.PHONY: bootstrap format lint typecheck test contract-test e2e build up down migrate dq-report model-eval retrieval-eval
 
 bootstrap:
 	uv sync --all-groups --frozen
@@ -20,7 +20,7 @@ typecheck:
 	pnpm typecheck
 
 test:
-	uv run pytest services/core/tests services/inference/tests services/worker/tests adapters/replay/tests tests/architecture tests/integration tests/model -q
+	uv run pytest services/core/tests services/inference/tests services/worker/tests adapters/replay/tests tests/architecture tests/integration tests/model tests/retrieval tests/resilience -q
 
 contract-test:
 	uv run pytest tests/contract -q
@@ -46,3 +46,6 @@ dq-report:
 
 model-eval:
 	uv run python -m ml.training.synthetic_baseline --manifest ml/datasets/synthetic_m3_manifest.json --output-dir ml/evaluation/synthetic_m3
+
+retrieval-eval:
+	uv run python -m ml.evaluation.m4_retrieval_eval --output ml/evaluation/synthetic_m4/retrieval_report.json

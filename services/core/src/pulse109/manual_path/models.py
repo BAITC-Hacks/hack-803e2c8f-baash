@@ -95,6 +95,38 @@ class OperatorDecision(BaseModel):
     operator_note: str | None = Field(default=None, max_length=2000)
 
 
+class ClassificationInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    request_version: int = Field(ge=1)
+    force_model_alias: Literal["champion", "challenger"] | None = None
+    return_similar: bool = False
+
+
+class RankedLabel(BaseModel):
+    id: str
+    score: float = Field(ge=0, le=1)
+    display_name: str | None = None
+
+
+class ClassificationRecommendation(BaseModel):
+    recommendation_id: UUID
+    request_id: UUID
+    request_version: int
+    model_version: str
+    taxonomy_version: str
+    top_topics: list[RankedLabel] = Field(min_length=1, max_length=3)
+    top_services: list[RankedLabel] = Field(min_length=1, max_length=3)
+    priority: Priority
+    confidence_band: Literal["high", "medium", "low", "out_of_domain"]
+    out_of_domain_score: float = Field(ge=0, le=1)
+    rule_hits: list[str] = Field(default_factory=list)
+    missing_fields: list[str] = Field(default_factory=list)
+    explanation: list[str] = Field(default_factory=list)
+    requires_human_confirmation: Literal[True] = True
+    produced_at: datetime
+
+
 class AssignmentCommand(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

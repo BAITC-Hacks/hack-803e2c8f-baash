@@ -1,0 +1,30 @@
+{
+  "adapter": "replay",
+  "contract_version": "1.0.0",
+  "events": [
+    {
+      "attempt": 1,
+      "error_code": "external_unavailable",
+      "external_id": null,
+      "state": "retrying"
+    },
+    {
+      "attempt": 2,
+      "error_code": null,
+      "external_id": "replay-request-synthetic-001",
+      "state": "published"
+    },
+    {
+      "checkpoint": "source-status-001",
+      "source_status": "ASSIGNED",
+      "state": "reconciled"
+    },
+    {
+      "canonical_status": null,
+      "source_status": "UNRECOGNIZED",
+      "state": "mapping_review"
+    }
+  ],
+  "synthetic_only": true,
+  "warning": "Replay evidence only; this is not a live regional integration."
+}

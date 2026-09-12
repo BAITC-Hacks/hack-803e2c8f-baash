@@ -12,6 +12,8 @@ from .models import (
     Appeal,
     AppealDetail,
     AssignmentCommand,
+    ClassificationInput,
+    ClassificationRecommendation,
     CreateRequest,
     DecisionReceipt,
     OperatorDecision,
@@ -58,6 +60,28 @@ def create_manual_router(service: ManualPathService, *, prefix: str = "/v1") -> 
     ) -> AppealDetail:
         try:
             return service.detail(request_id, region_id=region_id)
+        except ManualPathError as error:
+            raise _error(error) from error
+
+    @router.post(
+        "/requests/{request_id}/classifications",
+        response_model=ClassificationRecommendation,
+    )
+    def classify_request(
+        request_id: UUID,
+        command: ClassificationInput,
+        idempotency_key: str = Header(alias="Idempotency-Key", min_length=16, max_length=128),
+        region_id: str = Header(alias="X-Region-Id", pattern=r"^[A-Z0-9_-]{2,32}$"),
+        correlation_id: str | None = Header(default=None, alias="X-Correlation-Id", max_length=128),
+    ) -> ClassificationRecommendation:
+        try:
+            return service.classify(
+                request_id,
+                command,
+                idempotency_key=idempotency_key,
+                region_id=region_id,
+                correlation_id=correlation_id or str(uuid4()),
+            )
         except ManualPathError as error:
             raise _error(error) from error
 

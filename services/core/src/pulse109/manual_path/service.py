@@ -4,17 +4,24 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from datetime import datetime, timezone
 from typing import Any, cast
-from uuid import UUID, uuid4
+from uuid import NAMESPACE_URL, UUID, uuid4, uuid5
+
+from pulse109_inference.engine import classify as classify_with_fallback
+from pulse109_inference.models import InferenceRequest
 
 from .models import (
     Appeal,
     AppealDetail,
     AssignmentCommand,
+    ClassificationInput,
+    ClassificationRecommendation,
     CreateRequest,
     DecisionReceipt,
     OperatorDecision,
+    RankedLabel,
     ServiceDefinition,
     Status,
     StatusEventInput,
@@ -39,6 +46,14 @@ def _hash(value: object) -> str:
     return hashlib.sha256(
         json.dumps(value, default=str, sort_keys=True, separators=(",", ":")).encode()
     ).hexdigest()
+
+
+def _redact_text(value: str | None) -> str:
+    if not value or not value.strip():
+        return "[NO_TEXT]"
+    redacted = re.sub(r"[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}", "[EMAIL]", value)
+    redacted = re.sub(r"(?<!\w)(?:\+?\d[\d ()-]{7,}\d)(?!\w)", "[PHONE_OR_ID]", redacted)
+    return redacted.strip()
 
 
 class ManualPathService:
@@ -231,6 +246,98 @@ class ManualPathService:
             current_decision=decision,
             synchronization=sync_receipt,
         )
+
+    def classify(
+        self,
+        request_id: UUID,
+        command: ClassificationInput,
+        *,
+        idempotency_key: str,
+        region_id: str,
+        correlation_id: str,
+    ) -> ClassificationRecommendation:
+        with self.repository.transaction() as state:
+            appeal = self._get(state, request_id, region_id)
+            key = (f"classification:{request_id}", idempotency_key)
+            request_hash = _hash(command.model_dump(mode="json"))
+            if key in state.idempotency:
+                prior_hash, prior_response = state.idempotency[key]
+                if prior_hash != request_hash:
+                    raise ManualPathError(
+                        "idempotency_conflict", "The idempotency key has a different request body."
+                    )
+                return ClassificationRecommendation.model_validate(prior_response)
+            if appeal.version != command.request_version:
+                raise ManualPathError(
+                    "stale_version", "The appeal changed since classification was requested."
+                )
+            if command.force_model_alias is not None:
+                raise ManualPathError(
+                    "model_alias_unavailable",
+                    "The requested production model alias is not available in this profile.",
+                    503,
+                )
+
+            snapshot_id = uuid5(NAMESPACE_URL, f"pulse109:{request_id}:{appeal.version}")
+            response = classify_with_fallback(
+                InferenceRequest(
+                    contract_version="1.0.0",
+                    task="routing",
+                    request_id=request_id,
+                    request_version=appeal.version,
+                    region_id=appeal.region_id,
+                    feature_snapshot_id=snapshot_id,
+                    input_contract_version="canonical_request/1.0.0",
+                    preprocess_version="basic-pii-redaction/1.0.0",
+                    taxonomy_version="temporary/1.0.0",
+                    model_alias="baseline",
+                    redacted_text=_redact_text(appeal.text),
+                    language=appeal.language,
+                    channel=appeal.channel,
+                    correlation_id=correlation_id,
+                    trace_id=correlation_id,
+                    requested_at=_now(),
+                )
+            )
+            recommendation = ClassificationRecommendation(
+                recommendation_id=response.recommendation_id,
+                request_id=response.request_id,
+                request_version=response.request_version,
+                model_version=response.model_version,
+                taxonomy_version=response.taxonomy_version,
+                top_topics=[
+                    RankedLabel(id=item.id, score=item.score) for item in response.top_topics
+                ],
+                top_services=[
+                    RankedLabel(id=item.id, score=item.score) for item in response.top_services
+                ],
+                priority=response.priority,
+                confidence_band=response.confidence_band,
+                out_of_domain_score=response.ood_score,
+                rule_hits=list(response.rule_hits),
+                missing_fields=["text"] if appeal.text is None else [],
+                explanation=[
+                    "Deterministic lexical CPU fallback; no production quality claim.",
+                    "A human must confirm or correct this recommendation.",
+                ],
+                produced_at=response.produced_at,
+            )
+            stored = recommendation.model_dump(mode="json")
+            state.recommendations[recommendation.recommendation_id] = stored
+            state.idempotency[key] = (request_hash, stored)
+            self._audit(
+                state,
+                "ai.recommendation.produced",
+                request_id,
+                region_id,
+                "system",
+                {
+                    "recommendation_id": str(recommendation.recommendation_id),
+                    "model_version": recommendation.model_version,
+                    "requires_human_confirmation": True,
+                },
+            )
+            return recommendation
 
     def decide(
         self,

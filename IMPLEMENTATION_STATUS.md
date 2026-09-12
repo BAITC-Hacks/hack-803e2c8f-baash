@@ -2,76 +2,82 @@
 
 ## Current Milestone
 
-- Milestone: M0, M1 and synthetic-only M3 routing assistance
-- Objective: repository/data foundation plus a governed routing baseline and feedback boundary
-- Status: implementation and clean-run acceptance evidence complete
+- Milestone: M4, M5, and M6 on the existing M0/M1/M3 foundation
+- Objective: human-reviewed retrieval/incidents, resilient adapter mechanics, and governed analytics
+- Status: local acceptance complete; hosted CI evidence pending
 - Working tree: `codex/m0-m1-m3-foundation`
 
 ## Delivered Behavior
 
-- Root task commands, locked Python/Node dependencies, CI and local Compose topology.
-- Separate web, core API, worker, inference and replay-adapter processes.
-- PostgreSQL 16 with PostGIS and pgvector, plus local S3-compatible object storage.
-- Versioned OpenAPI, canonical request and event-envelope validation.
-- Forward-only database migrations for module schemas, provenance, quarantine, appeal, outbox,
-  private references and immutable audit/event history.
-- Synthetic JSONL raw-to-canonical import with SHA-256 references, schema-drift quarantine,
-  idempotent replay, conflicting-payload detection and explicit time quality.
-- Optional transactional PostgreSQL sink for import runs, source records, quarantine and appeals.
-- ML-independent manual API slice for idempotent intake, operator card, catalog, decision, timeline,
-  audit, queued sync and feedback capture.
-- Internal inference contract with deterministic lexical CPU and mock modes; every result returns
-  top-three topics/services, confidence, OOD, immutable versions and mandatory human confirmation.
-- Reproducible synthetic linear baseline with grouped temporal splits, leakage guard, language/region
-  slices, calibration evidence, OOD report, artifact hash and model card.
+- PostgreSQL FTS and pgvector storage, reciprocal-rank fusion, deterministic offline fallback, and
+  synthetic judged/pair evaluation fixtures.
+- Similar resolved-case evidence and duplicate proposals with text, service, geo, and time factors;
+  automatic merge is absent and appeal identities remain separate.
+- Human-confirmed incident membership with region checks, audit/outbox evidence, idempotency, and a
+  minimum confirmed-member rule.
+- Typed adapter SDK, deterministic replay adapter, bounded retry/backoff, dead-letter state, source
+  receipt deduplication, unknown-status review, and reconciliation checkpoints.
+- Versioned metric catalog and read models for coverage, freshness, volume trends, unavailable SLA
+  policy, alerts, and seasonal-naive forecast.
+- Governed analytics intent/query boundary with allowlisted fields and explicit region scope; arbitrary
+  SQL and cross-region filter bypasses are rejected.
+- PDF and XLSX report jobs render from the same immutable metric result and preserve Metric ID,
+  version, cutoff, quality, and rows.
+- Responsive situation-center UI with coverage/freshness first, missing/stale states, alert review,
+  forecast, and report controls.
 
 ## Contracts And Migrations Changed
 
-- Added `contracts/event_envelope.schema.json` as the executable version 1.0.0 companion to the event
-  catalog. Existing OpenAPI and canonical request semantics were not changed.
-- Added `contracts/inference.schema.json` for the internal version 1.0.0 inference envelope.
-- Added Alembic revisions `0001_extensions_and_schemas`, `0002_m1_data_foundation`,
-  `0003_m2_manual_path` and `0004_m3_routing_assistance`.
+- Existing OpenAPI remains versioned and unchanged at 18 operations and 26 schemas. The implemented
+  public routes use its analytics, alert, incident, retrieval, and report request/response shapes.
+- Added Alembic revisions `0005_m4_retrieval_duplicates`, `0006_m5_incidents_integration`, and
+  `0007_m6_analytics_reports` after the existing `0001`-`0004` chain.
+- Added append-only retrieval-run, incident-membership, delivery, mapping-review, metric-result,
+  alert-review, forecast, and report-artifact persistence structures.
 
 ## Verification
 
-| Command              | Result       | Evidence or note                                                          |
-| -------------------- | ------------ | ------------------------------------------------------------------------- |
-| `make lint`          | passed       | PowerShell equivalent; Ruff, Prettier and ESLint pass.                    |
-| `make typecheck`     | passed       | Strict mypy and TypeScript checks pass.                                   |
-| `make test`          | passed       | 33 passed; 2 PostgreSQL tests skipped only in the host-only run.          |
-| `make contract-test` | passed       | 5 passed; OpenAPI remains 18 operations/26 schemas.                       |
-| `make e2e`           | passed       | 2 passed: health and no-ML manual intake/decision/queued assignment.      |
-| `make build`         | passed       | Python wheel/sdist and Next.js production build.                          |
-| Compose startup      | passed in CI | All services healthy; public health endpoints returned success.           |
-| PostgreSQL checks    | passed in CI | PostGIS, pgvector, migration head and 2 persistent-import tests passed.   |
-| Local `make up`      | host-blocked | Docker Desktop 4.70 crashes on its stale `dockerInference` reparse point. |
-| `make dq-report`     | passed       | Deterministic synthetic fixture only.                                     |
-| `make model-eval`    | passed       | Deterministic synthetic baseline/evaluation artifacts reproduced.         |
-| Browser E2E          | passed       | Desktop/mobile; OOD manual decision and recommendation confirmation work. |
+| Command               | Result | Evidence or note                                                           |
+| --------------------- | ------ | -------------------------------------------------------------------------- |
+| `make lint`           | passed | Ruff, Prettier, and ESLint.                                                |
+| `make typecheck`      | passed | Strict mypy over 58 source files and TypeScript checks.                    |
+| `make test`           | passed | 59 passed; 4 PostgreSQL tests skipped only in the host-only run.           |
+| `make contract-test`  | passed | 6 passed; runtime mounts all 18 OpenAPI operations; 26 schemas remain.     |
+| `make e2e`            | passed | 8 passed across manual, retrieval, incident, and situation-report flows.   |
+| `make build`          | passed | Python wheel/sdist and Next.js production build.                           |
+| `make retrieval-eval` | passed | Deterministic synthetic M4 report reproduced.                              |
+| Alembic offline SQL   | passed | Forward chain renders through `0007_m6_analytics_reports`.                 |
+| Compose configuration | passed | Fully resolved local topology validates.                                   |
+| Browser verification  | passed | Desktop/mobile, interactions, no overflow, no WCAG A/AA violations.        |
+| PDF/XLSX comparison   | passed | Same metric result, ID, version, cutoff, and rows; PDF visually inspected. |
 
-Clean-run CI evidence: <https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/34681097162>.
+The earlier M0/M1/M3 clean-run CI evidence is
+<https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/34681220312>. The final M4-M6 run will be
+recorded here after the pushed commit completes.
 
 ## Known Limitations And External Blockers
 
 - B01-B10 in `DECISIONS_AND_BLOCKERS.md` remain unresolved.
-- There is no real regional adapter, production identity, production PII, approved retention/SLA policy,
-  approved taxonomy or production model training.
-- The synthetic fixture covers contract and failure behavior only and is excluded from model-quality
-  claims.
-- The M2 runtime repository is currently in-memory. Migrations define the durable tables, but the
-  production transaction/repository wiring is not complete.
-- Local container execution is blocked by a host Docker Desktop socket failure unrelated to this repo;
-  CI performs Compose startup, public health, extension, migration-head and PostgreSQL import checks.
+- M4 diagnostics use synthetic judgments and a deterministic hash-vector fallback. BGE embeddings,
+  reranking, representative latency, and real duplicate quality remain blocked by B02/B04/B10.
+- M5 has no live regional adapter. B07 blocks target protocol, credentials, sandbox, and authoritative
+  external status mappings; the replay adapter is the only implemented transport.
+- M6 uses synthetic read results. National coverage, SLA policy, production identity, and production
+  data remain blocked by B01/B06/B08/B10; missing and stale values stay explicit.
+- The M2 runtime repository remains in-memory. Durable tables exist, but production transaction and
+  identity wiring are not complete.
+- Local container startup is blocked by a host Docker Desktop stale `dockerInference` reparse point;
+  hosted CI remains the source of Compose and PostgreSQL migration evidence.
 
 ## Decisions Recorded
 
-- D-006 keeps nullable/ambiguous adapter time separate from the public M2 create DTO.
-- D-007 permits only explicitly synthetic manifests until the first source and legal policy are approved.
-- D-008 permits only synthetic M3 diagnostics and preserves mandatory human control.
-- D-009 keeps the current manual in-memory slice explicitly separate from durable M2 persistence.
+- D-010 limits M4 to deterministic synthetic hybrid mechanics and mandatory human duplicate review.
+- D-011 makes the replay adapter the only M5 transport until the first regional contract is approved.
+- D-012 binds M6 dashboard and exports to one governed metric result and preserves missing semantics.
 
-## Next Executable Task
+## Exact Next Milestone
 
-Complete M2 by replacing the in-memory manual repository with PostgreSQL transactions and approved
-region-scoped identity, then run the existing browser flow against that API before beginning M4.
+M7 release hardening: close the durable M2 repository gap, add approved region-scoped identity,
+exercise access/load/restore/rollback and observability runbooks, and produce the signed release
+evidence index. Real adapters, representative models, national claims, and binding SLA behavior stay
+blocked until their named external approvals are resolved.

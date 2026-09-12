@@ -1,0 +1,26 @@
+{
+  "dataset_id": "pulse109-synthetic-m4-retrieval-v1",
+  "synthetic_only": true,
+  "quality_claims_allowed": false,
+  "cutoff": "2026-09-12T00:00:00Z",
+  "embedding_mode": "sha256-hash-vector-fallback-1.0.0",
+  "ranking_mode": "lexical-vector-rrf-1.0.0",
+  "files": [
+    {
+      "path": "ml/datasets/synthetic_m4_judged.jsonl",
+      "sha256": "81db4f09edaa74d2af15a26af84f79573d20a9de29c28ae1dcabbf1fab22ee52",
+      "purpose": "retrieval mechanics"
+    },
+    {
+      "path": "ml/datasets/synthetic_m4_pairs.jsonl",
+      "sha256": "01f715b7b95cb5c2c68e4e5e42d06f3812a7d962691f30f6fe909f12c3ccebd9",
+      "purpose": "duplicate evidence mechanics"
+    }
+  ],
+  "blocked_by": ["B02", "B04", "B10"],
+  "notes": [
+    "Contains synthetic identifiers and synthetic appeal text only.",
+    "Fixture diagnostics do not estimate production retrieval or duplicate quality.",
+    "Duplicate candidates always require a human confirmation and never merge identities."
+  ]
+}

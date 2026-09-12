@@ -1,0 +1,66 @@
+"""Allowlisted metric definitions and typed query planning."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+from .models import AnalyticsQuery, MetricId
+
+
+@dataclass(frozen=True)
+class MetricDefinition:
+    metric_id: MetricId
+    version: str
+    definition: str
+    dimensions: frozenset[str]
+    filters: frozenset[str]
+
+
+METRIC_CATALOG: dict[MetricId, MetricDefinition] = {
+    "appeals_volume": MetricDefinition(
+        "appeals_volume",
+        "1.0.0",
+        "Count of accepted appeals by observed time.",
+        frozenset({"region_id", "status", "channel"}),
+        frozenset({"region_id", "status", "channel"}),
+    ),
+    "sla_risk": MetricDefinition(
+        "sla_risk",
+        "1.0.0",
+        "Appeals approaching or exceeding a versioned SLA.",
+        frozenset({"region_id", "service_id", "priority"}),
+        frozenset({"region_id", "service_id", "priority"}),
+    ),
+    "source_freshness": MetricDefinition(
+        "source_freshness",
+        "1.0.0",
+        "Latest observed source event and freshness state.",
+        frozenset({"region_id", "source_system"}),
+        frozenset({"region_id", "source_system"}),
+    ),
+    "coverage": MetricDefinition(
+        "coverage",
+        "1.0.0",
+        "Regions with present source data in the requested cutoff.",
+        frozenset({"region_id", "source_system"}),
+        frozenset({"region_id", "source_system"}),
+    ),
+}
+
+
+def metric_definition(metric_id: MetricId, version: str = "1.0.0") -> MetricDefinition:
+    definition = METRIC_CATALOG[metric_id]
+    if definition.version != version:
+        raise ValueError(f"unsupported metric version: {metric_id}/{version}")
+    return definition
+
+
+def validate_query(query: AnalyticsQuery) -> MetricDefinition:
+    if query.time_to <= query.time_from:
+        raise ValueError("time_to must be after time_from")
+    definition = metric_definition(query.metric_id, query.metric_version)
+    unknown_dimensions = set(query.dimensions) - definition.dimensions
+    unknown_filters = {item.field for item in query.filters} - definition.filters
+    if unknown_dimensions or unknown_filters:
+        raise ValueError("query contains a field outside the metric allowlist")
+    return definition

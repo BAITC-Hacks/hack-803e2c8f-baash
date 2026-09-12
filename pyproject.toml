@@ -13,10 +13,12 @@ dependencies = [
   "fastapi==0.116.1",
   "httpx==0.28.1",
   "jsonschema[format]==4.25.1",
+  "openpyxl==3.1.5",
   "psycopg[binary,pool]==3.2.10",
   "pydantic-settings==2.10.1",
   "python-dateutil==2.9.0.post0",
   "pyyaml==6.0.2",
+  "reportlab==4.4.9",
   "scikit-learn==1.7.2",
   "sqlalchemy==2.0.43",
   "uvicorn[standard]==0.35.0",
@@ -27,6 +29,7 @@ dev = [
   "hypothesis==6.138.15",
   "mypy==1.17.1",
   "openapi-spec-validator==0.7.2",
+  "pypdf==6.10.0",
   "pytest==8.4.2",
   "pytest-asyncio==1.1.0",
   "ruff==0.12.12",
@@ -43,12 +46,13 @@ packages = [
   "services/inference/src/pulse109_inference",
   "services/worker/src/pulse109_worker",
   "adapters/replay/src/pulse109_replay",
+  "adapters/sdk/src/pulse109_adapter",
 ]
 
 [tool.pytest.ini_options]
 addopts = "-ra --strict-config --strict-markers --import-mode=importlib"
 testpaths = ["services/core/tests", "services/inference/tests", "services/worker/tests", "adapters/replay/tests", "tests"]
-pythonpath = ["services/core/src", "services/inference/src", "services/worker/src", "adapters/replay/src"]
+pythonpath = ["services/core/src", "services/inference/src", "services/worker/src", "adapters/replay/src", "adapters/sdk/src"]
 markers = [
   "integration: requires local PostgreSQL services",
 ]
@@ -72,4 +76,4 @@ ignore = ["S101"]
 python_version = "3.10"
 strict = true
 mypy_path = ["services/core/src", "services/inference/src", "services/worker/src", "adapters/replay/src"]
-packages = ["pulse109", "pulse109_inference", "pulse109_worker", "pulse109_replay"]
+packages = ["pulse109", "pulse109_inference", "pulse109_worker", "pulse109_replay", "pulse109_adapter"]

@@ -1,0 +1,4 @@
+{"query_id":"10000000-0000-0000-0000-000000000001","candidate_id":"10000000-0000-0000-0000-000000000002","relevance":2,"region_id":"ALA","judgement":"same resolved water issue family"}
+{"query_id":"10000000-0000-0000-0000-000000000001","candidate_id":"10000000-0000-0000-0000-000000000003","relevance":0,"region_id":"ALA","judgement":"different service"}
+{"query_id":"10000000-0000-0000-0000-000000000004","candidate_id":"10000000-0000-0000-0000-000000000005","relevance":2,"region_id":"AST","judgement":"same resolved road issue family"}
+{"query_id":"10000000-0000-0000-0000-000000000004","candidate_id":"10000000-0000-0000-0000-000000000006","relevance":0,"region_id":"AST","judgement":"different service"}

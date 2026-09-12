@@ -62,7 +62,7 @@ jobs:
             psql -U pulse109 -d pulse109 -Atc \
             "SELECT string_agg(extname, ',' ORDER BY extname) FROM pg_extension WHERE extname IN ('postgis','vector');")" = "postgis,vector"
           test "$(docker compose -f infra/compose/docker-compose.yml exec -T postgres \
-            psql -U pulse109 -d pulse109 -Atc "SELECT version_num FROM alembic_version;")" = "0004_m3_routing_assistance"
+            psql -U pulse109 -d pulse109 -Atc "SELECT version_num FROM alembic_version;")" = "0007_m6_analytics_reports"
       - name: Verify PostgreSQL-backed import
         env:
           PULSE109_TEST_DATABASE_URL: postgresql://pulse109:pulse109-local@127.0.0.1:5432/pulse109

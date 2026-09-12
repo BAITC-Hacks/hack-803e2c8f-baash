@@ -85,6 +85,39 @@ Record implementation decisions here when the repository, contracts or available
 - **Evidence:** `services/core/src/pulse109/manual_path/`, migrations `0003`/`0004`, API E2E and browser screenshots.
 - **Revisit when:** the PostgreSQL repository and approved identity/authorization adapter are connected.
 
+### D-010 - Deterministic hybrid fallback before representative M4 data
+
+- **Date:** 2026-09-12
+- **Status:** accepted
+- **Context:** B02 and B04 block representative retrieval judgments, embeddings, and confirmed duplicate pairs.
+- **Decision:** implement PostgreSQL FTS/pgvector storage and reciprocal-rank fusion, while using a deterministic lexical/hash-vector fallback for synthetic tests. Every duplicate remains a proposal with text, service, time, and geo evidence and requires a human decision.
+- **Alternatives:** download unapproved embedding models; claim fixture scores as production quality; automatically merge high-scoring pairs.
+- **Consequences:** storage and review contracts are executable offline without creating a quality claim or destroying appeal identity.
+- **Evidence:** migration `0005`, `ml/datasets/synthetic_m4_manifest.json`, `ml/evaluation/synthetic_m4/`, and retrieval/E2E tests.
+- **Revisit when:** approved raw text, representative judgments, confirmed pairs, and evaluation policy are available.
+
+### D-011 - Replay adapter is the only M5 external transport
+
+- **Date:** 2026-09-12
+- **Status:** accepted
+- **Context:** B07 leaves the first regional target, owner, API, sandbox, and status semantics unknown.
+- **Decision:** ship a typed adapter SDK, deterministic replay adapter, bounded retries, dead-letter state, and reconciliation with unknown statuses routed to mapping review. Do not invent a live system protocol.
+- **Alternatives:** bind domain code to an assumed CRM; omit delivery failure behavior until a target exists.
+- **Consequences:** the delivery state machine and incident membership are testable, but no national or live integration is claimed.
+- **Evidence:** migration `0006`, adapter contract/outage tests, and `data/reports/synthetic-m5-replay-trace.json`.
+- **Revisit when:** B07 is resolved and the first adapter contract is approved.
+
+### D-012 - Governed synthetic read model for M6
+
+- **Date:** 2026-09-12
+- **Status:** accepted
+- **Context:** authoritative national coverage, SLA policy, production identity, and legal approval remain blocked by B01, B06, B08, and B10.
+- **Decision:** expose an allowlisted metric catalog and governed intent parser over synthetic read results. Dashboard, PDF, and XLSX consume the same immutable metric result; missing and stale regions remain explicit and never become numeric zeros.
+- **Alternatives:** allow arbitrary SQL; fabricate national values; encode an unapproved SLA threshold.
+- **Consequences:** situation-center semantics and export reconciliation are executable without representing unavailable policy or data as fact.
+- **Evidence:** migration `0007`, analytics/report tests, export comparison E2E, and browser evidence in `ml/evaluation/synthetic_m6/`.
+- **Revisit when:** B01, B06, B08, and B10 are resolved.
+
 ### D-XXX — Short title
 
 - **Date:** YYYY-MM-DD
