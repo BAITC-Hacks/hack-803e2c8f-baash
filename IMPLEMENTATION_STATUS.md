@@ -35,20 +35,20 @@
 
 ## Verification
 
-| Command              | Result         | Evidence or note                                                               |
-| -------------------- | -------------- | ------------------------------------------------------------------------------ |
-| `make lint`          | passed         | PowerShell equivalent; Ruff, Prettier and ESLint pass.                         |
-| `make typecheck`     | passed         | Strict mypy and TypeScript checks pass.                                        |
-| `make test`          | passed         | 33 passed; 2 PostgreSQL tests skipped only in the host-only run.                |
-| `make contract-test` | passed         | 5 passed; OpenAPI remains 18 operations/26 schemas.                            |
-| `make e2e`           | passed         | 2 passed: health and no-ML manual intake/decision/queued assignment.           |
-| `make build`         | passed         | Python wheel/sdist and Next.js production build.                               |
-| Compose startup      | passed in CI   | All services healthy; public health endpoints returned success.                |
-| PostgreSQL checks    | passed in CI   | PostGIS, pgvector, migration head and 2 persistent-import tests passed.         |
-| Local `make up`      | host-blocked   | Docker Desktop 4.70 crashes on its stale `dockerInference` reparse point.      |
-| `make dq-report`     | passed         | Deterministic synthetic fixture only.                                          |
-| `make model-eval`    | passed         | Deterministic synthetic baseline/evaluation artifacts reproduced.              |
-| Browser E2E          | passed         | Desktop/mobile; OOD manual decision and recommendation confirmation work.      |
+| Command              | Result       | Evidence or note                                                          |
+| -------------------- | ------------ | ------------------------------------------------------------------------- |
+| `make lint`          | passed       | PowerShell equivalent; Ruff, Prettier and ESLint pass.                    |
+| `make typecheck`     | passed       | Strict mypy and TypeScript checks pass.                                   |
+| `make test`          | passed       | 33 passed; 2 PostgreSQL tests skipped only in the host-only run.          |
+| `make contract-test` | passed       | 5 passed; OpenAPI remains 18 operations/26 schemas.                       |
+| `make e2e`           | passed       | 2 passed: health and no-ML manual intake/decision/queued assignment.      |
+| `make build`         | passed       | Python wheel/sdist and Next.js production build.                          |
+| Compose startup      | passed in CI | All services healthy; public health endpoints returned success.           |
+| PostgreSQL checks    | passed in CI | PostGIS, pgvector, migration head and 2 persistent-import tests passed.   |
+| Local `make up`      | host-blocked | Docker Desktop 4.70 crashes on its stale `dockerInference` reparse point. |
+| `make dq-report`     | passed       | Deterministic synthetic fixture only.                                     |
+| `make model-eval`    | passed       | Deterministic synthetic baseline/evaluation artifacts reproduced.         |
+| Browser E2E          | passed       | Desktop/mobile; OOD manual decision and recommendation confirmation work. |
 
 Clean-run CI evidence: <https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/34681097162>.
 
