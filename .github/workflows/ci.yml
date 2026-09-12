@@ -42,6 +42,11 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.11.28"
+      - name: Bootstrap locked Python dependencies
+        run: uv sync --all-groups --frozen
       - name: Start local topology and wait for health
         run: docker compose -f infra/compose/docker-compose.yml up --build --wait --wait-timeout 300
       - name: Verify service endpoints
@@ -58,6 +63,10 @@ jobs:
             "SELECT string_agg(extname, ',' ORDER BY extname) FROM pg_extension WHERE extname IN ('postgis','vector');")" = "postgis,vector"
           test "$(docker compose -f infra/compose/docker-compose.yml exec -T postgres \
             psql -U pulse109 -d pulse109 -Atc "SELECT version_num FROM alembic_version;")" = "0004_m3_routing_assistance"
+      - name: Verify PostgreSQL-backed import
+        env:
+          PULSE109_TEST_DATABASE_URL: postgresql://pulse109:pulse109-local@127.0.0.1:5432/pulse109
+        run: uv run pytest tests/integration -q
       - name: Capture container logs
         if: always()
         run: docker compose -f infra/compose/docker-compose.yml logs --no-color
