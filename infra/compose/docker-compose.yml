@@ -100,6 +100,8 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
+    ports:
+      - "8081:8081"
     healthcheck:
       test:
         [
@@ -125,6 +127,8 @@ services:
         "--port",
         "8082",
       ]
+    ports:
+      - "8082:8082"
     healthcheck:
       test:
         [
@@ -153,6 +157,8 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
+    ports:
+      - "8083:8083"
     healthcheck:
       test:
         [
