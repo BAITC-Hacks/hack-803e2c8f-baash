@@ -4,7 +4,7 @@
 
 - Milestone: M4, M5, and M6 on the existing M0/M1/M3 foundation
 - Objective: human-reviewed retrieval/incidents, resilient adapter mechanics, and governed analytics
-- Status: local acceptance complete; hosted CI evidence pending
+- Status: implementation and hosted acceptance evidence complete
 - Working tree: `codex/m0-m1-m3-foundation`
 
 ## Delivered Behavior
@@ -37,23 +37,22 @@
 
 ## Verification
 
-| Command               | Result | Evidence or note                                                           |
-| --------------------- | ------ | -------------------------------------------------------------------------- |
-| `make lint`           | passed | Ruff, Prettier, and ESLint.                                                |
-| `make typecheck`      | passed | Strict mypy over 58 source files and TypeScript checks.                    |
-| `make test`           | passed | 59 passed; 4 PostgreSQL tests skipped only in the host-only run.           |
-| `make contract-test`  | passed | 6 passed; runtime mounts all 18 OpenAPI operations; 26 schemas remain.     |
-| `make e2e`            | passed | 8 passed across manual, retrieval, incident, and situation-report flows.   |
-| `make build`          | passed | Python wheel/sdist and Next.js production build.                           |
-| `make retrieval-eval` | passed | Deterministic synthetic M4 report reproduced.                              |
-| Alembic offline SQL   | passed | Forward chain renders through `0007_m6_analytics_reports`.                 |
-| Compose configuration | passed | Fully resolved local topology validates.                                   |
-| Browser verification  | passed | Desktop/mobile, interactions, no overflow, no WCAG A/AA violations.        |
-| PDF/XLSX comparison   | passed | Same metric result, ID, version, cutoff, and rows; PDF visually inspected. |
+| Command               | Result       | Evidence or note                                                           |
+| --------------------- | ------------ | -------------------------------------------------------------------------- |
+| `make lint`           | passed       | Ruff, Prettier, and ESLint.                                                |
+| `make typecheck`      | passed       | Strict mypy over 58 source files and TypeScript checks.                    |
+| `make test`           | passed       | 59 passed; 4 PostgreSQL tests skipped only in the host-only run.           |
+| `make contract-test`  | passed       | 6 passed; runtime mounts all 18 OpenAPI operations; 26 schemas remain.     |
+| `make e2e`            | passed       | 8 passed across manual, retrieval, incident, and situation-report flows.   |
+| `make build`          | passed       | Python wheel/sdist and Next.js production build.                           |
+| `make retrieval-eval` | passed       | Deterministic synthetic M4 report reproduced.                              |
+| Alembic offline SQL   | passed       | Forward chain renders through `0007_m6_analytics_reports`.                 |
+| Compose/PostgreSQL    | passed in CI | All services healthy; extensions, migration head, and 4 DB tests passed.   |
+| Browser verification  | passed       | Desktop/mobile, interactions, no overflow, no WCAG A/AA violations.        |
+| PDF/XLSX comparison   | passed       | Same metric result, ID, version, cutoff, and rows; PDF visually inspected. |
 
-The earlier M0/M1/M3 clean-run CI evidence is
-<https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/34681220312>. The final M4-M6 run will be
-recorded here after the pushed commit completes.
+M4-M6 clean-run CI evidence:
+<https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/34685618121>.
 
 ## Known Limitations And External Blockers
 
