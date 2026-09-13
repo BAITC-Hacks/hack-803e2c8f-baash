@@ -10,10 +10,9 @@
 | Geo and retrieval | PostGIS and pgvector plus PostgreSQL full-text search | Add another engine only after a representative benchmark |
 | Reliability | Transactional outbox and idempotent adapters | Broker is optional after the pilot |
 | Human control | Human confirmation for routing, priority, duplicates and replies | No automatic expansion without approved policy and evidence |
-| Routing model | Fine-tuned XLM-RoBERTa base candidate plus linear baseline | Candidate ships only if it passes slice and calibration gates |
+| Routing model | Linear baseline on categorical features. Text fine-tuning is not possible, see D-018 | Revisit if B02 delivers raw appeal text |
 | Retrieval | BGE-M3 plus lexical retrieval and BGE reranker v2 m3 | Lexical fallback always remains available |
-| Generation | Qwen3 8B four-bit, limited to drafts and governed intent parsing | May be disabled without breaking core flow |
-| Speech | Whisper large v3 turbo, asynchronous | Enabled only after audio access and privacy approval |
+| Generation | Out of scope for the pilot, see D-018. Drafts use templates over confirmed facts | Revisit after the pilot |
 | Forecast | Seasonal naive baseline plus CatBoost or LightGBM candidate | Better validated model wins |
 | Deployment | OCI containers, Compose locally and Helm for target cluster | Same images and contracts across environments |
 | Hardware | Maximum two GPUs with CPU fallback | No requirement may depend on both GPUs being healthy |
@@ -27,7 +26,7 @@
 - Pavlodar contributes about 67.3 percent of the observed volume.
 - Some exports are different snapshots or levels of detail and cannot simply be concatenated.
 - Thirty-seven canonical records have no valid business date.
-- Raw citizen text or call transcript is almost absent from the available exports.
+- Raw citizen text or call transcript is absent from every one of the eight exports, confirmed by a full pass on 2026-09-13.
 - Status names, column families and time semantics drift between sources.
 
 These facts guide data-quality behavior. Recalculate them from the actual supplied dataset before using them in a release report.

@@ -15,3 +15,11 @@ node_modules/
 coverage.xml
 htmlcov/
 data/reports/*.tmp
+
+# Regional CSV ingest outputs. Real government data, B10 (legal basis and
+# retention) is unresolved, so only aggregate reports are versioned.
+build/ingest/
+data/raw/
+*.canonical.jsonl
+retrieval_corpus.jsonl
+quarantine.jsonl
