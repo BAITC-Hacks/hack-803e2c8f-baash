@@ -23,3 +23,8 @@ build/ingest/
 data/raw/
 canonical.jsonl
 *.canonical.jsonl
+
+# Trained sentence-transformer weights. 465 MB per checkpoint, reproduced in
+# about five minutes on CPU by ml/training/retrieval_finetune.py. The model
+# card carries the hash so a checkpoint can be matched to its report.
+ml/evaluation/**/model/

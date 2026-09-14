@@ -227,6 +227,39 @@ Record implementation decisions here when the repository, contracts or available
 - **Evidence:** `per_region` in the routing report.
 - **Revisit when:** new case data arrives and the region mix changes.
 
+### D-023 - Fine-tuned retrieval embeddings beat both baselines by a measured margin
+
+- **Date:** 2026-09-14
+- **Status:** accepted
+- **Context:** a frozen `multilingual-e5-small` loses to a character TF-IDF baseline on this corpus, scoring nDCG@10 of 0.3791 against 0.3932. Off-the-shelf multilingual semantics adds nothing to short clerical Russian text, which is what gives fine-tuning a measurable job.
+- **Decision:** fine-tune the base model with MultipleNegativesRankingLoss on 7 466 pairs mined only from the training period, and report the gain against the lexical baseline rather than against the frozen model.
+- **Alternatives:** ship the frozen model, ship lexical only, or claim the fine-tuning requirement without measuring it.
+- **Consequences:** the ТЗ fine-tuning requirement is met with a number that survives scrutiny. nDCG@10 reaches 0.4086, which is 1.54 points above lexical and 2.95 above frozen. The honest headline is the smaller number, because the larger one compares the model to itself.
+- **Evidence:** `ml/evaluation/retrieval_ft_v1/retrieval_finetune_report.json`, `ml/model_cards/retrieval_e5_small_ft_v1.json`.
+- **Revisit when:** raw citizen text arrives, since queries in production are citizen texts while every query here is an executor text.
+
+### D-024 - Retrieval stays hybrid because lexical wins the tail
+
+- **Date:** 2026-09-14
+- **Status:** accepted
+- **Context:** the fine-tuned model leads on Recall@1 (0.4713 against 0.4625) and nDCG@10, yet trails marginally on Recall@10 (0.6925 against 0.6937). The gain is concentrated at the top of the ranking.
+- **Decision:** keep lexical retrieval in the serving path permanently and fuse it with the dense ranking, rather than treating lexical as a fallback that a good enough model would retire.
+- **Alternatives:** replace lexical with the dense model once it wins on the headline metric.
+- **Consequences:** the operator sees a better first result from the dense side and keeps the recall of the lexical side. This confirms the existing locked decision that a lexical fallback always remains available, now with a measurement behind it.
+- **Evidence:** per-system Recall@1 and Recall@10 in the fine-tune report.
+- **Revisit when:** a reranker is added, which may change where each retriever contributes.
+
+### D-025 - Trained weights are not versioned, the model card is
+
+- **Date:** 2026-09-14
+- **Status:** accepted
+- **Context:** one checkpoint is 465 MB and is reproduced in about five minutes on CPU. The corpus, the pair mining and the split are all deterministic under a fixed seed.
+- **Decision:** ignore `ml/evaluation/**/model/` in git and version a model card carrying the weight sha256, the training configuration, the split and every metric.
+- **Alternatives:** commit the weights, or add Git LFS.
+- **Consequences:** a clone reproduces the checkpoint from the corpus that is versioned. A reviewer can match any reported number to the exact weights that produced it without the repository carrying half a gigabyte per experiment.
+- **Evidence:** `ml/model_cards/retrieval_e5_small_ft_v1.json`, field `weights.sha256`.
+- **Revisit when:** a checkpoint has to be shipped to an environment that cannot retrain.
+
 ### D-XXX — Short title
 
 - **Date:** YYYY-MM-DD
