@@ -118,6 +118,82 @@ Record implementation decisions here when the repository, contracts or available
 - **Evidence:** migration `0007`, analytics/report tests, export comparison E2E, and browser evidence in `ml/evaluation/synthetic_m6/`.
 - **Revisit when:** B01, B06, B08, and B10 are resolved.
 
+### D-013 - Karaganda dates parse as M/D/Y
+
+- **Date:** 2026-09-13
+- **Status:** accepted
+- **Context:** 87 709 Karaganda rows carry a second date field above 12 while the first field never exceeds 12, which fixes the order as month first.
+- **Decision:** parse `created_date`, `updated_date` and `submission_date` with an explicit M/D/Y rule in the regional CSV adapter.
+- **Alternatives:** default D/M/Y parsing, or per-row format inference.
+- **Consequences:** two years of Karaganda history keep correct day and month. Inference was rejected because it is not deterministic across runs.
+- **Evidence:** `adapters/regional_csv`, `data/reports/regional-csv-dq-report.json`.
+- **Revisit when:** the source owner confirms or contradicts the export locale.
+
+### D-014 - Turkestan collapses to one record per incident
+
+- **Date:** 2026-09-13
+- **Status:** accepted
+- **Context:** the Turkestan export holds 98 876 rows over 52 050 distinct `incidentid` values. Repeats are lifecycle snapshots, not separate appeals.
+- **Decision:** keep the row with the latest `updateddate` per `incidentid` and count the rest as deduplicated.
+- **Alternatives:** treat every row as an appeal, or retain all versions as history.
+- **Consequences:** any Turkestan metric computed without this step is inflated by roughly 47 percent. Version history is deferred until the source publishes a lifecycle contract.
+- **Evidence:** 46 826 rows collapsed, recorded in `data/reports/regional-csv-dq-report.json`.
+- **Revisit when:** B07 delivers a lifecycle event contract.
+
+### D-015 - Pavlodar parts concatenate without deduplication
+
+- **Date:** 2026-09-13
+- **Status:** accepted
+- **Context:** the two Pavlodar files share zero `id` values and both span 2020-02-09 to 2026-07-26, so the split is arbitrary rather than chronological.
+- **Decision:** concatenate both parts into one regional stream.
+- **Alternatives:** treat part 2 as a newer snapshot of part 1.
+- **Consequences:** 666 634 Pavlodar records enter the canonical stream, which is 67.3 percent of the corpus. Region-weighted evaluation becomes mandatory.
+- **Evidence:** identifier intersection of zero, verified over both files.
+- **Revisit when:** the source explains the split.
+
+### D-016 - Akmola column-shift rows are quarantined
+
+- **Date:** 2026-09-13
+- **Status:** accepted
+- **Context:** the Akmola export has 180 lines with unescaped quotes. In 32 records the shift is visible because `creation_date` holds an organisation name fragment rather than a date.
+- **Decision:** route those rows to quarantine with `SCHEMA_DRIFT_COLUMN_SHIFT` and never repair them heuristically.
+- **Alternatives:** infer field boundaries and repair, or drop silently.
+- **Consequences:** the canonical count is 990 000 rather than the 990 032 recorded in `DECISIONS_AND_BLOCKERS.md`. The difference is exactly these 32 rows.
+- **Evidence:** `quarantine_reasons` in the data quality report.
+- **Revisit when:** the source supplies a correctly escaped export.
+
+### D-017 - Location normalization status is missing for nearly every record
+
+- **Date:** 2026-09-13
+- **Status:** accepted
+- **Context:** coordinates are populated in 23 of 20 591 Kostanay rows and 264 of 98 876 Turkestan rows. The other five sources carry no coordinate columns.
+- **Decision:** set `location.normalization_status` to `missing` unless a coordinate pair parses, and keep geocoding outside the ingest step.
+- **Alternatives:** geocode addresses during ingest.
+- **Consequences:** incident proposals rest on topic, service and time. Spatial clustering has no source and cannot be demonstrated as measured behaviour.
+- **Evidence:** column fill rates in the data quality report.
+- **Revisit when:** a geocoding service is approved or the source supplies coordinates.
+
+### D-018 - Fine-tuning targets retrieval embeddings, not the intake classifier
+
+- **Date:** 2026-09-13
+- **Status:** accepted
+- **Context:** a full pass over all eight exports confirms that no field holds citizen text. The only free text is written by the executor after closure, giving 14 397 unique documents, of which 72 percent exceed 40 characters and 3 150 exceed 150 characters.
+- **Decision:** train embeddings for similar resolved case retrieval on that corpus. Keep the intake classifier on categorical features with a linear baseline until raw text arrives.
+- **Alternatives:** wait for B02, train the classifier on weak service L1-L3 labels, or claim no fine-tuning at all.
+- **Consequences:** the fine-tuning requirement is met on a corpus that actually exists. The absence of an intake classifier becomes a documented data request rather than an unexplained gap. This supersedes the routing model line in `DECISIONS_AND_BLOCKERS.md`.
+- **Evidence:** corpus statistics in `data/reports/regional-csv-dq-report.json`, with a language split of 96.9 percent ru, 3.0 percent mixed and 0 percent kk.
+- **Revisit when:** B02 delivers raw appeal text before 20 September.
+### D-019 - Redacted corpus is versioned in the private repository
+
+- **Date:** 2026-09-14
+- **Status:** accepted
+- **Context:** D-018 produced a 14 397 document corpus that every training and evaluation run depends on. Keeping it outside git made the retrieval results impossible to reproduce from a clone.
+- **Decision:** version the redacted corpus, the 32 quarantine rows and the quality report. The repository is private and access stays limited to the team.
+- **Alternatives:** keep the corpus out of git and distribute it by hand, or ship only hashes.
+- **Consequences:** a clone reproduces retrieval evaluation without external files. The canonical stream stays ignored because 1.7 GB does not belong in git, which is a size decision and not a privacy one. B10 is still unresolved, so this data must not leave the private repository and must not appear in any public artifact.
+- **Evidence:** residual PII scan over both files reports zero IIN, phone and email. Manifest at `ml/datasets/regional_retrieval_manifest.json`.
+- **Revisit when:** B10 returns a legal basis and retention class, or the repository visibility changes.
+
 ### D-XXX — Short title
 
 - **Date:** YYYY-MM-DD
