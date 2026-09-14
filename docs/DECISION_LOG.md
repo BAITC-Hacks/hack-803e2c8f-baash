@@ -183,6 +183,17 @@ Record implementation decisions here when the repository, contracts or available
 - **Consequences:** the fine-tuning requirement is met on a corpus that actually exists. The absence of an intake classifier becomes a documented data request rather than an unexplained gap. This supersedes the routing model line in `DECISIONS_AND_BLOCKERS.md`.
 - **Evidence:** corpus statistics in `data/reports/regional-csv-dq-report.json`, with a language split of 96.9 percent ru, 3.0 percent mixed and 0 percent kk.
 - **Revisit when:** B02 delivers raw appeal text before 20 September.
+### D-019 - Redacted corpus is versioned in the private repository
+
+- **Date:** 2026-09-14
+- **Status:** accepted
+- **Context:** D-018 produced a 14 397 document corpus that every training and evaluation run depends on. Keeping it outside git made the retrieval results impossible to reproduce from a clone.
+- **Decision:** version the redacted corpus, the 32 quarantine rows and the quality report. The repository is private and access stays limited to the team.
+- **Alternatives:** keep the corpus out of git and distribute it by hand, or ship only hashes.
+- **Consequences:** a clone reproduces retrieval evaluation without external files. The canonical stream stays ignored because 1.7 GB does not belong in git, which is a size decision and not a privacy one. B10 is still unresolved, so this data must not leave the private repository and must not appear in any public artifact.
+- **Evidence:** residual PII scan over both files reports zero IIN, phone and email. Manifest at `ml/datasets/regional_retrieval_manifest.json`.
+- **Revisit when:** B10 returns a legal basis and retention class, or the repository visibility changes.
+
 ### D-XXX — Short title
 
 - **Date:** YYYY-MM-DD

@@ -16,10 +16,10 @@ coverage.xml
 htmlcov/
 data/reports/*.tmp
 
-# Regional CSV ingest outputs. Real government data, B10 (legal basis and
-# retention) is unresolved, so only aggregate reports are versioned.
+# Regional CSV ingest working directory. The 1.7 GB canonical stream is
+# regenerated on demand and never versioned. Redacted corpus, quarantine rows
+# and the quality report are versioned under ml/datasets and data/reports.
 build/ingest/
 data/raw/
+canonical.jsonl
 *.canonical.jsonl
-retrieval_corpus.jsonl
-quarantine.jsonl

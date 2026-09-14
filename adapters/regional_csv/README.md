@@ -22,8 +22,9 @@ A full pass takes about 24 seconds on 1 036 858 input rows and produces:
 | `quarantine.jsonl`       | no        | 32 rows with their raw content                      |
 | `dq_report.json`         | yes       | aggregate counters only, no row content, no PII     |
 
-Only the aggregate report enters git. `.gitignore` blocks the rest while B10
-(legal basis and retention) stays unresolved.
+The redacted corpus, the quarantine rows and the aggregate report are
+versioned under `ml/datasets` and `data/reports`. Only the 1.7 GB canonical
+stream stays out of git, for size rather than privacy. See D-019.
 
 ## Observed result
 
