@@ -18,8 +18,8 @@ A full pass takes about 24 seconds on 1 036 858 input rows and produces:
 | Output                   | Versioned | Note                                                |
 | ------------------------ | --------- | --------------------------------------------------- |
 | `canonical.jsonl`        | no        | 990 000 records, about 1.7 GB, regenerate on demand |
-| `retrieval_corpus.jsonl` | no        | 14 397 executor texts, real data, B10 open          |
-| `quarantine.jsonl`       | no        | 32 rows with their raw content                      |
+| `retrieval_corpus.jsonl` | yes       | 14 397 redacted executor texts, see D-019           |
+| `quarantine.jsonl`       | yes       | 32 column-shift rows, scanned clean of PII          |
 | `dq_report.json`         | yes       | aggregate counters only, no row content, no PII     |
 
 The redacted corpus, the quarantine rows and the aggregate report are
