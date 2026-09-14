@@ -194,6 +194,39 @@ Record implementation decisions here when the repository, contracts or available
 - **Evidence:** residual PII scan over both files reports zero IIN, phone and email. Manifest at `ml/datasets/regional_retrieval_manifest.json`.
 - **Revisit when:** B10 returns a legal basis and retention class, or the repository visibility changes.
 
+### D-020 - Routing has no portable taxonomy across regions
+
+- **Date:** 2026-09-14
+- **Status:** accepted
+- **Context:** leave-one-region-out over the seven regions shows that a model trained on six regions does not work on the seventh. Kostanay shares 94.4 percent of its topic names with the training regions yet scores 0.002 accuracy. Turkestan shares 82.9 percent and scores 0.005. Karaganda shares zero.
+- **Decision:** treat the barrier to twenty regions as a taxonomy mapping problem, not a data volume problem. Report coverage per region and never present a single national routing number.
+- **Alternatives:** train one national model and report its average, or wait for the remaining thirteen regions.
+- **Consequences:** each region needs a versioned mapping from its own service catalogue onto a shared taxonomy before any cross-region claim holds. More data alone does not fix this.
+- **Evidence:** `ml/evaluation/routing_v1/routing_report.json`, section `leave_one_region_out`.
+- **Revisit when:** an authoritative shared service taxonomy arrives, or B01 delivers the remaining regions with their catalogues.
+
+### D-021 - The routing ceiling without citizen text is measured, not assumed
+
+- **Date:** 2026-09-14
+- **Status:** accepted
+- **Context:** a topic to service lookup reaches 0.573 accuracy on a temporal split inside each region. A logistic regression over topic, region, district, channel and time features reaches 0.588, which is 1.5 points better on accuracy and 0.02 points worse on macro F1.
+- **Decision:** ship the lookup with backoff as the routing baseline and keep the linear model as the confidence source for the abstention threshold. Do not claim a modelling gain that the numbers do not support.
+- **Alternatives:** present the model as the routing solution, or drop the model entirely.
+- **Consequences:** the coverage curve becomes the product feature. At 30 percent coverage accuracy is 0.972, at 50 percent it is 0.809. The operator receives everything below the threshold, which makes human-in-the-loop a tunable setting rather than a slogan.
+- **Evidence:** `ml/evaluation/routing_v1/routing_report.json`, sections `baselines`, `model` and `coverage_curve`.
+- **Revisit when:** B02 delivers raw appeal text, which is the only input expected to move this ceiling.
+
+### D-022 - Karaganda stays in the routing metrics with an explicit caveat
+
+- **Date:** 2026-09-14
+- **Status:** accepted
+- **Context:** Karaganda is 99.9 percent deterministic from topic alone because the executor organisation is derived from the category. It contributes 14 percent of the test slice at 0.989 accuracy and lifts the aggregate by 6.7 points. Excluding it moves the model from 0.588 to 0.521.
+- **Decision:** keep Karaganda in the reported metrics and publish both aggregates side by side, with and without it.
+- **Alternatives:** exclude it from routing metrics, or report only the aggregate that includes it.
+- **Consequences:** no number is hidden. A reader sees the inflated aggregate and the honest one in the same table, and can judge which applies to their region.
+- **Evidence:** `per_region` in the routing report.
+- **Revisit when:** new case data arrives and the region mix changes.
+
 ### D-XXX — Short title
 
 - **Date:** YYYY-MM-DD
