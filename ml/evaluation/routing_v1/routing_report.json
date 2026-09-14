@@ -1,0 +1,214 @@
+{
+  "task": "service routing from intake-available categorical features",
+  "generated_at": "2026-09-14T07:57:21.397616+00:00",
+  "rows": 247140,
+  "split": {
+    "strategy": "temporal inside each region",
+    "test_fraction": 0.2,
+    "regions": {
+      "PAVLODAR": {
+        "cut_at": "2025-05-13T09:04:31+00:00",
+        "train": 133290,
+        "test": 33323
+      },
+      "KARAGANDA": {
+        "cut_at": "2023-08-29T11:56:00+00:00",
+        "train": 28665,
+        "test": 7167
+      },
+      "TURKESTAN": {
+        "cut_at": "2025-07-22T17:08:09+00:00",
+        "train": 10410,
+        "test": 2603
+      },
+      "KOSTANAY": {
+        "cut_at": "2025-08-27T20:06:25+00:00",
+        "train": 4117,
+        "test": 1030
+      },
+      "VKO": {
+        "cut_at": "2025-04-09T09:29:11+00:00",
+        "train": 16676,
+        "test": 4170
+      },
+      "ALMATY_OBL": {
+        "cut_at": "2025-09-15T22:15:22+00:00",
+        "train": 3906,
+        "test": 977
+      },
+      "AKMOLA": {
+        "cut_at": "2025-10-16T09:54:14+00:00",
+        "train": 644,
+        "test": 162
+      }
+    }
+  },
+  "features": 1176,
+  "baselines": {
+    "B0_global_majority": {
+      "accuracy": 0.13191859524194854,
+      "macro_f1": 0.0002764987959412385
+    },
+    "B1_topic": {
+      "accuracy": 0.5593340346334358,
+      "macro_f1": 0.19973523389987596
+    },
+    "B2_topic_region": {
+      "accuracy": 0.5732116847386308,
+      "macro_f1": 0.21172957899987926
+    },
+    "B3_topic_region_district": {
+      "accuracy": 0.5734342126557695,
+      "macro_f1": 0.20973775546365167
+    }
+  },
+  "model": {
+    "accuracy": 0.588424502346658,
+    "macro_f1": 0.2094974340309356
+  },
+  "coverage_curve": [
+    {
+      "coverage": 0.3,
+      "accuracy": 0.9724189088947333,
+      "threshold": 0.8129307226780541
+    },
+    {
+      "coverage": 0.5,
+      "accuracy": 0.8093947240653827,
+      "threshold": 0.5953597766371014
+    },
+    {
+      "coverage": 0.7,
+      "accuracy": 0.7141205710652564,
+      "threshold": 0.49003584900653946
+    },
+    {
+      "coverage": 0.9,
+      "accuracy": 0.6302823233231433,
+      "threshold": 0.3349438722191178
+    },
+    {
+      "coverage": 1.0,
+      "accuracy": 0.588424502346658,
+      "threshold": 0.009673818850319243
+    }
+  ],
+  "per_region": {
+    "AKMOLA": {
+      "rows": 162,
+      "baseline_accuracy": 0.024691358024691357,
+      "model_accuracy": 0.05555555555555555,
+      "model_macro_f1": 0.003471314451706609
+    },
+    "ALMATY_OBL": {
+      "rows": 977,
+      "baseline_accuracy": 0.7697031729785057,
+      "model_accuracy": 0.7737973387922211,
+      "model_macro_f1": 0.2170498975616188
+    },
+    "KARAGANDA": {
+      "rows": 7167,
+      "baseline_accuracy": 0.988698200083717,
+      "model_accuracy": 0.9861866889912098,
+      "model_macro_f1": 0.7887166264235095
+    },
+    "KOSTANAY": {
+      "rows": 1030,
+      "baseline_accuracy": 0.49902912621359224,
+      "model_accuracy": 0.5087378640776699,
+      "model_macro_f1": 0.17253298048402077
+    },
+    "PAVLODAR": {
+      "rows": 33323,
+      "baseline_accuracy": 0.5439186147705789,
+      "model_accuracy": 0.5239024097470216,
+      "model_macro_f1": 0.10444928066804846
+    },
+    "TURKESTAN": {
+      "rows": 2603,
+      "baseline_accuracy": 0.4356511717249328,
+      "model_accuracy": 0.43757203227045716,
+      "model_macro_f1": 0.09673380759054659
+    },
+    "VKO": {
+      "rows": 4170,
+      "baseline_accuracy": 0.1752997601918465,
+      "model_accuracy": 0.5115107913669065,
+      "model_macro_f1": 0.23260654339881778
+    }
+  },
+  "per_language": {
+    "mixed": {
+      "rows": 1778,
+      "model_accuracy": 0.7092238470191226,
+      "model_macro_f1": 0.3227847720710748
+    },
+    "ru": {
+      "rows": 47654,
+      "model_accuracy": 0.5839174046250053,
+      "model_macro_f1": 0.20317494291520774
+    }
+  },
+  "leave_one_region_out": {
+    "AKMOLA": {
+      "test_rows": 806,
+      "topic_coverage": 0.02481389578163772,
+      "accuracy": 0.0,
+      "macro_f1": 0.0
+    },
+    "ALMATY_OBL": {
+      "test_rows": 4883,
+      "topic_coverage": 0.9903747696088471,
+      "accuracy": 0.49928322752406307,
+      "macro_f1": 0.07562539426508597
+    },
+    "KARAGANDA": {
+      "test_rows": 35832,
+      "topic_coverage": 0.0,
+      "accuracy": 0.0,
+      "macro_f1": 0.0
+    },
+    "KOSTANAY": {
+      "test_rows": 5147,
+      "topic_coverage": 0.9440450748008549,
+      "accuracy": 0.0015543034777540316,
+      "macro_f1": 0.009816315906893731
+    },
+    "PAVLODAR": {
+      "test_rows": 166613,
+      "topic_coverage": 0.8573400635004471,
+      "accuracy": 0.380822624885213,
+      "macro_f1": 0.03282465416949931
+    },
+    "TURKESTAN": {
+      "test_rows": 13013,
+      "topic_coverage": 0.8291708291708292,
+      "accuracy": 0.004533927610850688,
+      "macro_f1": 0.004288540977158099
+    },
+    "VKO": {
+      "test_rows": 20846,
+      "topic_coverage": 0.6631967763599731,
+      "accuracy": 0.0,
+      "macro_f1": 0.0
+    }
+  },
+  "notes": [
+    "No citizen text exists, so this ceiling reflects categorical features only.",
+    "Karaganda is 99.9 percent deterministic from topic alone and has no routing task.",
+    "A model that fails to beat B3 is evidence that routing needs the raw appeal text."
+  ],
+  "aggregates": {
+    "all_regions": {
+      "rows": 49432,
+      "baseline_accuracy": 0.5734342126557695,
+      "model_accuracy": 0.588424502346658
+    },
+    "excluding_karaganda": {
+      "rows": 42265,
+      "baseline_accuracy": 0.5030166804684727,
+      "model_accuracy": 0.5209748018454986
+    },
+    "note": "Karaganda is 99.9 percent deterministic from topic alone and lifts the aggregate. Both views are published per D-022."
+  }
+}
