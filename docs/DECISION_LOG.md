@@ -260,6 +260,39 @@ Record implementation decisions here when the repository, contracts or available
 - **Evidence:** `ml/model_cards/retrieval_e5_small_ft_v1.json`, field `weights.sha256`.
 - **Revisit when:** a checkpoint has to be shipped to an environment that cannot retrain.
 
+### D-026 - Load forecasting selects per region against a seasonal-naive baseline
+
+- **Date:** 2026-09-15
+- **Status:** accepted
+- **Context:** rolling-origin backtest over the four regions with enough history. A ridge model on calendar and lag features beats seasonal naive on the two large high-variance regions (Pavlodar 19.9 percent lower MAE at a 7-day horizon, VKO 14.9 percent) and loses on the two smaller or shorter series (Karaganda, Turkestan), where seasonal naive is already strong.
+- **Decision:** forecast each region with the method that wins its own backtest, and report both methods for every region. A model is used only where it beats the baseline it must beat.
+- **Alternatives:** one national model, or the ridge model everywhere regardless of the backtest.
+- **Consequences:** the situation centre reports a load forecast with a measured error against a reconstructible baseline, and never claims a modelling gain a region's data does not support. Three regions have too little history and are marked skipped rather than forecast weakly.
+- **Evidence:** `ml/evaluation/forecast_v1/forecast_report.json`, sections `regions.*.backtest` and `summary`.
+- **Revisit when:** new case data lengthens the short regions, or statsmodels ETS is added as a third candidate.
+
+### D-027 - Surge detection is a robust residual, not a threshold on the count
+
+- **Date:** 2026-09-15
+- **Status:** accepted
+- **Context:** raw daily counts have strong weekly rhythm, so a Monday is not a surge just because it exceeds a Sunday. The series is decomposed into a weekday-median seasonal, a centred rolling-median trend, and a residual.
+- **Decision:** flag a surge when the residual exceeds k times the scaled median absolute deviation, with k of 4. This is the aggregate form of the incident concept, an emerging problem rather than a claim that two appeals are one event.
+- **Alternatives:** a fixed daily threshold, or a mean-and-standard-deviation bound that outliers would inflate.
+- **Consequences:** the manager view surfaces roughly 1 to 7 percent of days per region as surges, each with its residual size, and the top examples are real spikes such as Pavlodar on 2024-06-21 at 2355 appeals against a norm near 370. Detection quality is not yet validated against labelled incidents.
+- **Evidence:** `regions.*.surges` in the forecast report.
+- **Revisit when:** a labelled incident set exists to measure precision and recall.
+
+### D-028 - The forecast is translated to operators per shift
+
+- **Date:** 2026-09-15
+- **Status:** accepted
+- **Context:** a graph of appeals per day is not a decision. A supervisor needs a staffing number.
+- **Decision:** convert the forecast to operators per shift using average handle time and a target occupancy, and mark both inputs as placeholders until the operator interview supplies real values.
+- **Alternatives:** report only the appeal volume and leave staffing to the reader.
+- **Consequences:** the number becomes actionable, for example Pavlodar's recent 339 appeals per day maps to about 5 operators per shift at a 6-minute handle time and 85 percent occupancy. The staffing figure is only as good as its two assumptions, which are stated in the report.
+- **Evidence:** `regions.*.staffing_recent` and the `staffing` block in the forecast report.
+- **Revisit when:** the operator interview returns a measured handle time and occupancy target.
+
 ### D-XXX — Short title
 
 - **Date:** YYYY-MM-DD
