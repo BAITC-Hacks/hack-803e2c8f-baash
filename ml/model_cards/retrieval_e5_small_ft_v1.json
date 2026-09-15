@@ -1,0 +1,68 @@
+{
+  "model_id": "pulse109-retrieval-e5-small-ft-v1",
+  "base_model": "intfloat/multilingual-e5-small",
+  "task": "similar resolved case retrieval for the operator assistant",
+  "trained_on": "ml/datasets/regional_retrieval_corpus_v1.jsonl",
+  "synthetic_only": false,
+  "quality_claims_allowed": true,
+  "weights": {
+    "path": "ml/evaluation/retrieval_ft_v1/model/model.safetensors",
+    "sha256": "4c747718a46ad63d4f0648f8758704c4d293e7ea85363e0daf0e077873f2b7e5",
+    "size_bytes": 470637416,
+    "versioned": false,
+    "reason": "465 MB, regenerated in about five minutes on CPU"
+  },
+  "training": {
+    "pairs": 7466,
+    "pairs_with_hard_negative": 7136,
+    "loss": "MultipleNegativesRankingLoss",
+    "epochs": 1,
+    "batch_size": 16,
+    "positive_rule": "same region, topic and service within 120 days",
+    "hard_negative_rule": "same region and topic, different service",
+    "device": "cpu",
+    "max_seq_length": 128
+  },
+  "split": {
+    "strategy": "temporal, evaluation documents never appear in training pairs",
+    "cut_at": "2025-08-11T16:27:29+00:00",
+    "train_documents": 7781,
+    "eval_documents": 2594
+  },
+  "metrics": {
+    "S1_char_tfidf": {
+      "recall_at_1": 0.4625,
+      "recall_at_5": 0.615,
+      "recall_at_10": 0.6937,
+      "mrr_at_10": 0.5339,
+      "ndcg_at_10": 0.3932
+    },
+    "S2_frozen": {
+      "recall_at_1": 0.4587,
+      "recall_at_5": 0.6112,
+      "recall_at_10": 0.6637,
+      "mrr_at_10": 0.5235,
+      "ndcg_at_10": 0.3791
+    },
+    "S3_finetuned": {
+      "recall_at_1": 0.4713,
+      "recall_at_5": 0.6262,
+      "recall_at_10": 0.6925,
+      "mrr_at_10": 0.5387,
+      "ndcg_at_10": 0.4086
+    }
+  },
+  "deltas_percentage_points": {
+    "finetuned_vs_frozen_ndcg_points": 2.95,
+    "finetuned_vs_lexical_ndcg_points": 1.54,
+    "finetuned_vs_frozen_recall_at_1_points": 1.25
+  },
+  "limits": [
+    "Queries are executor texts. Production queries are citizen texts.",
+    "Proxy relevance is a shared (region, topic, service) group.",
+    "No pure Kazakh documents exist, so no kk slice can be reported.",
+    "Recall@10 is marginally below lexical (0.6925 against 0.6937). The gain is at the top of the ranking, not in the tail.",
+    "A single epoch on 7 466 pairs. No hyperparameter search was run."
+  ],
+  "reproduce": "python ml/training/retrieval_finetune.py --corpus ml/datasets/regional_retrieval_corpus_v1.jsonl --out ml/evaluation/retrieval_ft_v1 --epochs 1 --batch 16 --queries 800 --device cpu --max-seq 128"
+}
