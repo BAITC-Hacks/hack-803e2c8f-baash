@@ -1,0 +1,468 @@
+{
+  "generated_at": "2026-09-15T09:14:33.475995+00:00",
+  "baseline": "seasonal naive, same weekday one week earlier",
+  "candidate": "ridge on calendar and lag features, iterative multi-step",
+  "backtest": "rolling origin, 6 origins, horizons (7, 14, 30)",
+  "staffing": {
+    "aht_minutes": 6.0,
+    "shift_hours": 8.0,
+    "target_occupancy": 0.85,
+    "note": "AHT and occupancy are placeholders pending the operator interview."
+  },
+  "regions": {
+    "PAVLODAR": {
+      "days": 2360,
+      "period": [
+        "2020-02-09",
+        "2026-07-26"
+      ],
+      "mean_per_day": 282.5,
+      "recommended_method": {
+        "method": "model_ridge",
+        "h7_mae": 97.4,
+        "beats_naive_by_pct": 19.9
+      },
+      "backtest": {
+        "origins": 6,
+        "horizons": {
+          "h7": {
+            "seasonal_naive": {
+              "mae": 121.57,
+              "mape": 39.25,
+              "smape": 40.59
+            },
+            "model_ridge": {
+              "mae": 97.4,
+              "mape": 32.66,
+              "smape": 39.34
+            },
+            "mae_improvement_pct": 19.9
+          },
+          "h14": {
+            "seasonal_naive": {
+              "mae": 121.71,
+              "mape": 41.35,
+              "smape": 40.02
+            },
+            "model_ridge": {
+              "mae": 110.33,
+              "mape": 40.56,
+              "smape": 45.76
+            },
+            "mae_improvement_pct": 9.4
+          },
+          "h30": {
+            "seasonal_naive": {
+              "mae": 131.79,
+              "mape": 39.71,
+              "smape": 41.06
+            },
+            "model_ridge": {
+              "mae": 125.8,
+              "mape": 43.68,
+              "smape": 45.0
+            },
+            "mae_improvement_pct": 4.5
+          }
+        }
+      },
+      "surges": {
+        "robust_bound": 231.3,
+        "k": 4.0,
+        "surge_days": 118,
+        "surge_rate_pct": 5.0,
+        "examples": [
+          {
+            "date": "2024-06-21",
+            "value": 2355,
+            "residual": 1984.0
+          },
+          {
+            "date": "2020-05-11",
+            "value": 2158,
+            "residual": 1538.0
+          },
+          {
+            "date": "2020-11-09",
+            "value": 1743,
+            "residual": 1186.0
+          },
+          {
+            "date": "2025-06-20",
+            "value": 1447,
+            "residual": 1043.0
+          },
+          {
+            "date": "2020-11-13",
+            "value": 1676,
+            "residual": 972.0
+          },
+          {
+            "date": "2020-11-12",
+            "value": 1595,
+            "residual": 921.0
+          },
+          {
+            "date": "2022-01-09",
+            "value": 997,
+            "residual": 886.0
+          },
+          {
+            "date": "2020-05-13",
+            "value": 1391,
+            "residual": 851.0
+          }
+        ]
+      },
+      "staffing_recent": {
+        "mean_appeals_per_day": 339.4,
+        "operators_per_shift": 5.0
+      }
+    },
+    "KARAGANDA": {
+      "days": 730,
+      "period": [
+        "2022-01-01",
+        "2023-12-31"
+      ],
+      "mean_per_day": 197.2,
+      "recommended_method": {
+        "method": "seasonal_naive",
+        "h7_mae": 35.67,
+        "reason": "model does not beat the baseline on this series"
+      },
+      "backtest": {
+        "origins": 6,
+        "horizons": {
+          "h7": {
+            "seasonal_naive": {
+              "mae": 35.67,
+              "mape": 19.84,
+              "smape": 19.72
+            },
+            "model_ridge": {
+              "mae": 61.47,
+              "mape": 34.99,
+              "smape": 39.73
+            },
+            "mae_improvement_pct": -72.3
+          },
+          "h14": {
+            "seasonal_naive": {
+              "mae": 37.68,
+              "mape": 19.44,
+              "smape": 20.59
+            },
+            "model_ridge": {
+              "mae": 64.52,
+              "mape": 34.51,
+              "smape": 40.4
+            },
+            "mae_improvement_pct": -71.2
+          },
+          "h30": {
+            "seasonal_naive": {
+              "mae": 48.93,
+              "mape": 23.77,
+              "smape": 24.2
+            },
+            "model_ridge": {
+              "mae": 70.23,
+              "mape": 34.77,
+              "smape": 39.76
+            },
+            "mae_improvement_pct": -43.5
+          }
+        }
+      },
+      "surges": {
+        "robust_bound": 136.4,
+        "k": 4.0,
+        "surge_days": 38,
+        "surge_rate_pct": 5.21,
+        "examples": [
+          {
+            "date": "2023-01-04",
+            "value": 940,
+            "residual": 748.5
+          },
+          {
+            "date": "2022-03-30",
+            "value": 1004,
+            "residual": 741.5
+          },
+          {
+            "date": "2023-12-30",
+            "value": 892,
+            "residual": 724.5
+          },
+          {
+            "date": "2022-03-24",
+            "value": 923,
+            "residual": 687.5
+          },
+          {
+            "date": "2022-11-20",
+            "value": 707,
+            "residual": 626.0
+          },
+          {
+            "date": "2023-12-31",
+            "value": 756,
+            "residual": 614.0
+          },
+          {
+            "date": "2023-11-19",
+            "value": 748,
+            "residual": 585.0
+          },
+          {
+            "date": "2022-03-23",
+            "value": 750,
+            "residual": 500.5
+          }
+        ]
+      },
+      "staffing_recent": {
+        "mean_appeals_per_day": 279.9,
+        "operators_per_shift": 4.1
+      }
+    },
+    "VKO": {
+      "days": 1035,
+      "period": [
+        "2023-01-01",
+        "2025-10-31"
+      ],
+      "mean_per_day": 80.6,
+      "recommended_method": {
+        "method": "model_ridge",
+        "h7_mae": 41.08,
+        "beats_naive_by_pct": 14.9
+      },
+      "backtest": {
+        "origins": 6,
+        "horizons": {
+          "h7": {
+            "seasonal_naive": {
+              "mae": 48.29,
+              "mape": 43.82,
+              "smape": 48.31
+            },
+            "model_ridge": {
+              "mae": 41.08,
+              "mape": 53.83,
+              "smape": 37.15
+            },
+            "mae_improvement_pct": 14.9
+          },
+          "h14": {
+            "seasonal_naive": {
+              "mae": 69.39,
+              "mape": 38.68,
+              "smape": 47.5
+            },
+            "model_ridge": {
+              "mae": 62.71,
+              "mape": 53.98,
+              "smape": 41.64
+            },
+            "mae_improvement_pct": 9.6
+          },
+          "h30": {
+            "seasonal_naive": {
+              "mae": 47.18,
+              "mape": 39.44,
+              "smape": 43.01
+            },
+            "model_ridge": {
+              "mae": 52.59,
+              "mape": 74.73,
+              "smape": 45.67
+            },
+            "mae_improvement_pct": -11.5
+          }
+        }
+      },
+      "surges": {
+        "robust_bound": 77.1,
+        "k": 4.0,
+        "surge_days": 68,
+        "surge_rate_pct": 6.57,
+        "examples": [
+          {
+            "date": "2024-02-16",
+            "value": 952,
+            "residual": 846.0
+          },
+          {
+            "date": "2024-02-17",
+            "value": 709,
+            "residual": 636.0
+          },
+          {
+            "date": "2024-02-15",
+            "value": 631,
+            "residual": 525.0
+          },
+          {
+            "date": "2025-01-22",
+            "value": 548,
+            "residual": 452.5
+          },
+          {
+            "date": "2023-03-03",
+            "value": 514,
+            "residual": 413.0
+          },
+          {
+            "date": "2024-02-14",
+            "value": 418,
+            "residual": 310.5
+          },
+          {
+            "date": "2024-02-11",
+            "value": 350,
+            "residual": 277.5
+          },
+          {
+            "date": "2024-02-18",
+            "value": 339,
+            "residual": 266.5
+          }
+        ]
+      },
+      "staffing_recent": {
+        "mean_appeals_per_day": 78.9,
+        "operators_per_shift": 1.2
+      }
+    },
+    "TURKESTAN": {
+      "days": 658,
+      "period": [
+        "2024-01-01",
+        "2025-10-19"
+      ],
+      "mean_per_day": 79.1,
+      "recommended_method": {
+        "method": "seasonal_naive",
+        "h7_mae": 6.55,
+        "reason": "model does not beat the baseline on this series"
+      },
+      "backtest": {
+        "origins": 6,
+        "horizons": {
+          "h7": {
+            "seasonal_naive": {
+              "mae": 6.55,
+              "smape": 5.0,
+              "mape": 15.75
+            },
+            "model_ridge": {
+              "mae": 13.56,
+              "smape": 99.63,
+              "mape": 11.71
+            },
+            "mae_improvement_pct": -107.0
+          },
+          "h14": {
+            "seasonal_naive": {
+              "mae": 13.61,
+              "smape": 14.81,
+              "mape": 44.9
+            },
+            "model_ridge": {
+              "mae": 22.41,
+              "smape": 102.61,
+              "mape": 41.1
+            },
+            "mae_improvement_pct": -64.7
+          },
+          "h30": {
+            "seasonal_naive": {
+              "mae": 24.08,
+              "smape": 29.19,
+              "mape": 55.48
+            },
+            "model_ridge": {
+              "mae": 40.39,
+              "smape": 118.0,
+              "mape": 54.86
+            },
+            "mae_improvement_pct": -67.7
+          }
+        }
+      },
+      "surges": {
+        "robust_bound": 71.2,
+        "k": 4.0,
+        "surge_days": 7,
+        "surge_rate_pct": 1.06,
+        "examples": [
+          {
+            "date": "2024-12-10",
+            "value": 264,
+            "residual": 147.0
+          },
+          {
+            "date": "2024-12-09",
+            "value": 245,
+            "residual": 123.0
+          },
+          {
+            "date": "2024-04-19",
+            "value": 197,
+            "residual": 104.0
+          },
+          {
+            "date": "2025-07-21",
+            "value": 265,
+            "residual": 100.0
+          },
+          {
+            "date": "2024-09-30",
+            "value": 211,
+            "residual": 85.0
+          },
+          {
+            "date": "2024-06-26",
+            "value": 206,
+            "residual": 79.0
+          },
+          {
+            "date": "2024-12-17",
+            "value": 189,
+            "residual": 74.0
+          }
+        ]
+      },
+      "staffing_recent": {
+        "mean_appeals_per_day": 96.5,
+        "operators_per_shift": 1.4
+      }
+    },
+    "KOSTANAY": {
+      "days": 309,
+      "skipped": "history below minimum"
+    },
+    "ALMATY_OBL": {
+      "days": 315,
+      "skipped": "history below minimum"
+    },
+    "AKMOLA": {
+      "days": 127,
+      "skipped": "history below minimum"
+    }
+  },
+  "limits": [
+    "Volume is proxied by received_at day. A region with a short history is forecast weakly.",
+    "Surge detection flags aggregate anomalies, not that two specific appeals are one event.",
+    "AHT and target occupancy are assumptions, not measured from the call centre."
+  ],
+  "summary": {
+    "regions_scored": 4,
+    "model_wins": 2,
+    "naive_wins": 2,
+    "decision": "forecast each region with the method that wins its own backtest"
+  }
+}
