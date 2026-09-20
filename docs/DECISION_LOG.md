@@ -293,6 +293,17 @@ Record implementation decisions here when the repository, contracts or available
 - **Evidence:** `regions.*.staffing_recent` and the `staffing` block in the forecast report.
 - **Revisit when:** the operator interview returns a measured handle time and occupancy target.
 
+### D-029 - One end-to-end scenario composes the three modules on real data
+
+- **Date:** 2026-09-20
+- **Status:** accepted
+- **Context:** the three modules existed as separate scripts and reports. Judges reward one coherent working scenario over three separate metrics, and the product positioning is a single operational contour.
+- **Decision:** ship `ml/training/demo_scenario.py`, which runs one appeal through routing, assist, surge and forecast, emitting a single trace where every downstream number comes from a real artifact. The intake free text is illustrative and labelled as such in the trace, because no citizen text exists (D-018). Everything after intake is real.
+- **Alternatives:** keep the modules separate, or fake the whole flow with mock outputs for a smoother demo.
+- **Consequences:** the demo has a spine. The default case is Pavlodar on 2024-06-21, a real surge day with 1819 water-supply appeals for a single topic. Routing returns 0.25 confidence and correctly sends the case to an operator, which demonstrates the abstention path rather than hiding it. The fine-tuned retriever returns three real resolved water-break cases. The manager view shows the surge and a 5-operators-per-shift staffing call.
+- **Evidence:** `ml/evaluation/demo_v1/demo_trace.json`, reproducible from the canonical stream and the merged reports.
+- **Revisit when:** raw citizen text arrives and the illustrative intake can be replaced by a real appeal.
+
 ### D-XXX — Short title
 
 - **Date:** YYYY-MM-DD
