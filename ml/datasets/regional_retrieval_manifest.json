@@ -1,17 +1,11 @@
 {
   "dataset_id": "pulse109-regional-retrieval-v1",
   "synthetic_only": false,
-  "quality_claims_allowed": true,
+  "quality_claims_allowed": false,
   "cutoff": "2026-09-13T00:00:00Z",
   "source": "seven regional CSV exports provided by the organisers",
   "text_origin": "executor result written after closure, never citizen text",
-  "redaction_version": "pii-ru-kz/1.0.0",
-  "residual_pii_scan": {
-    "iin": 0,
-    "phone": 0,
-    "email": 0,
-    "scanned_documents": 14397
-  },
+  "redaction_version": "withheld-unapproved-text/1.0.0",
   "documents": 14397,
   "by_region": {
     "KOSTANAY": 9285,
@@ -22,28 +16,20 @@
     "ru": 13449,
     "mixed": 948
   },
-  "length_chars": {
-    "median": 68,
-    "p25": 36,
-    "p75": 135,
-    "max": 4668,
-    "at_least_40": 10376,
-    "at_least_150": 3150
-  },
   "files": [
     {
       "path": "ml/datasets/regional_retrieval_corpus_v1.jsonl",
-      "sha256": "d33fb30ad8b6cdb351f191f030a0eae0db3aa456803bec679913096b6651b6b2",
+      "sha256": "f3cef1b9c86f4fb69b7f0e45d1ecccf394476a87eeffe018330a16099f820858",
       "purpose": "retrieval embedding fine-tuning and judged-set construction"
     },
     {
       "path": "data/reports/regional-csv-quarantine.jsonl",
-      "sha256": "75f954489ac08521c283ec590e462abe74f604a729673f0f56566f0871ac5af5",
+      "sha256": "2f3bd065b78976817f679e7c3146b4249886335d6ae2f778e2322c15707e62fa",
       "purpose": "column-shift rows, kept for transparency"
     },
     {
       "path": "data/reports/regional-csv-dq-report.json",
-      "sha256": "f2473f7b5ec77e2b0fff9dacad121c2ce3f53c19c6b0787bb06ceec021f75840",
+      "sha256": "0655cf612c7854903158d54b71bcac27e2bef6976d859975f441439a7a982ba7",
       "purpose": "aggregate quality counters"
     }
   ],
@@ -51,9 +37,20 @@
     "B10"
   ],
   "notes": [
-    "Real government data in a private repository. B10 legal basis and retention remain unconfirmed.",
-    "Direct identifiers are redacted before writing. A residual scan found zero IIN, phone or email.",
-    "No pure Kazakh documents exist in this corpus, so bilingual evaluation is not possible from it.",
-    "See docs/DECISION_LOG.md D-018 for why this corpus replaces intake-classifier fine-tuning."
-  ]
+    "This HEAD artifact contains no original free text; it cannot train or evaluate retrieval.",
+    "Prior Git blobs still require a repository-owner privacy and retention decision.",
+    "All earlier retrieval metrics are historical and not approved for release claims."
+  ],
+  "corpus_status": "withheld_pending_privacy_review",
+  "privacy_review": {
+    "status": "blocked",
+    "reason_codes": [
+      "ADDRESS_REDACTION_INCOMPLETE",
+      "SOURCE_TIMEZONE_UNKNOWN",
+      "B10_UNRESOLVED"
+    ],
+    "text_withheld": true,
+    "document_count": 14397,
+    "quarantine_count": 32
+  }
 }

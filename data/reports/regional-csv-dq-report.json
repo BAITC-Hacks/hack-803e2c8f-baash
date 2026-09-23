@@ -107,5 +107,10 @@
       "ru": 26711,
       "mixed": 1139
     }
-  }
+  },
+  "release_status": "historical_unverified",
+  "invalidated_by": [
+    "SOURCE_TIMEZONE_UNKNOWN",
+    "ADDRESS_REDACTION_INCOMPLETE"
+  ]
 }

@@ -4,7 +4,7 @@
   "task": "similar resolved case retrieval for the operator assistant",
   "trained_on": "ml/datasets/regional_retrieval_corpus_v1.jsonl",
   "synthetic_only": false,
-  "quality_claims_allowed": true,
+  "quality_claims_allowed": false,
   "weights": {
     "path": "ml/evaluation/retrieval_ft_v1/model/model.safetensors",
     "sha256": "4c747718a46ad63d4f0648f8758704c4d293e7ea85363e0daf0e077873f2b7e5",
@@ -31,23 +31,23 @@
   },
   "metrics": {
     "S1_char_tfidf": {
-      "recall_at_1": 0.4625,
-      "recall_at_5": 0.615,
-      "recall_at_10": 0.6937,
+      "hit_rate_at_1": 0.4625,
+      "hit_rate_at_5": 0.615,
+      "hit_rate_at_10": 0.6937,
       "mrr_at_10": 0.5339,
       "ndcg_at_10": 0.3932
     },
     "S2_frozen": {
-      "recall_at_1": 0.4587,
-      "recall_at_5": 0.6112,
-      "recall_at_10": 0.6637,
+      "hit_rate_at_1": 0.4587,
+      "hit_rate_at_5": 0.6112,
+      "hit_rate_at_10": 0.6637,
       "mrr_at_10": 0.5235,
       "ndcg_at_10": 0.3791
     },
     "S3_finetuned": {
-      "recall_at_1": 0.4713,
-      "recall_at_5": 0.6262,
-      "recall_at_10": 0.6925,
+      "hit_rate_at_1": 0.4713,
+      "hit_rate_at_5": 0.6262,
+      "hit_rate_at_10": 0.6925,
       "mrr_at_10": 0.5387,
       "ndcg_at_10": 0.4086
     }
@@ -55,14 +55,22 @@
   "deltas_percentage_points": {
     "finetuned_vs_frozen_ndcg_points": 2.95,
     "finetuned_vs_lexical_ndcg_points": 1.54,
-    "finetuned_vs_frozen_recall_at_1_points": 1.25
+    "finetuned_vs_frozen_hit_rate_at_1_points": 1.25
   },
   "limits": [
     "Queries are executor texts. Production queries are citizen texts.",
     "Proxy relevance is a shared (region, topic, service) group.",
     "No pure Kazakh documents exist, so no kk slice can be reported.",
-    "Recall@10 is marginally below lexical (0.6925 against 0.6937). The gain is at the top of the ranking, not in the tail.",
+    "Hit rate@10 is marginally below lexical (0.6925 against 0.6937). The gain is at the top of the ranking, not in the tail.",
     "A single epoch on 7 466 pairs. No hyperparameter search was run."
   ],
-  "reproduce": "python ml/training/retrieval_finetune.py --corpus ml/datasets/regional_retrieval_corpus_v1.jsonl --out ml/evaluation/retrieval_ft_v1 --epochs 1 --batch 16 --queries 800 --device cpu --max-seq 128"
+  "reproduce": "python ml/training/retrieval_finetune.py --corpus ml/datasets/regional_retrieval_corpus_v1.jsonl --out ml/evaluation/retrieval_ft_v1 --epochs 1 --batch 16 --queries 800 --device cpu --max-seq 128",
+  "release_status": "historical_unverified",
+  "metric_semantics": "hit_rate_at_k is the fraction of queries with at least one relevant result, not recall over all relevant documents",
+  "invalidated_by": [
+    "B10_UNRESOLVED",
+    "SOURCE_TIMEZONE_UNKNOWN",
+    "ADDRESS_REDACTION_INCOMPLETE"
+  ],
+  "reproduction_status": "blocked_until_approved_private_corpus_and_time_mapping"
 }

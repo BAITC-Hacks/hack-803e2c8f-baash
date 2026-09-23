@@ -20,7 +20,7 @@ typecheck:
 	pnpm typecheck
 
 test:
-	uv run pytest services/core/tests services/inference/tests services/worker/tests adapters/replay/tests adapters/open311/tests tests/architecture tests/integration tests/load tests/model tests/retrieval tests/resilience tests/security -q
+	uv run python -m pytest services/core/tests services/inference/tests services/worker/tests adapters/replay/tests adapters/open311/tests adapters/regional_csv/tests tests/architecture tests/integration tests/load tests/model tests/retrieval tests/resilience tests/security -q
 
 contract-test:
 	uv run pytest tests/contract -q

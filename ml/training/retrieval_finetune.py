@@ -1,9 +1,8 @@
 """Fine-tune retrieval embeddings on the regional executor corpus.
 
-Frozen multilingual embeddings lose to a character TF-IDF baseline on this
-corpus: e5-small reaches nDCG@10 of 0.420 against 0.430 for lexical. That is
-what gives fine-tuning a measurable job, and it is why the gain reported here
-is a real number rather than a formality.
+Evaluation reports hit_rate@k (the fraction of queries with any relevant
+result), MRR and nDCG. It does not call that hit rate recall, which would
+require dividing by all relevant documents.
 
 Leakage control is the whole design. Relevance in the evaluation is a shared
 (region, topic, service) group. If pairs were mined across the full corpus the
@@ -50,6 +49,8 @@ def load(path):
     with open(path, encoding="utf-8") as handle:
         for line in handle:
             doc = json.loads(line)
+            if doc.get("text", "").startswith("[WITHHELD_"):
+                raise ValueError("retrieval fine-tuning corpus contains withheld text placeholders")
             if not doc.get("received_at"):
                 continue
             if not (MIN_CHARS <= len(doc["text"]) <= MAX_CHARS):
@@ -100,7 +101,7 @@ def mine_pairs(train, seed=RANDOM_STATE):
 
 
 # --------------------------------------------------------------------------
-# evaluation, identical to retrieval_eval so numbers stay comparable
+# Evaluation definitions are kept identical to retrieval_eval.
 # --------------------------------------------------------------------------
 
 
@@ -121,6 +122,9 @@ def evaluate(ranked, relevant, k=TOP_K):
     n = len(ranked)
     for qid, order in ranked.items():
         rel = relevant[qid]
+        # Exclude self-matches before applying the cutoff, even for callers
+        # that provide a ranking without having removed the query document.
+        order = [doc for doc in order if doc != qid]
         top = order[:k]
         for cut in rec:
             rec[cut] += 1 if any(d in rel for d in top[:cut]) else 0
@@ -132,9 +136,9 @@ def evaluate(ranked, relevant, k=TOP_K):
         ideal = sum(1.0 / math.log2(r + 1) for r in range(1, min(len(rel), k) + 1))
         ndcg += gain / ideal if ideal else 0.0
     return {
-        "recall_at_1": rec[1] / n,
-        "recall_at_5": rec[5] / n,
-        "recall_at_10": rec[10] / n,
+        "hit_rate_at_1": rec[1] / n,
+        "hit_rate_at_5": rec[5] / n,
+        "hit_rate_at_10": rec[10] / n,
         "mrr_at_10": mrr / n,
         "ndcg_at_10": ndcg / n,
         "queries": n,
@@ -150,7 +154,7 @@ def rank_lexical(docs, queries):
     out = {}
     for qid in queries:
         scores = (matrix @ matrix[qid].T).toarray().ravel()
-        scores[qid] = -1.0
+        scores[qid] = float("-inf")
         out[qid] = np.argsort(-scores)[:TOP_K].tolist()
     return out
 
@@ -168,7 +172,7 @@ def rank_model(model, docs, queries, prefix=""):
     out = {}
     for qid in queries:
         scores = emb @ emb[qid]
-        scores[qid] = -1.0
+        scores[qid] = float("-inf")
         out[qid] = np.argsort(-scores)[:TOP_K].tolist()
     return out
 
@@ -268,8 +272,8 @@ def main():
         "finetuned_vs_lexical_ndcg_points": round(
             (tun["ndcg_at_10"] - lexr["ndcg_at_10"]) * 100, 2
         ),
-        "finetuned_vs_frozen_recall_at_1_points": round(
-            (tun["recall_at_1"] - base["recall_at_1"]) * 100, 2
+        "finetuned_vs_frozen_hit_rate_at_1_points": round(
+            (tun["hit_rate_at_1"] - base["hit_rate_at_1"]) * 100, 2
         ),
     }
 

@@ -20,25 +20,25 @@
   },
   "systems": {
     "S1_char_tfidf": {
-      "recall_at_1": 0.4625,
-      "recall_at_5": 0.615,
-      "recall_at_10": 0.69375,
+      "hit_rate_at_1": 0.4625,
+      "hit_rate_at_5": 0.615,
+      "hit_rate_at_10": 0.69375,
       "mrr_at_10": 0.5338859126984126,
       "ndcg_at_10": 0.39317443492891085,
       "queries": 800
     },
     "S2_frozen": {
-      "recall_at_1": 0.45875,
-      "recall_at_5": 0.61125,
-      "recall_at_10": 0.66375,
+      "hit_rate_at_1": 0.45875,
+      "hit_rate_at_5": 0.61125,
+      "hit_rate_at_10": 0.66375,
       "mrr_at_10": 0.5234955357142855,
       "ndcg_at_10": 0.37907680581317144,
       "queries": 800
     },
     "S3_finetuned": {
-      "recall_at_1": 0.47125,
-      "recall_at_5": 0.62625,
-      "recall_at_10": 0.6925,
+      "hit_rate_at_1": 0.47125,
+      "hit_rate_at_5": 0.62625,
+      "hit_rate_at_10": 0.6925,
       "mrr_at_10": 0.5387157738095236,
       "ndcg_at_10": 0.4085617661263359,
       "queries": 800
@@ -52,6 +52,15 @@
   "deltas": {
     "finetuned_vs_frozen_ndcg_points": 2.95,
     "finetuned_vs_lexical_ndcg_points": 1.54,
-    "finetuned_vs_frozen_recall_at_1_points": 1.25
-  }
+    "finetuned_vs_frozen_hit_rate_at_1_points": 1.25
+  },
+  "quality_claims_allowed": false,
+  "release_status": "historical_unverified",
+  "metric_semantics": "hit_rate_at_k is the fraction of queries with at least one relevant result, not recall over all relevant documents",
+  "invalidated_by": [
+    "B10_UNRESOLVED",
+    "SOURCE_TIMEZONE_UNKNOWN",
+    "ADDRESS_REDACTION_INCOMPLETE"
+  ],
+  "reproduction_status": "blocked_until_approved_private_corpus_and_time_mapping"
 }

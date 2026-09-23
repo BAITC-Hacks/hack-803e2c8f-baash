@@ -1,8 +1,8 @@
-"""End-to-end case walkthrough that composes the three modules on real data.
+"""Historical case walkthrough, gated while regional data review is open.
 
-This is the product thesis made executable: one appeal flows through the whole
-operational contour and every downstream number comes from a real artifact
-built earlier, not a mock.
+The walkthrough requires approved source time and private text handling. The
+versioned regional corpus is currently withheld, so this command exits before
+producing a new trace from it.
 
   intake        an appeal arrives with region, a topic hint and a timestamp
   routing       predict the responsible service, with a confidence decision
@@ -12,10 +12,7 @@ built earlier, not a mock.
   situation     is this appeal part of a surge for its region and day
   forecast      the load forecast and the staffing it implies
 
-One honesty boundary, stated in the trace itself: no citizen text exists in the
-data (D-018), so the intake free text is illustrative and marked as such. Every
-number after it, the routing decision, the retrieved cases, the surge, the
-forecast, is computed from real records and real models.
+The intake free text is illustrative; old reports are historical and unverified.
 
 Usage:
     python ml/training/demo_scenario.py \
@@ -141,6 +138,8 @@ def main():
 
     rows = load_canonical(args.canonical)
     corpus = [json.loads(line) for line in open(args.corpus, encoding="utf-8")]
+    if any(str(doc.get("text", "")).startswith("[WITHHELD_") for doc in corpus):
+        raise SystemExit("regional corpus withheld pending privacy and source-time review")
     forecast_report = json.loads(
         pathlib.Path(args.reports, "forecast_v1", "forecast_report.json").read_text()
     )

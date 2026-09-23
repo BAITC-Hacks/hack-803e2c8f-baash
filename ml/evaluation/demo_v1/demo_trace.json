@@ -1,6 +1,6 @@
 {
   "generated_at": "2026-09-20T16:00:12.295555+00:00",
-  "honesty_boundary": "Intake free text is illustrative because no citizen text exists in the data (D-018). Every downstream result is computed from real records and models.",
+  "honesty_boundary": "Historical demo only. Source time and outcome text await privacy and timezone review; the metrics are not approved production evidence.",
   "step_1_intake": {
     "region": "PAVLODAR",
     "day": "2024-06-21",
@@ -33,18 +33,18 @@
     "similar_resolved_cases": [
       {
         "service": "Отсутствие холодной воды",
-        "received_at": "2025-05-15",
-        "resolution_excerpt": "В ответ на ваше обращение сообщаем что водоканал никаких работ не производит"
+        "received_at": null,
+        "resolution_excerpt": "[WITHHELD_PENDING_PRIVACY_REVIEW]"
       },
       {
         "service": "Отсутствие холодной воды",
-        "received_at": "2025-08-16",
-        "resolution_excerpt": "В ответ на Ваше обращение сообщаем о устранение, вода есть"
+        "received_at": null,
+        "resolution_excerpt": "[WITHHELD_PENDING_PRIVACY_REVIEW]"
       },
       {
         "service": "Отсутствие давления воды",
-        "received_at": "2025-11-02",
-        "resolution_excerpt": "Ответ на Ваше обращение сообщаем следующее;  Порыв по линии скважины  на сегодняшний день устранена силами водоканала"
+        "received_at": null,
+        "resolution_excerpt": "[WITHHELD_PENDING_PRIVACY_REVIEW]"
       }
     ]
   },

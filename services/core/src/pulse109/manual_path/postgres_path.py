@@ -273,7 +273,7 @@ class PostgresManualPathService:
             WHERE a.request_id = %s
             """
         if lock:
-            query += " FOR UPDATE"
+            query += " FOR UPDATE OF a"
         cursor.execute(query, (request_id,))
         row = cursor.fetchone()
         if row is None:
@@ -460,7 +460,7 @@ class PostgresManualPathService:
                 JOIN integration.source_record AS sr ON sr.id = a.source_record_id
                 LEFT JOIN privacy.appeal_content AS ac ON ac.appeal_id = a.request_id
                 WHERE a.source_system_id = %s AND a.source_request_id = %s
-                FOR UPDATE
+                FOR UPDATE OF a
                 """,
                 (source_system_id, command.source_request_id),
             )

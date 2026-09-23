@@ -10,3 +10,8 @@ evidence and cannot be used to enable automatic merging.
 MLOps exports derived from these fixtures are explicitly synthetic. Operator feedback is exported
 in a Label Studio-compatible shape, while registry and drift files are local compatibility manifests;
 they do not authorize training, model promotion, or production drift decisions.
+
+`regional_retrieval_corpus_v1.jsonl` is a historical regional artifact with all prose withheld
+pending B10 privacy review. It cannot train or evaluate a model. The adjacent manifest blocks
+quality claims and records the source-time and redaction defects. Earlier text remains in Git
+history pending a separate repository-owner retention decision.

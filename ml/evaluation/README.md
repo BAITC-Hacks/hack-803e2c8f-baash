@@ -14,3 +14,9 @@ must not be used as a quality claim.
 abstention bands, a Label Studio-compatible feedback export, an MLflow-compatible registry
 manifest, an Evidently-compatible categorical drift report, and a hash manifest. No heavyweight
 MLOps service dependency is required; these files exercise versioning and handoff formats only.
+
+`retrieval_v1/`, `retrieval_ft_v1/`, and `demo_v1/` contain historical regional research reports.
+Their source timezone and text redaction have not been approved, so the numbers cannot support
+production quality claims. Query success metrics are labelled `hit_rate_at_k`: they count queries
+with any relevant result, rather than recall over all relevant documents. The associated corpus
+is withheld and the scripts stop if it is supplied.

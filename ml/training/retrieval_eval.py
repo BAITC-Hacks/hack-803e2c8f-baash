@@ -46,6 +46,8 @@ def load_corpus(path):
     with open(path, encoding="utf-8") as handle:
         for line in handle:
             doc = json.loads(line)
+            if doc.get("text", "").startswith("[WITHHELD_"):
+                raise ValueError("retrieval evaluation corpus contains withheld text placeholders")
             doc["group"] = (doc["region_id"], doc["topic_label"], doc["service_label"])
             docs.append(doc)
     return docs
@@ -75,13 +77,20 @@ def build_query_set(docs, n_queries, seed=RANDOM_STATE):
 
 
 def evaluate(ranked, relevant, k=TOP_K):
-    """Recall@1/5/10, MRR@10 and nDCG@10 over the supplied rankings."""
+    """Hit rate@1/5/10, MRR@10 and nDCG@10 over the supplied rankings.
+
+    The numerator counts queries with at least one relevant result, so these
+    values are hit rates, not recall over all relevant documents.
+    """
     rec = {1: 0.0, 5: 0.0, 10: 0.0}
     mrr = 0.0
     ndcg = 0.0
     n = len(ranked)
     for qid, order in ranked.items():
         rel = relevant[qid]
+        # Remove a query's own document before applying any cutoff. This also
+        # protects callers that pass unfiltered rankings into the evaluator.
+        order = [doc for doc in order if doc != qid]
         top = order[:k]
         for cut in rec:
             hits = sum(1 for d in top[:cut] if d in rel)
@@ -94,9 +103,9 @@ def evaluate(ranked, relevant, k=TOP_K):
         ideal = sum(1.0 / math.log2(r + 1) for r in range(1, min(len(rel), k) + 1))
         ndcg += gain / ideal if ideal else 0.0
     return {
-        "recall_at_1": rec[1] / n,
-        "recall_at_5": rec[5] / n,
-        "recall_at_10": rec[10] / n,
+        "hit_rate_at_1": rec[1] / n,
+        "hit_rate_at_5": rec[5] / n,
+        "hit_rate_at_10": rec[10] / n,
         "mrr_at_10": mrr / n,
         "ndcg_at_10": ndcg / n,
         "queries": n,
@@ -113,8 +122,8 @@ def rank_random(docs, queries, seed=RANDOM_STATE):
     pool = list(range(len(docs)))
     out = {}
     for qid in queries:
-        sample = rng.sample(pool, min(TOP_K + 1, len(pool)))
-        out[qid] = [d for d in sample if d != qid][:TOP_K]
+        candidates = [doc for doc in pool if doc != qid]
+        out[qid] = rng.sample(candidates, min(TOP_K, len(candidates)))
     return out
 
 
@@ -129,7 +138,7 @@ def rank_lexical(docs, queries):
     out = {}
     for qid in queries:
         scores = (matrix @ matrix[qid].T).toarray().ravel()
-        scores[qid] = -1.0
+        scores[qid] = float("-inf")
         out[qid] = np.argsort(-scores)[:TOP_K].tolist()
     return out
 
@@ -155,7 +164,7 @@ def rank_embeddings(docs, queries, model_name, batch_size=256, prefix=""):
     out = {}
     for qid in queries:
         scores = emb @ emb[qid]
-        scores[qid] = -1.0
+        scores[qid] = float("-inf")
         out[qid] = np.argsort(-scores)[:TOP_K].tolist()
     return out, None
 
@@ -206,12 +215,13 @@ def main():
 
     ranked = rank_random(docs, queries)
     report["systems"]["S0_random"] = evaluate(ranked, relevant)
-    print(f"  {'S0_random':<34} R@10 {report['systems']['S0_random']['recall_at_10']:.4f}")
+    print(f"  {'S0_random':<34} HR@10 {report['systems']['S0_random']['hit_rate_at_10']:.4f}")
 
     lex = rank_lexical(docs, queries)
     report["systems"]["S1_char_tfidf"] = evaluate(lex, relevant)
     report["systems"]["S1_char_tfidf"]["by_region"] = slice_report(lex, relevant, docs, "region_id")
-    print(f"  {'S1_char_tfidf':<34} R@10 {report['systems']['S1_char_tfidf']['recall_at_10']:.4f}")
+    lexical_hit_rate = report["systems"]["S1_char_tfidf"]["hit_rate_at_10"]
+    print(f"  {'S1_char_tfidf':<34} HR@10 {lexical_hit_rate:.4f}")
 
     for model_name in args.models:
         prefix = "query: " if "e5" in model_name else ""
@@ -223,7 +233,7 @@ def main():
             continue
         report["systems"][key] = evaluate(emb, relevant)
         report["systems"][key]["by_region"] = slice_report(emb, relevant, docs, "region_id")
-        print(f"  {key:<34} R@10 {report['systems'][key]['recall_at_10']:.4f}")
+        print(f"  {key:<34} HR@10 {report['systems'][key]['hit_rate_at_10']:.4f}")
 
     out = pathlib.Path(args.out)
     out.mkdir(parents=True, exist_ok=True)

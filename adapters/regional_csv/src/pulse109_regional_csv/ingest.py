@@ -49,6 +49,20 @@ RE_IIN = re.compile(r"\b\d{12}\b")
 RE_PHONE = re.compile(r"(?:\+?7|8)[\s\-(]*7\d{2}[\s\-)]*\d{3}[\s\-]*\d{2}[\s\-]*\d{2}")
 RE_HOUSE = re.compile(r"(?i)\b(дом|д\.|кв\.|квартира|үй|пәтер)\s*№?\s*[\d]+[а-яА-Я/\-]*")  # noqa: RUF001
 RE_EMAIL = re.compile(r"\b[\w.+-]+@[\w-]+\.[\w.]+\b")
+# A street number may appear with a street prefix or as a bare street name.
+# Keep this deliberately narrow: capitalized Cyrillic place names followed by
+# a number, rather than replacing arbitrary numbers in executor prose.
+RE_STREET_ADDRESS = re.compile(
+    r"(?i)\b(?:ул(?:ица)?\.?\s*)?"
+    r"[А-ЯЁӘҒҚҢӨҰҮҺІ][А-ЯЁӘҒҚҢӨҰҮҺІа-яёәғқңөұүһі-]*"  # noqa: RUF001
+    r"(?:\s+[А-ЯЁӘҒҚҢӨҰҮҺІ][А-ЯЁӘҒҚҢӨҰҮҺІа-яёәғқңөұүһі-]*){0,2}"  # noqa: RUF001
+    r"\s+\d+[А-ЯЁӘҒҚҢӨҰҮҺІа-яёәғқңөұүһі/-]*\b"  # noqa: RUF001
+)
+RE_PERSON_NAME = re.compile(
+    r"\b[А-ЯЁӘҒҚҢӨҰҮҺІ][а-яёәғқңөұүһі'-]+"  # noqa: RUF001
+    r"\s+[А-ЯЁӘҒҚҢӨҰҮҺІ][а-яёәғқңөұүһі'-]+"  # noqa: RUF001
+    r"(?:\s+[А-ЯЁӘҒҚҢӨҰҮҺІ][а-яёәғқңөұүһі'-]+|\s+[А-ЯЁӘҒҚҢӨҰҮҺІ]\.?)\b"  # noqa: RUF001
+)
 
 
 # --------------------------------------------------------------------------
@@ -238,32 +252,38 @@ def parse_time(raw: str, fmt: str):
     if not raw or raw in ("-infinity", "infinity", "NULL", "null"):
         return None, "missing"
 
-    m = re.match(r"^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})", raw)
-    if m:
-        y, mo, d, h, mi, s = (int(x) for x in m.groups())
-        try:
-            return datetime(
-                y, mo, d, h, mi, s, tzinfo=timezone.utc
-            ).isoformat(), "source_tz_assumed"
-        except ValueError:
-            return None, "missing"
-
+    # Date-only values carry a calendar date, not an instant. Preserve that
+    # distinction instead of manufacturing midnight UTC.
     m = re.match(r"^(\d{4})-(\d{2})-(\d{2})$", raw)
     if m:
         y, mo, d = (int(x) for x in m.groups())
         try:
-            return datetime(y, mo, d, tzinfo=timezone.utc).isoformat(), "date_only"
+            datetime(y, mo, d)  # validate without assigning a timezone
+            return None, "date_only"
         except ValueError:
             return None, "missing"
+
+    # Preserve explicit offsets when the source provides one. A naive source
+    # timestamp has unknown business timezone, so it stays missing.
+    if fmt == "iso":
+        try:
+            parsed = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+            if parsed.tzinfo is not None:
+                return parsed.isoformat(), "exact"
+            return None, "missing"
+        except ValueError:
+            pass
 
     if fmt == "dmy":
         m = re.match(r"^(\d{2})\.(\d{2})\.(\d{4})(?:\s+(\d{2}):(\d{2}):(\d{2}))?", raw)
         if m:
             d, mo, y = int(m.group(1)), int(m.group(2)), int(m.group(3))
-            h, mi, s = (int(m.group(i) or 0) for i in (4, 5, 6))
             try:
-                q = "source_tz_assumed" if m.group(4) else "date_only"
-                return datetime(y, mo, d, h, mi, s, tzinfo=timezone.utc).isoformat(), q
+                if m.group(4):
+                    # These regional formats have no timezone field.
+                    return None, "missing"
+                datetime(y, mo, d)  # validate the date
+                return None, "date_only"
             except ValueError:
                 return None, "missing"
 
@@ -273,10 +293,12 @@ def parse_time(raw: str, fmt: str):
             mo, d = int(m.group(1)), int(m.group(2))
             y = int(m.group(3))
             y = y + 2000 if y < 100 else y
-            h, mi = (int(m.group(i) or 0) for i in (4, 5))
             try:
-                q = "source_tz_assumed" if m.group(4) else "date_only"
-                return datetime(y, mo, d, h, mi, tzinfo=timezone.utc).isoformat(), q
+                if m.group(4):
+                    # These regional formats have no timezone field.
+                    return None, "missing"
+                datetime(y, mo, d)  # validate the date
+                return None, "date_only"
             except ValueError:
                 return None, "missing"
 
@@ -301,6 +323,12 @@ def redact(text: str):
     if RE_HOUSE.search(out):
         out = RE_HOUSE.sub("[АДРЕС]", out)
         flags.append("address")
+    if RE_STREET_ADDRESS.search(out):
+        out = RE_STREET_ADDRESS.sub("[АДРЕС]", out)
+        flags.append("address")
+    if RE_PERSON_NAME.search(out):
+        out = RE_PERSON_NAME.sub("[ПЕРСОНАЛЬНЫЕ ДАННЫЕ]", out)
+        flags.append("name")
     return out, flags
 
 
@@ -482,28 +510,23 @@ def _emit(rec, text, fh_canon, fh_corpus, report, rstat, seen_texts):
     for p in rec["governance"]["pii_flags"]:
         report["pii_flags"][p] += 1
 
+    # B10 remains open. Regex masking is diagnostic only and cannot authorize
+    # exporting executor prose to a feature corpus. Keep the output file empty
+    # until a private approved redaction pipeline replaces this research path.
     if text and len(text) >= 8:
-        h = sha(text)
-        report["corpus"]["texts"] += 1
-        report["corpus"]["by_language"][rec["intake"]["language"]] += 1
-        if h not in seen_texts:
-            seen_texts.add(h)
-            fh_corpus.write(
-                json.dumps(
-                    {
-                        "doc_id": h[:32],
-                        "region_id": rec["source"]["region_id"],
-                        "language": rec["intake"]["language"],
-                        "topic_label": rec["intake"]["selected_attributes"]["topic_label"],
-                        "service_label": rec["intake"]["selected_attributes"]["service_label"],
-                        "received_at": rec["time"]["received_at"],
-                        "text": text,
-                        "text_origin": "executor_result_after_closure",
-                    },
-                    ensure_ascii=False,
-                )
-                + "\n"
-            )
+        report["corpus"]["withheld_texts"] += 1
+
+
+def quarantine_entry(region_id: str, reason: str, row: dict, source_ref: str) -> dict:
+    """Return a content-free quarantine record with stable source provenance."""
+    serialized = json.dumps(row, ensure_ascii=False, sort_keys=True)
+    return {
+        "region": region_id,
+        "reason": reason,
+        "source_ref": source_ref,
+        "source_row_sha256": sha(serialized),
+        "field_names": sorted(str(key) for key in row if key),
+    }
 
 
 def run(src_dir, out_dir, salt, limit=None):
@@ -532,7 +555,7 @@ def run(src_dir, out_dir, salt, limit=None):
         "warnings": Counter(),
         "quarantine_reasons": Counter(),
         "pii_flags": Counter(),
-        "corpus": {"texts": 0, "unique_texts": 0, "by_language": Counter()},
+        "corpus": {"texts": 0, "unique_texts": 0, "withheld_texts": 0, "by_language": Counter()},
     }
     seen_texts = set()
 
@@ -563,11 +586,12 @@ def run(src_dir, out_dir, salt, limit=None):
                         rstat["quarantined"] += 1
                         fh_quar.write(
                             json.dumps(
-                                {
-                                    "region": region_id,
-                                    "reason": "FIELD_COUNT_MISMATCH",
-                                    "row": {k: v for k, v in row.items() if k},
-                                },
+                                quarantine_entry(
+                                    region_id,
+                                    "FIELD_COUNT_MISMATCH",
+                                    {k: v for k, v in row.items() if k},
+                                    raw_ref,
+                                ),
                                 ensure_ascii=False,
                             )
                             + "\n"
@@ -581,7 +605,7 @@ def run(src_dir, out_dir, salt, limit=None):
                         rstat["quarantined"] += 1
                         fh_quar.write(
                             json.dumps(
-                                {"region": region_id, "reason": extra, "row": row},
+                                quarantine_entry(region_id, extra, row, raw_ref),
                                 ensure_ascii=False,
                             )
                             + "\n"

@@ -352,7 +352,7 @@ Record implementation decisions here when the repository, contracts or available
 ### D-034 - Preserve time provenance and scope idempotency to the region
 
 - **Date:** 2026-09-23
-- **Status:** accepted
+- **Status:** superseded by D-036
 - **Context:** M7 review found an invented received time in migration 0008, ambiguous status-event timestamps, and a global create idempotency receipt.
 - **Decision:** received time and its quality are stored separately from observed time; missing or date-only time stays null. Status events state quality explicitly. Create receipts are region-scoped and transaction-locked; object access is checked before replay receipts are returned.
 - **Alternatives:** backfill from observation time; infer exact quality from a timestamp; rely on unique-violation retry for concurrent requests.
@@ -370,6 +370,17 @@ Record implementation decisions here when the repository, contracts or available
 - **Consequences:** several assistive features remain unavailable in the operational profile while the manual critical path can proceed with approved private storage and policy configuration.
 - **Evidence:** profile gating tests, operational-intake tests, security review and `IMPLEMENTATION_STATUS.md`.
 - **Revisit when:** B01, B02, B08 and B10 supply approved data, identity, redaction, storage and policies.
+
+### D-036 - Withhold unapproved regional prose and historical model claims
+
+- **Date:** 2026-09-23
+- **Status:** accepted
+- **Context:** review of the merged regional research artifacts found street addresses in the versioned retrieval corpus, raw source values in quarantine, timezone assumptions for naive dates, and `Recall@k` labels for query hit rates. B10 does not approve private-text processing or model quality claims.
+- **Decision:** replace the corpus prose with a fixed withheld marker, remove source row values from quarantine, preserve naive and date-only time as non-instants, disable new corpus export and fail training/evaluation loaders on withheld text. Mark historical reports and the model card unverified, with query metrics labelled hit rate. Preserve existing Git history pending the repository owner's retention decision; this change does not rewrite published commits.
+- **Alternatives:** rely on expanded regex masking; continue model training from the existing corpus; rewrite published Git history without a retention plan.
+- **Consequences:** regional ML scripts no longer yield quality numbers from these artifacts. The manual operational path is unaffected. Historical blobs remain reachable in Git until a separate retention and history-remediation decision is executed.
+- **Evidence:** `scripts/withhold_unapproved_corpus.py`, regional ingest and research-artifact gate tests, manifest/model-card status, and CI security scan.
+- **Revisit when:** B10 approves a private source store, redaction process, legal basis, retention class, and independently reviewed evaluation split.
 
 ### D-XXX — Short title
 

@@ -36,6 +36,9 @@
   configuration; unverified free text never enters the inference path.
 - Synthetic retrieval, analytics, alerts and volatile reports are disabled in pilot/production
   profiles until approved durable read models exist. The ML-independent manual path remains mounted.
+- The merged regional research corpus now contains withheld text markers only. Quarantine artifacts
+  contain hashes and counts without source row values. New regional ingest withholds executor prose;
+  training and evaluation stop on withheld data, and historical reports block quality claims.
 
 ## Contracts And Migrations Changed
 
@@ -48,20 +51,26 @@
 
 ## Verification
 
-| Command                             | Result  | Evidence or note                                                                          |
-| ----------------------------------- | ------- | ----------------------------------------------------------------------------------------- |
-| `./scripts/tasks.ps1 lint`          | passed  | Ruff, Prettier and ESLint after M7 changes.                                               |
-| `./scripts/tasks.ps1 typecheck`     | passed  | Strict mypy over 70 source files and TypeScript checks.                                   |
-| `./scripts/tasks.ps1 test`          | passed  | 89 passed, 6 PostgreSQL-only tests skipped because `PULSE109_TEST_DATABASE_URL` is unset. |
-| `./scripts/tasks.ps1 contract-test` | passed  | 17 passed; time-quality and OpenAPI validation included.                                  |
-| `./scripts/tasks.ps1 e2e`           | passed  | 9 passed, including manual and incident flows.                                            |
-| `./scripts/tasks.ps1 build`         | passed  | Python wheel/sdist and Next.js production build.                                          |
-| Alembic offline SQL                 | passed  | Forward chain renders through `0011_m7_incident_persistence`.                             |
-| `docker compose ... config --quiet` | passed  | Compose model parses without a running daemon.                                            |
-| PostgreSQL integration              | pending | Docker daemon is unavailable on this host; CI must run all 6 database tests.              |
+| Command                             | Result  | Evidence or note                                                                            |
+| ----------------------------------- | ------- | ------------------------------------------------------------------------------------------- |
+| `./scripts/tasks.ps1 lint`          | passed  | Ruff, Prettier and ESLint after M7 changes.                                                 |
+| `./scripts/tasks.ps1 typecheck`     | passed  | Strict mypy over 70 source files and TypeScript checks.                                     |
+| `./scripts/tasks.ps1 test`          | passed  | 106 passed, 6 PostgreSQL-only tests skipped because `PULSE109_TEST_DATABASE_URL` is unset.  |
+| `./scripts/tasks.ps1 contract-test` | passed  | 17 passed; time-quality and OpenAPI validation included.                                    |
+| `./scripts/tasks.ps1 e2e`           | passed  | 9 passed, including manual and incident flows.                                              |
+| `./scripts/tasks.ps1 build`         | passed  | Python wheel/sdist and Next.js production build.                                            |
+| Alembic offline SQL                 | passed  | Forward chain renders through `0011_m7_incident_persistence`.                               |
+| `docker compose ... config --quiet` | passed  | Compose model parses without a running daemon.                                              |
+| PostgreSQL integration              | pending | CI reached the tests and found a `FOR UPDATE` outer-join error; the query fix awaits rerun. |
 
 Earlier M4-M6 clean-run CI evidence:
 <https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/34685618121>.
+
+CI run <https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/35899340246> passed
+the quality job and all four earlier database checks. Its two new M7 database tests failed on
+PostgreSQL's outer-join lock rule; `FOR UPDATE OF a` is now staged for rerun. The supply-chain job
+stopped at the license-gated Gitleaks Action; the official Gitleaks CLI container is staged in its
+place, and the SBOM step now requires a successfully built image.
 
 ## Known Limitations And External Blockers
 
@@ -77,6 +86,10 @@ Earlier M4-M6 clean-run CI evidence:
 - B08/B10 still require the approved OIDC provider, immutable private source storage, legal basis
   and retention class. Operational intake fails closed if these are absent; the current regex is a
   synthetic-fixture aid and is not a production PII redactor.
+- The merged regional corpus previously included address-bearing executor prose and quarantine
+  source values. HEAD now withholds both and labels all derived model reports historical and
+  unverified. Earlier Git blobs remain reachable; a repository-owner retention and history
+  remediation decision is still required. No published history was rewritten.
 - Docker Desktop is not running on this host. The next executable database check is the CI
   `container-smoke` job after the branch is pushed, or the same Compose commands on a Docker host.
 - No live regional adapter, Handoff Guard lifecycle, Replay Lab, verified outcome memory, closure
@@ -89,10 +102,12 @@ Earlier M4-M6 clean-run CI evidence:
 - D-012 binds M6 dashboard and exports to one governed metric result and preserves missing semantics.
 - D-030 through D-035 record the M7 design, time provenance, regional idempotency and operational
   fail-closed boundaries after reconciliation with the upstream decision log.
+- D-036 withholds unapproved regional prose, corrects historical hit-rate labels and blocks
+  unsupported quality claims.
 
 ## Exact Next Milestone
 
-Run the upstream data/ML checks, then execute all PostgreSQL integration and Compose smoke checks
-in CI. After M7 is evidenced, build a durable handoff command
+Rerun quality, PostgreSQL integration and supply-chain checks in CI after the SQL and research-data
+fixes are pushed. After M7 is evidenced, build a durable handoff command
 and receipt state as the first M8 vertical slice. Keep live adapters, representative model claims,
 binding SLA and real PII processing gated by B01-B10.
