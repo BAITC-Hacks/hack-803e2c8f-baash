@@ -6,15 +6,31 @@
       "10000000-0000-0000-0000-000000000002"
     ]
   },
+  "duplicate_pair_metrics": {
+    "expected_count": 2,
+    "f1": 1.0,
+    "precision": 1.0,
+    "predicted_count": 2,
+    "recall": 1.0
+  },
   "fallback": "deterministic hash vector plus lexical overlap; no external model",
+  "incident_level_b_cubed": {
+    "f1": 1.0,
+    "item_count": 6,
+    "precision": 1.0,
+    "recall": 1.0
+  },
   "judged_queries": 2,
   "latency_ms": {
     "count": 2,
-    "max": 0.30149996746331453,
-    "mean": 0.21455000387504697
+    "max": 0.4993999609723687,
+    "mean": 0.32885000109672546,
+    "p95": 0.4993999609723687
   },
   "mrr": 1.0,
+  "ndcg_at_10": 1.0,
   "recall_at_10": 1.0,
+  "recall_at_20": 1.0,
   "synthetic_only": true,
   "warning": "Fixture diagnostics only; no real-world quality claim."
 }

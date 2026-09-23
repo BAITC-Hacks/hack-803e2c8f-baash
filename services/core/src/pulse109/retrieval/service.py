@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 import math
+import re
 from typing import cast
 from uuid import UUID
 
 from .models import (
     AppealDocument,
     DuplicateCandidate,
+    PreflightRequest,
+    PreflightResult,
     RetrievalEvidence,
     RetrievalQuery,
     SimilarRequest,
@@ -66,6 +69,38 @@ class HybridRetriever:
             : query.limit
         ]
 
+    def preflight(self, command: PreflightRequest) -> PreflightResult:
+        """Evaluate a prospective appeal without storing or merging it."""
+
+        source = AppealDocument(
+            request_id=UUID(int=0),
+            region_id=command.region_id,
+            service_id=command.service_id,
+            topic_id=command.topic_id,
+            redacted_text=_redact(command.text),
+            occurred_at=command.occurred_at,
+            occurred_at_quality=command.occurred_at_quality,
+            latitude=command.latitude,
+            longitude=command.longitude,
+            resolved=False,
+            data_classification="synthetic",
+        )
+        candidates = [
+            candidate
+            for document in self._documents.values()
+            if document.region_id == command.region_id
+            and (candidate := self._duplicate(source, document)) is not None
+        ]
+        return PreflightResult(
+            candidates=sorted(candidates, key=lambda item: (-item.score, str(item.candidate_id)))[
+                : command.limit
+            ],
+            evaluated_factors=("category", "distance", "time", "lexical", "semantic"),
+            synthetic_only=all(
+                document.data_classification == "synthetic" for document in self._documents.values()
+            ),
+        )
+
     def _source(self, request_id: UUID) -> AppealDocument:
         try:
             return self._documents[request_id]
@@ -117,15 +152,21 @@ class HybridRetriever:
         lexical = lexical_similarity(source.redacted_text, candidate.redacted_text)
         if lexical < 0.30 or source.service_id != candidate.service_id:
             return None
-        reasons = ["text_overlap", "service_match"]
-        score = 0.70 * lexical + 0.20
+        semantic = max(
+            0.0, self._provider.similarity(source.redacted_text, candidate.redacted_text)
+        )
+        reasons = ["text_overlap", "semantic_similarity", "service_match"]
+        score = 0.60 * lexical + 0.10 * semantic + 0.20
+        if source.topic_id == candidate.topic_id:
+            score += 0.05
+            reasons.append("topic_match")
         distance = _distance_m(source, candidate)
         if distance is not None and distance <= 1000:
-            score += 0.10
+            score += 0.05
             reasons.append("geography_within_1000m")
         time_delta = _time_delta_minutes(source, candidate)
         if time_delta is not None and time_delta <= 24 * 60:
-            score += 0.10
+            score += 0.05
             reasons.append("time_within_24h")
         if score < 0.70:
             return None
@@ -165,3 +206,8 @@ def _time_delta_minutes(left: AppealDocument, right: AppealDocument) -> float | 
     if left.occurred_at_quality not in valid or right.occurred_at_quality not in valid:
         return None
     return abs((left.occurred_at - right.occurred_at).total_seconds()) / 60
+
+
+def _redact(value: str) -> str:
+    redacted = re.sub(r"[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}", "[EMAIL]", value)
+    return re.sub(r"(?<!\w)(?:\+?\d[\d ()-]{7,}\d)(?!\w)", "[PHONE_OR_ID]", redacted)

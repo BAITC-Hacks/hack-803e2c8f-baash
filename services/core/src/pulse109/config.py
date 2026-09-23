@@ -20,6 +20,17 @@ class Settings(BaseSettings):
     service_name: str = "core-api"
     api_version: str = "1.0.0"
     max_import_rows: int = Field(default=100_000, ge=1, le=1_000_000)
+    local_identity_enabled: bool = True
+    oidc_issuer: str | None = None
+    oidc_audience: str | None = None
+    oidc_jwks_url: str | None = None
+    oidc_algorithms: list[str] = Field(default_factory=lambda: ["RS256"])
+    otel_enabled: bool = True
+    otel_exporter_endpoint: str | None = None
+    otel_sample_ratio: float = Field(default=0.1, ge=0, le=1)
+    manual_repository_mode: Literal["memory", "postgres"] = "memory"
+    approved_legal_basis: str | None = None
+    approved_retention_class: str | None = None
 
 
 @lru_cache

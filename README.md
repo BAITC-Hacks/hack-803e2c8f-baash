@@ -1,12 +1,12 @@
 # Pulse 109
 
-Pulse 109 is a contract-first assistance layer for citizen appeals. The repository now contains the
-M0/M1 foundation and executable M3-M6 synthetic evidence paths: human-controlled routing, hybrid
-retrieval and duplicate review, incident membership, adapter delivery/reconciliation, governed
-analytics, alerts, forecasting, and PDF/XLSX reporting. A narrow M2 manual vertical slice keeps
-intake, operator decisions, audit, and queued synchronization usable without ML. It does not claim
-production readiness, national coverage, a live regional integration, autonomous decisions, or
-real-world model quality.
+Pulse 109 is a contract-first assistance layer for citizen appeals. The pilot implements the manual
+critical path, pre-submit duplicate evidence, human-controlled routing and reversible incidents,
+durable PostgreSQL/outbox delivery, Open311 compatibility sandbox, governed analytics and reports,
+RU/KZ citizen/operator/admin surfaces, OIDC-compatible access control, MapLibre/Martin integration,
+OpenTelemetry, synthetic MLOps evidence and release runbooks. Intake, manual decisions, status,
+audit and queued synchronization remain usable without ML or a regional system. It does not claim
+national coverage, a live regional integration, autonomous decisions or real-world model quality.
 
 ## Prerequisites
 
@@ -36,6 +36,9 @@ make migrate         # apply the forward-only Alembic migration chain
 make dq-report       # reproduce the synthetic M1 data-quality report
 make model-eval      # reproduce the synthetic M3 baseline and evaluation evidence
 make retrieval-eval  # reproduce the synthetic M4 retrieval mechanics report
+make mlops-eval      # reproduce synthetic risk-coverage, feedback, registry and drift exports
+make load-test       # run the bounded synthetic preflight load smoke
+make release-evidence # hash contracts, locks and generated synthetic evidence
 ```
 
 Windows without GNU Make uses the same task names:
@@ -55,9 +58,16 @@ Copy `.env.example` to `.env` only when overriding the safe local defaults, then
 `.\scripts\tasks.ps1 up`. The web workspace is exposed at `http://localhost:3000`, the core API at
 `http://localhost:8080`, PostgreSQL at `localhost:5432`, and MinIO at `http://localhost:9000`.
 
-The core readiness probe depends only on PostgreSQL. ML, object storage, and the regional adapter are
-outside the manual critical path. The current M2 API slice uses an explicitly in-memory repository;
-the PostgreSQL tables are present, but wiring the production repository remains the next M2 task.
+The core readiness probe depends only on PostgreSQL. ML, object storage and the regional adapter are
+outside the manual critical path. Local/test profiles may use the explicit in-memory repository;
+pilot/production profiles and Compose use the PostgreSQL appeal and incident repositories with audit
+and outbox writes in the same transaction. The worker claims adapter events with short PostgreSQL
+leases and `FOR UPDATE SKIP LOCKED`.
+
+The web workspace is exposed at `http://localhost:3000`, the core API at `http://localhost:8080`,
+inference at `http://localhost:8081`, worker at `http://localhost:8082`, replay adapter at
+`http://localhost:8083`, the isolated synthetic Open311 sandbox at `http://localhost:8084`,
+PostgreSQL at `localhost:5432`, and MinIO at `http://localhost:9000`.
 
 ## Synthetic Ingestion
 
@@ -82,17 +92,24 @@ The internal inference endpoint is `POST /v1/inference/classify`. It supports de
 CPU and mock modes, always reports the actual model/fallback version, and always requires human
 confirmation.
 
+`make mlops-eval` extends the synthetic routing evidence with a risk-coverage curve, AURC and
+explicit abstention bands. It also emits Label Studio-compatible feedback tasks, an MLflow-compatible
+local registry manifest with champion/challenger/rollback aliases, and an Evidently-compatible drift
+report under `ml/evaluation/synthetic_mlop/`. These are offline workflow fixtures and carry no
+real-world model, promotion or drift-quality claim.
+
 ## Retrieval, Incidents, And Delivery
 
-`POST /v1/retrieval/similar` returns reciprocal-rank-fused evidence from the offline lexical and
-deterministic hash-vector fallback. `POST /v1/retrieval/duplicate-candidates` returns proposals with
-text, service, geo, and time evidence; it never merges appeals. Incident membership is recorded only
-after a human confirmation and preserves every appeal ID, history, and SLA clock.
+`POST /v1/appeals/preflight` checks a prospective appeal without storing it and returns category,
+distance, time, lexical and semantic duplicate evidence. `POST /v1/retrieval/similar` returns
+reciprocal-rank-fused evidence from the offline lexical and deterministic hash-vector fallback.
+Duplicate endpoints only return proposals; they never merge appeals. Incident membership is
+append-only, human-confirmed and reversible while preserving every appeal ID, history and SLA clock.
 
-The typed adapter SDK, replay adapter, retry/dead-letter state machine, and reconciliation service
-exercise M5 without inventing a regional protocol. Unknown external statuses enter mapping review.
-The replay trace under `data/reports/` is explicitly synthetic and is not evidence of a live or
-national integration.
+The typed adapter SDK, replay adapter, retry/dead-letter state machine, reconciliation service and
+Open311 v2 sandbox exercise M5 without inventing a regional protocol. Unknown external statuses enter
+mapping review. The replay trace and Open311 responses are explicitly synthetic and are not evidence
+of a live or national integration.
 
 ## Governed Situation Center
 

@@ -8,6 +8,8 @@ from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Header, HTTPException, Query, Response, status
 
+from pulse109.security import AuthenticatedActor
+
 from .models import (
     Appeal,
     AppealDetail,
@@ -22,6 +24,7 @@ from .models import (
     SyncReceipt,
     TimelineEvent,
 )
+from .postgres_path import PostgresManualPathService
 from .service import ManualPathError, ManualPathService
 
 
@@ -31,21 +34,31 @@ def _error(error: ManualPathError) -> HTTPException:
     )
 
 
-def create_manual_router(service: ManualPathService, *, prefix: str = "/v1") -> APIRouter:
+def create_manual_router(
+    service: ManualPathService | PostgresManualPathService, *, prefix: str = "/v1"
+) -> APIRouter:
     router = APIRouter(prefix=prefix, tags=["Requests", "Decisions"])
 
     @router.post("/requests", response_model=Appeal, status_code=status.HTTP_201_CREATED)
     def create_request(
         command: CreateRequest,
         response: Response,
+        identity: AuthenticatedActor,
         idempotency_key: str = Header(alias="Idempotency-Key", min_length=16, max_length=128),
         region_id: str = Header(alias="X-Region-Id", pattern=r"^[A-Z0-9_-]{2,32}$"),
         correlation_id: str | None = Header(default=None, alias="X-Correlation-Id", max_length=128),
     ) -> Appeal:
+        identity.require_any_role("citizen", "intake", "operator", "supervisor", "admin", "system")
+        identity.require_body_region(command.region_id, region_id)
         try:
-            response.headers["X-Correlation-Id"] = correlation_id or str(uuid4())
+            effective_correlation_id = correlation_id or str(uuid4())
+            response.headers["X-Correlation-Id"] = effective_correlation_id
             appeal, replay = service.create(
-                command, idempotency_key=idempotency_key, region_id=region_id
+                command,
+                idempotency_key=idempotency_key,
+                region_id=region_id,
+                actor=identity.actor_id,
+                correlation_id=effective_correlation_id,
             )
             if replay:
                 response.status_code = status.HTTP_200_OK
@@ -56,8 +69,11 @@ def create_manual_router(service: ManualPathService, *, prefix: str = "/v1") -> 
     @router.get("/requests/{request_id}", response_model=AppealDetail)
     def get_request(
         request_id: UUID,
+        identity: AuthenticatedActor,
         region_id: str = Header(alias="X-Region-Id", pattern=r"^[A-Z0-9_-]{2,32}$"),
     ) -> AppealDetail:
+        identity.require_any_role("operator", "supervisor", "analyst", "auditor", "admin")
+        identity.require_region(region_id)
         try:
             return service.detail(request_id, region_id=region_id)
         except ManualPathError as error:
@@ -70,10 +86,13 @@ def create_manual_router(service: ManualPathService, *, prefix: str = "/v1") -> 
     def classify_request(
         request_id: UUID,
         command: ClassificationInput,
+        identity: AuthenticatedActor,
         idempotency_key: str = Header(alias="Idempotency-Key", min_length=16, max_length=128),
         region_id: str = Header(alias="X-Region-Id", pattern=r"^[A-Z0-9_-]{2,32}$"),
         correlation_id: str | None = Header(default=None, alias="X-Correlation-Id", max_length=128),
     ) -> ClassificationRecommendation:
+        identity.require_any_role("operator", "supervisor", "admin")
+        identity.require_region(region_id)
         try:
             return service.classify(
                 request_id,
@@ -93,17 +112,19 @@ def create_manual_router(service: ManualPathService, *, prefix: str = "/v1") -> 
     def record_decision(
         request_id: UUID,
         command: OperatorDecision,
+        identity: AuthenticatedActor,
         idempotency_key: str = Header(alias="Idempotency-Key", min_length=16, max_length=128),
         region_id: str = Header(alias="X-Region-Id", pattern=r"^[A-Z0-9_-]{2,32}$"),
-        actor: str = Header(default="operator", alias="X-Actor-Token"),
     ) -> DecisionReceipt:
+        identity.require_any_role("operator", "supervisor", "admin")
+        identity.require_region(region_id)
         try:
             return service.decide(
                 request_id,
                 command,
                 idempotency_key=idempotency_key,
                 region_id=region_id,
-                actor=actor,
+                actor=identity.actor_id,
             )
         except ManualPathError as error:
             raise _error(error) from error
@@ -116,17 +137,19 @@ def create_manual_router(service: ManualPathService, *, prefix: str = "/v1") -> 
     def append_status(
         request_id: UUID,
         command: StatusEventInput,
+        identity: AuthenticatedActor,
         idempotency_key: str = Header(alias="Idempotency-Key", min_length=16, max_length=128),
         region_id: str = Header(alias="X-Region-Id", pattern=r"^[A-Z0-9_-]{2,32}$"),
-        actor: str = Header(default="operator", alias="X-Actor-Token"),
     ) -> TimelineEvent:
+        identity.require_any_role("operator", "supervisor", "admin", "system")
+        identity.require_region(region_id)
         try:
             return service.status(
                 request_id,
                 command,
                 idempotency_key=idempotency_key,
                 region_id=region_id,
-                actor=actor,
+                actor=identity.actor_id,
             )
         except ManualPathError as error:
             raise _error(error) from error
@@ -139,17 +162,19 @@ def create_manual_router(service: ManualPathService, *, prefix: str = "/v1") -> 
     def assign(
         request_id: UUID,
         command: AssignmentCommand,
+        identity: AuthenticatedActor,
         idempotency_key: str = Header(alias="Idempotency-Key", min_length=16, max_length=128),
         region_id: str = Header(alias="X-Region-Id", pattern=r"^[A-Z0-9_-]{2,32}$"),
-        actor: str = Header(default="operator", alias="X-Actor-Token"),
     ) -> SyncReceipt:
+        identity.require_any_role("operator", "supervisor", "admin")
+        identity.require_region(region_id)
         try:
             return service.assign(
                 request_id,
                 command,
                 idempotency_key=idempotency_key,
                 region_id=region_id,
-                actor=actor,
+                actor=identity.actor_id,
             )
         except ManualPathError as error:
             raise _error(error) from error
@@ -157,8 +182,11 @@ def create_manual_router(service: ManualPathService, *, prefix: str = "/v1") -> 
     @router.get("/catalog/services", response_model=list[ServiceDefinition], tags=["Catalog"])
     def list_services(
         effective_at: Annotated[datetime, Query()],
+        identity: AuthenticatedActor,
         region_id: str = Header(alias="X-Region-Id", pattern=r"^[A-Z0-9_-]{2,32}$"),
     ) -> list[ServiceDefinition]:
+        identity.require_any_role("operator", "supervisor", "analyst", "auditor", "admin")
+        identity.require_region(region_id)
         return service.list_services(region_id=region_id, effective_at=effective_at)
 
     return router

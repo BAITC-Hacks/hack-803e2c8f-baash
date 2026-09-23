@@ -2,10 +2,15 @@
 
 ## Current Milestone
 
-- Milestone: M4, M5, and M6 on the existing M0/M1/M3 foundation
-- Objective: human-reviewed retrieval/incidents, resilient adapter mechanics, and governed analytics
-- Status: implementation and hosted acceptance evidence complete
-- Working tree: `codex/m0-m1-m3-foundation`
+- Milestone: M7 durable core and release hardening.
+- Status: active; the local M7 implementation has been reviewed and hardened, but its PostgreSQL
+  integration and release gates have not yet passed on this host.
+- Branch: `codex/production-platform-20260923`, created without discarding the pre-existing local
+  changes. GitHub was fetched; the newer upstream commits will be integrated after the first
+  verified checkpoint.
+- Scope from the two supplied texts: durable manual journey first, then Handoff Guard, Replay Lab,
+  Outcome Memory, Closure Integrity, Adaptive Case Schema, recurrence and federation. These later
+  capabilities are planned and are not represented as delivered production behavior.
 
 ## Delivered Behavior
 
@@ -25,33 +30,38 @@
   version, cutoff, quality, and rows.
 - Responsive situation-center UI with coverage/freshness first, missing/stale states, alert review,
   forecast, and report controls.
+- PostgreSQL-backed manual commands and incident decisions in pilot/production profiles, with
+  transaction-scoped idempotency locks, region-bound OIDC authorization and worker lease recovery.
+- Received time remains null when missing or date-only; status events require explicit quality.
+  Operational intake requires an approved immutable source reference, legal basis and retention
+  configuration; unverified free text never enters the inference path.
+- Synthetic retrieval, analytics, alerts and volatile reports are disabled in pilot/production
+  profiles until approved durable read models exist. The ML-independent manual path remains mounted.
 
 ## Contracts And Migrations Changed
 
-- Existing OpenAPI remains versioned and unchanged at 18 operations and 26 schemas. The implemented
-  public routes use its analytics, alert, incident, retrieval, and report request/response shapes.
-- Added Alembic revisions `0005_m4_retrieval_duplicates`, `0006_m5_incidents_integration`, and
-  `0007_m6_analytics_reports` after the existing `0001`-`0004` chain.
+- OpenAPI includes 20 operations and 29 schemas. Create and status-event time-quality rules now
+  agree with the canonical JSON schema; no timestamp is derived from observation time.
+- Added Alembic revisions `0008_m7_manual_path_persistence` through
+  `0011_m7_incident_persistence` after the previously accepted `0001`-`0007` chain.
 - Added append-only retrieval-run, incident-membership, delivery, mapping-review, metric-result,
   alert-review, forecast, and report-artifact persistence structures.
 
 ## Verification
 
-| Command               | Result       | Evidence or note                                                           |
-| --------------------- | ------------ | -------------------------------------------------------------------------- |
-| `make lint`           | passed       | Ruff, Prettier, and ESLint.                                                |
-| `make typecheck`      | passed       | Strict mypy over 58 source files and TypeScript checks.                    |
-| `make test`           | passed       | 59 passed; 4 PostgreSQL tests skipped only in the host-only run.           |
-| `make contract-test`  | passed       | 6 passed; runtime mounts all 18 OpenAPI operations; 26 schemas remain.     |
-| `make e2e`            | passed       | 8 passed across manual, retrieval, incident, and situation-report flows.   |
-| `make build`          | passed       | Python wheel/sdist and Next.js production build.                           |
-| `make retrieval-eval` | passed       | Deterministic synthetic M4 report reproduced.                              |
-| Alembic offline SQL   | passed       | Forward chain renders through `0007_m6_analytics_reports`.                 |
-| Compose/PostgreSQL    | passed in CI | All services healthy; extensions, migration head, and 4 DB tests passed.   |
-| Browser verification  | passed       | Desktop/mobile, interactions, no overflow, no WCAG A/AA violations.        |
-| PDF/XLSX comparison   | passed       | Same metric result, ID, version, cutoff, and rows; PDF visually inspected. |
+| Command                             | Result  | Evidence or note                                                                          |
+| ----------------------------------- | ------- | ----------------------------------------------------------------------------------------- |
+| `./scripts/tasks.ps1 lint`          | passed  | Ruff, Prettier and ESLint after M7 changes.                                               |
+| `./scripts/tasks.ps1 typecheck`     | passed  | Strict mypy over 70 source files and TypeScript checks.                                   |
+| `./scripts/tasks.ps1 test`          | passed  | 89 passed, 6 PostgreSQL-only tests skipped because `PULSE109_TEST_DATABASE_URL` is unset. |
+| `./scripts/tasks.ps1 contract-test` | passed  | 17 passed; time-quality and OpenAPI validation included.                                  |
+| `./scripts/tasks.ps1 e2e`           | passed  | 9 passed, including manual and incident flows.                                            |
+| `./scripts/tasks.ps1 build`         | passed  | Python wheel/sdist and Next.js production build.                                          |
+| Alembic offline SQL                 | passed  | Forward chain renders through `0011_m7_incident_persistence`.                             |
+| `docker compose ... config --quiet` | passed  | Compose model parses without a running daemon.                                            |
+| PostgreSQL integration              | pending | Docker daemon is unavailable on this host; CI must run all 6 database tests.              |
 
-M4-M6 clean-run CI evidence:
+Earlier M4-M6 clean-run CI evidence:
 <https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/34685618121>.
 
 ## Known Limitations And External Blockers
@@ -61,22 +71,29 @@ M4-M6 clean-run CI evidence:
   reranking, representative latency, and real duplicate quality remain blocked by B02/B04/B10.
 - M5 has no live regional adapter. B07 blocks target protocol, credentials, sandbox, and authoritative
   external status mappings; the replay adapter is the only implemented transport.
-- M6 uses synthetic read results. National coverage, SLA policy, production identity, and production
-  data remain blocked by B01/B06/B08/B10; missing and stale values stay explicit.
-- The M2 runtime repository remains in-memory. Durable tables exist, but production transaction and
-  identity wiring are not complete.
-- Local container startup is blocked by a host Docker Desktop stale `dockerInference` reparse point;
-  hosted CI remains the source of Compose and PostgreSQL migration evidence.
+- M6 read results, retrieval corpus and report storage remain synthetic or process-local. Their
+  operational routes return `read_model_unavailable` until durable, approved providers are wired.
+- The local/test profile uses in-memory manual state. Pilot/production selects PostgreSQL, but live
+  PostgreSQL tests, restart tests and backup/restore evidence remain pending in the current branch.
+- B08/B10 still require the approved OIDC provider, immutable private source storage, legal basis
+  and retention class. Operational intake fails closed if these are absent; the current regex is a
+  synthetic-fixture aid and is not a production PII redactor.
+- Docker Desktop is not running on this host. The next executable database check is the CI
+  `container-smoke` job after the branch is pushed, or the same Compose commands on a Docker host.
+- No live regional adapter, Handoff Guard lifecycle, Replay Lab, verified outcome memory, closure
+  evidence gate, adaptive case schema, recurrence engine or federated control plane is complete.
 
 ## Decisions Recorded
 
 - D-010 limits M4 to deterministic synthetic hybrid mechanics and mandatory human duplicate review.
 - D-011 makes the replay adapter the only M5 transport until the first regional contract is approved.
 - D-012 binds M6 dashboard and exports to one governed metric result and preserves missing semantics.
+- D-013 through D-016 record the local M7 design; their numbering must be reconciled with the
+  newer upstream decision log during merge.
 
 ## Exact Next Milestone
 
-M7 release hardening: close the durable M2 repository gap, add approved region-scoped identity,
-exercise access/load/restore/rollback and observability runbooks, and produce the signed release
-evidence index. Real adapters, representative models, national claims, and binding SLA behavior stay
-blocked until their named external approvals are resolved.
+Integrate the fetched upstream branch, run its new data/ML checks, then execute all PostgreSQL
+integration and Compose smoke checks in CI. After M7 is evidenced, build a durable handoff command
+and receipt state as the first M8 vertical slice. Keep live adapters, representative model claims,
+binding SLA and real PII processing gated by B01-B10.

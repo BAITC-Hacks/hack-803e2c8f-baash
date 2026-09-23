@@ -36,6 +36,18 @@ class RetrievalQuery(StrictModel):
     service_id: Annotated[str, Field(min_length=1, max_length=128)] | None = None
 
 
+class PreflightRequest(StrictModel):
+    region_id: Annotated[str, Field(pattern=r"^[A-Z0-9_-]{2,32}$")]
+    service_id: Annotated[str, Field(min_length=1, max_length=128)]
+    topic_id: Annotated[str, Field(min_length=1, max_length=128)]
+    text: Annotated[str, Field(min_length=1, max_length=20_000)]
+    occurred_at: Annotated[datetime, Field(strict=False)] | None = None
+    occurred_at_quality: Literal["exact", "source_tz_assumed", "date_only", "missing"] = "missing"
+    latitude: Annotated[float, Field(ge=-90, le=90)] | None = None
+    longitude: Annotated[float, Field(ge=-180, le=180)] | None = None
+    limit: Annotated[int, Field(ge=1, le=10)] = 5
+
+
 class SimilarRequest(StrictModel):
     request_id: Annotated[UUID, Field(strict=False)]
     score: Annotated[float, Field(ge=0, le=1)]
@@ -53,6 +65,14 @@ class DuplicateCandidate(StrictModel):
     distance_m: Annotated[float, Field(ge=0)] | None = None
     time_delta_minutes: Annotated[float, Field(ge=0)] | None = None
     needs_human_confirmation: Literal[True] = True
+
+
+class PreflightResult(StrictModel):
+    candidates: list[DuplicateCandidate]
+    evaluated_factors: tuple[Literal["category", "distance", "time", "lexical", "semantic"], ...]
+    needs_human_confirmation: Literal[True] = True
+    automatic_merge: Literal[False] = False
+    synthetic_only: bool
 
 
 class RetrievalEvidence(StrictModel):

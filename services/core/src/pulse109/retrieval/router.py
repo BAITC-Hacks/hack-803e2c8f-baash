@@ -5,7 +5,16 @@ from uuid import UUID
 
 from fastapi import APIRouter, Header, HTTPException, Query
 
-from .models import AppealDocument, DuplicateCandidate, RetrievalQuery, SimilarRequest
+from pulse109.security import AuthenticatedActor
+
+from .models import (
+    AppealDocument,
+    DuplicateCandidate,
+    PreflightRequest,
+    PreflightResult,
+    RetrievalQuery,
+    SimilarRequest,
+)
 from .service import HybridRetriever
 
 
@@ -65,13 +74,28 @@ def create_retrieval_router(retriever: HybridRetriever) -> APIRouter:
             service_id=service_id,
         )
 
+    @router.post(
+        "/appeals/preflight", response_model=PreflightResult, operation_id="preflightAppeal"
+    )
+    def preflight(
+        command: PreflightRequest,
+        identity: AuthenticatedActor,
+        region_id: str = Header(alias="X-Region-Id", pattern=r"^[A-Z0-9_-]{2,32}$"),
+    ) -> PreflightResult:
+        identity.require_any_role("citizen", "intake", "operator", "supervisor", "admin")
+        identity.require_body_region(command.region_id, region_id)
+        return retriever.preflight(command)
+
     @router.get("/requests/{request_id}/similar", response_model=list[SimilarRequest])
     def similar(
         request_id: UUID,
+        identity: AuthenticatedActor,
         limit: int = Query(default=10, ge=1, le=50),
         service_id: str | None = Query(default=None),
         region_id: str = Header(alias="X-Region-Id", pattern=r"^[A-Z0-9_-]{2,32}$"),
     ) -> list[SimilarRequest]:
+        identity.require_any_role("operator", "supervisor", "analyst", "admin")
+        identity.require_region(region_id)
         try:
             return retriever.similar(_query(request_id, region_id, limit, service_id))
         except KeyError as error:
@@ -87,8 +111,11 @@ def create_retrieval_router(retriever: HybridRetriever) -> APIRouter:
     )
     def duplicates(
         request_id: UUID,
+        identity: AuthenticatedActor,
         region_id: str = Header(alias="X-Region-Id", pattern=r"^[A-Z0-9_-]{2,32}$"),
     ) -> list[DuplicateCandidate]:
+        identity.require_any_role("operator", "supervisor", "analyst", "admin")
+        identity.require_region(region_id)
         try:
             return retriever.duplicate_candidates(_query(request_id, region_id, 10, None))
         except KeyError as error:

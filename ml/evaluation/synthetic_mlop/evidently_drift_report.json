@@ -1,0 +1,64 @@
+{
+  "current_split": "test",
+  "dataset_drift": false,
+  "dataset_id": "pulse109-synthetic-m3-baseline",
+  "format": "evidently-report",
+  "format_version": "1.0.0",
+  "metrics": [
+    {
+      "column": "language",
+      "current": {
+        "kk": 0.44444444,
+        "mixed": 0.11111111,
+        "ru": 0.44444444
+      },
+      "drifted": false,
+      "max_abs_share_delta": 0.0,
+      "metric": "categorical_share_difference",
+      "reference": {
+        "kk": 0.44444444,
+        "mixed": 0.11111111,
+        "ru": 0.44444444
+      }
+    },
+    {
+      "column": "region_id",
+      "current": {
+        "ALA": 0.33333333,
+        "AST": 0.33333333,
+        "KAR": 0.33333333
+      },
+      "drifted": false,
+      "max_abs_share_delta": 0.0,
+      "metric": "categorical_share_difference",
+      "reference": {
+        "ALA": 0.33333333,
+        "AST": 0.33333333,
+        "KAR": 0.33333333
+      }
+    },
+    {
+      "column": "channel",
+      "current": {
+        "email": 0.11111111,
+        "mobile": 0.22222222,
+        "phone": 0.22222222,
+        "telegram": 0.11111111,
+        "web": 0.33333333
+      },
+      "drifted": false,
+      "max_abs_share_delta": 0.0,
+      "metric": "categorical_share_difference",
+      "reference": {
+        "email": 0.11111111,
+        "mobile": 0.22222222,
+        "phone": 0.22222222,
+        "telegram": 0.11111111,
+        "web": 0.33333333
+      }
+    }
+  ],
+  "purpose": "distribution drift fixture; not a production drift claim",
+  "reference_split": "train",
+  "synthetic_only": true
+}

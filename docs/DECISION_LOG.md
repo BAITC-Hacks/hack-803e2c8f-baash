@@ -118,6 +118,50 @@ Record implementation decisions here when the repository, contracts or available
 - **Evidence:** migration `0007`, analytics/report tests, export comparison E2E, and browser evidence in `ml/evaluation/synthetic_m6/`.
 - **Revisit when:** B01, B06, B08, and B10 are resolved.
 
+### D-013 - Durable pilot path and verified identity boundary
+
+- **Date:** 2026-09-13
+- **Status:** accepted
+- **Context:** M7 requires PostgreSQL durability and production access controls while B08 still blocks the selected identity provider and hosting profile.
+- **Decision:** pilot/production profiles use PostgreSQL repositories for appeals and incidents, transactional audit/outbox writes, OIDC/JWKS validation, role and region scopes, and object-level report checks. Header identity is limited to local/development/test profiles.
+- **Alternatives:** retain in-memory production state; trust identity headers at the reverse proxy; block all implementation pending provider selection.
+- **Consequences:** the production boundary is fail-closed and Keycloak-compatible without selecting an unapproved provider. Local synthetic demos remain self-contained.
+- **Evidence:** migrations `0008`-`0011`, `pulse109.security`, PostgreSQL integration tests, and security tests.
+- **Revisit when:** B08 supplies the approved issuer, audience, claims, network and hosting profile.
+
+### D-014 - Pre-submit duplicate evidence and reversible incident membership
+
+- **Date:** 2026-09-13
+- **Status:** accepted
+- **Context:** the research requires duplicate warning before submission and reversible incident grouping without losing appeal identity.
+- **Decision:** expose a non-mutating preflight endpoint with category, distance, time, lexical and semantic evidence; every membership decision is append-only and can explicitly remove then reconfirm a member. No candidate is merged automatically.
+- **Alternatives:** search only after creating an appeal; hard-merge high-score pairs; mutate the prior membership row.
+- **Consequences:** citizen/operator workflows can act on evidence while every appeal retains its identifier, history and SLA clock.
+- **Evidence:** OpenAPI `preflightAppeal`, retrieval tests, incident event history, golden-flow E2E, and durable integration test.
+- **Revisit when:** B04 provides approved pairs/groups and a production threshold policy.
+
+### D-015 - Versioned policy records never invent an SLA
+
+- **Date:** 2026-09-13
+- **Status:** accepted
+- **Context:** routing, confidence and SLA behavior need versioning, approval, effective dates and rollback, but B06 leaves the authoritative rules unavailable.
+- **Decision:** persist immutable policy versions and review metadata; expose only active/effective versions. The synthetic routing/confidence policies are labelled local fixtures and SLA calculation remains disabled until an approved effective SLA policy exists.
+- **Alternatives:** hard-code an assumed SLA; expose draft policy as active; omit policy provenance from assignment.
+- **Consequences:** assignments retain policy provenance and missing policy remains visible rather than becoming a fabricated deadline.
+- **Evidence:** migration `0009`, policy catalog API/tests, assignment validation, and rollback runbook.
+- **Revisit when:** B06 is resolved by the policy owner.
+
+### D-016 - Compatibility services and release evidence remain explicitly synthetic
+
+- **Date:** 2026-09-13
+- **Status:** accepted
+- **Context:** P1/P2 recommendations include Open311, Martin/MapLibre, MLOps tools and signed supply-chain evidence, while real source contracts, map hosting and signing authority are unavailable.
+- **Decision:** provide an isolated Open311 sandbox, Martin-ready MapLibre source, tool-compatible offline exports, OTel instrumentation, dependency/SBOM CI gates and hash-indexed synthetic evidence. Do not claim a live adapter, production map, model promotion or signed release.
+- **Alternatives:** invent regional credentials/endpoints; require external services for the offline demo; omit compatibility seams.
+- **Consequences:** integration and operations mechanics are executable now and replaceable through stable boundaries; production claims stay gated by B01-B10.
+- **Evidence:** `adapters/open311`, situation map, `synthetic_mlop`, security CI, runbooks and `release/evidence-index.md`.
+- **Revisit when:** the first source, tile/geocoder infrastructure and release-signing owner are approved.
+
 ### D-XXX — Short title
 
 - **Date:** YYYY-MM-DD

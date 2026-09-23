@@ -10,12 +10,17 @@ readme = "README.md"
 requires-python = ">=3.10,<3.14"
 dependencies = [
   "alembic==1.16.5",
-  "fastapi==0.116.1",
+  "fastapi==0.141.1",
   "httpx==0.28.1",
   "jsonschema[format]==4.25.1",
   "openpyxl==3.1.5",
+  "opentelemetry-api==1.38.0",
+  "opentelemetry-exporter-otlp-proto-http==1.38.0",
+  "opentelemetry-instrumentation-fastapi==0.59b0",
+  "opentelemetry-sdk==1.38.0",
   "psycopg[binary,pool]==3.2.10",
   "pydantic-settings==2.10.1",
+  "pyjwt[crypto]==2.14.0",
   "python-dateutil==2.9.0.post0",
   "pyyaml==6.0.2",
   "reportlab==4.4.9",
@@ -46,13 +51,14 @@ packages = [
   "services/inference/src/pulse109_inference",
   "services/worker/src/pulse109_worker",
   "adapters/replay/src/pulse109_replay",
+  "adapters/open311/src/pulse109_open311",
   "adapters/sdk/src/pulse109_adapter",
 ]
 
 [tool.pytest.ini_options]
 addopts = "-ra --strict-config --strict-markers --import-mode=importlib"
-testpaths = ["services/core/tests", "services/inference/tests", "services/worker/tests", "adapters/replay/tests", "tests"]
-pythonpath = ["services/core/src", "services/inference/src", "services/worker/src", "adapters/replay/src", "adapters/sdk/src"]
+testpaths = ["services/core/tests", "services/inference/tests", "services/worker/tests", "adapters/replay/tests", "adapters/open311/tests", "tests"]
+pythonpath = ["services/core/src", "services/inference/src", "services/worker/src", "adapters/replay/src", "adapters/open311/src", "adapters/sdk/src"]
 markers = [
   "integration: requires local PostgreSQL services",
 ]
@@ -75,5 +81,5 @@ ignore = ["S101"]
 [tool.mypy]
 python_version = "3.10"
 strict = true
-mypy_path = ["services/core/src", "services/inference/src", "services/worker/src", "adapters/replay/src"]
-packages = ["pulse109", "pulse109_inference", "pulse109_worker", "pulse109_replay", "pulse109_adapter"]
+mypy_path = ["services/core/src", "services/inference/src", "services/worker/src", "adapters/replay/src", "adapters/open311/src", "adapters/sdk/src"]
+packages = ["pulse109", "pulse109_inference", "pulse109_worker", "pulse109_replay", "pulse109_open311", "pulse109_adapter"]

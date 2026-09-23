@@ -1,0 +1,13 @@
+{
+  "dataset_id": "pulse109-synthetic-m3-baseline",
+  "files": {
+    "evidently_drift_report.json": "8e24e507fda2bb8d3f4ccddec4c3a061258c14b0ba4912e62361e541d54dac12",
+    "label_studio_export.json": "cdb9268eab069f28222d0867245e63bb418e7ebd2198f69f87784166f46f8f8a",
+    "mlflow_registry_manifest.json": "4e54c746bc8a44685f7f11aeef9f874e5a0859bfa297118ee4eeacdee5ac0988",
+    "routing_selective_report.json": "1ed038f6448ea1626d8a648a7ed87de879afe8dd03fd1eeb71c41872147e9ee9"
+  },
+  "format": "pulse109-synthetic-mlops-evidence",
+  "format_version": "1.0.0",
+  "quality_claims_allowed": false,
+  "synthetic_only": true
+}

@@ -1,4 +1,4 @@
-.PHONY: bootstrap format lint typecheck test contract-test e2e build up down migrate dq-report model-eval retrieval-eval
+.PHONY: bootstrap format lint typecheck test contract-test e2e build up down migrate dq-report model-eval retrieval-eval mlops-eval load-test release-evidence
 
 bootstrap:
 	uv sync --all-groups --frozen
@@ -20,7 +20,7 @@ typecheck:
 	pnpm typecheck
 
 test:
-	uv run pytest services/core/tests services/inference/tests services/worker/tests adapters/replay/tests tests/architecture tests/integration tests/model tests/retrieval tests/resilience -q
+	uv run pytest services/core/tests services/inference/tests services/worker/tests adapters/replay/tests adapters/open311/tests tests/architecture tests/integration tests/load tests/model tests/retrieval tests/resilience tests/security -q
 
 contract-test:
 	uv run pytest tests/contract -q
@@ -49,3 +49,12 @@ model-eval:
 
 retrieval-eval:
 	uv run python -m ml.evaluation.m4_retrieval_eval --output ml/evaluation/synthetic_m4/retrieval_report.json
+
+mlops-eval:
+	uv run python -m ml.evaluation.synthetic_mlop --output-dir ml/evaluation/synthetic_mlop
+
+load-test:
+	uv run python -m tests.load.run_synthetic_load --requests 100 --concurrency 10 --output release/evidence/synthetic-load.json
+
+release-evidence:
+	uv run python scripts/release_evidence.py --output release/evidence-index.json

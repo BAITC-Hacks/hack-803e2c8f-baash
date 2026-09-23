@@ -150,8 +150,13 @@ class BaselineModel:
         return probabilities / probabilities.sum(axis=1, keepdims=True)
 
     def predict_top3(
-        self, records: list[dict[str, Any]], ood_threshold: float
+        self,
+        records: list[dict[str, Any]],
+        ood_threshold: float,
+        *,
+        auto_threshold: float | None = None,
     ) -> list[dict[str, Any]]:
+        auto = max(ood_threshold, auto_threshold if auto_threshold is not None else 0.8)
         probabilities = self.predict_proba(records)
         output = []
         for record, scores in zip(records, probabilities, strict=True):
@@ -163,12 +168,20 @@ class BaselineModel:
                 }
                 for index in order
             ]
+            confidence = candidates[0]["score"]
+            if confidence < ood_threshold:
+                abstention_band = "requires_review"
+            elif confidence >= auto:
+                abstention_band = "auto_suggest"
+            else:
+                abstention_band = "review_top3"
             output.append(
                 {
                     "record_id": record["record_id"],
                     "top3": candidates,
-                    "confidence": candidates[0]["score"],
-                    "ood_state": "ood" if candidates[0]["score"] < ood_threshold else "in_domain",
+                    "confidence": confidence,
+                    "ood_state": "ood" if confidence < ood_threshold else "in_domain",
+                    "abstention_band": abstention_band,
                 }
             )
         return output
@@ -221,6 +234,35 @@ def expected_calibration_error(bins: list[dict[str, Any]], total: int) -> float:
         )
         / max(total, 1)
     )
+
+
+def risk_coverage_curve(
+    confidences: list[float], correct: list[bool]
+) -> tuple[list[dict[str, float]], float]:
+    """Return selective-prediction risk by coverage and the AURC.
+
+    Cases are accepted from highest to lowest confidence. The zero-coverage
+    origin is included so the synthetic artifact can be plotted directly.
+    """
+
+    if len(confidences) != len(correct):
+        raise ValueError("confidence and correctness lengths must match")
+    if not confidences:
+        return ([{"coverage": 0.0, "risk": 0.0, "selected": 0.0}], 0.0)
+    ordered = sorted(zip(confidences, correct, strict=True), key=lambda item: -item[0])
+    points = [{"coverage": 0.0, "risk": 0.0, "selected": 0.0}]
+    errors = 0
+    for selected, (_, is_correct) in enumerate(ordered, 1):
+        errors += not is_correct
+        points.append(
+            {
+                "coverage": round(selected / len(ordered), 8),
+                "risk": round(errors / selected, 8),
+                "selected": float(selected),
+            }
+        )
+    aurc = sum(point["risk"] for point in points[1:]) / len(ordered)
+    return points, round(aurc, 8)
 
 
 def _slice_metrics(
@@ -288,9 +330,12 @@ def evaluate(
     label_field = manifest["label_field"]
     calibration_predictions = model.predict_proba(splits["calibration"])
     calibration_confidence = calibration_predictions.max(axis=1)
-    threshold = float(max(0.5, np.quantile(calibration_confidence, 0.1)))
+    review_threshold = float(max(0.5, np.quantile(calibration_confidence, 0.1)))
+    auto_threshold = float(max(review_threshold, np.quantile(calibration_confidence, 0.75)))
     test_records = splits["test"]
-    test_predictions = model.predict_top3(test_records, threshold)
+    test_predictions = model.predict_top3(
+        test_records, review_threshold, auto_threshold=auto_threshold
+    )
     test_probabilities = model.predict_proba(test_records)
     labels = [record[label_field] for record in test_records]
     top1 = sum(
@@ -301,6 +346,12 @@ def evaluate(
         label in {candidate["label"] for candidate in item["top3"]}
         for item, label in zip(test_predictions, labels, strict=True)
     )
+    correctness = [
+        item["top3"][0]["label"] == label
+        for item, label in zip(test_predictions, labels, strict=True)
+    ]
+    confidences = [float(item["confidence"]) for item in test_predictions]
+    risk_coverage, aurc = risk_coverage_curve(confidences, correctness)
     bins = reliability_bins(test_probabilities, labels, model.classifier.classes_)
     metrics = {
         "synthetic_only": True,
@@ -311,6 +362,8 @@ def evaluate(
         "top3_accuracy": top3 / len(test_records),
         "brier_score": _multiclass_brier(test_probabilities, labels, model.classifier.classes_),
         "ece": expected_calibration_error(bins, len(test_records)),
+        "risk_coverage_curve": risk_coverage,
+        "aurc": aurc,
         "reliability_bins": bins,
         "slices": {
             "language": _slice_metrics(test_records, test_predictions, "language", label_field),
@@ -319,12 +372,35 @@ def evaluate(
     }
     ood = {
         "synthetic_only": True,
-        "method": "calibration confidence tenth percentile with floor 0.5",
-        "threshold": threshold,
+        "method": "calibration confidence quantiles with review floor 0.5",
+        "threshold": review_threshold,
+        "abstention_policy": {
+            "auto_suggest": {
+                "confidence_gte": auto_threshold,
+                "ood_state": "in_domain",
+                "human_confirmation_required": True,
+            },
+            "review_top3": {
+                "confidence_gte": review_threshold,
+                "confidence_lt": auto_threshold,
+                "human_choice_required": True,
+            },
+            "requires_review": {
+                "confidence_lt": review_threshold,
+                "or_ood": True,
+                "human_choice_required": True,
+            },
+        },
+        "review_threshold": review_threshold,
+        "auto_threshold": auto_threshold,
         "calibration_count": len(splits["calibration"]),
         "test_count": len(test_records),
         "test_ood_count": sum(item["ood_state"] == "ood" for item in test_predictions),
         "test_in_domain_count": sum(item["ood_state"] == "in_domain" for item in test_predictions),
+        "abstention_band_counts": {
+            band: sum(item["abstention_band"] == band for item in test_predictions)
+            for band in ("auto_suggest", "review_top3", "requires_review")
+        },
     }
     return metrics, ood, test_predictions
 
@@ -372,11 +448,15 @@ This artifact is synthetic-only and is not evidence of real-world model quality.
 - Model: character TF-IDF (3-5 grams) plus linear logistic classifier
 - Calibration: deterministic temperature search on the calibration split
 - OOD: confidence threshold derived from calibration only
+- Selective prediction: confidence-sorted risk-coverage curve and AURC
+- Abstention: auto-suggest, top-3 review, or requires-review bands; human confirmation remains
+  mandatory
 - Post-decision leakage fields: rejected by the loader
 
 Reported values are fixture diagnostics only:
 top-1 `{metrics["top1_accuracy"]:.6f}`, top-3 `{metrics["top3_accuracy"]:.6f}`,
-Brier `{metrics["brier_score"]:.6f}`, ECE `{metrics["ece"]:.6f}`.
+Brier `{metrics["brier_score"]:.6f}`, ECE `{metrics["ece"]:.6f}`,
+AURC `{metrics["aurc"]:.6f}`.
 """
     (output_dir / "model_card.md").write_text(card, encoding="utf-8")
 

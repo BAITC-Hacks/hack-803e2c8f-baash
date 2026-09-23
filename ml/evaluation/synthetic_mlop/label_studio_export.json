@@ -1,0 +1,486 @@
+{
+  "dataset_id": "pulse109-synthetic-m3-baseline",
+  "format": "label-studio-tasks",
+  "format_version": "1.0.0",
+  "purpose": "operator feedback export fixture; not a production annotation set",
+  "synthetic_only": true,
+  "tasks": [
+    {
+      "annotations": [
+        {
+          "completed_by": {
+            "id": "synthetic-operator"
+          },
+          "result": [
+            {
+              "from_name": "topic",
+              "to_name": "text",
+              "type": "choices",
+              "value": {
+                "choices": [
+                  "water_supply"
+                ]
+              }
+            }
+          ],
+          "was_correction": false
+        }
+      ],
+      "data": {
+        "channel": "phone",
+        "language": "ru",
+        "record_id": "syn-019",
+        "region_id": "ALA",
+        "text": "\u0410\u0432\u0430\u0440\u0438\u044f \u043e\u0441\u0442\u0430\u0432\u0438\u043b\u0430 \u0434\u043e\u043c \u0431\u0435\u0437 \u0432\u043e\u0434\u044b"
+      },
+      "id": 1,
+      "meta": {
+        "abstention_band": "requires_review",
+        "ood_state": "ood",
+        "synthetic_only": true
+      },
+      "predictions": [
+        {
+          "model_version": "synthetic-linear-baseline-1.0.0",
+          "result": [
+            {
+              "from_name": "topic",
+              "to_name": "text",
+              "type": "choices",
+              "value": {
+                "choices": [
+                  "water_supply"
+                ]
+              }
+            }
+          ],
+          "score": 0.48940442
+        }
+      ]
+    },
+    {
+      "annotations": [
+        {
+          "completed_by": {
+            "id": "synthetic-operator"
+          },
+          "result": [
+            {
+              "from_name": "topic",
+              "to_name": "text",
+              "type": "choices",
+              "value": {
+                "choices": [
+                  "water_supply"
+                ]
+              }
+            }
+          ],
+          "was_correction": false
+        }
+      ],
+      "data": {
+        "channel": "web",
+        "language": "kk",
+        "record_id": "syn-020",
+        "region_id": "AST",
+        "text": "\u0421\u0443 \u0436\u043e\u049b, \u049b\u04b1\u0431\u044b\u0440\u0434\u044b \u0442\u0435\u043a\u0441\u0435\u0440\u0443 \u043a\u0435\u0440\u0435\u043a"
+      },
+      "id": 2,
+      "meta": {
+        "abstention_band": "review_top3",
+        "ood_state": "in_domain",
+        "synthetic_only": true
+      },
+      "predictions": [
+        {
+          "model_version": "synthetic-linear-baseline-1.0.0",
+          "result": [
+            {
+              "from_name": "topic",
+              "to_name": "text",
+              "type": "choices",
+              "value": {
+                "choices": [
+                  "water_supply"
+                ]
+              }
+            }
+          ],
+          "score": 0.53429118
+        }
+      ]
+    },
+    {
+      "annotations": [
+        {
+          "completed_by": {
+            "id": "synthetic-operator"
+          },
+          "result": [
+            {
+              "from_name": "topic",
+              "to_name": "text",
+              "type": "choices",
+              "value": {
+                "choices": [
+                  "road_damage"
+                ]
+              }
+            }
+          ],
+          "was_correction": false
+        }
+      ],
+      "data": {
+        "channel": "mobile",
+        "language": "ru",
+        "record_id": "syn-021",
+        "region_id": "KAR",
+        "text": "\u041d\u0430 \u0443\u043b\u0438\u0446\u0435 \u0440\u0430\u0437\u0440\u0443\u0448\u0435\u043d \u0443\u0447\u0430\u0441\u0442\u043e\u043a \u0434\u043e\u0440\u043e\u0433\u0438"
+      },
+      "id": 3,
+      "meta": {
+        "abstention_band": "review_top3",
+        "ood_state": "in_domain",
+        "synthetic_only": true
+      },
+      "predictions": [
+        {
+          "model_version": "synthetic-linear-baseline-1.0.0",
+          "result": [
+            {
+              "from_name": "topic",
+              "to_name": "text",
+              "type": "choices",
+              "value": {
+                "choices": [
+                  "road_damage"
+                ]
+              }
+            }
+          ],
+          "score": 0.63380453
+        }
+      ]
+    },
+    {
+      "annotations": [
+        {
+          "completed_by": {
+            "id": "synthetic-operator"
+          },
+          "result": [
+            {
+              "from_name": "topic",
+              "to_name": "text",
+              "type": "choices",
+              "value": {
+                "choices": [
+                  "road_damage"
+                ]
+              }
+            }
+          ],
+          "was_correction": true
+        }
+      ],
+      "data": {
+        "channel": "telegram",
+        "language": "kk",
+        "record_id": "syn-022",
+        "region_id": "ALA",
+        "text": "\u0416\u043e\u043b\u0434\u044b\u04a3 \u0431\u0435\u0442\u0456 \u043e\u0439\u044b\u043b\u044b\u043f \u043a\u0435\u0442\u043a\u0435\u043d"
+      },
+      "id": 4,
+      "meta": {
+        "abstention_band": "review_top3",
+        "ood_state": "in_domain",
+        "synthetic_only": true
+      },
+      "predictions": [
+        {
+          "model_version": "synthetic-linear-baseline-1.0.0",
+          "result": [
+            {
+              "from_name": "topic",
+              "to_name": "text",
+              "type": "choices",
+              "value": {
+                "choices": [
+                  "waste_collection"
+                ]
+              }
+            }
+          ],
+          "score": 0.50284503
+        }
+      ]
+    },
+    {
+      "annotations": [
+        {
+          "completed_by": {
+            "id": "synthetic-operator"
+          },
+          "result": [
+            {
+              "from_name": "topic",
+              "to_name": "text",
+              "type": "choices",
+              "value": {
+                "choices": [
+                  "waste_collection"
+                ]
+              }
+            }
+          ],
+          "was_correction": false
+        }
+      ],
+      "data": {
+        "channel": "phone",
+        "language": "ru",
+        "record_id": "syn-023",
+        "region_id": "AST",
+        "text": "\u0412\u044b\u0432\u043e\u0437 \u043e\u0442\u0445\u043e\u0434\u043e\u0432 \u0437\u0430\u0434\u0435\u0440\u0436\u0438\u0432\u0430\u0435\u0442\u0441\u044f \u0432\u0442\u043e\u0440\u043e\u0439 \u0434\u0435\u043d\u044c"
+      },
+      "id": 5,
+      "meta": {
+        "abstention_band": "requires_review",
+        "ood_state": "ood",
+        "synthetic_only": true
+      },
+      "predictions": [
+        {
+          "model_version": "synthetic-linear-baseline-1.0.0",
+          "result": [
+            {
+              "from_name": "topic",
+              "to_name": "text",
+              "type": "choices",
+              "value": {
+                "choices": [
+                  "waste_collection"
+                ]
+              }
+            }
+          ],
+          "score": 0.39014073
+        }
+      ]
+    },
+    {
+      "annotations": [
+        {
+          "completed_by": {
+            "id": "synthetic-operator"
+          },
+          "result": [
+            {
+              "from_name": "topic",
+              "to_name": "text",
+              "type": "choices",
+              "value": {
+                "choices": [
+                  "waste_collection"
+                ]
+              }
+            }
+          ],
+          "was_correction": false
+        }
+      ],
+      "data": {
+        "channel": "web",
+        "language": "kk",
+        "record_id": "syn-024",
+        "region_id": "KAR",
+        "text": "\u049a\u0430\u043b\u0434\u044b\u049b\u0442\u0430\u0440\u0434\u044b \u0448\u044b\u0493\u0430\u0440\u0443 \u043a\u0435\u0440\u0435\u043a, \u0436\u04d9\u0448\u0456\u043a \u0442\u043e\u043b\u044b\u043f \u0442\u04b1\u0440"
+      },
+      "id": 6,
+      "meta": {
+        "abstention_band": "requires_review",
+        "ood_state": "ood",
+        "synthetic_only": true
+      },
+      "predictions": [
+        {
+          "model_version": "synthetic-linear-baseline-1.0.0",
+          "result": [
+            {
+              "from_name": "topic",
+              "to_name": "text",
+              "type": "choices",
+              "value": {
+                "choices": [
+                  "waste_collection"
+                ]
+              }
+            }
+          ],
+          "score": 0.41455616
+        }
+      ]
+    },
+    {
+      "annotations": [
+        {
+          "completed_by": {
+            "id": "synthetic-operator"
+          },
+          "result": [
+            {
+              "from_name": "topic",
+              "to_name": "text",
+              "type": "choices",
+              "value": {
+                "choices": [
+                  "water_supply"
+                ]
+              }
+            }
+          ],
+          "was_correction": false
+        }
+      ],
+      "data": {
+        "channel": "email",
+        "language": "mixed",
+        "record_id": "syn-025",
+        "region_id": "KAR",
+        "text": "\u0412\u043e\u0434\u0430 \u0441\u043d\u043e\u0432\u0430 \u043f\u0440\u043e\u043f\u0430\u043b\u0430 \u0432 \u043a\u0432\u0430\u0440\u0442\u0438\u0440\u0435"
+      },
+      "id": 7,
+      "meta": {
+        "abstention_band": "review_top3",
+        "ood_state": "in_domain",
+        "synthetic_only": true
+      },
+      "predictions": [
+        {
+          "model_version": "synthetic-linear-baseline-1.0.0",
+          "result": [
+            {
+              "from_name": "topic",
+              "to_name": "text",
+              "type": "choices",
+              "value": {
+                "choices": [
+                  "water_supply"
+                ]
+              }
+            }
+          ],
+          "score": 0.50330706
+        }
+      ]
+    },
+    {
+      "annotations": [
+        {
+          "completed_by": {
+            "id": "synthetic-operator"
+          },
+          "result": [
+            {
+              "from_name": "topic",
+              "to_name": "text",
+              "type": "choices",
+              "value": {
+                "choices": [
+                  "road_damage"
+                ]
+              }
+            }
+          ],
+          "was_correction": false
+        }
+      ],
+      "data": {
+        "channel": "mobile",
+        "language": "kk",
+        "record_id": "syn-026",
+        "region_id": "AST",
+        "text": "\u0416\u043e\u043b \u0436\u04e9\u043d\u0434\u0435\u0443\u0434\u0456 \u0441\u04b1\u0440\u0430\u0439\u043c\u044b\u043d, \u04af\u043b\u043a\u0435\u043d \u0448\u04b1\u04a3\u049b\u044b\u0440 \u0431\u0430\u0440"
+      },
+      "id": 8,
+      "meta": {
+        "abstention_band": "auto_suggest",
+        "ood_state": "in_domain",
+        "synthetic_only": true
+      },
+      "predictions": [
+        {
+          "model_version": "synthetic-linear-baseline-1.0.0",
+          "result": [
+            {
+              "from_name": "topic",
+              "to_name": "text",
+              "type": "choices",
+              "value": {
+                "choices": [
+                  "road_damage"
+                ]
+              }
+            }
+          ],
+          "score": 0.83215371
+        }
+      ]
+    },
+    {
+      "annotations": [
+        {
+          "completed_by": {
+            "id": "synthetic-operator"
+          },
+          "result": [
+            {
+              "from_name": "topic",
+              "to_name": "text",
+              "type": "choices",
+              "value": {
+                "choices": [
+                  "waste_collection"
+                ]
+              }
+            }
+          ],
+          "was_correction": false
+        }
+      ],
+      "data": {
+        "channel": "web",
+        "language": "ru",
+        "record_id": "syn-027",
+        "region_id": "ALA",
+        "text": "\u041c\u0443\u0441\u043e\u0440\u043d\u044b\u0435 \u0431\u0430\u043a\u0438 \u0437\u0430\u043f\u043e\u043b\u043d\u0435\u043d\u044b \u0432\u043e\u0437\u043b\u0435 \u0434\u043e\u043c\u0430"
+      },
+      "id": 9,
+      "meta": {
+        "abstention_band": "requires_review",
+        "ood_state": "ood",
+        "synthetic_only": true
+      },
+      "predictions": [
+        {
+          "model_version": "synthetic-linear-baseline-1.0.0",
+          "result": [
+            {
+              "from_name": "topic",
+              "to_name": "text",
+              "type": "choices",
+              "value": {
+                "choices": [
+                  "waste_collection"
+                ]
+              }
+            }
+          ],
+          "score": 0.46389367
+        }
+      ]
+    }
+  ]
+}

@@ -14,6 +14,7 @@ def test_router_exposes_create_and_region_scope():
         "source_request_id": "REQ-R",
         "region_id": "ALA",
         "received_at": datetime(2026, 9, 12, tzinfo=timezone.utc).isoformat(),
+        "received_at_quality": "exact",
         "channel": "web",
         "language": "ru",
     }
@@ -37,6 +38,7 @@ def test_router_classification_is_versioned_idempotent_and_human_controlled():
         "source_request_id": "REQ-CLASSIFY",
         "region_id": "ALA",
         "received_at": datetime(2026, 9, 12, tzinfo=timezone.utc).isoformat(),
+        "received_at_quality": "exact",
         "channel": "web",
         "language": "ru",
         "text": "Pothole report from test@example.invalid or +7 700 123 45 67",

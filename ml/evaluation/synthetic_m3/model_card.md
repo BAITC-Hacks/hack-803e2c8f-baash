@@ -9,8 +9,12 @@ This artifact is synthetic-only and is not evidence of real-world model quality.
 - Model: character TF-IDF (3-5 grams) plus linear logistic classifier
 - Calibration: deterministic temperature search on the calibration split
 - OOD: confidence threshold derived from calibration only
+- Selective prediction: confidence-sorted risk-coverage curve and AURC
+- Abstention: auto-suggest, top-3 review, or requires-review bands; human confirmation remains
+  mandatory
 - Post-decision leakage fields: rejected by the loader
 
 Reported values are fixture diagnostics only:
 top-1 `0.888889`, top-3 `1.000000`,
-Brier `0.402141`, ECE `0.359512`.
+Brier `0.402141`, ECE `0.359512`,
+AURC `0.082848`.

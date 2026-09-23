@@ -6,6 +6,8 @@ from typing import Annotated, Literal
 from fastapi import APIRouter, Header, HTTPException, Query
 from pydantic import BaseModel, ConfigDict, Field
 
+from pulse109.security import AuthenticatedActor
+
 from .alerts import AlertStore
 from .models import Alert, AnalyticsQuery, AnalyticsResult, MetricFilter
 from .service import AnalyticsError, AnalyticsService
@@ -49,8 +51,11 @@ def create_analytics_router(service: AnalyticsService, alerts: AlertStore) -> AP
     @router.post("/analytics/query", response_model=AnalyticsResult)
     def query_metrics(
         command: AnalyticsQueryRequest,
+        identity: AuthenticatedActor,
         region_id: str = Header(alias="X-Region-Id", pattern=r"^(ALL|[A-Z0-9_-]{2,32})$"),
     ) -> AnalyticsResult:
+        identity.require_any_role("operator", "supervisor", "analyst", "auditor", "admin")
+        identity.require_region(region_id)
         try:
             return service.query(command.internal(), actor_region=region_id)
         except AnalyticsError as error:
@@ -61,6 +66,7 @@ def create_analytics_router(service: AnalyticsService, alerts: AlertStore) -> AP
 
     @router.get("/alerts", response_model=list[Alert])
     def list_alerts(
+        identity: AuthenticatedActor,
         region_id: str = Header(alias="X-Region-Id", pattern=r"^(ALL|[A-Z0-9_-]{2,32})$"),
         alert_status: Annotated[
             Literal["new", "acknowledged", "resolved", "dismissed"] | None,
@@ -69,6 +75,8 @@ def create_analytics_router(service: AnalyticsService, alerts: AlertStore) -> AP
         from_: Annotated[datetime | None, Query(alias="from")] = None,
         to: Annotated[datetime | None, Query()] = None,
     ) -> list[Alert]:
+        identity.require_any_role("operator", "supervisor", "analyst", "auditor", "admin")
+        identity.require_region(region_id)
         values = list(alerts.alerts.values())
         return [
             item

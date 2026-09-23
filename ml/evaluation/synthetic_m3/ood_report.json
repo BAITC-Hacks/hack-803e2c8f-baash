@@ -1,6 +1,30 @@
 {
+  "abstention_band_counts": {
+    "auto_suggest": 1,
+    "requires_review": 4,
+    "review_top3": 4
+  },
+  "abstention_policy": {
+    "auto_suggest": {
+      "confidence_gte": 0.6575001416303361,
+      "human_confirmation_required": true,
+      "ood_state": "in_domain"
+    },
+    "requires_review": {
+      "confidence_lt": 0.5,
+      "human_choice_required": true,
+      "or_ood": true
+    },
+    "review_top3": {
+      "confidence_gte": 0.5,
+      "confidence_lt": 0.6575001416303361,
+      "human_choice_required": true
+    }
+  },
+  "auto_threshold": 0.6575001416303361,
   "calibration_count": 9,
-  "method": "calibration confidence tenth percentile with floor 0.5",
+  "method": "calibration confidence quantiles with review floor 0.5",
+  "review_threshold": 0.5,
   "synthetic_only": true,
   "test_count": 9,
   "test_in_domain_count": 5,

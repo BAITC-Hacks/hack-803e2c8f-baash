@@ -166,7 +166,7 @@
           "if": {
             "properties": {
               "received_at_quality": {
-                "const": "missing"
+                "enum": ["missing", "date_only"]
               }
             }
           },

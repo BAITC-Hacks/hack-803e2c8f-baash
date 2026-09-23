@@ -11,6 +11,7 @@ from pydantic import BaseModel, ConfigDict
 
 from pulse109.analytics.router import AnalyticsQueryRequest
 from pulse109.analytics.service import AnalyticsError, AnalyticsService
+from pulse109.security import AuthenticatedActor
 
 from .models import ReportArtifact, ReportJob, ReportRequest
 from .renderers import artifact_sha256, render_pdf, render_xlsx
@@ -32,6 +33,7 @@ class ReportRuntime:
         self.jobs = ReportJobStore()
         self.artifacts: dict[UUID, ReportArtifact] = {}
         self.contents: dict[UUID, bytes] = {}
+        self.access: dict[UUID, tuple[str, str]] = {}
 
     def create(
         self,
@@ -52,6 +54,7 @@ class ReportRuntime:
             actor_token=actor,
         )
         job = self.jobs.enqueue(request, idempotency_key=idempotency_key)
+        self.access[job.job_id] = (region_id, actor)
         if job.status == "succeeded":
             return job
         result = self.analytics.query(request.query, actor_region=region_id)
@@ -99,17 +102,20 @@ def create_report_router(runtime: ReportRuntime) -> APIRouter:
     @router.post("/reports", response_model=ReportJob, status_code=status.HTTP_202_ACCEPTED)
     def create_report(
         command: PublicReportRequest,
+        identity: AuthenticatedActor,
         idempotency_key: str = Header(alias="Idempotency-Key", min_length=16, max_length=128),
         region_id: str = Header(alias="X-Region-Id", pattern=r"^(ALL|[A-Z0-9_-]{2,32})$"),
-        actor: str = Header(default="local-analyst", alias="X-Actor-Token"),
         purpose: str = Header(default="local-synthetic-review", alias="X-Export-Purpose"),
     ) -> ReportJob:
         try:
+            identity.require_any_role("analyst", "supervisor", "auditor", "admin")
+            identity.require_region(region_id)
+            identity.require_purpose(purpose)
             return runtime.create(
                 command,
                 idempotency_key=idempotency_key,
                 region_id=region_id,
-                actor=actor,
+                actor=identity.actor_id,
                 purpose=purpose,
             )
         except ReportIdempotencyConflict as error:
@@ -126,12 +132,38 @@ def create_report_router(runtime: ReportRuntime) -> APIRouter:
             ) from error
 
     @router.get("/jobs/{job_id}", response_model=ReportJob, tags=["Operations"])
-    def get_job(job_id: UUID) -> ReportJob:
+    def get_job(
+        job_id: UUID,
+        identity: AuthenticatedActor,
+        region_id: str = Header(alias="X-Region-Id", pattern=r"^(ALL|[A-Z0-9_-]{2,32})$"),
+    ) -> ReportJob:
+        identity.require_any_role("analyst", "supervisor", "auditor", "admin")
+        identity.require_region(region_id)
         job = runtime.jobs.jobs.get(job_id)
         if job is None:
             raise HTTPException(
                 status_code=404,
                 detail={"code": "job_not_found", "message": "Report job not found."},
+            )
+        owner_region, owner_actor = runtime.access[job_id]
+        identity.require_region(owner_region)
+        if region_id != owner_region and region_id != "ALL":
+            raise HTTPException(
+                status_code=403,
+                detail={
+                    "code": "region_scope_denied",
+                    "message": "The report belongs to a different region scope.",
+                },
+            )
+        if identity.actor_id != owner_actor and not identity.roles.intersection(
+            {"supervisor", "auditor", "admin"}
+        ):
+            raise HTTPException(
+                status_code=403,
+                detail={
+                    "code": "object_access_denied",
+                    "message": "The report job belongs to a different actor.",
+                },
             )
         return job
 

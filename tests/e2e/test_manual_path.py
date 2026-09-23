@@ -16,6 +16,7 @@ def test_manual_routing_remains_available_without_ml_or_adapter() -> None:
         "source_request_id": f"SYN-{nonce}",
         "region_id": "ALA",
         "received_at": "2026-09-12T00:00:00Z",
+        "received_at_quality": "exact",
         "channel": "web",
         "language": "mixed",
         "text": "Synthetic road request without personal data.",

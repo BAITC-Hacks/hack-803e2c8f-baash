@@ -18,6 +18,8 @@ def test_m4_to_m6_tables_and_indexes_are_installed() -> None:
         "incidents.duplicate_candidate",
         "incidents.incident",
         "incidents.membership_decision",
+        "incidents.incident_candidate_member",
+        "incidents.incident_event",
         "integration.checkpoint",
         "integration.dead_letter",
         "integration.delivery_attempt",
@@ -26,13 +28,16 @@ def test_m4_to_m6_tables_and_indexes_are_installed() -> None:
         "reports.report_job",
         "triage.retrieval_document",
         "triage.retrieval_run",
+        "catalog.policy_version",
+        "catalog.policy_review",
     }
     with psycopg.connect(url) as connection, connection.cursor() as cursor:
         cursor.execute(
             """
             SELECT schemaname || '.' || tablename
             FROM pg_tables
-            WHERE schemaname IN ('analytics', 'incidents', 'integration', 'reports', 'triage')
+            WHERE schemaname IN
+                ('analytics', 'catalog', 'incidents', 'integration', 'reports', 'triage')
             """
         )
         installed = {str(row[0]) for row in cursor.fetchall()}
@@ -47,6 +52,15 @@ def test_m4_to_m6_tables_and_indexes_are_installed() -> None:
         indexes = {str(row[0]) for row in cursor.fetchall()}
         assert "retrieval_document_fts_idx" in indexes
         assert "retrieval_document_embedding_idx" in indexes
+        cursor.execute(
+            """
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_schema = 'integration' AND table_name = 'outbox'
+            """
+        )
+        outbox_columns = {str(row[0]) for row in cursor.fetchall()}
+        assert {"processing_started_at", "worker_id", "external_id"} <= outbox_columns
 
 
 @pytest.mark.integration

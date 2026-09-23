@@ -19,6 +19,33 @@ tags:
   - name: Catalog
   - name: Operations
 paths:
+  /v1/appeals/preflight:
+    post:
+      tags: [Requests, Incidents]
+      summary: Suggest possible duplicates before an appeal is submitted
+      operationId: preflightAppeal
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/RegionId'
+        - $ref: '#/components/parameters/CorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PreflightRequest'
+      responses:
+        '200':
+          description: Advisory duplicate candidates; no appeal is stored or merged
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PreflightResult'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
   /v1/requests:
     post:
       tags: [Requests]
@@ -283,14 +310,17 @@ paths:
           application/json:
             schema:
               type: object
-              required: [request_id, decision, reason_code]
+              required: [request_id, incident_version, decision, reason_code]
               properties:
                 request_id:
                   type: string
                   format: uuid
+                incident_version:
+                  type: integer
+                  minimum: 1
                 decision:
                   type: string
-                  enum: [confirm, reject]
+                  enum: [confirm, reject, remove]
                 reason_code:
                   type: string
                 note:
@@ -319,8 +349,11 @@ paths:
           application/json:
             schema:
               type: object
-              required: [decision, reason_code]
+              required: [incident_version, decision, reason_code]
               properties:
+                incident_version:
+                  type: integer
+                  minimum: 1
                 decision:
                   type: string
                   enum: [confirm, reject]
@@ -430,6 +463,7 @@ paths:
           schema:
             type: string
             format: uuid
+        - $ref: '#/components/parameters/RegionId'
       responses:
         '200':
           description: Current job state
@@ -463,6 +497,35 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/ServiceDefinition'
+  /v1/catalog/policies:
+    get:
+      tags: [Catalog]
+      summary: Get effective versioned routing, SLA, and confidence policies
+      operationId: listPolicies
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/RegionId'
+        - name: effective_at
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: include_drafts
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Effective or explicitly authorized draft policies
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PolicyDefinition'
   /v1/health/live:
     get:
       tags: [Operations]
@@ -544,6 +607,12 @@ components:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/Problem'
+    Forbidden:
+      description: The verified actor lacks the required region or purpose scope
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
     NotFound:
       description: Resource not found or not visible to this principal
       content:
@@ -575,6 +644,7 @@ components:
         - source_request_id
         - region_id
         - received_at
+        - received_at_quality
         - channel
       properties:
         source_system:
@@ -586,8 +656,13 @@ components:
         region_id:
           type: string
         received_at:
-          type: string
+          type: [string, 'null']
           format: date-time
+        received_at_quality:
+          type: string
+          enum: [exact, source_tz_assumed, date_only, missing]
+        source_timezone:
+          type: [string, 'null']
         channel:
           type: string
           enum: [phone, web, mobile, telegram, whatsapp, email, walk_in, import, other]
@@ -615,6 +690,50 @@ components:
         consent_or_legal_basis:
           type: string
           maxLength: 128
+      allOf:
+        - if:
+            required: [received_at_quality]
+            properties:
+              received_at_quality:
+                const: missing
+          then:
+            properties:
+              received_at:
+                type: 'null'
+        - if:
+            required: [received_at_quality]
+            properties:
+              received_at_quality:
+                const: date_only
+          then:
+            properties:
+              received_at:
+                type: 'null'
+        - if:
+            required: [received_at_quality]
+            properties:
+              received_at_quality:
+                const: exact
+          then:
+            required: [received_at]
+            properties:
+              received_at:
+                type: string
+                format: date-time
+        - if:
+            required: [received_at_quality]
+            properties:
+              received_at_quality:
+                const: source_tz_assumed
+          then:
+            required: [received_at, source_timezone]
+            properties:
+              received_at:
+                type: string
+                format: date-time
+              source_timezone:
+                type: string
+                minLength: 1
     LocationInput:
       type: object
       additionalProperties: false
@@ -811,6 +930,8 @@ components:
     AssignmentCommand:
       type: object
       additionalProperties: false
+      dependentRequired:
+        expected_due_at: [policy_version]
       required: [request_version, service_id, reason_code]
       properties:
         request_version:
@@ -829,7 +950,7 @@ components:
     StatusEventInput:
       type: object
       additionalProperties: false
-      required: [source_event_id, status, occurred_at, source_system]
+      required: [source_event_id, status, occurred_at, occurred_at_quality, source_system]
       properties:
         source_event_id:
           type: string
@@ -838,8 +959,13 @@ components:
           type: string
           enum: [new, triage, assigned, accepted, in_progress, waiting, resolved, closed, reopened, cancelled]
         occurred_at:
-          type: string
+          type: [string, 'null']
           format: date-time
+        occurred_at_quality:
+          type: string
+          enum: [exact, source_tz_assumed, date_only, missing]
+        source_timezone:
+          type: [string, 'null']
         observed_at:
           type: string
           format: date-time
@@ -851,6 +977,41 @@ components:
           type: array
           items:
             type: string
+      allOf:
+        - if:
+            required: [occurred_at_quality]
+            properties:
+              occurred_at_quality:
+                const: missing
+          then:
+            properties:
+              occurred_at:
+                type: 'null'
+        - if:
+            required: [occurred_at_quality]
+            properties:
+              occurred_at_quality:
+                const: exact
+          then:
+            required: [occurred_at]
+            properties:
+              occurred_at:
+                type: string
+                format: date-time
+        - if:
+            required: [occurred_at_quality]
+            properties:
+              occurred_at_quality:
+                const: source_tz_assumed
+          then:
+            required: [occurred_at, source_timezone]
+            properties:
+              occurred_at:
+                type: string
+                format: date-time
+              source_timezone:
+                type: string
+                minLength: 1
     LifecycleEvent:
       type: object
       required: [event_id, event_type, occurred_at, observed_at, actor_type]
@@ -923,6 +1084,65 @@ components:
           type: [number, 'null']
         needs_human_confirmation:
           const: true
+    PreflightRequest:
+      type: object
+      additionalProperties: false
+      required: [region_id, service_id, topic_id, text]
+      properties:
+        region_id:
+          type: string
+          pattern: '^[A-Z0-9_-]{2,32}$'
+        service_id:
+          type: string
+          minLength: 1
+        topic_id:
+          type: string
+          minLength: 1
+        text:
+          type: string
+          minLength: 1
+          maxLength: 20000
+        occurred_at:
+          type: [string, 'null']
+          format: date-time
+        occurred_at_quality:
+          type: string
+          enum: [exact, source_tz_assumed, date_only, missing]
+          default: missing
+        latitude:
+          type: [number, 'null']
+          minimum: -90
+          maximum: 90
+        longitude:
+          type: [number, 'null']
+          minimum: -180
+          maximum: 180
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 10
+          default: 5
+    PreflightResult:
+      type: object
+      additionalProperties: false
+      required:
+        [candidates, evaluated_factors, needs_human_confirmation, automatic_merge, synthetic_only]
+      properties:
+        candidates:
+          type: array
+          items:
+            $ref: '#/components/schemas/DuplicateCandidate'
+        evaluated_factors:
+          type: array
+          items:
+            type: string
+            enum: [category, distance, time, lexical, semantic]
+        needs_human_confirmation:
+          const: true
+        automatic_merge:
+          const: false
+        synthetic_only:
+          type: boolean
     CreateIncident:
       type: object
       additionalProperties: false
@@ -990,7 +1210,7 @@ components:
           format: uuid
         decision:
           type: string
-          enum: [confirm, reject]
+          enum: [confirm, reject, remove]
         decided_at:
           type: string
           format: date-time
@@ -1188,6 +1408,37 @@ components:
           items:
             type: string
         active:
+          type: boolean
+    PolicyDefinition:
+      type: object
+      additionalProperties: false
+      required:
+        [policy_type, region_id, version, state, parameters, synthetic_only]
+      properties:
+        policy_type:
+          type: string
+          enum: [routing, sla, confidence]
+        region_id:
+          type: string
+        version:
+          type: string
+        state:
+          type: string
+          enum: [draft, pending_approval, approved, retired]
+        effective_from:
+          type: [string, 'null']
+          format: date-time
+        effective_to:
+          type: [string, 'null']
+          format: date-time
+        parameters:
+          type: object
+          additionalProperties: true
+        approval_ref:
+          type: [string, 'null']
+        rollback_version:
+          type: [string, 'null']
+        synthetic_only:
           type: boolean
     Problem:
       type: object

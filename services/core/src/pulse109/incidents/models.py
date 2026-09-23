@@ -47,7 +47,8 @@ class MembershipCommand(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     request_id: UUID
-    decision: Literal["confirm", "reject"]
+    incident_version: int = Field(ge=1)
+    decision: Literal["confirm", "reject", "remove"]
     reason_code: str = Field(min_length=1, max_length=128)
     note: str | None = Field(default=None, max_length=1000)
     evidence_refs: list[str] = Field(default_factory=list, max_length=20)
@@ -56,13 +57,14 @@ class MembershipCommand(BaseModel):
 class IncidentMember(BaseModel):
     incident_id: UUID
     request_id: UUID
-    decision: Literal["confirm", "reject"]
+    decision: Literal["confirm", "reject", "remove"]
     decided_at: datetime
 
 
 class IncidentDecision(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+    incident_version: int = Field(ge=1)
     decision: Literal["confirm", "reject"]
     reason_code: str = Field(min_length=1, max_length=128)
     note: str | None = Field(default=None, max_length=1000)

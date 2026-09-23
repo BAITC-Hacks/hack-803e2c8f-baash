@@ -8,8 +8,6 @@ from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID, uuid4
 
-from pulse109.manual_path.repository import InMemoryManualRepository
-
 from .models import CreateIncident, Incident, IncidentDecision, IncidentMember, MembershipCommand
 from .repository import IncidentState, InMemoryIncidentRepository
 
@@ -33,10 +31,19 @@ class IncidentService:
     def __init__(
         self,
         repository: InMemoryIncidentRepository,
-        appeal_repository: InMemoryManualRepository,
+        appeal_repository: Any,
     ) -> None:
         self.repository = repository
         self.appeal_repository = appeal_repository
+
+    def _appeal_region(self, request_id: UUID) -> str | None:
+        """Read only the appeal scope through either repository implementation."""
+        lookup = getattr(self.appeal_repository, "get_appeal_region", None)
+        if lookup is not None:
+            region = lookup(request_id)
+            return str(region) if region is not None else None
+        record = self.appeal_repository.state.appeals.get(request_id)
+        return str(record["region_id"]) if record is not None else None
 
     @staticmethod
     def _scope(actual: str, requested: str) -> None:
@@ -103,14 +110,13 @@ class IncidentService:
         correlation_id: str,
     ) -> tuple[Incident, bool]:
         self._scope(command.region_id, region_id)
-        appeal_state = self.appeal_repository.state
         for request_id in command.member_request_ids:
-            appeal = appeal_state.appeals.get(request_id)
-            if appeal is None:
+            appeal_region = self._appeal_region(request_id)
+            if appeal_region is None:
                 raise IncidentError(
                     "member_not_found", "A proposed member appeal was not found.", 422
                 )
-            self._scope(str(appeal["region_id"]), region_id)
+            self._scope(appeal_region, region_id)
         request_hash = _hash(command.model_dump(mode="json"))
         key = (f"create:{region_id}", idempotency_key)
         with self.repository.transaction() as state:
@@ -168,12 +174,23 @@ class IncidentService:
                 if prior[0] != request_hash:
                     raise IncidentError("idempotency_conflict", "Idempotency key body differs.")
                 return IncidentMember.model_validate(prior[1])
+            if command.incident_version != incident["version"]:
+                raise IncidentError("stale_version", "The incident changed during review.")
             if command.request_id not in state.proposed_members.get(incident_id, set()):
                 raise IncidentError("member_not_proposed", "Appeal is not a proposed member.", 422)
-            appeal = self.appeal_repository.state.appeals.get(command.request_id)
-            if appeal is None:
+            prior_decisions = state.member_decisions.get((incident_id, command.request_id), [])
+            if command.decision == "remove" and (
+                not prior_decisions or prior_decisions[-1]["decision"] != "confirm"
+            ):
+                raise IncidentError(
+                    "member_not_confirmed",
+                    "Only a currently confirmed member can be removed.",
+                    422,
+                )
+            appeal_region = self._appeal_region(command.request_id)
+            if appeal_region is None:
                 raise IncidentError("member_not_found", "Appeal not found.", 422)
-            self._scope(str(appeal["region_id"]), region_id)
+            self._scope(appeal_region, region_id)
             decided_at = _now()
             state.member_decisions.setdefault((incident_id, command.request_id), []).append(
                 {
@@ -183,11 +200,11 @@ class IncidentService:
                     "incident_version": incident["version"],
                 }
             )
-            event_type = (
-                "incident.member.added.v1"
-                if command.decision == "confirm"
-                else "incident.member.rejected.v1"
-            )
+            event_type = {
+                "confirm": "incident.member.added.v1",
+                "reject": "incident.member.rejected.v1",
+                "remove": "incident.member.removed.v1",
+            }[command.decision]
             self._event(
                 state,
                 event_type,
@@ -229,6 +246,8 @@ class IncidentService:
                 if prior[0] != request_hash:
                     raise IncidentError("idempotency_conflict", "Idempotency key body differs.")
                 return Incident.model_validate(prior[1])
+            if command.incident_version != incident["version"]:
+                raise IncidentError("stale_version", "The incident changed during review.")
             if incident["state"] != "proposed":
                 raise IncidentError(
                     "invalid_incident_state", "Only proposed incidents can be reviewed."

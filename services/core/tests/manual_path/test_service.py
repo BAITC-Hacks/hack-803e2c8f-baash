@@ -13,6 +13,7 @@ def create_command(source_id="REQ-1", region="ALA"):
         source_request_id=source_id,
         region_id=region,
         received_at=datetime(2026, 9, 12, tzinfo=timezone.utc),
+        received_at_quality="exact",
         channel="web",
         language="kk",
     )
@@ -155,6 +156,7 @@ def test_status_and_assignment_are_idempotent_and_pending(service):
         source_event_id="src-1",
         status="in_progress",
         occurred_at=datetime(2026, 9, 12, tzinfo=timezone.utc),
+        occurred_at_quality="exact",
         source_system="synthetic-crm",
     )
     event = service.status(
@@ -184,3 +186,25 @@ def test_status_and_assignment_are_idempotent_and_pending(service):
     )
     assert receipt.status == "queued"
     assert service.detail(appeal.request_id, region_id="ALA").synchronization is not None
+
+
+def test_status_without_business_time_remains_explicitly_missing(service):
+    appeal, _ = service.create(
+        create_command(), idempotency_key="create-key-000007", region_id="ALA"
+    )
+    event = service.status(
+        appeal.request_id,
+        StatusEventInput(
+            source_event_id="src-missing-time",
+            status="in_progress",
+            occurred_at=None,
+            source_system="synthetic-crm",
+            occurred_at_quality="missing",
+        ),
+        idempotency_key="status-key-missing-time",
+        region_id="ALA",
+        actor="operator",
+    )
+
+    assert event.occurred_at is None
+    assert event.occurred_at_quality == "missing"

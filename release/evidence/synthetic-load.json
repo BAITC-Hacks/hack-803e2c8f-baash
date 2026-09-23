@@ -1,0 +1,19 @@
+{
+  "concurrency": 10,
+  "elapsed_seconds": 0.519439,
+  "error_rate": 0.0,
+  "latency_ms": {
+    "p50": 40.176,
+    "p95": 59.994,
+    "p99": 84.46
+  },
+  "passed": true,
+  "path": "/v1/appeals/preflight",
+  "requests": 100,
+  "requests_per_second": 192.515,
+  "smoke_gate": {
+    "max_error_rate": 0.0,
+    "max_p95_ms": 2000.0
+  },
+  "synthetic_only": true
+}

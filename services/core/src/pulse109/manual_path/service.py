@@ -6,7 +6,7 @@ import hashlib
 import json
 import re
 from datetime import datetime, timezone
-from typing import Any, cast
+from typing import Any
 from uuid import NAMESPACE_URL, UUID, uuid4, uuid5
 
 from pulse109_inference.engine import classify as classify_with_fallback
@@ -23,7 +23,6 @@ from .models import (
     OperatorDecision,
     RankedLabel,
     ServiceDefinition,
-    Status,
     StatusEventInput,
     SyncReceipt,
     SyncState,
@@ -97,12 +96,13 @@ class ManualPathService:
         actor: str,
         payload: dict[str, Any],
         occurred_at: datetime | None = None,
+        occurred_at_quality: str | None = None,
     ) -> dict[str, Any]:
         event = {
             "event_id": uuid4(),
             "event_type": event_type,
             "occurred_at": occurred_at,
-            "occurred_at_quality": "exact" if occurred_at else "missing",
+            "occurred_at_quality": occurred_at_quality or ("exact" if occurred_at else "missing"),
             "observed_at": _now(),
             "actor_type": actor,
             "actor_id_token": actor,
@@ -153,8 +153,15 @@ class ManualPathService:
         return event_id
 
     def create(
-        self, command: CreateRequest, *, idempotency_key: str, region_id: str, actor: str = "system"
+        self,
+        command: CreateRequest,
+        *,
+        idempotency_key: str,
+        region_id: str,
+        actor: str = "system",
+        correlation_id: str | None = None,
     ) -> tuple[Appeal, bool]:
+        del correlation_id
         self._scope(command.region_id, region_id)
         body = command.model_dump(mode="json")
         request_hash = _hash(body)
@@ -481,18 +488,25 @@ class ManualPathService:
                     422,
                 )
             previous_status = appeal.status
-            appeal.status, appeal.version = cast(Status, command.status), appeal.version + 1
+            appeal.status, appeal.version = command.status, appeal.version + 1
             state.appeals[request_id] = appeal.model_dump(mode="json")
             payload = {
                 "previous_status": previous_status,
                 "new_status": command.status,
                 "source_event_id": command.source_event_id,
                 "source_system": command.source_system,
+                "source_timezone": command.source_timezone,
                 "reason_code": command.reason_code,
                 "evidence_refs": command.evidence_refs,
             }
             event = self._event(
-                state, request_id, "appeal.status.changed.v1", actor, payload, command.occurred_at
+                state,
+                request_id,
+                "appeal.status.changed.v1",
+                actor,
+                payload,
+                command.occurred_at,
+                command.occurred_at_quality,
             )
             self._audit(state, "appeal.status.changed", request_id, region_id, actor, payload)
             self._outbox(state, "appeal.status.changed.v1", request_id, region_id, payload)

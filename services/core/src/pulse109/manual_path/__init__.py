@@ -1,9 +1,4 @@
-"""ML-independent manual appeal workflow.
-
-The package is intentionally backed by an in-memory repository for the pilot
-vertical slice. The router factory lets the production root replace that
-repository without changing the application service contract.
-"""
+"""ML-independent manual appeal workflow and its repository implementations."""
 
 from .models import (
     AssignmentCommand,
@@ -13,6 +8,7 @@ from .models import (
     OperatorDecision,
     StatusEventInput,
 )
+from .postgres_path import PostgresManualPathService, PostgresManualRepository
 from .repository import InMemoryManualRepository
 from .router import create_manual_router
 from .service import ManualPathService
@@ -25,6 +21,8 @@ __all__ = [
     "InMemoryManualRepository",
     "ManualPathService",
     "OperatorDecision",
+    "PostgresManualPathService",
+    "PostgresManualRepository",
     "StatusEventInput",
     "create_manual_router",
 ]

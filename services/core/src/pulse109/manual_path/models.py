@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 Channel = Literal[
     "phone", "web", "mobile", "telegram", "whatsapp", "email", "walk_in", "import", "other"
@@ -15,7 +15,16 @@ Language = Literal["kk", "ru", "mixed", "unknown"]
 Priority = Literal["routine", "elevated", "urgent", "emergency_handoff"]
 DecisionAction = Literal["accepted", "corrected", "manual"]
 Status = Literal[
-    "new", "triage", "assigned", "in_progress", "resolved", "closed", "reopened", "cancelled"
+    "new",
+    "triage",
+    "assigned",
+    "accepted",
+    "in_progress",
+    "waiting",
+    "resolved",
+    "closed",
+    "reopened",
+    "cancelled",
 ]
 LifecycleStatus = Literal[
     "new",
@@ -37,7 +46,9 @@ class CreateRequest(BaseModel):
     source_system: str = Field(min_length=1, max_length=64)
     source_request_id: str = Field(min_length=1, max_length=128)
     region_id: str = Field(pattern=r"^[A-Z0-9_-]{2,32}$")
-    received_at: datetime
+    received_at: datetime | None
+    received_at_quality: Literal["exact", "source_tz_assumed", "date_only", "missing"]
+    source_timezone: str | None = Field(default=None, max_length=64)
     channel: Channel
     language: Language = "unknown"
     text: str | None = Field(default=None, max_length=20000)
@@ -47,6 +58,16 @@ class CreateRequest(BaseModel):
     citizen_token: str | None = None
     source_payload_ref: str | None = None
     consent_or_legal_basis: str | None = Field(default=None, max_length=128)
+
+    @model_validator(mode="after")
+    def validate_received_time_quality(self) -> CreateRequest:
+        if self.received_at is None and self.received_at_quality in {"exact", "source_tz_assumed"}:
+            raise ValueError("an exact or assumed received time requires received_at")
+        if self.received_at is not None and self.received_at_quality in {"missing", "date_only"}:
+            raise ValueError("received_at must be null when its quality is missing or date_only")
+        if self.received_at_quality == "source_tz_assumed" and not self.source_timezone:
+            raise ValueError("source_timezone is required for source_tz_assumed quality")
+        return self
 
 
 class LocationInput(BaseModel):
@@ -72,7 +93,9 @@ class Appeal(BaseModel):
     region_id: str
     channel: Channel
     language: Language
-    received_at: datetime
+    received_at: datetime | None
+    received_at_quality: Literal["exact", "source_tz_assumed", "date_only", "missing"] = "missing"
+    source_timezone: str | None = None
     text: str | None = None
     transcript_ref: str | None = None
     media_refs: list[str] = Field(default_factory=list)
@@ -137,17 +160,35 @@ class AssignmentCommand(BaseModel):
     expected_due_at: datetime | None = None
     policy_version: str | None = None
 
+    @model_validator(mode="after")
+    def require_policy_for_due_time(self) -> AssignmentCommand:
+        if self.expected_due_at is not None and self.policy_version is None:
+            raise ValueError("policy_version is required when expected_due_at is supplied")
+        return self
+
 
 class StatusEventInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     source_event_id: str = Field(min_length=1, max_length=128)
     status: LifecycleStatus
-    occurred_at: datetime
+    occurred_at: datetime | None
+    occurred_at_quality: Literal["exact", "source_tz_assumed", "date_only", "missing"]
+    source_timezone: str | None = Field(default=None, max_length=64)
     source_system: str = Field(min_length=1)
     observed_at: datetime | None = None
     reason_code: str | None = None
     evidence_refs: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def validate_time_quality(self) -> StatusEventInput:
+        if self.occurred_at is None and self.occurred_at_quality not in {"missing", "date_only"}:
+            raise ValueError("an exact or assumed time requires occurred_at")
+        if self.occurred_at is not None and self.occurred_at_quality in {"missing", "date_only"}:
+            raise ValueError("occurred_at requires exact or source_tz_assumed quality")
+        if self.occurred_at_quality == "source_tz_assumed" and not self.source_timezone:
+            raise ValueError("source_timezone is required for source_tz_assumed quality")
+        return self
 
 
 class DecisionReceipt(BaseModel):
@@ -199,4 +240,4 @@ class ServiceDefinition(BaseModel):
     topic_ids: list[str]
     required_fields: list[str]
     active: bool
-    synthetic_only: Literal[True] = True
+    synthetic_only: bool = True

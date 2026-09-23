@@ -1,10 +1,13 @@
 from fastapi import FastAPI, HTTPException
+from pulse109.config import Settings
+from pulse109.observability import configure_observability
 from pulse109_adapter import AssignmentCommand
 from pulse109_adapter.protocol import AdapterError
 
 from pulse109_replay.store import ReplayStore
 
 app = FastAPI(title="Pulse 109 Replay Adapter", version="0.1.0", docs_url=None, redoc_url=None)
+configure_observability(app, Settings(service_name="adapter-replay"))
 store = ReplayStore()
 
 

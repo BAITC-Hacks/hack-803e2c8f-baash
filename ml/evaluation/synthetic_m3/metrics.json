@@ -1,4 +1,5 @@
 {
+  "aurc": 0.08284832,
   "brier_score": 0.4021405600869106,
   "count": 9,
   "dataset_id": "pulse109-synthetic-m3-baseline",
@@ -83,6 +84,58 @@
       "lower": 0.9,
       "mean_confidence": null,
       "upper": 1.0
+    }
+  ],
+  "risk_coverage_curve": [
+    {
+      "coverage": 0.0,
+      "risk": 0.0,
+      "selected": 0.0
+    },
+    {
+      "coverage": 0.11111111,
+      "risk": 0.0,
+      "selected": 1.0
+    },
+    {
+      "coverage": 0.22222222,
+      "risk": 0.0,
+      "selected": 2.0
+    },
+    {
+      "coverage": 0.33333333,
+      "risk": 0.0,
+      "selected": 3.0
+    },
+    {
+      "coverage": 0.44444444,
+      "risk": 0.0,
+      "selected": 4.0
+    },
+    {
+      "coverage": 0.55555556,
+      "risk": 0.2,
+      "selected": 5.0
+    },
+    {
+      "coverage": 0.66666667,
+      "risk": 0.16666667,
+      "selected": 6.0
+    },
+    {
+      "coverage": 0.77777778,
+      "risk": 0.14285714,
+      "selected": 7.0
+    },
+    {
+      "coverage": 0.88888889,
+      "risk": 0.125,
+      "selected": 8.0
+    },
+    {
+      "coverage": 1.0,
+      "risk": 0.11111111,
+      "selected": 9.0
     }
   ],
   "slices": {

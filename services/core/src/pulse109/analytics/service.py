@@ -22,23 +22,35 @@ class AnalyticsError(ValueError):
 class AnalyticsService:
     """Reference semantic layer; SQL repositories implement this same boundary."""
 
-    def __init__(self) -> None:
-        self._coverage: dict[str, CoverageState] = {
-            "ALA": "present",
-            "AST": "stale",
-            "KAR": "missing",
-        }
-        self._events = [
-            {"region_id": "ALA", "status": "new", "channel": "web", "day": "2026-09-08"},
-            {"region_id": "ALA", "status": "resolved", "channel": "phone", "day": "2026-09-09"},
-            {"region_id": "ALA", "status": "new", "channel": "web", "day": "2026-09-10"},
-            {"region_id": "AST", "status": "new", "channel": "import", "day": "2026-09-08"},
-        ]
-        self._source_system = "synthetic-replay"
-        self._last_observed = {
-            "ALA": datetime(2026, 9, 10, 23, 50, tzinfo=timezone.utc),
-            "AST": datetime(2026, 9, 8, 18, 0, tzinfo=timezone.utc),
-        }
+    def __init__(self, *, synthetic: bool = True) -> None:
+        self._coverage: dict[str, CoverageState] = (
+            {
+                "ALA": "present",
+                "AST": "stale",
+                "KAR": "missing",
+            }
+            if synthetic
+            else {}
+        )
+        self._events = (
+            [
+                {"region_id": "ALA", "status": "new", "channel": "web", "day": "2026-09-08"},
+                {"region_id": "ALA", "status": "resolved", "channel": "phone", "day": "2026-09-09"},
+                {"region_id": "ALA", "status": "new", "channel": "web", "day": "2026-09-10"},
+                {"region_id": "AST", "status": "new", "channel": "import", "day": "2026-09-08"},
+            ]
+            if synthetic
+            else []
+        )
+        self._source_system = "synthetic-replay" if synthetic else None
+        self._last_observed = (
+            {
+                "ALA": datetime(2026, 9, 10, 23, 50, tzinfo=timezone.utc),
+                "AST": datetime(2026, 9, 8, 18, 0, tzinfo=timezone.utc),
+            }
+            if synthetic
+            else {}
+        )
 
     @staticmethod
     def _filter_values(query: AnalyticsQuery, field: str) -> set[str] | None:

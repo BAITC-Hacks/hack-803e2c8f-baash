@@ -8,6 +8,7 @@ from ml.training.synthetic_baseline import (
     grouped_temporal_split,
     load_manifest,
     load_records,
+    risk_coverage_curve,
     run,
     train_baseline,
 )
@@ -61,6 +62,24 @@ def test_top3_calibration_slices_and_ood_are_reported() -> None:
     assert 0.0 <= metrics["brier_score"] <= 2.0
     assert 0.0 <= metrics["ece"] <= 1.0
     assert 0.0 <= ood["threshold"] <= 1.0
+    assert len(metrics["risk_coverage_curve"]) == len(predictions) + 1
+    assert 0.0 <= metrics["aurc"] <= 1.0
+    assert set(ood["abstention_band_counts"]) == {
+        "auto_suggest",
+        "review_top3",
+        "requires_review",
+    }
+    assert all("abstention_band" in item for item in predictions)
+
+
+def test_risk_coverage_rejects_mismatched_inputs_and_is_confidence_ordered() -> None:
+    with pytest.raises(ValueError, match="lengths"):
+        risk_coverage_curve([0.9], [])
+    curve, aurc = risk_coverage_curve([0.2, 0.9, 0.5], [False, True, True])
+    assert curve[0] == {"coverage": 0.0, "risk": 0.0, "selected": 0.0}
+    assert curve[1]["coverage"] == pytest.approx(1 / 3)
+    assert curve[1]["risk"] == 0.0
+    assert 0.0 <= aurc <= 1.0
 
 
 def test_artifacts_are_deterministic(tmp_path: Path) -> None:

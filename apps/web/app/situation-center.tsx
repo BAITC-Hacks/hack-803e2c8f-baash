@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 
+import { SituationMap } from "./situation-map";
+
 const trend = [8, 10, 9, 12, 11, 13, 8];
 const maxTrend = Math.max(...trend);
 
@@ -62,6 +64,7 @@ export function SituationCenter() {
       </section>
 
       <div className="situation-grid">
+        <SituationMap />
         <section className="trend-panel" aria-labelledby="trend-title">
           <div className="panel-heading">
             <div>

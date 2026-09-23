@@ -1,0 +1,46 @@
+{
+  "experiment": {
+    "experiment_id": "synthetic-109",
+    "name": "pulse109-synthetic-routing"
+  },
+  "format": "mlflow-registry-manifest",
+  "format_version": "1.0.0",
+  "purpose": "local registry workflow fixture; no promotion authority",
+  "registered_model": {
+    "aliases": {
+      "challenger": "synthetic-mock-1.0.0",
+      "champion": "synthetic-linear-baseline-1.0.0",
+      "rollback": "synthetic-linear-baseline-1.0.0"
+    },
+    "approval": "synthetic-fixture-only; human approval required",
+    "name": "pulse109-routing-synthetic",
+    "version": "1"
+  },
+  "run": {
+    "artifacts": {
+      "model": {
+        "path": "ml/evaluation/synthetic_m3/model.joblib",
+        "sha256": "7b04a12b8c38d350f55906fd2451d2578712150dd475b909f9bed12f726b416f"
+      },
+      "model_card": "ml/evaluation/synthetic_m3/model_card.md"
+    },
+    "metrics": {
+      "aurc": 0.08284832,
+      "ece": 0.3595115011111111,
+      "top1_accuracy": 0.8888888888888888,
+      "top3_accuracy": 1.0
+    },
+    "params": {
+      "model": "char-tfidf-logistic",
+      "seed": 109,
+      "split_policy": "grouped_temporal"
+    },
+    "run_id": "synthetic-run-109-m3",
+    "status": "FINISHED",
+    "tags": {
+      "quality_claim": "false",
+      "synthetic_only": "true"
+    }
+  },
+  "synthetic_only": true
+}

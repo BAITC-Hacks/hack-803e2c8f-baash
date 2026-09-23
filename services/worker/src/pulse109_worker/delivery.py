@@ -29,11 +29,13 @@ class OutboxEnvelope:
     subject_id: str
     region_id: str
     payload: dict[str, Any]
+    correlation_id: str | None = None
     status: str = "pending"
     attempts: int = 0
     next_attempt_at: datetime | None = None
     external_id: str | None = None
     last_error_code: str | None = None
+    claim_worker_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -88,11 +90,22 @@ class OutboxDeliveryService:
                         service_id=str(payload["service_id"]),
                         assignee_unit_id=payload.get("assignee_unit_id"),
                         reason_code=str(payload.get("reason_code", "adapter_delivery")),
+                        policy_version=(
+                            str(payload["policy_version"])
+                            if payload.get("policy_version") is not None
+                            else None
+                        ),
+                        correlation_id=record.correlation_id,
                     )
                 )
             else:
                 result = adapter.push_status(
-                    record.event_id, {**record.payload, "request_id": record.subject_id}
+                    record.event_id,
+                    {
+                        **record.payload,
+                        "request_id": record.subject_id,
+                        "correlation_id": record.correlation_id,
+                    },
                 )
             if not result.confirmed or not result.external_id:
                 raise AdapterError(

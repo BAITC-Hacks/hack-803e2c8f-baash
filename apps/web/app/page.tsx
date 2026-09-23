@@ -10,8 +10,10 @@ import {
   ShieldCheck,
   WifiOff,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 
+import { Intake } from "./intake";
+import { AdminPanel } from "./admin-panel";
 import { SituationCenter } from "./situation-center";
 
 type Recommendation = { id: string; label: string; score: number };
@@ -28,6 +30,82 @@ type Appeal = {
   topics: Recommendation[];
   services: Recommendation[];
 };
+
+type Locale = "ru" | "kk";
+type DemoState =
+  | "ready"
+  | "loading"
+  | "low_confidence"
+  | "ml_unavailable"
+  | "stale_catalog"
+  | "sync_retry"
+  | "forbidden_region"
+  | "recovered";
+
+const copy = {
+  ru: {
+    intake: "Подать обращение",
+    queue: "Очередь оператора",
+    situation: "Ситуационный центр",
+    admin: "Администрирование",
+    profile: "Локальный оператор · синтетические данные",
+    appeals: "Обращения на проверку",
+    synthetic: "синтетических",
+    selected: "Выбранное обращение",
+    humanDecision: "Решение человека",
+    chooseAction: "Выберите действие",
+    confirm: "Подтвердить рекомендацию",
+    manual: "Сохранить ручное решение",
+    correctionReason: "Причина исправления",
+    optionalNote: "Необязательная заметка",
+    noAssignment: "Назначение не отправляется без подтверждения человека.",
+    evidence: "Доказательства",
+    similar: "Похожие решённые обращения",
+    duplicates: "Кандидаты в дубликаты",
+    workflow: "Состояния демо",
+    retry: "Повторить синхронизацию",
+    ready: "Готово",
+    loading: "Загрузка карточки…",
+    low_confidence: "Низкая уверенность: требуется проверка",
+    ml_unavailable: "ML недоступен: ручной режим активен",
+    stale_catalog: "Справочник устарел: ручной выбор обязателен",
+    sync_retry: "Внешняя синхронизация ожидает повтора",
+    forbidden_region: "Нет доступа к региону",
+    recovered: "Сессия восстановлена",
+    auditRecorded: "Аудит записан",
+  },
+  kk: {
+    intake: "Өтініш беру",
+    queue: "Оператор кезегі",
+    situation: "Жағдай орталығы",
+    admin: "Әкімшілендіру",
+    profile: "Жергілікті оператор · синтетикалық деректер",
+    appeals: "Тексеруді қажет ететін өтініштер",
+    synthetic: "синтетикалық",
+    selected: "Таңдалған өтініш",
+    humanDecision: "Адам шешімі",
+    chooseAction: "Әрекетті таңдаңыз",
+    confirm: "Ұсынысты растау",
+    manual: "Қолмен шешімді сақтау",
+    correctionReason: "Түзету себебі",
+    optionalNote: "Міндетті емес ескертпе",
+    noAssignment: "Адам растамайынша тағайындау жіберілмейді.",
+    evidence: "Дәлелдер",
+    similar: "Ұқсас шешілген өтініштер",
+    duplicates: "Дубликат үміткерлері",
+    workflow: "Демо күйлері",
+    retry: "Синхрондауды қайталау",
+    ready: "Дайын",
+    loading: "Карточка жүктелуде…",
+    low_confidence: "Сенім төмен: тексеру қажет",
+    ml_unavailable: "ML қолжетімсіз: қолмен режим іске қосылды",
+    stale_catalog: "Каталог ескірген: қолмен таңдау қажет",
+    sync_retry: "Сыртқы синхрондау қайталауды күтуде",
+    forbidden_region: "Аймаққа кіруге рұқсат жоқ",
+    recovered: "Сессия қалпына келтірілді",
+    auditRecorded: "Аудит жазылды",
+  },
+} as const;
 
 const appeals: Appeal[] = [
   {
@@ -101,11 +179,22 @@ const taxonomyVersion = "temporary/1.0.0";
 const scoreLabel = (score: number) => `${Math.round(score * 100)}%`;
 
 export default function OperatorWorkspace() {
-  const [view, setView] = useState<"queue" | "situation">("queue");
+  const [view, setView] = useState<"queue" | "situation" | "intake" | "admin">(
+    "queue",
+  );
+  const [locale, setLocale] = useState<Locale>("ru");
   const [selectedId, setSelectedId] = useState(appeals[0].id);
   const [decision, setDecision] = useState<"pending" | "confirmed" | "manual">(
     "pending",
   );
+  const [demoState, setDemoState] = useState<DemoState>("ready");
+  const [decisionAction, setDecisionAction] = useState<
+    "confirm" | "manual" | null
+  >(null);
+  const [correctionReason, setCorrectionReason] = useState("");
+  const [operatorNote, setOperatorNote] = useState("");
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const decisionTriggerRef = useRef<HTMLButtonElement>(null);
   const [manualTopic, setManualTopic] = useState("Street lighting");
   const [manualService, setManualService] = useState("City services");
   const [priority, setPriority] = useState("Routine");
@@ -116,12 +205,49 @@ export default function OperatorWorkspace() {
   const hasDecision = decision !== "pending";
   const decisionLabel =
     decision === "confirmed"
-      ? "Recommendation confirmed"
-      : "Manual decision recorded";
+      ? locale === "ru"
+        ? "Рекомендация подтверждена"
+        : "Ұсыныс расталды"
+      : locale === "ru"
+        ? "Ручное решение записано"
+        : "Қолмен шешім жазылды";
+  const text = copy[locale];
+
+  useEffect(() => {
+    document.documentElement.lang = locale === "ru" ? "ru" : "kk";
+  }, [locale]);
+
+  useEffect(() => {
+    if (decisionAction && dialogRef.current && !dialogRef.current.open) {
+      dialogRef.current.showModal();
+    }
+  }, [decisionAction]);
+
+  function closeDecisionDialog() {
+    dialogRef.current?.close();
+    setDecisionAction(null);
+    decisionTriggerRef.current?.focus();
+  }
+
+  function openDecisionDialog(
+    action: "confirm" | "manual",
+    event: MouseEvent<HTMLButtonElement>,
+  ) {
+    decisionTriggerRef.current = event.currentTarget;
+    setDecisionAction(action);
+  }
+
+  function saveDecision() {
+    if (decisionAction === "manual" && !correctionReason) return;
+    setDecision(decisionAction === "confirm" ? "confirmed" : "manual");
+    closeDecisionDialog();
+  }
 
   function selectAppeal(id: string) {
     setSelectedId(id);
     setDecision("pending");
+    setCorrectionReason("");
+    setOperatorNote("");
   }
 
   return (
@@ -130,24 +256,60 @@ export default function OperatorWorkspace() {
         <div className="brand">Pulse 109</div>
         <div className="view-switch" aria-label="Workspace view" role="group">
           <button
+            aria-pressed={view === "intake"}
+            onClick={() => setView("intake")}
+            type="button"
+          >
+            {text.intake}
+          </button>
+          <button
             aria-pressed={view === "queue"}
             onClick={() => setView("queue")}
             type="button"
           >
-            Operator queue
+            {text.queue}
           </button>
           <button
             aria-pressed={view === "situation"}
             onClick={() => setView("situation")}
             type="button"
           >
-            Situation center
+            {text.situation}
+          </button>
+          <button
+            aria-pressed={view === "admin"}
+            onClick={() => setView("admin")}
+            type="button"
+          >
+            {text.admin}
           </button>
         </div>
-        <div className="profile">Local operator · synthetic data</div>
+        <div className="topbar-actions">
+          <div className="locale-switch" aria-label="Language" role="group">
+            <button
+              aria-pressed={locale === "ru"}
+              onClick={() => setLocale("ru")}
+              type="button"
+            >
+              RU
+            </button>
+            <button
+              aria-pressed={locale === "kk"}
+              onClick={() => setLocale("kk")}
+              type="button"
+            >
+              KZ
+            </button>
+          </div>
+          <div className="profile">{text.profile}</div>
+        </div>
       </header>
-      {view === "situation" ? (
+      {view === "intake" ? (
+        <Intake locale={locale} />
+      ) : view === "situation" ? (
         <SituationCenter />
+      ) : view === "admin" ? (
+        <AdminPanel locale={locale} />
       ) : (
         <div className="workspace">
           <aside aria-label="Primary navigation">
@@ -170,11 +332,40 @@ export default function OperatorWorkspace() {
           <section className="content" id="queue">
             <div className="section-heading">
               <div>
-                <p className="eyebrow">Operator queue</p>
-                <h1>Appeals requiring review</h1>
+                <p className="eyebrow">{text.queue}</p>
+                <h1>{text.appeals}</h1>
               </div>
-              <span className="count">3 synthetic</span>
+              <span className="count">3 {text.synthetic}</span>
             </div>
+            <section
+              className="workflow-state"
+              aria-labelledby="workflow-state-title"
+            >
+              <div>
+                <p className="eyebrow">{text.workflow}</p>
+                <h2 id="workflow-state-title">{text[demoState]}</h2>
+              </div>
+              <label>
+                <span className="sr-only">{text.workflow}</span>
+                <select
+                  value={demoState}
+                  onChange={(event) =>
+                    setDemoState(event.target.value as DemoState)
+                  }
+                >
+                  <option value="ready">{text.ready}</option>
+                  <option value="loading">{text.loading}</option>
+                  <option value="low_confidence">{text.low_confidence}</option>
+                  <option value="ml_unavailable">{text.ml_unavailable}</option>
+                  <option value="stale_catalog">{text.stale_catalog}</option>
+                  <option value="sync_retry">{text.sync_retry}</option>
+                  <option value="forbidden_region">
+                    {text.forbidden_region}
+                  </option>
+                  <option value="recovered">{text.recovered}</option>
+                </select>
+              </label>
+            </section>
             <div
               className="queue"
               role="table"
@@ -213,223 +404,264 @@ export default function OperatorWorkspace() {
               ))}
             </div>
 
-            <section className="appeal-card" aria-labelledby="appeal-title">
-              <div className="appeal-header">
-                <div>
-                  <p className="eyebrow">Selected appeal</p>
-                  <h2 id="appeal-title">{appeal.id}</h2>
-                  <p className="appeal-summary">{appeal.summary}</p>
+            {demoState === "forbidden_region" ? (
+              <section
+                className="security-state"
+                role="alert"
+                aria-labelledby="forbidden-title"
+              >
+                <ShieldCheck aria-hidden="true" size={24} />
+                <h2 id="forbidden-title">{text.forbidden_region}</h2>
+                <p>
+                  This appeal is outside the signed-in operator&apos;s region
+                  scope.
+                </p>
+              </section>
+            ) : (
+              <section
+                className="appeal-card"
+                aria-labelledby="appeal-title"
+                aria-busy={demoState === "loading"}
+              >
+                <div className="appeal-header">
+                  <div>
+                    <p className="eyebrow">Selected appeal</p>
+                    <h2 id="appeal-title">{appeal.id}</h2>
+                    <p className="appeal-summary">{appeal.summary}</p>
+                  </div>
+                  <div className="appeal-status">
+                    <span className="status-chip">{appeal.state}</span>
+                    <span className="sync-chip">
+                      <WifiOff aria-hidden="true" size={14} /> Sync pending
+                    </span>
+                  </div>
                 </div>
-                <div className="appeal-status">
-                  <span className="status-chip">{appeal.state}</span>
-                  <span className="sync-chip">
-                    <WifiOff aria-hidden="true" size={14} /> Sync pending
-                  </span>
-                </div>
-              </div>
-              <div className="meta-grid">
-                <div>
-                  <span>Region</span>
-                  <strong>{appeal.region}</strong>
-                </div>
-                <div>
-                  <span>Channel</span>
-                  <strong>{appeal.channel}</strong>
-                </div>
-                <div>
-                  <span>Observed</span>
-                  <strong>{appeal.observed}</strong>
-                </div>
-                <div>
-                  <span>Business time</span>
-                  <strong
-                    className={
-                      appeal.time === "missing" ? "attention" : undefined
-                    }
-                  >
-                    {appeal.time}
-                  </strong>
-                </div>
-              </div>
-              <div className="advisory-heading">
-                <div>
-                  <p className="eyebrow">Advisory routing</p>
-                  <h3>AI proposes; operator confirms</h3>
-                </div>
-                <span className={`confidence confidence-${appeal.confidence}`}>
-                  {appeal.confidence === "out_of_domain"
-                    ? "Out of domain"
-                    : `${appeal.confidence} confidence`}
-                </span>
-              </div>
-              <div className="recommendation-grid">
-                <RecommendationList title="Topics" items={appeal.topics} />
-                <RecommendationList title="Services" items={appeal.services} />
-                <div className="model-panel">
-                  <span className="panel-label">Model signal</span>
-                  <div className="signal-row">
-                    <span>Confidence</span>
-                    <strong>
-                      {scoreLabel(
-                        appeal.confidence === "out_of_domain"
-                          ? 0.2
-                          : appeal.topics[0].score,
-                      )}
+                <div className="meta-grid">
+                  <div>
+                    <span>Region</span>
+                    <strong>{appeal.region}</strong>
+                  </div>
+                  <div>
+                    <span>Channel</span>
+                    <strong>{appeal.channel}</strong>
+                  </div>
+                  <div>
+                    <span>Observed</span>
+                    <strong>{appeal.observed}</strong>
+                  </div>
+                  <div>
+                    <span>Business time</span>
+                    <strong
+                      className={
+                        appeal.time === "missing" ? "attention" : undefined
+                      }
+                    >
+                      {appeal.time}
                     </strong>
                   </div>
-                  <div className="signal-row">
-                    <span>OOD score</span>
-                    <strong>{scoreLabel(appeal.ood)}</strong>
-                  </div>
-                  <div className="signal-row">
-                    <span>Model</span>
-                    <strong>{modelVersion}</strong>
-                  </div>
-                  <div className="signal-row">
-                    <span>Taxonomy</span>
-                    <strong>{taxonomyVersion}</strong>
-                  </div>
                 </div>
-              </div>
-
-              <div className="decision-area">
-                <div className="decision-title">
+                <div className="advisory-heading">
                   <div>
-                    <p className="eyebrow">Human decision</p>
-                    <h3>{hasDecision ? decisionLabel : "Choose an action"}</h3>
+                    <p className="eyebrow">Advisory routing</p>
+                    <h3>AI proposes; operator confirms</h3>
                   </div>
-                  {hasDecision && (
-                    <span className="recorded">
-                      <Check aria-hidden="true" size={15} /> Recorded locally
-                    </span>
-                  )}
-                </div>
-                <div className="decision-controls">
-                  <button
-                    className="primary-action"
-                    disabled={hasDecision}
-                    onClick={() => setDecision("confirmed")}
-                    type="button"
+                  <span
+                    className={`confidence confidence-${appeal.confidence}`}
                   >
-                    <Check aria-hidden="true" size={16} /> Confirm
-                    recommendation
-                  </button>
-                  <button
-                    className="secondary-action"
-                    disabled={hasDecision}
-                    onClick={() => setDecision("manual")}
-                    type="button"
-                  >
-                    <FileCheck2 aria-hidden="true" size={16} /> Save manual
-                    decision
-                  </button>
+                    {appeal.confidence === "out_of_domain"
+                      ? "Out of domain"
+                      : `${appeal.confidence} confidence`}
+                  </span>
                 </div>
-                <div className="manual-fields">
-                  <label>
-                    Topic
-                    <select
-                      disabled={hasDecision}
-                      onChange={(event) => setManualTopic(event.target.value)}
-                      value={manualTopic}
-                    >
-                      <option>Street lighting</option>
-                      <option>Road maintenance</option>
-                      <option>Utilities</option>
-                      <option>Manual catalog review</option>
-                    </select>
-                  </label>
-                  <label>
-                    Service
-                    <select
-                      disabled={hasDecision}
-                      onChange={(event) => setManualService(event.target.value)}
-                      value={manualService}
-                    >
-                      <option>City services</option>
-                      <option>Roads department</option>
-                      <option>District office</option>
-                      <option>Manual assignment</option>
-                    </select>
-                  </label>
-                  <label>
-                    Priority
-                    <select
-                      disabled={hasDecision}
-                      onChange={(event) => setPriority(event.target.value)}
-                      value={priority}
-                    >
-                      <option>Routine</option>
-                      <option>Elevated</option>
-                      <option>Urgent</option>
-                      <option>Emergency handoff</option>
-                    </select>
-                  </label>
-                </div>
-                <p className="decision-note">
-                  {hasDecision
-                    ? `${manualTopic} · ${manualService} · ${priority}`
-                    : "No assignment is sent until a human confirms the route."}
-                </p>
-              </div>
-
-              <div className="activity-grid">
-                <div>
-                  <div className="activity-heading">
-                    <History aria-hidden="true" size={17} />
-                    <h3>Timeline</h3>
-                  </div>
-                  <ol className="timeline">
-                    <li>
-                      <span className="timeline-dot" />
-                      <div>
-                        <strong>Appeal received</strong>
-                        <span>{appeal.observed} · source channel</span>
-                      </div>
-                    </li>
-                    <li>
-                      <span className="timeline-dot" />
-                      <div>
-                        <strong>Advisory produced</strong>
-                        <span>
-                          {modelVersion} · human confirmation required
-                        </span>
-                      </div>
-                    </li>
-                    {hasDecision && (
-                      <li>
-                        <span className="timeline-dot complete" />
-                        <div>
-                          <strong>{decisionLabel}</strong>
-                          <span>Local operator · just now</span>
-                        </div>
-                      </li>
-                    )}
-                  </ol>
-                </div>
-                <div>
-                  <div className="activity-heading">
-                    <ShieldCheck aria-hidden="true" size={17} />
-                    <h3>Audit and sync</h3>
-                  </div>
-                  <div className="audit-list">
-                    <div>
-                      <span>Audit event</span>
+                <div className="recommendation-grid">
+                  <RecommendationList title="Topics" items={appeal.topics} />
+                  <RecommendationList
+                    title="Services"
+                    items={appeal.services}
+                  />
+                  <div className="model-panel">
+                    <span className="panel-label">Model signal</span>
+                    <div className="signal-row">
+                      <span>Confidence</span>
                       <strong>
-                        {hasDecision ? "Recorded" : "Awaiting decision"}
+                        {scoreLabel(
+                          appeal.confidence === "out_of_domain"
+                            ? 0.2
+                            : appeal.topics[0].score,
+                        )}
                       </strong>
                     </div>
-                    <div>
-                      <span>External sync</span>
-                      <strong className="attention">Pending</strong>
+                    <div className="signal-row">
+                      <span>OOD score</span>
+                      <strong>{scoreLabel(appeal.ood)}</strong>
                     </div>
-                    <div>
-                      <span>Raw reference</span>
-                      <strong>Opaque only</strong>
+                    <div className="signal-row">
+                      <span>Model</span>
+                      <strong>{modelVersion}</strong>
+                    </div>
+                    <div className="signal-row">
+                      <span>Taxonomy</span>
+                      <strong>{taxonomyVersion}</strong>
                     </div>
                   </div>
                 </div>
-              </div>
-            </section>
+
+                <div className="decision-area">
+                  <div className="decision-title">
+                    <div>
+                      <p className="eyebrow">{text.humanDecision}</p>
+                      <h3>{hasDecision ? decisionLabel : text.chooseAction}</h3>
+                    </div>
+                    {hasDecision && (
+                      <span className="recorded">
+                        <Check aria-hidden="true" size={15} /> Recorded locally
+                      </span>
+                    )}
+                  </div>
+                  <div className="decision-controls">
+                    <button
+                      className="primary-action"
+                      disabled={hasDecision}
+                      onClick={(event) => openDecisionDialog("confirm", event)}
+                      type="button"
+                    >
+                      <Check aria-hidden="true" size={16} /> {text.confirm}
+                    </button>
+                    <button
+                      className="secondary-action"
+                      disabled={hasDecision}
+                      onClick={(event) => openDecisionDialog("manual", event)}
+                      type="button"
+                    >
+                      <FileCheck2 aria-hidden="true" size={16} /> {text.manual}
+                    </button>
+                  </div>
+                  <div className="manual-fields">
+                    <label>
+                      Topic
+                      <select
+                        disabled={hasDecision}
+                        onChange={(event) => setManualTopic(event.target.value)}
+                        value={manualTopic}
+                      >
+                        <option>Street lighting</option>
+                        <option>Road maintenance</option>
+                        <option>Utilities</option>
+                        <option>Manual catalog review</option>
+                      </select>
+                    </label>
+                    <label>
+                      Service
+                      <select
+                        disabled={hasDecision}
+                        onChange={(event) =>
+                          setManualService(event.target.value)
+                        }
+                        value={manualService}
+                      >
+                        <option>City services</option>
+                        <option>Roads department</option>
+                        <option>District office</option>
+                        <option>Manual assignment</option>
+                      </select>
+                    </label>
+                    <label>
+                      Priority
+                      <select
+                        disabled={hasDecision}
+                        onChange={(event) => setPriority(event.target.value)}
+                        value={priority}
+                      >
+                        <option>Routine</option>
+                        <option>Elevated</option>
+                        <option>Urgent</option>
+                        <option>Emergency handoff</option>
+                      </select>
+                    </label>
+                  </div>
+                  <p className="decision-note">
+                    {hasDecision
+                      ? `${manualTopic} · ${manualService} · ${priority}`
+                      : text.noAssignment}
+                  </p>
+                </div>
+
+                <div className="evidence-grid">
+                  <EvidencePanel
+                    title={text.similar}
+                    items={[
+                      "Resolved street lighting · 410 m",
+                      "School entrance lighting · 1.2 km",
+                    ]}
+                  />
+                  <EvidencePanel
+                    title={text.duplicates}
+                    items={[
+                      "Text overlap 0.52 · distance 0.23 · time 0.14",
+                      "Service match · human confirmation required",
+                    ]}
+                  />
+                </div>
+
+                <div className="activity-grid">
+                  <div>
+                    <div className="activity-heading">
+                      <History aria-hidden="true" size={17} />
+                      <h3>Timeline</h3>
+                    </div>
+                    <ol className="timeline">
+                      <li>
+                        <span className="timeline-dot" />
+                        <div>
+                          <strong>Appeal received</strong>
+                          <span>{appeal.observed} · source channel</span>
+                        </div>
+                      </li>
+                      <li>
+                        <span className="timeline-dot" />
+                        <div>
+                          <strong>Advisory produced</strong>
+                          <span>
+                            {modelVersion} · human confirmation required
+                          </span>
+                        </div>
+                      </li>
+                      {hasDecision && (
+                        <li>
+                          <span className="timeline-dot complete" />
+                          <div>
+                            <strong>{decisionLabel}</strong>
+                            <span>Local operator · just now</span>
+                          </div>
+                        </li>
+                      )}
+                    </ol>
+                  </div>
+                  <div>
+                    <div className="activity-heading">
+                      <ShieldCheck aria-hidden="true" size={17} />
+                      <h3>Audit and sync</h3>
+                    </div>
+                    <div className="audit-list">
+                      <div>
+                        <span>Audit event</span>
+                        <strong>
+                          {hasDecision ? "Recorded" : "Awaiting decision"}
+                        </strong>
+                      </div>
+                      <div>
+                        <span>External sync</span>
+                        <strong className="attention">Pending</strong>
+                      </div>
+                      <div>
+                        <span>Raw reference</span>
+                        <strong>Opaque only</strong>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            )}
 
             <section
               className="status-band"
@@ -463,6 +695,87 @@ export default function OperatorWorkspace() {
           </section>
         </div>
       )}
+      <p className="sr-only" role="status" aria-live="polite">
+        {hasDecision
+          ? `${text.auditRecorded}: ${decisionLabel}`
+          : text[demoState]}
+      </p>
+      <dialog
+        ref={dialogRef}
+        className="decision-dialog"
+        onCancel={closeDecisionDialog}
+      >
+        <form
+          method="dialog"
+          onSubmit={(event) => {
+            event.preventDefault();
+            saveDecision();
+          }}
+        >
+          <p className="eyebrow">{text.humanDecision}</p>
+          <h2>{decisionAction === "confirm" ? text.confirm : text.manual}</h2>
+          {decisionAction === "manual" ? (
+            <>
+              <label htmlFor="correction-reason">
+                {text.correctionReason} <span aria-hidden="true">*</span>
+              </label>
+              <select
+                id="correction-reason"
+                required
+                aria-describedby="correction-reason-help"
+                value={correctionReason}
+                onChange={(event) => setCorrectionReason(event.target.value)}
+              >
+                <option value="">
+                  {locale === "ru" ? "Выберите причину" : "Себепті таңдаңыз"}
+                </option>
+                <option value="wrong_topic">
+                  {locale === "ru" ? "Неверная категория" : "Қате санат"}
+                </option>
+                <option value="wrong_service">
+                  {locale === "ru" ? "Неверная организация" : "Қате ұйым"}
+                </option>
+                <option value="missing_context">
+                  {locale === "ru"
+                    ? "Недостаточно контекста"
+                    : "Контекст жеткіліксіз"}
+                </option>
+              </select>
+              <span id="correction-reason-help" className="field-help">
+                {locale === "ru"
+                  ? "Причина попадёт в аудит."
+                  : "Себеп аудитке жазылады."}
+              </span>
+              <label htmlFor="operator-note">{text.optionalNote}</label>
+              <textarea
+                id="operator-note"
+                value={operatorNote}
+                onChange={(event) => setOperatorNote(event.target.value)}
+                maxLength={2000}
+              />
+            </>
+          ) : (
+            <p>{text.noAssignment}</p>
+          )}
+          <div className="dialog-actions">
+            <button
+              className="secondary-action"
+              type="button"
+              autoFocus
+              onClick={closeDecisionDialog}
+            >
+              {locale === "ru" ? "Отмена" : "Бас тарту"}
+            </button>
+            <button
+              className="primary-action"
+              type="submit"
+              disabled={decisionAction === "manual" && !correctionReason}
+            >
+              {locale === "ru" ? "Подтвердить" : "Растау"}
+            </button>
+          </div>
+        </form>
+      </dialog>
     </main>
   );
 }
@@ -489,5 +802,18 @@ function RecommendationList({
         ))}
       </ol>
     </div>
+  );
+}
+
+function EvidencePanel({ title, items }: { title: string; items: string[] }) {
+  return (
+    <section className="evidence-panel" aria-labelledby={`evidence-${title}`}>
+      <h3 id={`evidence-${title}`}>{title}</h3>
+      <ul>
+        {items.map((item) => (
+          <li key={item}>{item}</li>
+        ))}
+      </ul>
+    </section>
   );
 }

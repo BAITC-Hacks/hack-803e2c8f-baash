@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
 from fastapi.testclient import TestClient
-from pulse109.main import app
+from pulse109.main import app, incident_repository
 
 
 def _create_appeal(client: TestClient, source_id: str) -> str:
@@ -13,6 +13,7 @@ def _create_appeal(client: TestClient, source_id: str) -> str:
             "source_request_id": source_id,
             "region_id": "ALA",
             "received_at": datetime(2026, 9, 12, tzinfo=timezone.utc).isoformat(),
+            "received_at_quality": "exact",
             "channel": "web",
             "language": "mixed",
             "text": "synthetic redacted water leak",
@@ -55,6 +56,7 @@ def test_human_confirmed_incident_preserves_member_appeal_identity() -> None:
             headers={**headers, "Idempotency-Key": f"member-confirm-000{index}"},
             json={
                 "request_id": request_id,
+                "incident_version": 1,
                 "decision": "confirm",
                 "reason_code": "operator_verified",
                 "evidence_refs": [f"synthetic://evidence/{index}"],
@@ -66,7 +68,11 @@ def test_human_confirmed_incident_preserves_member_appeal_identity() -> None:
     confirmed = client.post(
         f"/v1/incidents/{incident_id}/confirm",
         headers={**headers, "Idempotency-Key": "incident-confirm-0001"},
-        json={"decision": "confirm", "reason_code": "two_members_verified"},
+        json={
+            "incident_version": 1,
+            "decision": "confirm",
+            "reason_code": "two_members_verified",
+        },
     )
     assert confirmed.status_code == 200
     assert confirmed.json()["state"] == "confirmed"
@@ -77,3 +83,21 @@ def test_human_confirmed_incident_preserves_member_appeal_identity() -> None:
     assert first.json()["request_id"] == first_id
     assert second.json()["request_id"] == second_id
     assert first_id != second_id
+
+    removed = client.post(
+        f"/v1/incidents/{incident_id}/members",
+        headers={**headers, "Idempotency-Key": "member-remove-0001"},
+        json={
+            "request_id": first_id,
+            "incident_version": 2,
+            "decision": "remove",
+            "reason_code": "operator_reversed_membership",
+            "evidence_refs": ["synthetic://evidence/removal"],
+        },
+    )
+    assert removed.status_code == 201
+    assert removed.json()["decision"] == "remove"
+    assert incident_repository.state.events[-1]["event_type"] == "incident.member.removed.v1"
+
+    # Removing membership never deletes, aliases, or rewrites the source appeal.
+    assert client.get(f"/v1/requests/{first_id}", headers={"X-Region-Id": "ALA"}).status_code == 200

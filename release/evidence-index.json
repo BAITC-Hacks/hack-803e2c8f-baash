@@ -1,0 +1,64 @@
+{
+  "complete": true,
+  "files": [
+    {
+      "bytes": 37912,
+      "path": "contracts/openapi.yaml",
+      "sha256": "3609f778ef2ebc38a567b5be5846a92e2160e57d07642be430a30c26c34ba3ed"
+    },
+    {
+      "bytes": 11315,
+      "path": "contracts/canonical_request.schema.json",
+      "sha256": "89d23e5161488be63f271b61bc8fcc95b04aa7413baf56b21ae788620dafdf00"
+    },
+    {
+      "bytes": 7018,
+      "path": "contracts/inference.schema.json",
+      "sha256": "19f9ff1830671d9794eb18108ccea0b904d4fd0b27c3107f326e0cd400bd106b"
+    },
+    {
+      "bytes": 871,
+      "path": "data/reports/synthetic-m1-dq-report.json",
+      "sha256": "a666e47a28fe70d8ac0c8eb676b1a957061718d07aad7bde84201322267ff3ae"
+    },
+    {
+      "bytes": 3492,
+      "path": "ml/evaluation/synthetic_m3/metrics.json",
+      "sha256": "2a18e68893d0c137bfe4098a6e116dfd07b4ebb9e49a6a04759ff50571113d47"
+    },
+    {
+      "bytes": 879,
+      "path": "ml/evaluation/synthetic_m4/retrieval_report.json",
+      "sha256": "e4872964d092fd2f6839866d60df47b6ce3e15a2d6d2ae1e07adc44710f149cc"
+    },
+    {
+      "bytes": 635,
+      "path": "ml/evaluation/synthetic_mlop/evidence_manifest.json",
+      "sha256": "5adb007fdd5002a4b0282af1d526355e74dd44e6334bde350b1fe9aabf9bf973"
+    },
+    {
+      "bytes": 379,
+      "path": "release/evidence/synthetic-load.json",
+      "sha256": "6ff9d6c92d00ae6908c4560c15f3129ed0bbabb413d5ae40a22718376fa1303d"
+    },
+    {
+      "bytes": 498159,
+      "path": "uv.lock",
+      "sha256": "138d5f5c3ae1201fe21a575ed2080638c30c1e67813ab1a61c3bd8253db21316"
+    },
+    {
+      "bytes": 134153,
+      "path": "pnpm-lock.yaml",
+      "sha256": "36606e82ac32368373377b41bcd7612aab9668319bc2d118f3e56f344b531918"
+    }
+  ],
+  "generated_at": "2026-09-13T14:25:13.259229+00:00",
+  "git_commit": "6150b5b1a98821ef52fe1789080b0d51e02ceebc",
+  "missing": [],
+  "schema_version": "pulse109-release-evidence/1.0.0",
+  "signature": {
+    "reason": "release signing identity is an external approval",
+    "state": "unsigned"
+  },
+  "synthetic_only": true
+}

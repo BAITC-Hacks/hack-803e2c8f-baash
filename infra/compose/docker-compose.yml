@@ -66,6 +66,7 @@ services:
     environment:
       PULSE109_DATABASE_URL: postgresql+psycopg://pulse109:pulse109-local@postgres:5432/pulse109
       PULSE109_ENVIRONMENT: local
+      PULSE109_MANUAL_REPOSITORY_MODE: postgres
       PULSE109_READINESS_DATABASE_REQUIRED: "true"
     depends_on:
       migrate:
@@ -100,6 +101,9 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
+    environment:
+      PULSE109_DATABASE_URL: postgresql+psycopg://pulse109:pulse109-local@postgres:5432/pulse109
+      PULSE109_WORKER_ENABLED: "true"
     ports:
       - "8081:8081"
     healthcheck:
@@ -166,6 +170,33 @@ services:
           "python",
           "-c",
           "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8083/v1/health/ready')",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  open311-sandbox:
+    build:
+      context: ../..
+      dockerfile: infra/docker/python-process.Dockerfile
+    command:
+      [
+        "uvicorn",
+        "pulse109_open311.main:app",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8084",
+      ]
+    ports:
+      - "8084:8084"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8084/v1/health/live')",
         ]
       interval: 5s
       timeout: 3s
