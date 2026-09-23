@@ -28,6 +28,7 @@ def test_manual_decision_and_outbox_commit_as_one_durable_path() -> None:
             source_request_id=source_id,
             region_id="ALA",
             received_at=datetime.now(timezone.utc),
+            received_at_quality="exact",
             channel="web",
             language="ru",
             text="Leak report citizen@example.test +7 700 123 45 67",
@@ -76,6 +77,7 @@ def test_manual_decision_and_outbox_commit_as_one_durable_path() -> None:
             source_request_id=second_source_id,
             region_id="ALA",
             received_at=datetime.now(timezone.utc),
+            received_at_quality="exact",
             channel="web",
             language="kk",
             text="Су құбыры ағып жатыр",  # noqa: RUF001 - intentional Kazakh fixture
@@ -223,6 +225,7 @@ def test_create_idempotency_is_region_scoped_and_serializes_concurrent_requests(
         source_request_id=f"appeal-{suffix}",
         region_id="ALA",
         received_at=datetime.now(timezone.utc),
+        received_at_quality="exact",
         channel="web",
         text="Synthetic water outage",
         consent_or_legal_basis="SYNTHETIC_TEST_ONLY",
