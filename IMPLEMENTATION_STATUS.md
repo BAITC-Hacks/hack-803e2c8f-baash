@@ -6,8 +6,7 @@
 - Status: active; the local M7 implementation has been reviewed and hardened, but its PostgreSQL
   integration and release gates have not yet passed on this host.
 - Branch: `codex/production-platform-20260923`, created without discarding the pre-existing local
-  changes. GitHub was fetched; the newer upstream commits will be integrated after the first
-  verified checkpoint.
+  changes. The newer upstream regional-import and ML commits have been merged into the branch.
 - Scope from the two supplied texts: durable manual journey first, then Handoff Guard, Replay Lab,
   Outcome Memory, Closure Integrity, Adaptive Case Schema, recurrence and federation. These later
   capabilities are planned and are not represented as delivered production behavior.
@@ -88,12 +87,12 @@ Earlier M4-M6 clean-run CI evidence:
 - D-010 limits M4 to deterministic synthetic hybrid mechanics and mandatory human duplicate review.
 - D-011 makes the replay adapter the only M5 transport until the first regional contract is approved.
 - D-012 binds M6 dashboard and exports to one governed metric result and preserves missing semantics.
-- D-013 through D-016 record the local M7 design; their numbering must be reconciled with the
-  newer upstream decision log during merge.
+- D-030 through D-035 record the M7 design, time provenance, regional idempotency and operational
+  fail-closed boundaries after reconciliation with the upstream decision log.
 
 ## Exact Next Milestone
 
-Integrate the fetched upstream branch, run its new data/ML checks, then execute all PostgreSQL
-integration and Compose smoke checks in CI. After M7 is evidenced, build a durable handoff command
+Run the upstream data/ML checks, then execute all PostgreSQL integration and Compose smoke checks
+in CI. After M7 is evidenced, build a durable handoff command
 and receipt state as the first M8 vertical slice. Keep live adapters, representative model claims,
 binding SLA and real PII processing gated by B01-B10.

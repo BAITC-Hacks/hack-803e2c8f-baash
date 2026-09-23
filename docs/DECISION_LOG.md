@@ -118,7 +118,193 @@ Record implementation decisions here when the repository, contracts or available
 - **Evidence:** migration `0007`, analytics/report tests, export comparison E2E, and browser evidence in `ml/evaluation/synthetic_m6/`.
 - **Revisit when:** B01, B06, B08, and B10 are resolved.
 
-### D-013 - Durable pilot path and verified identity boundary
+### D-013 - Karaganda dates parse as M/D/Y
+
+- **Date:** 2026-09-13
+- **Status:** accepted
+- **Context:** 87 709 Karaganda rows carry a second date field above 12 while the first field never exceeds 12, which fixes the order as month first.
+- **Decision:** parse `created_date`, `updated_date` and `submission_date` with an explicit M/D/Y rule in the regional CSV adapter.
+- **Alternatives:** default D/M/Y parsing, or per-row format inference.
+- **Consequences:** two years of Karaganda history keep correct day and month. Inference was rejected because it is not deterministic across runs.
+- **Evidence:** `adapters/regional_csv`, `data/reports/regional-csv-dq-report.json`.
+- **Revisit when:** the source owner confirms or contradicts the export locale.
+
+### D-014 - Turkestan collapses to one record per incident
+
+- **Date:** 2026-09-13
+- **Status:** accepted
+- **Context:** the Turkestan export holds 98 876 rows over 52 050 distinct `incidentid` values. Repeats are lifecycle snapshots, not separate appeals.
+- **Decision:** keep the row with the latest `updateddate` per `incidentid` and count the rest as deduplicated.
+- **Alternatives:** treat every row as an appeal, or retain all versions as history.
+- **Consequences:** any Turkestan metric computed without this step is inflated by roughly 47 percent. Version history is deferred until the source publishes a lifecycle contract.
+- **Evidence:** 46 826 rows collapsed, recorded in `data/reports/regional-csv-dq-report.json`.
+- **Revisit when:** B07 delivers a lifecycle event contract.
+
+### D-015 - Pavlodar parts concatenate without deduplication
+
+- **Date:** 2026-09-13
+- **Status:** accepted
+- **Context:** the two Pavlodar files share zero `id` values and both span 2020-02-09 to 2026-07-26, so the split is arbitrary rather than chronological.
+- **Decision:** concatenate both parts into one regional stream.
+- **Alternatives:** treat part 2 as a newer snapshot of part 1.
+- **Consequences:** 666 634 Pavlodar records enter the canonical stream, which is 67.3 percent of the corpus. Region-weighted evaluation becomes mandatory.
+- **Evidence:** identifier intersection of zero, verified over both files.
+- **Revisit when:** the source explains the split.
+
+### D-016 - Akmola column-shift rows are quarantined
+
+- **Date:** 2026-09-13
+- **Status:** accepted
+- **Context:** the Akmola export has 180 lines with unescaped quotes. In 32 records the shift is visible because `creation_date` holds an organisation name fragment rather than a date.
+- **Decision:** route those rows to quarantine with `SCHEMA_DRIFT_COLUMN_SHIFT` and never repair them heuristically.
+- **Alternatives:** infer field boundaries and repair, or drop silently.
+- **Consequences:** the canonical count is 990 000 rather than the 990 032 recorded in `DECISIONS_AND_BLOCKERS.md`. The difference is exactly these 32 rows.
+- **Evidence:** `quarantine_reasons` in the data quality report.
+- **Revisit when:** the source supplies a correctly escaped export.
+
+### D-017 - Location normalization status is missing for nearly every record
+
+- **Date:** 2026-09-13
+- **Status:** accepted
+- **Context:** coordinates are populated in 23 of 20 591 Kostanay rows and 264 of 98 876 Turkestan rows. The other five sources carry no coordinate columns.
+- **Decision:** set `location.normalization_status` to `missing` unless a coordinate pair parses, and keep geocoding outside the ingest step.
+- **Alternatives:** geocode addresses during ingest.
+- **Consequences:** incident proposals rest on topic, service and time. Spatial clustering has no source and cannot be demonstrated as measured behaviour.
+- **Evidence:** column fill rates in the data quality report.
+- **Revisit when:** a geocoding service is approved or the source supplies coordinates.
+
+### D-018 - Fine-tuning targets retrieval embeddings, not the intake classifier
+
+- **Date:** 2026-09-13
+- **Status:** accepted
+- **Context:** a full pass over all eight exports confirms that no field holds citizen text. The only free text is written by the executor after closure, giving 14 397 unique documents, of which 72 percent exceed 40 characters and 3 150 exceed 150 characters.
+- **Decision:** train embeddings for similar resolved case retrieval on that corpus. Keep the intake classifier on categorical features with a linear baseline until raw text arrives.
+- **Alternatives:** wait for B02, train the classifier on weak service L1-L3 labels, or claim no fine-tuning at all.
+- **Consequences:** the fine-tuning requirement is met on a corpus that actually exists. The absence of an intake classifier becomes a documented data request rather than an unexplained gap. This supersedes the routing model line in `DECISIONS_AND_BLOCKERS.md`.
+- **Evidence:** corpus statistics in `data/reports/regional-csv-dq-report.json`, with a language split of 96.9 percent ru, 3.0 percent mixed and 0 percent kk.
+- **Revisit when:** B02 delivers raw appeal text before 20 September.
+### D-019 - Redacted corpus is versioned in the private repository
+
+- **Date:** 2026-09-14
+- **Status:** accepted
+- **Context:** D-018 produced a 14 397 document corpus that every training and evaluation run depends on. Keeping it outside git made the retrieval results impossible to reproduce from a clone.
+- **Decision:** version the redacted corpus, the 32 quarantine rows and the quality report. The repository is private and access stays limited to the team.
+- **Alternatives:** keep the corpus out of git and distribute it by hand, or ship only hashes.
+- **Consequences:** a clone reproduces retrieval evaluation without external files. The canonical stream stays ignored because 1.7 GB does not belong in git, which is a size decision and not a privacy one. B10 is still unresolved, so this data must not leave the private repository and must not appear in any public artifact.
+- **Evidence:** residual PII scan over both files reports zero IIN, phone and email. Manifest at `ml/datasets/regional_retrieval_manifest.json`.
+- **Revisit when:** B10 returns a legal basis and retention class, or the repository visibility changes.
+
+### D-020 - Routing has no portable taxonomy across regions
+
+- **Date:** 2026-09-14
+- **Status:** accepted
+- **Context:** leave-one-region-out over the seven regions shows that a model trained on six regions does not work on the seventh. Kostanay shares 94.4 percent of its topic names with the training regions yet scores 0.002 accuracy. Turkestan shares 82.9 percent and scores 0.005. Karaganda shares zero.
+- **Decision:** treat the barrier to twenty regions as a taxonomy mapping problem, not a data volume problem. Report coverage per region and never present a single national routing number.
+- **Alternatives:** train one national model and report its average, or wait for the remaining thirteen regions.
+- **Consequences:** each region needs a versioned mapping from its own service catalogue onto a shared taxonomy before any cross-region claim holds. More data alone does not fix this.
+- **Evidence:** `ml/evaluation/routing_v1/routing_report.json`, section `leave_one_region_out`.
+- **Revisit when:** an authoritative shared service taxonomy arrives, or B01 delivers the remaining regions with their catalogues.
+
+### D-021 - The routing ceiling without citizen text is measured, not assumed
+
+- **Date:** 2026-09-14
+- **Status:** accepted
+- **Context:** a topic to service lookup reaches 0.573 accuracy on a temporal split inside each region. A logistic regression over topic, region, district, channel and time features reaches 0.588, which is 1.5 points better on accuracy and 0.02 points worse on macro F1.
+- **Decision:** ship the lookup with backoff as the routing baseline and keep the linear model as the confidence source for the abstention threshold. Do not claim a modelling gain that the numbers do not support.
+- **Alternatives:** present the model as the routing solution, or drop the model entirely.
+- **Consequences:** the coverage curve becomes the product feature. At 30 percent coverage accuracy is 0.972, at 50 percent it is 0.809. The operator receives everything below the threshold, which makes human-in-the-loop a tunable setting rather than a slogan.
+- **Evidence:** `ml/evaluation/routing_v1/routing_report.json`, sections `baselines`, `model` and `coverage_curve`.
+- **Revisit when:** B02 delivers raw appeal text, which is the only input expected to move this ceiling.
+
+### D-022 - Karaganda stays in the routing metrics with an explicit caveat
+
+- **Date:** 2026-09-14
+- **Status:** accepted
+- **Context:** Karaganda is 99.9 percent deterministic from topic alone because the executor organisation is derived from the category. It contributes 14 percent of the test slice at 0.989 accuracy and lifts the aggregate by 6.7 points. Excluding it moves the model from 0.588 to 0.521.
+- **Decision:** keep Karaganda in the reported metrics and publish both aggregates side by side, with and without it.
+- **Alternatives:** exclude it from routing metrics, or report only the aggregate that includes it.
+- **Consequences:** no number is hidden. A reader sees the inflated aggregate and the honest one in the same table, and can judge which applies to their region.
+- **Evidence:** `per_region` in the routing report.
+- **Revisit when:** new case data arrives and the region mix changes.
+
+### D-023 - Fine-tuned retrieval embeddings beat both baselines by a measured margin
+
+- **Date:** 2026-09-14
+- **Status:** accepted
+- **Context:** a frozen `multilingual-e5-small` loses to a character TF-IDF baseline on this corpus, scoring nDCG@10 of 0.3791 against 0.3932. Off-the-shelf multilingual semantics adds nothing to short clerical Russian text, which is what gives fine-tuning a measurable job.
+- **Decision:** fine-tune the base model with MultipleNegativesRankingLoss on 7 466 pairs mined only from the training period, and report the gain against the lexical baseline rather than against the frozen model.
+- **Alternatives:** ship the frozen model, ship lexical only, or claim the fine-tuning requirement without measuring it.
+- **Consequences:** the ТЗ fine-tuning requirement is met with a number that survives scrutiny. nDCG@10 reaches 0.4086, which is 1.54 points above lexical and 2.95 above frozen. The honest headline is the smaller number, because the larger one compares the model to itself.
+- **Evidence:** `ml/evaluation/retrieval_ft_v1/retrieval_finetune_report.json`, `ml/model_cards/retrieval_e5_small_ft_v1.json`.
+- **Revisit when:** raw citizen text arrives, since queries in production are citizen texts while every query here is an executor text.
+
+### D-024 - Retrieval stays hybrid because lexical wins the tail
+
+- **Date:** 2026-09-14
+- **Status:** accepted
+- **Context:** the fine-tuned model leads on Recall@1 (0.4713 against 0.4625) and nDCG@10, yet trails marginally on Recall@10 (0.6925 against 0.6937). The gain is concentrated at the top of the ranking.
+- **Decision:** keep lexical retrieval in the serving path permanently and fuse it with the dense ranking, rather than treating lexical as a fallback that a good enough model would retire.
+- **Alternatives:** replace lexical with the dense model once it wins on the headline metric.
+- **Consequences:** the operator sees a better first result from the dense side and keeps the recall of the lexical side. This confirms the existing locked decision that a lexical fallback always remains available, now with a measurement behind it.
+- **Evidence:** per-system Recall@1 and Recall@10 in the fine-tune report.
+- **Revisit when:** a reranker is added, which may change where each retriever contributes.
+
+### D-025 - Trained weights are not versioned, the model card is
+
+- **Date:** 2026-09-14
+- **Status:** accepted
+- **Context:** one checkpoint is 465 MB and is reproduced in about five minutes on CPU. The corpus, the pair mining and the split are all deterministic under a fixed seed.
+- **Decision:** ignore `ml/evaluation/**/model/` in git and version a model card carrying the weight sha256, the training configuration, the split and every metric.
+- **Alternatives:** commit the weights, or add Git LFS.
+- **Consequences:** a clone reproduces the checkpoint from the corpus that is versioned. A reviewer can match any reported number to the exact weights that produced it without the repository carrying half a gigabyte per experiment.
+- **Evidence:** `ml/model_cards/retrieval_e5_small_ft_v1.json`, field `weights.sha256`.
+- **Revisit when:** a checkpoint has to be shipped to an environment that cannot retrain.
+
+### D-026 - Load forecasting selects per region against a seasonal-naive baseline
+
+- **Date:** 2026-09-15
+- **Status:** accepted
+- **Context:** rolling-origin backtest over the four regions with enough history. A ridge model on calendar and lag features beats seasonal naive on the two large high-variance regions (Pavlodar 19.9 percent lower MAE at a 7-day horizon, VKO 14.9 percent) and loses on the two smaller or shorter series (Karaganda, Turkestan), where seasonal naive is already strong.
+- **Decision:** forecast each region with the method that wins its own backtest, and report both methods for every region. A model is used only where it beats the baseline it must beat.
+- **Alternatives:** one national model, or the ridge model everywhere regardless of the backtest.
+- **Consequences:** the situation centre reports a load forecast with a measured error against a reconstructible baseline, and never claims a modelling gain a region's data does not support. Three regions have too little history and are marked skipped rather than forecast weakly.
+- **Evidence:** `ml/evaluation/forecast_v1/forecast_report.json`, sections `regions.*.backtest` and `summary`.
+- **Revisit when:** new case data lengthens the short regions, or statsmodels ETS is added as a third candidate.
+
+### D-027 - Surge detection is a robust residual, not a threshold on the count
+
+- **Date:** 2026-09-15
+- **Status:** accepted
+- **Context:** raw daily counts have strong weekly rhythm, so a Monday is not a surge just because it exceeds a Sunday. The series is decomposed into a weekday-median seasonal, a centred rolling-median trend, and a residual.
+- **Decision:** flag a surge when the residual exceeds k times the scaled median absolute deviation, with k of 4. This is the aggregate form of the incident concept, an emerging problem rather than a claim that two appeals are one event.
+- **Alternatives:** a fixed daily threshold, or a mean-and-standard-deviation bound that outliers would inflate.
+- **Consequences:** the manager view surfaces roughly 1 to 7 percent of days per region as surges, each with its residual size, and the top examples are real spikes such as Pavlodar on 2024-06-21 at 2355 appeals against a norm near 370. Detection quality is not yet validated against labelled incidents.
+- **Evidence:** `regions.*.surges` in the forecast report.
+- **Revisit when:** a labelled incident set exists to measure precision and recall.
+
+### D-028 - The forecast is translated to operators per shift
+
+- **Date:** 2026-09-15
+- **Status:** accepted
+- **Context:** a graph of appeals per day is not a decision. A supervisor needs a staffing number.
+- **Decision:** convert the forecast to operators per shift using average handle time and a target occupancy, and mark both inputs as placeholders until the operator interview supplies real values.
+- **Alternatives:** report only the appeal volume and leave staffing to the reader.
+- **Consequences:** the number becomes actionable, for example Pavlodar's recent 339 appeals per day maps to about 5 operators per shift at a 6-minute handle time and 85 percent occupancy. The staffing figure is only as good as its two assumptions, which are stated in the report.
+- **Evidence:** `regions.*.staffing_recent` and the `staffing` block in the forecast report.
+- **Revisit when:** the operator interview returns a measured handle time and occupancy target.
+
+### D-029 - One end-to-end scenario composes the three modules on real data
+
+- **Date:** 2026-09-20
+- **Status:** accepted
+- **Context:** the three modules existed as separate scripts and reports. Judges reward one coherent working scenario over three separate metrics, and the product positioning is a single operational contour.
+- **Decision:** ship `ml/training/demo_scenario.py`, which runs one appeal through routing, assist, surge and forecast, emitting a single trace where every downstream number comes from a real artifact. The intake free text is illustrative and labelled as such in the trace, because no citizen text exists (D-018). Everything after intake is real.
+- **Alternatives:** keep the modules separate, or fake the whole flow with mock outputs for a smoother demo.
+- **Consequences:** the demo has a spine. The default case is Pavlodar on 2024-06-21, a real surge day with 1819 water-supply appeals for a single topic. Routing returns 0.25 confidence and correctly sends the case to an operator, which demonstrates the abstention path rather than hiding it. The fine-tuned retriever returns three real resolved water-break cases. The manager view shows the surge and a 5-operators-per-shift staffing call.
+- **Evidence:** `ml/evaluation/demo_v1/demo_trace.json`, reproducible from the canonical stream and the merged reports.
+- **Revisit when:** raw citizen text arrives and the illustrative intake can be replaced by a real appeal.
+
+### D-030 - Durable pilot path and verified identity boundary
 
 - **Date:** 2026-09-13
 - **Status:** accepted
@@ -129,7 +315,7 @@ Record implementation decisions here when the repository, contracts or available
 - **Evidence:** migrations `0008`-`0011`, `pulse109.security`, PostgreSQL integration tests, and security tests.
 - **Revisit when:** B08 supplies the approved issuer, audience, claims, network and hosting profile.
 
-### D-014 - Pre-submit duplicate evidence and reversible incident membership
+### D-031 - Pre-submit duplicate evidence and reversible incident membership
 
 - **Date:** 2026-09-13
 - **Status:** accepted
@@ -140,7 +326,7 @@ Record implementation decisions here when the repository, contracts or available
 - **Evidence:** OpenAPI `preflightAppeal`, retrieval tests, incident event history, golden-flow E2E, and durable integration test.
 - **Revisit when:** B04 provides approved pairs/groups and a production threshold policy.
 
-### D-015 - Versioned policy records never invent an SLA
+### D-032 - Versioned policy records never invent an SLA
 
 - **Date:** 2026-09-13
 - **Status:** accepted
@@ -151,7 +337,7 @@ Record implementation decisions here when the repository, contracts or available
 - **Evidence:** migration `0009`, policy catalog API/tests, assignment validation, and rollback runbook.
 - **Revisit when:** B06 is resolved by the policy owner.
 
-### D-016 - Compatibility services and release evidence remain explicitly synthetic
+### D-033 - Compatibility services and release evidence remain explicitly synthetic
 
 - **Date:** 2026-09-13
 - **Status:** accepted
@@ -161,6 +347,29 @@ Record implementation decisions here when the repository, contracts or available
 - **Consequences:** integration and operations mechanics are executable now and replaceable through stable boundaries; production claims stay gated by B01-B10.
 - **Evidence:** `adapters/open311`, situation map, `synthetic_mlop`, security CI, runbooks and `release/evidence-index.md`.
 - **Revisit when:** the first source, tile/geocoder infrastructure and release-signing owner are approved.
+
+
+### D-034 - Preserve time provenance and scope idempotency to the region
+
+- **Date:** 2026-09-23
+- **Status:** accepted
+- **Context:** M7 review found an invented received time in migration 0008, ambiguous status-event timestamps, and a global create idempotency receipt.
+- **Decision:** received time and its quality are stored separately from observed time; missing or date-only time stays null. Status events state quality explicitly. Create receipts are region-scoped and transaction-locked; object access is checked before replay receipts are returned.
+- **Alternatives:** backfill from observation time; infer exact quality from a timestamp; rely on unique-violation retry for concurrent requests.
+- **Consequences:** SLA and analytics cannot mistake ingestion time for source time; concurrent retries get one response and cannot cross region boundaries.
+- **Evidence:** OpenAPI and canonical schema changes, migration 0008, M7 durable-path and contract tests.
+- **Revisit when:** source-specific time semantics are approved and integration tests run against the target PostgreSQL profile.
+
+### D-035 - Fail closed for unapproved operational features and private data
+
+- **Date:** 2026-09-23
+- **Status:** accepted
+- **Context:** the current retrieval, analytics and report providers are synthetic or process-local; the available regex does not safely remove names and addresses from arbitrary citizen text.
+- **Decision:** pilot/production serves the durable manual path but returns `read_model_unavailable` for those demo endpoints. Operational intake requires an immutable source reference and configured legal basis and retention class; free text is not stored as a feature or passed to inference until an approved privacy gateway exists.
+- **Alternatives:** present synthetic metrics as live data; treat regex masking as complete PII redaction; invent legal defaults.
+- **Consequences:** several assistive features remain unavailable in the operational profile while the manual critical path can proceed with approved private storage and policy configuration.
+- **Evidence:** profile gating tests, operational-intake tests, security review and `IMPLEMENTATION_STATUS.md`.
+- **Revisit when:** B01, B02, B08 and B10 supply approved data, identity, redaction, storage and policies.
 
 ### D-XXX — Short title
 

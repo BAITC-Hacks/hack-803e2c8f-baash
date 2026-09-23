@@ -1,0 +1,125 @@
+{
+  "generated_at": "2026-09-14T08:14:34.654037+00:00",
+  "corpus_documents": 14397,
+  "groups": 834,
+  "relevance": "shared (region, topic, service), proxy rather than human judgment",
+  "query_selection": "40 to 4000 characters, group size above one",
+  "queries": 1500,
+  "systems": {
+    "S0_random": {
+      "recall_at_1": 0.018666666666666668,
+      "recall_at_5": 0.08,
+      "recall_at_10": 0.154,
+      "mrr_at_10": 0.04893835978835983,
+      "ndcg_at_10": 0.018690509119990338,
+      "queries": 1500
+    },
+    "S1_char_tfidf": {
+      "recall_at_1": 0.49066666666666664,
+      "recall_at_5": 0.6633333333333333,
+      "recall_at_10": 0.7166666666666667,
+      "mrr_at_10": 0.5658169312169317,
+      "ndcg_at_10": 0.42975327296675203,
+      "queries": 1500,
+      "by_region": {
+        "KOSTANAY": {
+          "recall_at_1": 0.46932515337423314,
+          "recall_at_5": 0.656441717791411,
+          "recall_at_10": 0.7198364008179959,
+          "mrr_at_10": 0.5518197974486315,
+          "ndcg_at_10": 0.41108477408051497,
+          "queries": 978
+        },
+        "ALMATY_OBL": {
+          "recall_at_1": 0.5311203319502075,
+          "recall_at_5": 0.6680497925311203,
+          "recall_at_10": 0.7012448132780082,
+          "mrr_at_10": 0.5877996772706318,
+          "ndcg_at_10": 0.4669901342995063,
+          "queries": 482
+        },
+        "VKO": {
+          "recall_at_1": 0.525,
+          "recall_at_5": 0.775,
+          "recall_at_10": 0.825,
+          "mrr_at_10": 0.643154761904762,
+          "ndcg_at_10": 0.43749389167556946,
+          "queries": 40
+        }
+      }
+    },
+    "S2_multilingual-e5-small": {
+      "recall_at_1": 0.488,
+      "recall_at_5": 0.6566666666666666,
+      "recall_at_10": 0.7193333333333334,
+      "mrr_at_10": 0.561495502645503,
+      "ndcg_at_10": 0.42013985847681473,
+      "queries": 1500,
+      "by_region": {
+        "KOSTANAY": {
+          "recall_at_1": 0.48568507157464214,
+          "recall_at_5": 0.6431492842535788,
+          "recall_at_10": 0.7137014314928425,
+          "mrr_at_10": 0.556327701496413,
+          "ndcg_at_10": 0.4105026924873345,
+          "queries": 978
+        },
+        "ALMATY_OBL": {
+          "recall_at_1": 0.4896265560165975,
+          "recall_at_5": 0.6680497925311203,
+          "recall_at_10": 0.7178423236514523,
+          "mrr_at_10": 0.563818086017256,
+          "ndcg_at_10": 0.44346180730013135,
+          "queries": 482
+        },
+        "VKO": {
+          "recall_at_1": 0.525,
+          "recall_at_5": 0.85,
+          "recall_at_10": 0.875,
+          "mrr_at_10": 0.659861111111111,
+          "ndcg_at_10": 0.37473908359864977,
+          "queries": 40
+        }
+      }
+    },
+    "S2_paraphrase-multilingual-MiniLM-L12-v2": {
+      "recall_at_1": 0.45066666666666666,
+      "recall_at_5": 0.6213333333333333,
+      "recall_at_10": 0.68,
+      "mrr_at_10": 0.524966137566138,
+      "ndcg_at_10": 0.3850365115832235,
+      "queries": 1500,
+      "by_region": {
+        "KOSTANAY": {
+          "recall_at_1": 0.4325153374233129,
+          "recall_at_5": 0.6104294478527608,
+          "recall_at_10": 0.6656441717791411,
+          "mrr_at_10": 0.5097437270750151,
+          "ndcg_at_10": 0.36419832859774415,
+          "queries": 978
+        },
+        "ALMATY_OBL": {
+          "recall_at_1": 0.483402489626556,
+          "recall_at_5": 0.6410788381742739,
+          "recall_at_10": 0.7074688796680498,
+          "mrr_at_10": 0.552735790028321,
+          "ndcg_at_10": 0.4340050255044136,
+          "queries": 482
+        },
+        "VKO": {
+          "recall_at_1": 0.5,
+          "recall_at_5": 0.65,
+          "recall_at_10": 0.7,
+          "mrr_at_10": 0.5625297619047618,
+          "ndcg_at_10": 0.3044594928278454,
+          "queries": 40
+        }
+      }
+    }
+  },
+  "limits": [
+    "Queries are executor texts. Production queries are citizen texts.",
+    "Proxy relevance rewards recovering the metadata grouping, not operator usefulness.",
+    "No pure Kazakh documents exist in this corpus, so no kk slice can be reported."
+  ]
+}

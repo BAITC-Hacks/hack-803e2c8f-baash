@@ -1,0 +1,57 @@
+{
+  "generated_at": "2026-09-14T09:06:22.059946+00:00",
+  "base_model": "intfloat/multilingual-e5-small",
+  "device": "cpu",
+  "max_seq_length": 128,
+  "split": {
+    "strategy": "temporal, evaluation documents never appear in training pairs",
+    "cut_at": "2025-08-11T16:27:29+00:00",
+    "train_documents": 7781,
+    "eval_documents": 2594
+  },
+  "training": {
+    "pairs": 7466,
+    "pairs_with_hard_negative": 7136,
+    "loss": "MultipleNegativesRankingLoss",
+    "epochs": 1,
+    "batch_size": 16,
+    "positive_rule": "same region, topic and service within 120 days",
+    "hard_negative_rule": "same region and topic, different service"
+  },
+  "systems": {
+    "S1_char_tfidf": {
+      "recall_at_1": 0.4625,
+      "recall_at_5": 0.615,
+      "recall_at_10": 0.69375,
+      "mrr_at_10": 0.5338859126984126,
+      "ndcg_at_10": 0.39317443492891085,
+      "queries": 800
+    },
+    "S2_frozen": {
+      "recall_at_1": 0.45875,
+      "recall_at_5": 0.61125,
+      "recall_at_10": 0.66375,
+      "mrr_at_10": 0.5234955357142855,
+      "ndcg_at_10": 0.37907680581317144,
+      "queries": 800
+    },
+    "S3_finetuned": {
+      "recall_at_1": 0.47125,
+      "recall_at_5": 0.62625,
+      "recall_at_10": 0.6925,
+      "mrr_at_10": 0.5387157738095236,
+      "ndcg_at_10": 0.4085617661263359,
+      "queries": 800
+    }
+  },
+  "limits": [
+    "Queries are executor texts. Production queries are citizen texts.",
+    "Proxy relevance is a shared (region, topic, service) group.",
+    "No pure Kazakh documents exist, so no kk slice can be reported."
+  ],
+  "deltas": {
+    "finetuned_vs_frozen_ndcg_points": 2.95,
+    "finetuned_vs_lexical_ndcg_points": 1.54,
+    "finetuned_vs_frozen_recall_at_1_points": 1.25
+  }
+}

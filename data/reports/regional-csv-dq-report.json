@@ -1,0 +1,111 @@
+{
+  "generated_at": "2026-09-13T07:27:14+00:00",
+  "adapter_version": "1.0.0",
+  "mapping_version": "regional-csv/1.0.0",
+  "redaction_version": "pii-ru-kz/1.0.0",
+  "totals": {
+    "input_rows": 1036858,
+    "accepted": 843937,
+    "accepted_with_warnings": 146063,
+    "quarantined": 32,
+    "deduplicated": 46826
+  },
+  "regions": {
+    "PAVLODAR": {
+      "input_rows": 666634,
+      "accepted": 666634,
+      "quarantined": 0,
+      "deduplicated": 0,
+      "files": [
+        "Данные по обращениям 109 — Павлодарская область_part_001_of_002.csv",
+        "Данные по обращениям 109 — Павлодарская область_part_002_of_002.csv"
+      ]
+    },
+    "KARAGANDA": {
+      "input_rows": 143954,
+      "accepted": 143954,
+      "quarantined": 0,
+      "deduplicated": 0,
+      "files": [
+        "Обращения граждан 109 - Карагандинская область.csv"
+      ]
+    },
+    "TURKESTAN": {
+      "input_rows": 98876,
+      "accepted": 52050,
+      "quarantined": 0,
+      "deduplicated": 46826,
+      "files": [
+        "Обращения жителей 109 - Туркестанская область.csv"
+      ]
+    },
+    "KOSTANAY": {
+      "input_rows": 20591,
+      "accepted": 20591,
+      "quarantined": 0,
+      "deduplicated": 0,
+      "files": [
+        "Обращения жителей 109 - Костанайская область.csv"
+      ]
+    },
+    "VKO": {
+      "input_rows": 83385,
+      "accepted": 83385,
+      "quarantined": 0,
+      "deduplicated": 0,
+      "files": [
+        "Обращения граждан 109 - Восточно-Казахстанская область.csv"
+      ]
+    },
+    "ALMATY_OBL": {
+      "input_rows": 19912,
+      "accepted": 19912,
+      "quarantined": 0,
+      "deduplicated": 0,
+      "files": [
+        "Обращения граждан 109 - Алматинская область.csv"
+      ]
+    },
+    "AKMOLA": {
+      "input_rows": 3506,
+      "accepted": 3474,
+      "quarantined": 32,
+      "deduplicated": 0,
+      "files": [
+        "Обращения граждан 109 - Акмолинская область.csv"
+      ]
+    }
+  },
+  "language": {
+    "ru": 959021,
+    "mixed": 30189,
+    "unknown": 790
+  },
+  "time_quality": {
+    "source_tz_assumed": 990000
+  },
+  "warnings": {
+    "SYNTHETIC_SOURCE_ID": 143954,
+    "STATUS_UNMAPPED": 1521,
+    "TOPIC_MISSING": 1371,
+    "SERVICE_MISSING": 863
+  },
+  "quarantine_reasons": {
+    "SCHEMA_DRIFT_COLUMN_SHIFT": 32
+  },
+  "pii_flags": {
+    "address": 74198,
+    "street": 22347,
+    "full_name": 6499,
+    "phone": 93,
+    "iin": 10
+  },
+  "corpus": {
+    "texts": 27850,
+    "unique_texts": 14397,
+    "by_language": {
+      "ru": 26711,
+      "mixed": 1139
+    }
+  }
+}

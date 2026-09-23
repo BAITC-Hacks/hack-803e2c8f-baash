@@ -15,3 +15,16 @@ node_modules/
 coverage.xml
 htmlcov/
 data/reports/*.tmp
+
+# Regional CSV ingest working directory. The 1.7 GB canonical stream is
+# regenerated on demand and never versioned. Redacted corpus, quarantine rows
+# and the quality report are versioned under ml/datasets and data/reports.
+build/ingest/
+data/raw/
+canonical.jsonl
+*.canonical.jsonl
+
+# Trained sentence-transformer weights. 465 MB per checkpoint, reproduced in
+# about five minutes on CPU by ml/training/retrieval_finetune.py. The model
+# card carries the hash so a checkpoint can be matched to its report.
+ml/evaluation/**/model/
