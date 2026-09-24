@@ -1,0 +1,10 @@
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Synthetic idempotency token in the M7 privacy test, committed in 7534a5b"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "line"
+regexes = ['''idempotency_key="synthetic-key-1234"''']
+paths = ['''^services/core/tests/manual_path/test_operational_privacy\.py$''']

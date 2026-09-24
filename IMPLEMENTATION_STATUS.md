@@ -51,26 +51,30 @@
 
 ## Verification
 
-| Command                             | Result  | Evidence or note                                                                            |
-| ----------------------------------- | ------- | ------------------------------------------------------------------------------------------- |
-| `./scripts/tasks.ps1 lint`          | passed  | Ruff, Prettier and ESLint after M7 changes.                                                 |
-| `./scripts/tasks.ps1 typecheck`     | passed  | Strict mypy over 70 source files and TypeScript checks.                                     |
-| `./scripts/tasks.ps1 test`          | passed  | 106 passed, 6 PostgreSQL-only tests skipped because `PULSE109_TEST_DATABASE_URL` is unset.  |
-| `./scripts/tasks.ps1 contract-test` | passed  | 17 passed; time-quality and OpenAPI validation included.                                    |
-| `./scripts/tasks.ps1 e2e`           | passed  | 9 passed, including manual and incident flows.                                              |
-| `./scripts/tasks.ps1 build`         | passed  | Python wheel/sdist and Next.js production build.                                            |
-| Alembic offline SQL                 | passed  | Forward chain renders through `0011_m7_incident_persistence`.                               |
-| `docker compose ... config --quiet` | passed  | Compose model parses without a running daemon.                                              |
-| PostgreSQL integration              | pending | CI reached the tests and found a `FOR UPDATE` outer-join error; the query fix awaits rerun. |
+| Command                             | Result | Evidence or note                                                                           |
+| ----------------------------------- | ------ | ------------------------------------------------------------------------------------------ |
+| `./scripts/tasks.ps1 lint`          | passed | Ruff, Prettier and ESLint after M7 changes.                                                |
+| `./scripts/tasks.ps1 typecheck`     | passed | Strict mypy over 70 source files and TypeScript checks.                                    |
+| `./scripts/tasks.ps1 test`          | passed | 106 passed, 6 PostgreSQL-only tests skipped because `PULSE109_TEST_DATABASE_URL` is unset. |
+| `./scripts/tasks.ps1 contract-test` | passed | 17 passed; time-quality and OpenAPI validation included.                                   |
+| `./scripts/tasks.ps1 e2e`           | passed | 9 passed, including manual and incident flows.                                             |
+| `./scripts/tasks.ps1 build`         | passed | Python wheel/sdist and Next.js production build.                                           |
+| Alembic offline SQL                 | passed | Forward chain renders through `0011_m7_incident_persistence`.                              |
+| `docker compose ... config --quiet` | passed | Compose model parses without a running daemon.                                             |
+| PostgreSQL integration              | passed | CI run `35900618132` passed all 6 integration tests and Compose health checks.             |
+| Gitleaks 8.30.1 history scan        | passed | Local full-history scan with the exact synthetic test-token allowlist.                     |
 
 Earlier M4-M6 clean-run CI evidence:
 <https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/34685618121>.
 
 CI run <https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/35899340246> passed
 the quality job and all four earlier database checks. Its two new M7 database tests failed on
-PostgreSQL's outer-join lock rule; `FOR UPDATE OF a` is now staged for rerun. The supply-chain job
-stopped at the license-gated Gitleaks Action; the official Gitleaks CLI container is staged in its
-place, and the SBOM step now requires a successfully built image.
+PostgreSQL's outer-join lock rule. CI run
+<https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/35900618132> passed quality and
+container-smoke after `FOR UPDATE OF a`. Its supply-chain job found two false positives on the
+same synthetic idempotency token in a test. A path, rule and literal-scoped Gitleaks allowlist is
+staged and passed a local full-history scan. The image vulnerability scan and SBOM remain to be
+verified in the next CI run.
 
 ## Known Limitations And External Blockers
 
@@ -81,8 +85,9 @@ place, and the SBOM step now requires a successfully built image.
   external status mappings; the replay adapter is the only implemented transport.
 - M6 read results, retrieval corpus and report storage remain synthetic or process-local. Their
   operational routes return `read_model_unavailable` until durable, approved providers are wired.
-- The local/test profile uses in-memory manual state. Pilot/production selects PostgreSQL, but live
-  PostgreSQL tests, restart tests and backup/restore evidence remain pending in the current branch.
+- The local/test profile uses in-memory manual state. Pilot/production selects PostgreSQL; CI now
+  passes database tests and Compose health checks, while restart and backup/restore evidence remain
+  pending in the current branch.
 - B08/B10 still require the approved OIDC provider, immutable private source storage, legal basis
   and retention class. Operational intake fails closed if these are absent; the current regex is a
   synthetic-fixture aid and is not a production PII redactor.
@@ -90,8 +95,7 @@ place, and the SBOM step now requires a successfully built image.
   source values. HEAD now withholds both and labels all derived model reports historical and
   unverified. Earlier Git blobs remain reachable; a repository-owner retention and history
   remediation decision is still required. No published history was rewritten.
-- Docker Desktop is not running on this host. The next executable database check is the CI
-  `container-smoke` job after the branch is pushed, or the same Compose commands on a Docker host.
+- Docker Desktop is not running on this host; database-backed evidence comes from CI.
 - No live regional adapter, Handoff Guard lifecycle, Replay Lab, verified outcome memory, closure
   evidence gate, adaptive case schema, recurrence engine or federated control plane is complete.
 
@@ -107,7 +111,6 @@ place, and the SBOM step now requires a successfully built image.
 
 ## Exact Next Milestone
 
-Rerun quality, PostgreSQL integration and supply-chain checks in CI after the SQL and research-data
-fixes are pushed. After M7 is evidenced, build a durable handoff command
+Rerun the supply-chain job in CI with the narrow Gitleaks allowlist. After M7 is evidenced, build a durable handoff command
 and receipt state as the first M8 vertical slice. Keep live adapters, representative model claims,
 binding SLA and real PII processing gated by B01-B10.
