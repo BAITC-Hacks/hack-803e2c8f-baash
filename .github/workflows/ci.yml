@@ -68,6 +68,26 @@ jobs:
         env:
           PULSE109_TEST_DATABASE_URL: postgresql://pulse109:pulse109-local@127.0.0.1:5432/pulse109
         run: uv run pytest tests/integration -q
+      - name: Restore into a disposable database and compare durable state
+        run: |
+          compose=(docker compose -f infra/compose/docker-compose.yml)
+          "${compose[@]}" exec -T postgres pg_dump -U pulse109 -d pulse109 \
+            --format=custom --no-owner --file=/tmp/pulse109-restore-drill.dump
+          "${compose[@]}" exec -T postgres createdb -U pulse109 pulse109_restore
+          "${compose[@]}" exec -T postgres pg_restore -U pulse109 -d pulse109_restore \
+            --exit-on-error --no-owner --no-privileges /tmp/pulse109-restore-drill.dump
+          for table in integration.source_record appeals.appeal appeals.appeal_event audit.audit_event integration.outbox; do
+            source_count=$("${compose[@]}" exec -T postgres psql -U pulse109 -d pulse109 -Atc "SELECT count(*) FROM $table")
+            restored_count=$("${compose[@]}" exec -T postgres psql -U pulse109 -d pulse109_restore -Atc "SELECT count(*) FROM $table")
+            test "$source_count" = "$restored_count"
+          done
+          source_hash=$("${compose[@]}" exec -T postgres psql -U pulse109 -d pulse109 -Atc \
+            "SELECT md5(coalesce(string_agg(raw_payload_hash::text, '' ORDER BY id), '')) FROM integration.source_record")
+          restored_hash=$("${compose[@]}" exec -T postgres psql -U pulse109 -d pulse109_restore -Atc \
+            "SELECT md5(coalesce(string_agg(raw_payload_hash::text, '' ORDER BY id), '')) FROM integration.source_record")
+          test "$source_hash" = "$restored_hash"
+          test "$("${compose[@]}" exec -T postgres psql -U pulse109 -d pulse109_restore -Atc \
+            'SELECT version_num FROM alembic_version')" = "0011_m7_incident_persistence"
       - name: Capture container logs
         if: always()
         run: docker compose -f infra/compose/docker-compose.yml logs --no-color

@@ -51,18 +51,19 @@
 
 ## Verification
 
-| Command                             | Result | Evidence or note                                                                           |
-| ----------------------------------- | ------ | ------------------------------------------------------------------------------------------ |
-| `./scripts/tasks.ps1 lint`          | passed | Ruff, Prettier and ESLint after M7 changes.                                                |
-| `./scripts/tasks.ps1 typecheck`     | passed | Strict mypy over 70 source files and TypeScript checks.                                    |
-| `./scripts/tasks.ps1 test`          | passed | 106 passed, 6 PostgreSQL-only tests skipped because `PULSE109_TEST_DATABASE_URL` is unset. |
-| `./scripts/tasks.ps1 contract-test` | passed | 17 passed; time-quality and OpenAPI validation included.                                   |
-| `./scripts/tasks.ps1 e2e`           | passed | 9 passed, including manual and incident flows.                                             |
-| `./scripts/tasks.ps1 build`         | passed | Python wheel/sdist and Next.js production build.                                           |
-| Alembic offline SQL                 | passed | Forward chain renders through `0011_m7_incident_persistence`.                              |
-| `docker compose ... config --quiet` | passed | Compose model parses without a running daemon.                                             |
-| PostgreSQL integration              | passed | CI run `35900618132` passed all 6 integration tests and Compose health checks.             |
-| Gitleaks 8.30.1 history scan        | passed | Local full-history scan with the exact synthetic test-token allowlist.                     |
+| Command                             | Result  | Evidence or note                                                                           |
+| ----------------------------------- | ------- | ------------------------------------------------------------------------------------------ |
+| `./scripts/tasks.ps1 lint`          | passed  | Ruff, Prettier and ESLint after M7 changes.                                                |
+| `./scripts/tasks.ps1 typecheck`     | passed  | Strict mypy over 70 source files and TypeScript checks.                                    |
+| `./scripts/tasks.ps1 test`          | passed  | 106 passed, 6 PostgreSQL-only tests skipped because `PULSE109_TEST_DATABASE_URL` is unset. |
+| `./scripts/tasks.ps1 contract-test` | passed  | 17 passed; time-quality and OpenAPI validation included.                                   |
+| `./scripts/tasks.ps1 e2e`           | passed  | 9 passed, including manual and incident flows.                                             |
+| `./scripts/tasks.ps1 build`         | passed  | Python wheel/sdist and Next.js production build.                                           |
+| Alembic offline SQL                 | passed  | Forward chain renders through `0011_m7_incident_persistence`.                              |
+| `docker compose ... config --quiet` | passed  | Compose model parses without a running daemon.                                             |
+| PostgreSQL integration              | passed  | CI run `35900618132` passed all 6 integration tests and Compose health checks.             |
+| Gitleaks 8.30.1 history scan        | passed  | Local full-history scan with the exact synthetic test-token allowlist.                     |
+| PostgreSQL restore drill            | pending | CI now dumps into a new database and compares counts and source hashes; rerun pending.     |
 
 Earlier M4-M6 clean-run CI evidence:
 <https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/34685618121>.
@@ -95,8 +96,8 @@ findings prevent production security certification and require continuing review
 - M6 read results, retrieval corpus and report storage remain synthetic or process-local. Their
   operational routes return `read_model_unavailable` until durable, approved providers are wired.
 - The local/test profile uses in-memory manual state. Pilot/production selects PostgreSQL; CI now
-  passes database tests and Compose health checks, while restart and backup/restore evidence remain
-  pending in the current branch.
+  passes database tests and Compose health checks. A disposable restore drill is staged in CI;
+  restart, target RPO/RTO and production object-store restore evidence remain pending.
 - B08/B10 still require the approved OIDC provider, immutable private source storage, legal basis
   and retention class. Operational intake fails closed if these are absent; the current regex is a
   synthetic-fixture aid and is not a production PII redactor.
