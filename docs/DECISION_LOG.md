@@ -393,6 +393,17 @@ Record implementation decisions here when the repository, contracts or available
 - **Evidence:** migration `0012_m8_ownership_catalog`, ownership engine and tests, OpenAPI assessment contract.
 - **Revisit when:** approved regional ownership sources and handoff protocols are available.
 
+### D-038 — Isolate inference behind a typed provider
+
+- **Date:** 2026-09-24
+- **Status:** accepted
+- **Context:** the core imported the lexical model implementation directly although inference runs as a separate deployment boundary.
+- **Decision:** manual-path classification calls an injected `InferenceProvider`; a named local lexical implementation preserves offline/test fallback. Pilot/production still fail closed before inference until an approved de-identified feature snapshot and remote provider are configured.
+- **Alternatives:** keep model imports in both manual services; auto-fallback to local inference after remote failures.
+- **Consequences:** model transport can change without changing appeal transactions. The provider boundary alone is not a complete Decision Gateway or an operational remote inference client.
+- **Evidence:** `services/core/src/pulse109/decisions/inference_provider.py`, provider-injection test and existing manual-path E2E flow.
+- **Revisit when:** B02/B08/B10 approve real features, privacy handling and operational inference.
+
 ### D-XXX — Short title
 
 - **Date:** YYYY-MM-DD

@@ -39,6 +39,8 @@
 - M8 adds an append-only, effective-dated ownership catalog and an advisory assessment of approved
   organization candidates. It uses the last human-confirmed service, labels observed-time fallback,
   exposes rule provenance, detects ambiguity and prior rejection, and never assigns an organization.
+- Classification now calls an injected `InferenceProvider` boundary; the existing lexical CPU
+  fallback is explicit and operational profiles still reject unapproved feature snapshots.
 - The merged regional research corpus now contains withheld text markers only. Quarantine artifacts
   contain hashes and counts without source row values. New regional ingest withholds executor prose;
   training and evaluation stop on withheld data, and historical reports block quality claims.
@@ -66,10 +68,11 @@
 | `./scripts/tasks.ps1 build`         | passed | Python wheel/sdist and Next.js production build.                                           |
 | Alembic offline SQL                 | passed | Forward chain renders through `0012_m8_ownership_catalog`.                                 |
 | `docker compose ... config --quiet` | passed | Compose model parses without a running daemon.                                             |
-| PostgreSQL integration              | passed | CI run `35900618132` passed all 6 integration tests and Compose health checks.             |
+| PostgreSQL integration              | passed | CI run `36010385477` applied M8 and passed all 7 integration tests and Compose checks.     |
 | Gitleaks 8.30.1 history scan        | passed | Local full-history scan with the exact synthetic test-token allowlist.                     |
 | PostgreSQL restore drill            | passed | CI run `36008801557` restored into a new database and compared counts, hashes and head.    |
 | M8 focused local checks             | passed | 16 passed, one PostgreSQL-only test skipped; Ruff and strict mypy passed.                  |
+| Inference provider boundary         | passed | 2 focused tests passed; Ruff and strict mypy passed on changed modules.                    |
 
 Earlier M4-M6 clean-run CI evidence:
 <https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/34685618121>.
@@ -94,6 +97,8 @@ findings prevent production security certification and require continuing review
 CI runs <https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/36008629096> and
 <https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/36008801557> passed every job,
 including the remediable-vulnerability gate and disposable PostgreSQL restore drill.
+CI run <https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/36010385477>
+passed every job after migration `0012`; the container job ran seven PostgreSQL integration tests.
 
 ## Known Limitations And External Blockers
 

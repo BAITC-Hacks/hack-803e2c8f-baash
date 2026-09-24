@@ -19,10 +19,10 @@ from uuid import NAMESPACE_URL, UUID, uuid4, uuid5
 
 import psycopg
 from psycopg.rows import dict_row
-from pulse109_inference.engine import classify as classify_with_fallback
 from pulse109_inference.models import InferenceRequest
 
 from pulse109.config import get_settings
+from pulse109.decisions import InferenceProvider, LocalLexicalInferenceProvider
 
 from .models import (
     Appeal,
@@ -86,8 +86,13 @@ class PostgresManualRepository:
 class PostgresManualPathService:
     """M2 application service backed by PostgreSQL transactions."""
 
-    def __init__(self, repository: PostgresManualRepository) -> None:
+    def __init__(
+        self,
+        repository: PostgresManualRepository,
+        inference_provider: InferenceProvider | None = None,
+    ) -> None:
         self.repository = repository
+        self.inference_provider = inference_provider or LocalLexicalInferenceProvider()
 
     @staticmethod
     def _scope(actual: str, requested: str) -> None:
@@ -829,7 +834,7 @@ class PostgresManualPathService:
                     503,
                 )
             snapshot_id = uuid5(NAMESPACE_URL, f"pulse109:{request_id}:{appeal.version}")
-            response = classify_with_fallback(
+            response = self.inference_provider.classify(
                 InferenceRequest(
                     contract_version="1.0.0",
                     task="routing",

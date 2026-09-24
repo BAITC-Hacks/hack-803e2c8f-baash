@@ -9,8 +9,9 @@ from datetime import datetime, timezone
 from typing import Any
 from uuid import NAMESPACE_URL, UUID, uuid4, uuid5
 
-from pulse109_inference.engine import classify as classify_with_fallback
 from pulse109_inference.models import InferenceRequest
+
+from pulse109.decisions import InferenceProvider, LocalLexicalInferenceProvider
 
 from .models import (
     Appeal,
@@ -56,8 +57,13 @@ def _redact_text(value: str | None) -> str:
 
 
 class ManualPathService:
-    def __init__(self, repository: InMemoryManualRepository) -> None:
+    def __init__(
+        self,
+        repository: InMemoryManualRepository,
+        inference_provider: InferenceProvider | None = None,
+    ) -> None:
         self.repository = repository
+        self.inference_provider = inference_provider or LocalLexicalInferenceProvider()
 
     def list_services(self, *, region_id: str, effective_at: datetime) -> list[ServiceDefinition]:
         del effective_at
@@ -286,7 +292,7 @@ class ManualPathService:
                 )
 
             snapshot_id = uuid5(NAMESPACE_URL, f"pulse109:{request_id}:{appeal.version}")
-            response = classify_with_fallback(
+            response = self.inference_provider.classify(
                 InferenceRequest(
                     contract_version="1.0.0",
                     task="routing",
