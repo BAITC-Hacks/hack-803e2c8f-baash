@@ -3,8 +3,8 @@
 ## Current Milestone
 
 - Milestone: M8 governed ownership and Handoff Guard, first vertical slice.
-- Status: active. M7 CI run `36008801557` passed quality, container, security and disposable
-  PostgreSQL restore checks. M8 catalog, advisory engine and read API are under validation.
+- Status: active. M8 ownership, handoff outcome and adaptive intake slices have passed database CI;
+  confidence policy publication and gateway integration are in progress.
 - Branch: `codex/production-platform-20260923`, created without discarding the pre-existing local
   changes. The newer upstream regional-import and ML commits have been merged into the branch.
 - Scope from the two supplied texts: durable manual journey first, then Handoff Guard, Replay Lab,
@@ -52,6 +52,9 @@
   an approved confidence policy and explicit required-field states, rejects ownership evidence from
   a different appeal version, and always requires human confirmation. Runtime policy publication and
   persistence of gateway assessments are still pending.
+- A new append-only confidence policy catalog keys thresholds to region, model artifact hash,
+  taxonomy and preprocessing versions. The reader rejects overlaps and unapproved synthetic facts
+  in operational mode; live migration and database checks await CI.
 - The merged regional research corpus now contains withheld text markers only. Quarantine artifacts
   contain hashes and counts without source row values. New regional ingest withholds executor prose;
   training and evaluation stop on withheld data, and historical reports block quality claims.
@@ -67,29 +70,32 @@
 - Added `0012_m8_ownership_catalog` with organization, jurisdiction, asset, responsibility-rule
   versions and handoff outcome evidence; CI applied it successfully.
 - Added `0013_m8_intake_policy` with approved, effective and append-only regional intake policies;
+  CI applied the migration and verified its reader.
+- Added `0014_m8_confidence_policy` for approved, effective and artifact-bound confidence thresholds;
   live migration and query require CI verification.
 
 ## Verification
 
-| Command                             | Result | Evidence or note                                                                           |
-| ----------------------------------- | ------ | ------------------------------------------------------------------------------------------ |
-| `./scripts/tasks.ps1 lint`          | passed | Ruff, Prettier and ESLint after M7 changes.                                                |
-| `./scripts/tasks.ps1 typecheck`     | passed | Strict mypy over 86 source files and TypeScript checks.                                    |
-| `./scripts/tasks.ps1 test`          | passed | 129 passed, 9 PostgreSQL-only tests skipped because `PULSE109_TEST_DATABASE_URL` is unset. |
-| `./scripts/tasks.ps1 contract-test` | passed | 19 passed; time-quality, handoff, intake and OpenAPI validation included.                  |
-| `./scripts/tasks.ps1 e2e`           | passed | 11 passed, including manual, incident, ownership and intake availability flows.            |
-| `./scripts/tasks.ps1 build`         | passed | Python wheel/sdist and Next.js production build.                                           |
-| Alembic offline SQL                 | passed | Forward chain renders through `0013_m8_intake_policy`.                                     |
-| `docker compose ... config --quiet` | passed | Compose model parses without a running daemon.                                             |
-| PostgreSQL integration              | passed | CI run `36010385477` applied M8 and passed all 7 integration tests and Compose checks.     |
-| Gitleaks 8.30.1 history scan        | passed | Local full-history scan with the exact synthetic test-token allowlist.                     |
-| PostgreSQL restore drill            | passed | CI run `36008801557` restored into a new database and compared counts, hashes and head.    |
-| M8 focused local checks             | passed | 16 passed, one PostgreSQL-only test skipped; Ruff and strict mypy passed.                  |
-| Inference provider boundary         | passed | 2 focused tests passed; CI run `36010905991` passed every job.                             |
-| M8 handoff outcome                  | passed | CI run `36012237217` passed the transaction, API replay, quality and security checks.      |
-| M8 Adaptive Intake                  | passed | CI run `36013109806` applied `0013`, passed nine DB tests and all release jobs.            |
-| M8 Decision Gateway evaluator       | passed | 10 focused tests and Ruff; no operational route is exposed yet.                            |
-| M8 jurisdiction resolution          | local  | 4 service tests passed; PostgreSQL boundary tests await the CI database job.               |
+| Command                             | Result | Evidence or note                                                                        |
+| ----------------------------------- | ------ | --------------------------------------------------------------------------------------- |
+| `./scripts/tasks.ps1 lint`          | passed | Ruff format/check, Prettier and ESLint after the M8 confidence policy change.           |
+| `./scripts/tasks.ps1 typecheck`     | passed | Strict mypy over 88 source files and TypeScript checks.                                 |
+| `./scripts/tasks.ps1 test`          | passed | 151 passed, 11 PostgreSQL-only tests skipped without `PULSE109_TEST_DATABASE_URL`.      |
+| `./scripts/tasks.ps1 contract-test` | passed | 19 passed; time-quality, handoff, intake and OpenAPI validation included.               |
+| `./scripts/tasks.ps1 e2e`           | passed | 11 passed, including manual, incident, ownership and intake availability flows.         |
+| `./scripts/tasks.ps1 build`         | passed | Python wheel/sdist and Next.js 16.3.4 production build.                                 |
+| Alembic offline SQL                 | passed | Forward chain renders through `0013_m8_intake_policy`.                                  |
+| `docker compose ... config --quiet` | passed | Compose model parses without a running daemon.                                          |
+| PostgreSQL integration              | passed | CI run `36010385477` applied M8 and passed all 7 integration tests and Compose checks.  |
+| Gitleaks 8.30.1 history scan        | passed | Local full-history scan with the exact synthetic test-token allowlist.                  |
+| PostgreSQL restore drill            | passed | CI run `36008801557` restored into a new database and compared counts, hashes and head. |
+| M8 focused local checks             | passed | 16 passed, one PostgreSQL-only test skipped; Ruff and strict mypy passed.               |
+| Inference provider boundary         | passed | 2 focused tests passed; CI run `36010905991` passed every job.                          |
+| M8 handoff outcome                  | passed | CI run `36012237217` passed the transaction, API replay, quality and security checks.   |
+| M8 Adaptive Intake                  | passed | CI run `36013109806` applied `0013`, passed nine DB tests and all release jobs.         |
+| M8 Decision Gateway evaluator       | passed | 11 focused tests and Ruff; no operational route is exposed yet.                         |
+| M8 jurisdiction resolution          | passed | 4 service tests; CI run `36014297057` passed the PostgreSQL boundary cases.             |
+| M8 confidence policy                | local  | Focused tests and mypy passed; PostgreSQL migration/query await CI.                     |
 
 Earlier M4-M6 clean-run CI evidence:
 <https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/34685618121>.

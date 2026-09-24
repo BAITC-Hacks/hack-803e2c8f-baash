@@ -64,9 +64,7 @@ class ConflictingAssetGeoRepository(GeoJurisdictionRepository):
     def resolve_asset(
         self, *, region_id: str, asset_id: str, at: datetime, allow_synthetic: bool
     ) -> AssetResolution:
-        return AssetResolution(
-            status="verified", asset_id=asset_id, jurisdiction_id="DISTRICT_8"
-        )
+        return AssetResolution(status="verified", asset_id=asset_id, jurisdiction_id="DISTRICT_8")
 
 
 def _appeal_with_coordinates(*, object_id: str | None = None) -> AppealDetail:

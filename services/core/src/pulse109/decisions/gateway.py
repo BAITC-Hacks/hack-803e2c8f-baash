@@ -27,6 +27,9 @@ class EffectiveConfidencePolicy:
 
     version: str
     approved: bool
+    artifact_sha256: str
+    taxonomy_version: str
+    preprocess_version: str
     high_min: float
     medium_min: float
     abstain_below: float
@@ -82,6 +85,12 @@ def evaluate_decision(
         policy_problem = "CONFIDENCE_POLICY_NOT_APPROVED"
     elif not policy.version.strip():
         policy_problem = "CONFIDENCE_POLICY_VERSION_MISSING"
+    elif (
+        policy.artifact_sha256 != inference.artifact_sha256
+        or policy.taxonomy_version != inference.taxonomy_version
+        or policy.preprocess_version != inference.preprocess_version
+    ):
+        policy_problem = "CONFIDENCE_POLICY_CONTEXT_MISMATCH"
     elif not _valid_thresholds(policy):
         policy_problem = "CONFIDENCE_POLICY_THRESHOLDS_INVALID"
     else:
@@ -94,7 +103,7 @@ def evaluate_decision(
             GatewayDecision.REVIEW_REQUIRED,
             (policy_problem,),
             policy_version,
-            inference.confidence_band,
+            None,
             candidates,
         )
 
@@ -199,9 +208,9 @@ def _inference_candidates(inference: InferenceResponse) -> tuple[DecisionCandida
         preprocess_version=inference.preprocess_version,
         recommendation_id=str(inference.recommendation_id),
     )
-    return tuple(
-        _ranked("topic", label, provenance) for label in inference.top_topics
-    ) + tuple(_ranked("service", label, provenance) for label in inference.top_services)
+    return tuple(_ranked("topic", label, provenance) for label in inference.top_topics) + tuple(
+        _ranked("service", label, provenance) for label in inference.top_services
+    )
 
 
 def _ranked(

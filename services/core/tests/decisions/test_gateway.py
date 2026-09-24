@@ -17,8 +17,7 @@ from pulse109_inference.models import InferenceResponse
 def _inference(*, confidence: float = 0.82, ood: str = "in_domain") -> InferenceResponse:
     request_id = uuid4()
     labels = tuple(
-        {"id": f"candidate-{rank}", "score": 0.9 - rank / 10, "rank": rank}
-        for rank in (1, 2, 3)
+        {"id": f"candidate-{rank}", "score": 0.9 - rank / 10, "rank": rank} for rank in (1, 2, 3)
     )
     return InferenceResponse.model_validate(
         {
@@ -55,6 +54,9 @@ def _policy(**overrides: object) -> EffectiveConfidencePolicy:
     values: dict[str, object] = {
         "version": "confidence-v4",
         "approved": True,
+        "artifact_sha256": "a" * 64,
+        "taxonomy_version": "taxonomy-v3",
+        "preprocess_version": "prep-v1",
         "high_min": 0.8,
         "medium_min": 0.55,
         "abstain_below": 0.35,
@@ -83,6 +85,7 @@ def test_returns_versioned_model_candidates_and_always_requires_human_confirmati
         (_policy(approved=False), "CONFIDENCE_POLICY_NOT_APPROVED"),
         (_policy(high_min=0.4, medium_min=0.6), "CONFIDENCE_POLICY_THRESHOLDS_INVALID"),
         (_policy(high_min=float("nan")), "CONFIDENCE_POLICY_THRESHOLDS_INVALID"),
+        (_policy(artifact_sha256="b" * 64), "CONFIDENCE_POLICY_CONTEXT_MISMATCH"),
     ],
 )
 def test_missing_unapproved_or_invalid_policy_fails_closed(policy, reason: str) -> None:
@@ -91,6 +94,7 @@ def test_missing_unapproved_or_invalid_policy_fails_closed(policy, reason: str) 
     assert result.decision is GatewayDecision.REVIEW_REQUIRED
     assert result.reason_codes == (reason,)
     assert result.policy_version is None
+    assert result.confidence_band is None
 
 
 def test_out_of_domain_model_result_is_explicit() -> None:

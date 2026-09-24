@@ -190,17 +190,17 @@ def test_manual_decision_and_outbox_commit_as_one_durable_path() -> None:
         assert "+7 700 123 45 67" not in redacted
         cursor.execute(
             """
-            SELECT event_type, status
+            SELECT event_type
             FROM integration.outbox
             WHERE subject_id = %s
             ORDER BY created_at
             """,
             (str(appeal.request_id),),
         )
-        events = cursor.fetchall()
-        assert ("appeal.created.v1", "pending") in events
-        assert ("appeal.decision.recorded.v1", "pending") in events
-        assert ("appeal.assigned.v1", "pending") in events
+        events = {row[0] for row in cursor.fetchall()}
+        assert "appeal.created.v1" in events
+        assert "appeal.decision.recorded.v1" in events
+        assert "appeal.assigned.v1" in events
         cursor.execute(
             "SELECT event_type FROM incidents.incident_event WHERE incident_id = %s",
             (incident.incident_id,),

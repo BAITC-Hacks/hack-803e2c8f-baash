@@ -419,9 +419,7 @@ class PostgresOwnershipRepository:
                 approved_id is not None and approved_id != coordinate_id
             ):
                 return JurisdictionResolution(status="conflicting")
-            return JurisdictionResolution(
-                status="verified", jurisdiction_id=coordinate_id
-            )
+            return JurisdictionResolution(status="verified", jurisdiction_id=coordinate_id)
         if rows:
             return JurisdictionResolution(status="conflicting")
         return JurisdictionResolution(

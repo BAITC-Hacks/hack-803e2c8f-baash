@@ -127,30 +127,35 @@ def test_jurisdiction_resolution_fails_closed_on_conflicting_geo_evidence() -> N
             allow_synthetic=True,
         )
 
-    assert resolve(
-        geo_id=jurisdiction_id, latitude=43.0, longitude=75.2, precision_m=100
-    ).status == "verified"
-    assert resolve(
-        geo_id=jurisdiction_id, latitude=None, longitude=None, precision_m=None
-    ).status == "verified"
-    assert resolve(
-        geo_id=None, latitude=43.0, longitude=75.2, precision_m=0
-    ).status == "verified"
-    assert resolve(
-        geo_id=jurisdiction_id, latitude=43.0, longitude=76.0, precision_m=None
-    ).status == "conflicting"
-    assert resolve(
-        geo_id=f"unknown-{nonce}", latitude=43.0, longitude=75.2, precision_m=100
-    ).status == "conflicting"
-    assert resolve(
-        geo_id=None, latitude=43.0, longitude=76.0, precision_m=100
-    ).status == "conflicting"
-    assert resolve(
-        geo_id=jurisdiction_id, latitude=43.0, longitude=81.0, precision_m=100
-    ).status == "conflicting"
-    assert resolve(
-        geo_id=None, latitude=43.0, longitude=75.0001, precision_m=100
-    ).status == "conflicting"
-    assert resolve(
-        geo_id=jurisdiction_id, latitude=43.0, longitude=75.2, precision_m=1_000_000
-    ).status == "conflicting"
+    assert (
+        resolve(geo_id=jurisdiction_id, latitude=43.0, longitude=75.2, precision_m=100).status
+        == "verified"
+    )
+    assert (
+        resolve(geo_id=jurisdiction_id, latitude=None, longitude=None, precision_m=None).status
+        == "verified"
+    )
+    assert resolve(geo_id=None, latitude=43.0, longitude=75.2, precision_m=0).status == "verified"
+    assert (
+        resolve(geo_id=jurisdiction_id, latitude=43.0, longitude=76.0, precision_m=None).status
+        == "conflicting"
+    )
+    assert (
+        resolve(geo_id=f"unknown-{nonce}", latitude=43.0, longitude=75.2, precision_m=100).status
+        == "conflicting"
+    )
+    assert (
+        resolve(geo_id=None, latitude=43.0, longitude=76.0, precision_m=100).status == "conflicting"
+    )
+    assert (
+        resolve(geo_id=jurisdiction_id, latitude=43.0, longitude=81.0, precision_m=100).status
+        == "conflicting"
+    )
+    assert (
+        resolve(geo_id=None, latitude=43.0, longitude=75.0001, precision_m=100).status
+        == "conflicting"
+    )
+    assert (
+        resolve(geo_id=jurisdiction_id, latitude=43.0, longitude=75.2, precision_m=1_000_000).status
+        == "conflicting"
+    )
