@@ -58,6 +58,35 @@ class OwnershipService:
                 )
                 asset_id = None
 
+        location = appeal.location
+        geo_reason = None
+        if location is not None and (
+            location.geo_id is not None
+            or location.latitude is not None
+            or location.longitude is not None
+        ):
+            geo_resolution = self.repository.resolve_jurisdiction(
+                region_id=appeal.region_id,
+                geo_id=location.geo_id,
+                latitude=location.latitude,
+                longitude=location.longitude,
+                precision_m=location.precision_m,
+                at=policy_time,
+                allow_synthetic=self.allow_synthetic,
+            )
+            if geo_resolution.status == "conflicting":
+                geo_reason = "JURISDICTION_GEO_EVIDENCE_AMBIGUOUS"
+            elif geo_resolution.status == "verified":
+                if (
+                    jurisdiction_id is not None
+                    and jurisdiction_id != geo_resolution.jurisdiction_id
+                ):
+                    geo_reason = "ASSET_GEO_JURISDICTION_CONFLICT"
+                elif jurisdiction_id is None:
+                    jurisdiction_id = geo_resolution.jurisdiction_id
+            else:
+                geo_reason = "JURISDICTION_GEO_EVIDENCE_UNVERIFIED"
+
         context = CaseContext(
             region_id=appeal.region_id,
             service_id=decision.service_id,
@@ -81,6 +110,8 @@ class OwnershipService:
         reasons = list(assessment.reason_codes)
         if asset_reason is not None:
             reasons.append(asset_reason)
+        if geo_reason is not None:
+            reasons.append(geo_reason)
         return OwnershipAssessmentResponse(
             request_id=appeal.request_id,
             request_version=appeal.version,
@@ -93,6 +124,6 @@ class OwnershipService:
                 for candidate in assessment.candidates
             ],
             reason_codes=reasons,
-            ambiguous=assessment.ambiguous or asset_reason is not None,
+            ambiguous=assessment.ambiguous or asset_reason is not None or geo_reason is not None,
             loop_risk=assessment.loop_risk,
         )

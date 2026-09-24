@@ -39,6 +39,8 @@
 - M8 adds an append-only, effective-dated ownership catalog and an advisory assessment of approved
   organization candidates. It uses the last human-confirmed service, labels observed-time fallback,
   exposes rule provenance, detects ambiguity and prior rejection, and never assigns an organization.
+- Jurisdiction resolution now checks approved regional IDs and PostGIS boundaries against coordinate
+  precision. Incomplete, overlapping or contradictory evidence is marked for human review.
 - Classification now calls an injected `InferenceProvider` boundary; the existing lexical CPU
   fallback is explicit and operational profiles still reject unapproved feature snapshots.
 - M8 handoff outcome command now atomically writes the operator-confirmed receipt, appeal timeline,
@@ -87,6 +89,7 @@
 | M8 handoff outcome                  | passed | CI run `36012237217` passed the transaction, API replay, quality and security checks.      |
 | M8 Adaptive Intake                  | passed | CI run `36013109806` applied `0013`, passed nine DB tests and all release jobs.            |
 | M8 Decision Gateway evaluator       | passed | 10 focused tests and Ruff; no operational route is exposed yet.                            |
+| M8 jurisdiction resolution          | local  | 4 service tests passed; PostgreSQL boundary tests await the CI database job.               |
 
 Earlier M4-M6 clean-run CI evidence:
 <https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/34685618121>.

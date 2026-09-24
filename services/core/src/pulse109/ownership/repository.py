@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -26,6 +27,12 @@ class AssetResolution:
     jurisdiction_id: str | None = None
 
 
+@dataclass(frozen=True, slots=True)
+class JurisdictionResolution:
+    status: Literal["verified", "unverified", "conflicting"]
+    jurisdiction_id: str | None = None
+
+
 class OwnershipCatalogConflict(Exception):
     """Approved catalog state is ambiguous or too large to assess safely."""
 
@@ -34,6 +41,18 @@ class OwnershipRepository(Protocol):
     def resolve_asset(
         self, *, region_id: str, asset_id: str, at: datetime, allow_synthetic: bool
     ) -> AssetResolution: ...
+
+    def resolve_jurisdiction(
+        self,
+        *,
+        region_id: str,
+        geo_id: str | None,
+        latitude: float | None,
+        longitude: float | None,
+        precision_m: float | None,
+        at: datetime,
+        allow_synthetic: bool,
+    ) -> JurisdictionResolution: ...
 
     def list_rules(
         self, *, region_id: str, service_id: str, at: datetime, allow_synthetic: bool
@@ -49,6 +68,19 @@ class EmptyOwnershipRepository:
         self, *, region_id: str, asset_id: str, at: datetime, allow_synthetic: bool
     ) -> AssetResolution:
         return AssetResolution(status="unverified")
+
+    def resolve_jurisdiction(
+        self,
+        *,
+        region_id: str,
+        geo_id: str | None,
+        latitude: float | None,
+        longitude: float | None,
+        precision_m: float | None,
+        at: datetime,
+        allow_synthetic: bool,
+    ) -> JurisdictionResolution:
+        return JurisdictionResolution(status="unverified")
 
     def list_rules(
         self, *, region_id: str, service_id: str, at: datetime, allow_synthetic: bool
@@ -294,6 +326,106 @@ class PostgresOwnershipRepository:
             status="verified",
             asset_id=rows[0]["asset_id"],
             jurisdiction_id=rows[0]["jurisdiction_id"],
+        )
+
+    def resolve_jurisdiction(
+        self,
+        *,
+        region_id: str,
+        geo_id: str | None,
+        latitude: float | None,
+        longitude: float | None,
+        precision_m: float | None,
+        at: datetime,
+        allow_synthetic: bool,
+    ) -> JurisdictionResolution:
+        """Resolve only exact approved IDs or coordinates covered at stated precision."""
+        approved_id: str | None = None
+        id_supplied = geo_id is not None
+        with self._connection() as connection, connection.cursor() as cursor:
+            if geo_id is not None:
+                cursor.execute(
+                    """SELECT jurisdiction_id FROM ownership.jurisdiction_version
+                       WHERE region_id = %s AND jurisdiction_id = %s AND state = 'approved'
+                         AND effective_from <= %s AND (effective_to IS NULL OR effective_to > %s)
+                         AND (%s OR NOT synthetic_only)
+                       LIMIT 2""",
+                    (region_id, geo_id, at, at, allow_synthetic),
+                )
+                id_rows = cursor.fetchall()
+                if len(id_rows) > 1:
+                    return JurisdictionResolution(status="conflicting")
+                if id_rows:
+                    approved_id = id_rows[0]["jurisdiction_id"]
+
+            has_coordinate_evidence = latitude is not None or longitude is not None
+            if not has_coordinate_evidence:
+                return (
+                    JurisdictionResolution(status="verified", jurisdiction_id=approved_id)
+                    if approved_id is not None
+                    else JurisdictionResolution(status="unverified")
+                )
+            if latitude is None or longitude is None or precision_m is None:
+                return JurisdictionResolution(
+                    status="conflicting" if approved_id is not None or id_supplied else "unverified"
+                )
+            if (
+                not all(math.isfinite(value) for value in (latitude, longitude, precision_m))
+                or not -90 <= latitude <= 90
+                or not -180 <= longitude <= 180
+                or not 0 <= precision_m <= 100_000
+            ):
+                return JurisdictionResolution(
+                    status="conflicting" if approved_id is not None or id_supplied else "unverified"
+                )
+            cursor.execute(
+                """WITH query_shape AS (
+                       SELECT CASE WHEN %s = 0
+                                   THEN ST_SetSRID(ST_MakePoint(%s, %s), 4326)
+                                   ELSE ST_Buffer(
+                                       ST_SetSRID(ST_MakePoint(%s, %s), 4326)::geography,
+                                       %s
+                                   )::geometry
+                              END AS uncertainty
+                   ), evidence AS (
+                       SELECT jurisdiction_id,
+                              ST_Covers(boundary, query_shape.uncertainty) AS fully_covers
+                       FROM ownership.jurisdiction_version
+                       CROSS JOIN query_shape
+                       WHERE region_id = %s AND state = 'approved' AND boundary IS NOT NULL
+                         AND effective_from <= %s AND (effective_to IS NULL OR effective_to > %s)
+                         AND (%s OR NOT synthetic_only)
+                         AND ST_Intersects(boundary, query_shape.uncertainty)
+                   )
+                   SELECT jurisdiction_id, fully_covers FROM evidence LIMIT 3""",
+                (
+                    precision_m,
+                    longitude,
+                    latitude,
+                    longitude,
+                    latitude,
+                    precision_m,
+                    region_id,
+                    at,
+                    at,
+                    allow_synthetic,
+                ),
+            )
+            rows = cursor.fetchall()
+        containing = [row for row in rows if row["fully_covers"]]
+        if len(containing) == 1 and len(rows) == 1:
+            coordinate_id = containing[0]["jurisdiction_id"]
+            if (id_supplied and approved_id is None) or (
+                approved_id is not None and approved_id != coordinate_id
+            ):
+                return JurisdictionResolution(status="conflicting")
+            return JurisdictionResolution(
+                status="verified", jurisdiction_id=coordinate_id
+            )
+        if rows:
+            return JurisdictionResolution(status="conflicting")
+        return JurisdictionResolution(
+            status="conflicting" if approved_id is not None or id_supplied else "unverified"
         )
 
     def list_rules(

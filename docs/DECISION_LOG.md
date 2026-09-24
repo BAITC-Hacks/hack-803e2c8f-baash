@@ -437,6 +437,17 @@ Record implementation decisions here when the repository, contracts or available
 - **Evidence:** `services/core/src/pulse109/decisions/gateway.py` and focused gateway tests.
 - **Revisit when:** approved regional confidence thresholds, intake requirements and model validation evidence are available.
 
+### D-042 — Jurisdiction evidence must agree at stated precision
+
+- **Date:** 2026-09-24
+- **Status:** accepted
+- **Context:** an appeal may contain an exact jurisdiction ID, coordinates, asset reference, or a mixture. Boundary overlaps and coordinate uncertainty can make an apparently exact lookup unsafe.
+- **Decision:** resolve only approved effective jurisdiction versions in the appeal region. Coordinate evidence needs complete coordinates and a bounded precision radius; one boundary must cover the full uncertainty shape. Supplied ID and coordinates must agree. Unknown, partial and conflicting evidence is flagged for human review and never causes assignment.
+- **Alternatives:** use the point center alone; choose the first matching polygon; trust a source ID despite contradictory coordinates.
+- **Consequences:** borderline appeals may need manual review. PostGIS tests exercise overlap and boundary behavior with synthetic geometries.
+- **Evidence:** ownership repository/service and `tests/integration/test_m8_ownership_catalog.py`.
+- **Revisit when:** approved regional geometry and precision conventions are supplied.
+
 ### D-XXX — Short title
 
 - **Date:** YYYY-MM-DD
