@@ -18,6 +18,12 @@ from pulse109.incidents import (
     PostgresIncidentService,
     create_incident_router,
 )
+from pulse109.intake import (
+    EmptyIntakePolicyRepository,
+    IntakeApplicationService,
+    PostgresIntakePolicyRepository,
+    create_intake_router,
+)
 from pulse109.manual_path import (
     InMemoryManualRepository,
     ManualPathService,
@@ -55,6 +61,19 @@ else:
     manual_repository = InMemoryManualRepository()
     manual_service = ManualPathService(manual_repository)
 app.include_router(create_manual_router(manual_service))
+intake_repository = (
+    PostgresIntakePolicyRepository(settings.database_url)
+    if use_postgres_manual_path
+    else EmptyIntakePolicyRepository()
+)
+app.include_router(
+    create_intake_router(
+        IntakeApplicationService(
+            intake_repository,
+            allow_synthetic=settings.environment in {"local", "development", "test"},
+        )
+    )
+)
 ownership_repository: PostgresOwnershipRepository | EmptyOwnershipRepository
 handoff_service: HandoffOutcomeService | None
 if use_postgres_manual_path:

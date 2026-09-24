@@ -11,14 +11,45 @@ servers:
   - url: https://pulse109.example.gov.kz
     description: Production placeholder. Replace after infrastructure approval.
 tags:
+  - name: Intake
   - name: Requests
   - name: Decisions
+  - name: Ownership
   - name: Incidents
   - name: Analytics
   - name: Reports
   - name: Catalog
   - name: Operations
 paths:
+  /v1/intake/plans:
+    post:
+      tags: [Intake]
+      summary: Select questions from an approved effective intake policy
+      description: Advisory field-state plan without submitted values or appeal text.
+      operationId: planIntake
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/RegionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IntakePlanInput'
+      responses:
+        '200':
+          description: Versioned questions and required-field states
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IntakePlanResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /v1/appeals/preflight:
     post:
       tags: [Requests, Incidents]
@@ -699,7 +730,7 @@ components:
           schema:
             $ref: '#/components/schemas/Problem'
     ServiceUnavailable:
-      description: Optional AI or retrieval dependency is unavailable
+      description: An approved policy or assistive dependency is unavailable
       headers:
         Retry-After:
           schema:
@@ -709,6 +740,37 @@ components:
           schema:
             $ref: '#/components/schemas/Problem'
   schemas:
+    IntakePlanInput:
+      type: object
+      additionalProperties: false
+      required: [service_id, topic_id, locale]
+      properties:
+        service_id: { type: string, minLength: 1, maxLength: 128 }
+        topic_id: { type: string, minLength: 1, maxLength: 128 }
+        locale: { type: string, enum: [kk, ru] }
+        field_states:
+          type: object
+          maxProperties: 50
+          propertyNames: { pattern: '^[A-Za-z0-9_]+$' }
+          additionalProperties: { type: string, enum: [known, missing, unknown] }
+        max_questions: { type: integer, minimum: 0, maximum: 10, default: 5 }
+    IntakePlanResponse:
+      type: object
+      additionalProperties: false
+      required: [service_id, topic_id, policy_version, effective_at, complete, field_states, questions, advisory_only]
+      properties:
+        service_id: { type: string }
+        topic_id: { type: string }
+        policy_version: { type: string }
+        effective_at: { type: string, format: date-time }
+        complete: { type: boolean }
+        field_states:
+          type: object
+          additionalProperties: { type: string, enum: [known, missing, unknown] }
+        questions:
+          type: array
+          items: { type: string }
+        advisory_only: { type: boolean, const: true }
     HandoffOutcomeCommand:
       type: object
       additionalProperties: false

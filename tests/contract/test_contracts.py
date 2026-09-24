@@ -27,9 +27,9 @@ def test_openapi_31_contract_is_valid_and_stable() -> None:
         if method in {"get", "post", "put", "patch", "delete"}
     ]
     assert document["openapi"] == "3.1.0"
-    assert len(operations) == 22
-    assert len({item["operationId"] for item in operations}) == 22
-    assert len(document["components"]["schemas"]) == 34
+    assert len(operations) == 23
+    assert len({item["operationId"] for item in operations}) == 23
+    assert len(document["components"]["schemas"]) == 36
 
 
 def test_canonical_request_schema_is_valid() -> None:
@@ -54,6 +54,21 @@ def test_handoff_command_contract_requires_content_addressed_evidence() -> None:
     assert list(validator.iter_errors(command)) == []
     command["evidence_refs"] = ["https://example.test/private/citizen-address"]
     assert list(validator.iter_errors(command))
+
+
+def test_intake_plan_contract_accepts_only_field_states() -> None:
+    with (ROOT / "contracts/openapi.yaml").open(encoding="utf-8") as stream:
+        document = yaml.safe_load(stream)
+    validator = Draft202012Validator(document["components"]["schemas"]["IntakePlanInput"])
+    command = {
+        "service_id": "service:roads",
+        "topic_id": "topic:roads",
+        "locale": "ru",
+        "field_states": {"location": "unknown"},
+    }
+    assert list(validator.iter_errors(command)) == []
+    assert list(validator.iter_errors(command | {"text": "private appeal text"}))
+    assert list(validator.iter_errors(command | {"field_states": {"location": "Turan 47"}}))
 
 
 def test_event_envelope_accepts_missing_business_time() -> None:

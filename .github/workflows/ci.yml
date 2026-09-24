@@ -63,7 +63,7 @@ jobs:
             psql -U pulse109 -d pulse109 -Atc \
             "SELECT string_agg(extname, ',' ORDER BY extname) FROM pg_extension WHERE extname IN ('postgis','vector');")" = "postgis,vector"
           test "$(docker compose -f infra/compose/docker-compose.yml exec -T postgres \
-            psql -U pulse109 -d pulse109 -Atc "SELECT version_num FROM alembic_version;")" = "0012_m8_ownership_catalog"
+            psql -U pulse109 -d pulse109 -Atc "SELECT version_num FROM alembic_version;")" = "0013_m8_intake_policy"
       - name: Verify PostgreSQL-backed import
         env:
           PULSE109_TEST_DATABASE_URL: postgresql://pulse109:pulse109-local@127.0.0.1:5432/pulse109
@@ -87,7 +87,7 @@ jobs:
             "SELECT md5(coalesce(string_agg(raw_payload_hash::text, '' ORDER BY id), '')) FROM integration.source_record")
           test "$source_hash" = "$restored_hash"
           test "$("${compose[@]}" exec -T postgres psql -U pulse109 -d pulse109_restore -Atc \
-            'SELECT version_num FROM alembic_version')" = "0012_m8_ownership_catalog"
+            'SELECT version_num FROM alembic_version')" = "0013_m8_intake_policy"
       - name: Capture container logs
         if: always()
         run: docker compose -f infra/compose/docker-compose.yml logs --no-color

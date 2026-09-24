@@ -43,39 +43,45 @@
   fallback is explicit and operational profiles still reject unapproved feature snapshots.
 - M8 handoff outcome command now atomically writes the operator-confirmed receipt, appeal timeline,
   audit, outbox and idempotency record. It verifies region and assignment organization before replay.
+- Adaptive Intake now has a pure value-free question selector, an append-only approved policy table,
+  a region-scoped policy reader and a pre-create advisory plan endpoint. It never receives raw field
+  values or appeal text and fails closed when no single approved policy exists.
 - The merged regional research corpus now contains withheld text markers only. Quarantine artifacts
   contain hashes and counts without source row values. New regional ingest withholds executor prose;
   training and evaluation stop on withheld data, and historical reports block quality claims.
 
 ## Contracts And Migrations Changed
 
-- OpenAPI includes 22 operations and 34 schemas. Create and status-event time-quality rules now
+- OpenAPI includes 23 operations and 36 schemas. Create and status-event time-quality rules now
   agree with the canonical JSON schema; no timestamp is derived from observation time.
 - Added Alembic revisions `0008_m7_manual_path_persistence` through
   `0011_m7_incident_persistence` after the previously accepted `0001`-`0007` chain.
 - Added append-only retrieval-run, incident-membership, delivery, mapping-review, metric-result,
   alert-review, forecast, and report-artifact persistence structures.
 - Added `0012_m8_ownership_catalog` with organization, jurisdiction, asset, responsibility-rule
-  versions and handoff outcome evidence. PostgreSQL migration still needs CI execution.
+  versions and handoff outcome evidence; CI applied it successfully.
+- Added `0013_m8_intake_policy` with approved, effective and append-only regional intake policies;
+  live migration and query require CI verification.
 
 ## Verification
 
 | Command                             | Result  | Evidence or note                                                                           |
 | ----------------------------------- | ------- | ------------------------------------------------------------------------------------------ |
 | `./scripts/tasks.ps1 lint`          | passed  | Ruff, Prettier and ESLint after M7 changes.                                                |
-| `./scripts/tasks.ps1 typecheck`     | passed  | Strict mypy over 76 source files and TypeScript checks.                                    |
-| `./scripts/tasks.ps1 test`          | passed  | 116 passed, 7 PostgreSQL-only tests skipped because `PULSE109_TEST_DATABASE_URL` is unset. |
-| `./scripts/tasks.ps1 contract-test` | passed  | 18 passed; time-quality, handoff and OpenAPI validation included.                          |
-| `./scripts/tasks.ps1 e2e`           | passed  | 10 passed, including manual, incident and advisory ownership flows.                        |
+| `./scripts/tasks.ps1 typecheck`     | passed  | Strict mypy over 86 source files and TypeScript checks.                                    |
+| `./scripts/tasks.ps1 test`          | passed  | 129 passed, 9 PostgreSQL-only tests skipped because `PULSE109_TEST_DATABASE_URL` is unset. |
+| `./scripts/tasks.ps1 contract-test` | passed  | 19 passed; time-quality, handoff, intake and OpenAPI validation included.                  |
+| `./scripts/tasks.ps1 e2e`           | passed  | 11 passed, including manual, incident, ownership and intake availability flows.            |
 | `./scripts/tasks.ps1 build`         | passed  | Python wheel/sdist and Next.js production build.                                           |
-| Alembic offline SQL                 | passed  | Forward chain renders through `0012_m8_ownership_catalog`.                                 |
+| Alembic offline SQL                 | passed  | Forward chain renders through `0013_m8_intake_policy`.                                     |
 | `docker compose ... config --quiet` | passed  | Compose model parses without a running daemon.                                             |
 | PostgreSQL integration              | passed  | CI run `36010385477` applied M8 and passed all 7 integration tests and Compose checks.     |
 | Gitleaks 8.30.1 history scan        | passed  | Local full-history scan with the exact synthetic test-token allowlist.                     |
 | PostgreSQL restore drill            | passed  | CI run `36008801557` restored into a new database and compared counts, hashes and head.    |
 | M8 focused local checks             | passed  | 16 passed, one PostgreSQL-only test skipped; Ruff and strict mypy passed.                  |
 | Inference provider boundary         | passed  | 2 focused tests passed; CI run `36010905991` passed every job.                             |
-| M8 handoff outcome                  | pending | Local focused tests passed; PostgreSQL transaction test awaits CI.                         |
+| M8 handoff outcome                  | passed  | CI run `36012237217` passed the transaction, API replay, quality and security checks.      |
+| M8 Adaptive Intake                  | pending | Pure and API tests pass locally; PostgreSQL policy test and migration await CI.            |
 
 Earlier M4-M6 clean-run CI evidence:
 <https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/34685618121>.
@@ -104,6 +110,8 @@ CI run <https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/3601038547
 passed every job after migration `0012`; the container job ran seven PostgreSQL integration tests.
 CI run <https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/36010905991>
 passed every job after introducing the inference provider boundary.
+CI run <https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/36012237217>
+passed every job after adding the handoff outcome command and public contract.
 
 ## Known Limitations And External Blockers
 
@@ -127,10 +135,11 @@ passed every job after introducing the inference provider boundary.
 - Docker Desktop is not running on this host; database-backed evidence comes from CI. The optional
   local MinIO profile currently cannot be pulled from Quay and needs a maintained S3-compatible
   provider before object-storage certification.
-- The M8 endpoint does not publish catalog versions. The handoff outcome command requires an
+- M8 does not yet provide an admin publication workflow for ownership or intake catalog versions.
+  The handoff outcome command requires an
   assignment whose unit identifier is the organization identifier; no governed organization/unit
   crosswalk exists yet. No live regional adapter, complete Handoff Guard lifecycle, Replay Lab,
-  verified outcome memory, closure evidence gate, adaptive case schema, recurrence engine or
+  verified outcome memory, closure evidence gate, full adaptive case schema, recurrence engine or
   federated control plane is complete.
 
 ## Decisions Recorded
@@ -145,9 +154,10 @@ passed every job after introducing the inference provider boundary.
 - D-037 selects effective, approved, append-only ownership facts for a read-only human advisory.
 - D-038 isolates lexical inference behind a typed provider; D-039 binds handoff outcomes to an
   authenticated, durable and region-scoped assignment command.
+- D-040 requires an approved effective policy for value-free multilingual intake questions.
 
 ## Exact Next Milestone
 
-Run the handoff outcome PostgreSQL transaction test in CI, then add governed catalog publication,
-adaptive intake policy resolution and organization/unit crosswalk. Keep live adapters, representative
+Run the Adaptive Intake PostgreSQL migration and policy test in CI, then add governed catalog
+publication, conditional evidence requirements and an organization/unit crosswalk. Keep live adapters, representative
 model claims, binding SLA and real PII processing gated by B01-B10.

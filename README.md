@@ -130,6 +130,15 @@ The submitted organization must match the assignment unit identifier, and eviden
 SHA-256 content addresses. The local in-memory profile returns `handoff_store_unavailable` for
 this durable command.
 
+## Adaptive Intake
+
+`POST /v1/intake/plans` resolves one approved, effective and region-scoped intake policy for a
+service/topic pair. The request carries only required-field states (`known`, `missing`, `unknown`),
+and the response returns a bounded set of policy-authored questions in Kazakh or Russian plus the
+policy version and evaluation time. It never accepts or returns raw field values or appeal text.
+Unapproved, overlapping and absent policies fail closed; local/test without a configured policy
+returns `intake_policy_unavailable`.
+
 ## Governed Situation Center
 
 `POST /v1/analytics/query` accepts only catalogued metric IDs, dimensions, filters, and granularities;

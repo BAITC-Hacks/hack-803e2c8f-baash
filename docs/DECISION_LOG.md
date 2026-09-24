@@ -415,6 +415,17 @@ Record implementation decisions here when the repository, contracts or available
 - **Evidence:** ownership outcome repository and API, contract/event catalog and PostgreSQL integration test.
 - **Revisit when:** approved organization/unit mapping and regional handoff protocol are available.
 
+### D-040 — Ask only policy-required intake questions
+
+- **Date:** 2026-09-24
+- **Status:** accepted
+- **Context:** service-specific appeals need different evidence, while raw values and citizen text must stay outside a public planning seam.
+- **Decision:** resolve one approved, effective regional service/topic policy and return kk/ru authored questions based only on known/missing/unknown field states. Missing states remain unknown; no inference fills them. The plan is advisory, versioned and bounded, with no raw values in its request or response.
+- **Alternatives:** fixed universal form; LLM-generated questions; infer missing values from free text.
+- **Consequences:** absent or conflicting policies yield an explicit unavailable state. Policy publication and conditional fields remain subsequent M8 work.
+- **Evidence:** migration `0013_m8_intake_policy`, intake component, route, OpenAPI and integration tests.
+- **Revisit when:** approved regional intake requirements, localized wording and evidence classes are supplied.
+
 ### D-XXX — Short title
 
 - **Date:** YYYY-MM-DD
