@@ -183,6 +183,7 @@ Record implementation decisions here when the repository, contracts or available
 - **Consequences:** the fine-tuning requirement is met on a corpus that actually exists. The absence of an intake classifier becomes a documented data request rather than an unexplained gap. This supersedes the routing model line in `DECISIONS_AND_BLOCKERS.md`.
 - **Evidence:** corpus statistics in `data/reports/regional-csv-dq-report.json`, with a language split of 96.9 percent ru, 3.0 percent mixed and 0 percent kk.
 - **Revisit when:** B02 delivers raw appeal text before 20 September.
+
 ### D-019 - Redacted corpus is versioned in the private repository
 
 - **Date:** 2026-09-14
@@ -348,7 +349,6 @@ Record implementation decisions here when the repository, contracts or available
 - **Evidence:** `adapters/open311`, situation map, `synthetic_mlop`, security CI, runbooks and `release/evidence-index.md`.
 - **Revisit when:** the first source, tile/geocoder infrastructure and release-signing owner are approved.
 
-
 ### D-034 - Preserve time provenance and scope idempotency to the region
 
 - **Date:** 2026-09-23
@@ -381,6 +381,17 @@ Record implementation decisions here when the repository, contracts or available
 - **Consequences:** regional ML scripts no longer yield quality numbers from these artifacts. The manual operational path is unaffected. Historical blobs remain reachable in Git until a separate retention and history-remediation decision is executed.
 - **Evidence:** `scripts/withhold_unapproved_corpus.py`, regional ingest and research-artifact gate tests, manifest/model-card status, and CI security scan.
 - **Revisit when:** B10 approves a private source store, redaction process, legal basis, retention class, and independently reviewed evaluation split.
+
+### D-037 — Governed ownership facts remain advisory
+
+- **Date:** 2026-09-24
+- **Status:** accepted
+- **Context:** the supplied M8 Handoff Guard design requires ownership evidence without silently replacing regional systems or allowing an AI to assign a service.
+- **Decision:** store regional organization, jurisdiction, asset and responsibility-rule facts as append-only effective versions with source and approval references. The assessment reads only approved, effective records for the appeal region and last human-confirmed service. It returns explicit ambiguity, time provenance and prior rejection evidence; only a human may execute a handoff.
+- **Alternatives:** infer current ownership from free text; auto-assign the highest-ranked candidate; overwrite a rule in place.
+- **Consequences:** operators can review candidate evidence even when ML and adapters are unavailable. Unapproved or absent catalog facts yield no candidate. A later command path must separately validate a confirmed handoff and record an idempotent receipt.
+- **Evidence:** migration `0012_m8_ownership_catalog`, ownership engine and tests, OpenAPI assessment contract.
+- **Revisit when:** approved regional ownership sources and handoff protocols are available.
 
 ### D-XXX — Short title
 

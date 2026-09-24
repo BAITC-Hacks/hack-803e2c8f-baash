@@ -104,6 +104,30 @@ paths:
                 $ref: '#/components/schemas/AppealDetail'
         '404':
           $ref: '#/components/responses/NotFound'
+  /v1/requests/{request_id}/ownership-assessment:
+    get:
+      tags: [Ownership]
+      summary: Assess approved effective responsibility rules for human review
+      description: Read-only advisory. No organization is assigned by this operation.
+      operationId: getOwnershipAssessment
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+        - $ref: '#/components/parameters/RegionId'
+      responses:
+        '200':
+          description: Region-scoped ownership candidates with rule evidence and uncertainty
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OwnershipAssessment'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /v1/requests/{request_id}/classifications:
     post:
       tags: [Requests]
@@ -636,6 +660,54 @@ components:
           schema:
             $ref: '#/components/schemas/Problem'
   schemas:
+    OwnershipRuleEvidence:
+      type: object
+      additionalProperties: false
+      required: [rule_id, version, reason_code, source_ref, reason_codes]
+      properties:
+        rule_id: { type: string }
+        version: { type: string }
+        reason_code: { type: string }
+        source_ref: { type: [string, 'null'] }
+        reason_codes:
+          type: array
+          items: { type: string }
+    OwnershipCandidate:
+      type: object
+      additionalProperties: false
+      required: [organization_id, specificity, evidence, previously_rejected, previously_accepted]
+      properties:
+        organization_id: { type: string }
+        specificity: { type: integer, minimum: 0, maximum: 2 }
+        evidence:
+          type: array
+          items: { $ref: '#/components/schemas/OwnershipRuleEvidence' }
+        previously_rejected: { type: boolean }
+        previously_accepted: { type: boolean }
+    OwnershipAssessment:
+      type: object
+      additionalProperties: false
+      required: [request_id, request_version, region_id, service_id, policy_time, policy_time_source, candidates, reason_codes, ambiguous, loop_risk, requires_human_confirmation, advisory_only, assigned_organization_id]
+      properties:
+        request_id: { type: string, format: uuid }
+        request_version: { type: integer, minimum: 1 }
+        region_id: { type: string }
+        service_id: { type: [string, 'null'] }
+        policy_time: { type: [string, 'null'], format: date-time }
+        policy_time_source:
+          type: [string, 'null']
+          enum: [received_at, observed_at_fallback, null]
+        candidates:
+          type: array
+          items: { $ref: '#/components/schemas/OwnershipCandidate' }
+        reason_codes:
+          type: array
+          items: { type: string }
+        ambiguous: { type: boolean }
+        loop_risk: { type: boolean }
+        requires_human_confirmation: { type: boolean, const: true }
+        advisory_only: { type: boolean, const: true }
+        assigned_organization_id: { type: 'null' }
     CreateRequest:
       type: object
       additionalProperties: false

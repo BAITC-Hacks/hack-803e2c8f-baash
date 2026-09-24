@@ -26,6 +26,9 @@ from pulse109.manual_path import (
     create_manual_router,
 )
 from pulse109.observability import configure_observability
+from pulse109.ownership.repository import EmptyOwnershipRepository, PostgresOwnershipRepository
+from pulse109.ownership.router import create_ownership_router
+from pulse109.ownership.service import OwnershipService
 from pulse109.reports import ReportRuntime, create_report_router
 from pulse109.retrieval import HybridRetriever, create_retrieval_router, synthetic_corpus
 
@@ -51,6 +54,20 @@ else:
     manual_repository = InMemoryManualRepository()
     manual_service = ManualPathService(manual_repository)
 app.include_router(create_manual_router(manual_service))
+ownership_repository = (
+    PostgresOwnershipRepository(settings.database_url)
+    if use_postgres_manual_path
+    else EmptyOwnershipRepository()
+)
+app.include_router(
+    create_ownership_router(
+        manual_service,
+        OwnershipService(
+            ownership_repository,
+            allow_synthetic=settings.environment in {"local", "development", "test"},
+        ),
+    )
+)
 app.include_router(
     create_catalog_router(
         PolicyService(settings.database_url if use_postgres_manual_path else None)

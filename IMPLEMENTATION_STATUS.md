@@ -2,9 +2,9 @@
 
 ## Current Milestone
 
-- Milestone: M7 durable core and release hardening.
-- Status: active; the local M7 implementation has been reviewed and hardened, but its PostgreSQL
-  integration and release gates have not yet passed on this host.
+- Milestone: M8 governed ownership and Handoff Guard, first vertical slice.
+- Status: active. M7 CI run `36008801557` passed quality, container, security and disposable
+  PostgreSQL restore checks. M8 catalog, advisory engine and read API are under validation.
 - Branch: `codex/production-platform-20260923`, created without discarding the pre-existing local
   changes. The newer upstream regional-import and ML commits have been merged into the branch.
 - Scope from the two supplied texts: durable manual journey first, then Handoff Guard, Replay Lab,
@@ -36,34 +36,40 @@
   configuration; unverified free text never enters the inference path.
 - Synthetic retrieval, analytics, alerts and volatile reports are disabled in pilot/production
   profiles until approved durable read models exist. The ML-independent manual path remains mounted.
+- M8 adds an append-only, effective-dated ownership catalog and an advisory assessment of approved
+  organization candidates. It uses the last human-confirmed service, labels observed-time fallback,
+  exposes rule provenance, detects ambiguity and prior rejection, and never assigns an organization.
 - The merged regional research corpus now contains withheld text markers only. Quarantine artifacts
   contain hashes and counts without source row values. New regional ingest withholds executor prose;
   training and evaluation stop on withheld data, and historical reports block quality claims.
 
 ## Contracts And Migrations Changed
 
-- OpenAPI includes 20 operations and 29 schemas. Create and status-event time-quality rules now
+- OpenAPI includes 21 operations and 32 schemas. Create and status-event time-quality rules now
   agree with the canonical JSON schema; no timestamp is derived from observation time.
 - Added Alembic revisions `0008_m7_manual_path_persistence` through
   `0011_m7_incident_persistence` after the previously accepted `0001`-`0007` chain.
 - Added append-only retrieval-run, incident-membership, delivery, mapping-review, metric-result,
   alert-review, forecast, and report-artifact persistence structures.
+- Added `0012_m8_ownership_catalog` with organization, jurisdiction, asset, responsibility-rule
+  versions and handoff outcome evidence. PostgreSQL migration still needs CI execution.
 
 ## Verification
 
-| Command                             | Result  | Evidence or note                                                                           |
-| ----------------------------------- | ------- | ------------------------------------------------------------------------------------------ |
-| `./scripts/tasks.ps1 lint`          | passed  | Ruff, Prettier and ESLint after M7 changes.                                                |
-| `./scripts/tasks.ps1 typecheck`     | passed  | Strict mypy over 70 source files and TypeScript checks.                                    |
-| `./scripts/tasks.ps1 test`          | passed  | 106 passed, 6 PostgreSQL-only tests skipped because `PULSE109_TEST_DATABASE_URL` is unset. |
-| `./scripts/tasks.ps1 contract-test` | passed  | 17 passed; time-quality and OpenAPI validation included.                                   |
-| `./scripts/tasks.ps1 e2e`           | passed  | 9 passed, including manual and incident flows.                                             |
-| `./scripts/tasks.ps1 build`         | passed  | Python wheel/sdist and Next.js production build.                                           |
-| Alembic offline SQL                 | passed  | Forward chain renders through `0011_m7_incident_persistence`.                              |
-| `docker compose ... config --quiet` | passed  | Compose model parses without a running daemon.                                             |
-| PostgreSQL integration              | passed  | CI run `35900618132` passed all 6 integration tests and Compose health checks.             |
-| Gitleaks 8.30.1 history scan        | passed  | Local full-history scan with the exact synthetic test-token allowlist.                     |
-| PostgreSQL restore drill            | pending | CI now dumps into a new database and compares counts and source hashes; rerun pending.     |
+| Command                             | Result | Evidence or note                                                                           |
+| ----------------------------------- | ------ | ------------------------------------------------------------------------------------------ |
+| `./scripts/tasks.ps1 lint`          | passed | Ruff, Prettier and ESLint after M7 changes.                                                |
+| `./scripts/tasks.ps1 typecheck`     | passed | Strict mypy over 76 source files and TypeScript checks.                                    |
+| `./scripts/tasks.ps1 test`          | passed | 116 passed, 7 PostgreSQL-only tests skipped because `PULSE109_TEST_DATABASE_URL` is unset. |
+| `./scripts/tasks.ps1 contract-test` | passed | 17 passed; time-quality and OpenAPI validation included.                                   |
+| `./scripts/tasks.ps1 e2e`           | passed | 10 passed, including manual, incident and advisory ownership flows.                        |
+| `./scripts/tasks.ps1 build`         | passed | Python wheel/sdist and Next.js production build.                                           |
+| Alembic offline SQL                 | passed | Forward chain renders through `0012_m8_ownership_catalog`.                                 |
+| `docker compose ... config --quiet` | passed | Compose model parses without a running daemon.                                             |
+| PostgreSQL integration              | passed | CI run `35900618132` passed all 6 integration tests and Compose health checks.             |
+| Gitleaks 8.30.1 history scan        | passed | Local full-history scan with the exact synthetic test-token allowlist.                     |
+| PostgreSQL restore drill            | passed | CI run `36008801557` restored into a new database and compared counts, hashes and head.    |
+| M8 focused local checks             | passed | 16 passed, one PostgreSQL-only test skipped; Ruff and strict mypy passed.                  |
 
 Earlier M4-M6 clean-run CI evidence:
 <https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/34685618121>.
@@ -85,6 +91,9 @@ all container-smoke checks with those changes. Its Trivy artifact reports 44 hig
 the new image, all without an available fixed package version. The scan remains uploaded for
 review; a separate blocking gate now fails on fixable high/critical findings. The remaining OS
 findings prevent production security certification and require continuing review.
+CI runs <https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/36008629096> and
+<https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/36008801557> passed every job,
+including the remediable-vulnerability gate and disposable PostgreSQL restore drill.
 
 ## Known Limitations And External Blockers
 
@@ -96,8 +105,8 @@ findings prevent production security certification and require continuing review
 - M6 read results, retrieval corpus and report storage remain synthetic or process-local. Their
   operational routes return `read_model_unavailable` until durable, approved providers are wired.
 - The local/test profile uses in-memory manual state. Pilot/production selects PostgreSQL; CI now
-  passes database tests and Compose health checks. A disposable restore drill is staged in CI;
-  restart, target RPO/RTO and production object-store restore evidence remain pending.
+  passes database tests, Compose health checks and a disposable restore drill. Restart, target
+  RPO/RTO and production object-store restore evidence remain pending.
 - B08/B10 still require the approved OIDC provider, immutable private source storage, legal basis
   and retention class. Operational intake fails closed if these are absent; the current regex is a
   synthetic-fixture aid and is not a production PII redactor.
@@ -108,8 +117,9 @@ findings prevent production security certification and require continuing review
 - Docker Desktop is not running on this host; database-backed evidence comes from CI. The optional
   local MinIO profile currently cannot be pulled from Quay and needs a maintained S3-compatible
   provider before object-storage certification.
-- No live regional adapter, Handoff Guard lifecycle, Replay Lab, verified outcome memory, closure
-  evidence gate, adaptive case schema, recurrence engine or federated control plane is complete.
+- The M8 endpoint does not publish catalog versions or record handoff outcomes yet. No live regional
+  adapter, complete Handoff Guard lifecycle, Replay Lab, verified outcome memory, closure evidence
+  gate, adaptive case schema, recurrence engine or federated control plane is complete.
 
 ## Decisions Recorded
 
@@ -120,9 +130,10 @@ findings prevent production security certification and require continuing review
   fail-closed boundaries after reconciliation with the upstream decision log.
 - D-036 withholds unapproved regional prose, corrects historical hit-rate labels and blocks
   unsupported quality claims.
+- D-037 selects effective, approved, append-only ownership facts for a read-only human advisory.
 
 ## Exact Next Milestone
 
-Rerun the supply-chain job in CI with the narrow Gitleaks allowlist. After M7 is evidenced, build a durable handoff command
-and receipt state as the first M8 vertical slice. Keep live adapters, representative model claims,
-binding SLA and real PII processing gated by B01-B10.
+Run the M8 PostgreSQL migration and integration test in CI, then add governed catalog publication
+and a durable, idempotent handoff command and receipt state. Keep live adapters, representative
+model claims, binding SLA and real PII processing gated by B01-B10.

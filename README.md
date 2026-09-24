@@ -113,6 +113,16 @@ Open311 v2 sandbox exercise M5 without inventing a regional protocol. Unknown ex
 mapping review. The replay trace and Open311 responses are explicitly synthetic and are not evidence
 of a live or national integration.
 
+## Governed Ownership Assessment
+
+`GET /v1/requests/{request_id}/ownership-assessment` reads effective, approved organization,
+jurisdiction, asset and responsibility-rule versions for an authorized appeal region. It uses the
+latest human-confirmed service and returns candidate organizations with rule IDs, versions,
+provenance and reason codes. A missing source business time stays missing; an exact appeal creation
+time may be used as an explicitly labelled policy-time fallback. Conflicting rules and prior
+handoff rejection remain visible to the operator. The endpoint is advisory and never changes an
+assignment. Local/test without PostgreSQL returns no invented catalog facts.
+
 ## Governed Situation Center
 
 `POST /v1/analytics/query` accepts only catalogued metric IDs, dimensions, filters, and granularities;
