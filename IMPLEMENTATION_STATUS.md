@@ -71,13 +71,22 @@
 - Evidence-backed closure now has a status-preserving preflight against appeal-owned attachment hashes and
   a separate human confirmation that atomically records closure, timeline, audit, outbox and replay
   receipt. Source status alone does not qualify as closure evidence.
+- A read-only recurrence assessment now counts distinct confirmed incidents on the same object and
+  human-selected topic only when an appeal has a verified, operator-confirmed closure before the
+  new exact event time. Missing object, topic or exact time produces an explicit abstention.
+- Replay Lab now has a deterministic offline engine for region-scoped immutable snapshots. It keeps
+  labels outside policy inputs, rejects late/unknown features, excludes synthetic cases from quality
+  metrics, reports descriptive comparisons and has no promotion operation.
+- Outcome Memory now has a strict verified-record retrieval boundary: controlled terms, appeal-owned
+  evidence, human closure provenance, regional isolation, explicit synthetic labels and abstention.
+  No operational reader or public endpoint is mounted while approved corpus and privacy rules are absent.
 - The merged regional research corpus now contains withheld text markers only. Quarantine artifacts
   contain hashes and counts without source row values. New regional ingest withholds executor prose;
   training and evaluation stop on withheld data, and historical reports block quality claims.
 
 ## Contracts And Migrations Changed
 
-- OpenAPI includes 28 operations and 46 schemas. Create and status-event time-quality rules now
+- OpenAPI includes 29 operations and 48 schemas. Create and status-event time-quality rules now
   agree with the canonical JSON schema; no timestamp is derived from observation time.
 - Added Alembic revisions `0008_m7_manual_path_persistence` through
   `0011_m7_incident_persistence` after the previously accepted `0001`-`0007` chain.
@@ -92,6 +101,8 @@
 - Added `0015_m8_confidence_publication` for immutable proposal/review records and exclusion of
   overlapping approved confidence intervals. Added `0016_m9_closure_integrity` for immutable
   appeal-bound closure preflights. Both are awaiting the next database CI run.
+- Added `0017_m11_replay_lab` for immutable snapshot manifests and non-promoting aggregate replay
+  reports. It is awaiting database CI with the other new migrations.
 
 ## Verification
 
@@ -116,10 +127,12 @@
 | M8 jurisdiction resolution          | passed | 4 service tests; CI run `36014297057` passed the PostgreSQL boundary cases.             |
 | M8 confidence policy                | passed | CI run `36047169856` applied `0014`, passed PostgreSQL tests and restore.               |
 | Catalog policy time validation      | local  | 3 focused tests passed; the new validation needs no PostgreSQL access.                  |
-| Current batched local checks         | passed | Ruff format/check, mypy (96 files), Prettier, ESLint and TypeScript passed.             |
-| Current batched Python tests         | passed | 158 passed; 13 PostgreSQL-only tests skipped without `PULSE109_TEST_DATABASE_URL`.      |
-| Current contract and E2E checks      | passed | 19 contract and 11 E2E tests passed; OpenAPI validates with 28 unique operations.       |
-| Current build and migration head     | passed | Python package and Next.js production build; Alembic reports sole `0016` head.         |
+| Current batched local checks        | passed | Ruff format/check, mypy (96 files), Prettier, ESLint and TypeScript passed.             |
+| Current batched Python tests        | passed | 158 passed; 13 PostgreSQL-only tests skipped without `PULSE109_TEST_DATABASE_URL`.      |
+| Current contract and E2E checks     | passed | 19 contract and 11 E2E tests passed; OpenAPI validates with 28 unique operations.       |
+| Previous build and migration head   | passed | Python package and Next.js production build; the prior Alembic head was `0016`.         |
+| Recurrence/replay/memory focused    | passed | 39 focused and contract tests; Ruff and mypy pass across 106 source files.              |
+| Current Alembic head                | passed | Sole `0017_m11_replay_lab` head; PostgreSQL application awaits batched CI.              |
 
 The `make` executable is unavailable in this Windows shell. The equivalent root commands were
 run directly with `uv` and `pnpm`; CI uses the root task runner and performs the database tests.
@@ -192,8 +205,8 @@ passed quality, security, PostgreSQL integration and a disposable restore throug
   policy or durable recommendation path.
   The handoff outcome command requires an
   assignment whose unit identifier is the organization identifier; no governed organization/unit
-  crosswalk exists yet. No live regional adapter, complete Handoff Guard lifecycle, Replay Lab,
-  verified outcome memory, full adaptive case schema, recurrence engine or
+  crosswalk exists yet. No live regional adapter, complete Handoff Guard lifecycle, operational
+  Replay Lab pipeline, operational outcome memory reader, full adaptive case schema, or
   federated control plane is complete.
 
 ## Decisions Recorded
@@ -211,10 +224,13 @@ passed quality, security, PostgreSQL integration and a disposable restore throug
 - D-040 requires an approved effective policy for value-free multilingual intake questions.
 - D-044 through D-046 record independent confidence publication, appeal-bound closure evidence and
   durable assignment lookup for the operator handoff panel.
+- D-047 limits recurrence evidence to verified closure and exact time on the same asset and topic.
+- D-048 and D-049 constrain Replay Lab to descriptive offline evidence and Outcome Memory to verified
+  retrieval without post-decision intake features.
 
 ## Exact Next Milestone
 
-Complete the batched database CI for confidence publication and closure, then continue durable
-Decision Gateway assessments, the organization/unit crosswalk, Replay Lab and verified outcome
-memory. Keep live adapters, representative model claims, binding SLA and real PII processing
+Complete the batched database CI for confidence publication, closure and recurrence, then continue
+durable Decision Gateway assessments, the organization/unit crosswalk, replay persistence and
+verified outcome memory read models. Keep live adapters, representative model claims, binding SLA and real PII processing
 dependent on B01-B10.

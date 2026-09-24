@@ -159,6 +159,27 @@ paths:
           $ref: '#/components/responses/NotFound'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
+  /v1/requests/{request_id}/recurrence-assessment:
+    get:
+      tags: [Incidents]
+      summary: Assess verified prior incidents for a recurring infrastructure failure
+      description: Read-only advisory; requires an exact new report time, human topic and stable object ID.
+      operationId: getRecurrenceAssessment
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+        - $ref: '#/components/parameters/RegionId'
+      responses:
+        '200':
+          description: Bounded, region-scoped verified recurrence evidence or explicit abstention
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecurrenceAssessment'
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
   /v1/requests/{request_id}/closure-preflight:
     post:
       tags: [Requests]
@@ -994,6 +1015,33 @@ components:
         audit_event_id: { type: string, format: uuid }
         outbox_event_id: { type: string, format: uuid }
         replayed: { type: boolean }
+    PriorVerifiedIncident:
+      type: object
+      additionalProperties: false
+      required: [incident_id, first_reported_at, last_verified_closure_at, supporting_appeal_count]
+      properties:
+        incident_id: { type: string, format: uuid }
+        first_reported_at: { type: string, format: date-time }
+        last_verified_closure_at: { type: string, format: date-time }
+        supporting_appeal_count: { type: integer, minimum: 1 }
+    RecurrenceAssessment:
+      type: object
+      additionalProperties: false
+      required: [request_id, request_version, region_id, topic_id, state, window_days, verified_incident_count, recent_closure_count, evaluated_at, reason_codes, incidents, advisory_only, requires_human_confirmation]
+      properties:
+        request_id: { type: string, format: uuid }
+        request_version: { type: integer, minimum: 1 }
+        region_id: { type: string }
+        topic_id: { type: [string, 'null'] }
+        state: { type: string, enum: [insufficient_context, no_verified_history, history_present, recurring_pattern, possible_failed_resolution] }
+        window_days: { type: integer, minimum: 1 }
+        verified_incident_count: { type: integer, minimum: 0 }
+        recent_closure_count: { type: integer, minimum: 0 }
+        evaluated_at: { type: [string, 'null'], format: date-time }
+        reason_codes: { type: array, items: { type: string } }
+        incidents: { type: array, items: { $ref: '#/components/schemas/PriorVerifiedIncident' } }
+        advisory_only: { type: boolean, const: true }
+        requires_human_confirmation: { type: boolean, const: true }
     HandoffOutcomeReceipt:
       type: object
       additionalProperties: false

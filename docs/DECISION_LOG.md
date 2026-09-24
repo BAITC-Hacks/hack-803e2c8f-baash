@@ -492,6 +492,39 @@ Record implementation decisions here when the repository, contracts or available
 - **Evidence:** latest-assignment API, operator panel, and manual-path integration assertion.
 - **Revisit when:** a governed organization/unit crosswalk is approved.
 
+### D-047 — Count recurrence only after verified closure
+
+- **Date:** 2026-09-25
+- **Status:** accepted
+- **Context:** repeated reports at one infrastructure object can indicate failed resolution, but similar unclosed appeals may belong to one ongoing incident rather than recurrence.
+- **Decision:** the read-only recurrence assessment requires a stable object ID, an exact business event time and a human-selected topic for the new appeal. It counts distinct prior confirmed incidents only when their current membership is confirmed, a matching appeal has an operator-confirmed closure preflight, and that closure precedes the new event within a bounded window. A closure within seven days signals possible failed resolution; three distinct verified incidents signal a recurring pattern. The result is advisory and requires human confirmation.
+- **Alternatives:** count all related appeals; infer event time from row order; treat imported `closed` status as proof of resolution.
+- **Consequences:** uncertain time, missing object or topic, and unverified closures produce abstention or no verified history. The assessment may undercount until regional asset IDs and evidence are reliable.
+- **Evidence:** `pulse109.recurrence` read model and service, focused tests and PostgreSQL integration scenario.
+- **Revisit when:** regional asset identity quality, incident closure semantics and approved recurrence thresholds are available.
+
+### D-048 — Keep Replay Lab historical and non-promoting
+
+- **Date:** 2026-09-25
+- **Status:** accepted
+- **Context:** rule and model changes need evidence before rollout, but historical observations cannot prove a counterfactual outcome and synthetic fixtures cannot establish model quality.
+- **Decision:** replay only immutable, content-addressed, region-scoped snapshots with a small approved input-feature allowlist. Reject post-decision fields, non-finite values and cross-region cases. Exclude synthetic cases from all reported quality metrics. Keep labels outside predictor inputs, report descriptive baseline/candidate comparisons and prohibit promotion in the persistence schema.
+- **Alternatives:** run candidate policies against live appeals; use outcome fields as inputs; include synthetic fixtures in accuracy; promote automatically on a better historical score.
+- **Consequences:** the current engine is an offline comparison component, not a release controller. Production datasets, approved policy artifacts and representative labels are still needed.
+- **Evidence:** `pulse109.replay`, migration `0017_m11_replay_lab` and focused deterministic tests.
+- **Revisit when:** B02/B04/B05 provide approved snapshots and labels, and signed model artifacts exist.
+
+### D-049 — Treat outcome memory as verified retrieval only
+
+- **Date:** 2026-09-25
+- **Status:** accepted
+- **Context:** prior resolutions can help operators, but imported `closed` status, unowned evidence or post-decision fields would contaminate advice and intake training.
+- **Decision:** eligible outcome records require a human-confirmed closure chain, appeal-owned content-addressed evidence, source provenance and a redacted classification. Retrieval is region/service/topic scoped, excludes the source appeal, uses controlled terms, labels synthetic data and abstains when no verified match exists. Outcome records are explicitly blocked from becoming intake features or autonomous replies.
+- **Alternatives:** RAG over raw appeal text; direct use of status `closed`; treat prior resolutions as training input for the current intake decision.
+- **Consequences:** this is a validated component boundary. A PostgreSQL reader must still assemble and verify the proof chain before operational retrieval is exposed.
+- **Evidence:** `pulse109.outcome_memory` and focused eligibility tests.
+- **Revisit when:** approved source corpus, redaction, taxonomy and legal retention rules are available.
+
 ### D-XXX — Short title
 
 - **Date:** YYYY-MM-DD

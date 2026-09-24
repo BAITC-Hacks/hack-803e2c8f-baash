@@ -43,6 +43,11 @@ from pulse109.ownership.outcomes import HandoffOutcomeService
 from pulse109.ownership.repository import EmptyOwnershipRepository, PostgresOwnershipRepository
 from pulse109.ownership.router import create_ownership_router
 from pulse109.ownership.service import OwnershipService
+from pulse109.recurrence import (
+    PostgresRecurrenceRepository,
+    RecurrenceService,
+    create_recurrence_router,
+)
 from pulse109.reports import ReportRuntime, create_report_router
 from pulse109.retrieval import HybridRetriever, create_retrieval_router, synthetic_corpus
 
@@ -117,6 +122,13 @@ app.include_router(
 app.include_router(
     create_closure_router(
         ClosureIntegrityService(PostgresClosureRepository(settings.database_url))
+        if use_postgres_manual_path
+        else None
+    )
+)
+app.include_router(
+    create_recurrence_router(
+        RecurrenceService(PostgresRecurrenceRepository(settings.database_url))
         if use_postgres_manual_path
         else None
     )
