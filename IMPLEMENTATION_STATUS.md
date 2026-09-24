@@ -78,7 +78,12 @@ staged and passed a local full-history scan. CI run
 and Gitleaks, but Quay refused the legacy MinIO image during Compose startup. Trivy produced an
 SBOM and rejected the old Python 3.12.8 Bookworm image with high/critical OS vulnerabilities.
 Object storage is now an optional Compose profile, and the runtime Dockerfile pins the current
-Python 3.12.14 slim Trixie image. These changes await CI verification.
+Python 3.12.14 slim Trixie image. CI run
+<https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/36008124548> passed quality and
+all container-smoke checks with those changes. Its Trivy artifact reports 44 high OS findings on
+the new image, all without an available fixed package version. The scan remains uploaded for
+review; a separate blocking gate now fails on fixable high/critical findings. The remaining OS
+findings prevent production security certification and require continuing review.
 
 ## Known Limitations And External Blockers
 
