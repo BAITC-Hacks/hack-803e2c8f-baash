@@ -37,6 +37,7 @@ The envelope never carries a citizen name, phone number, full street address, un
 | `appeal.status.changed.v1` | Core or adapter | previous status, new status, source event ID, reason | Timeline, notifications, analytics |
 | `appeal.resolved.v1` | Core or adapter | result reference, evidence references, resolution code | Retrieval corpus, citizen notification |
 | `appeal.reopened.v1` | Core or adapter | reason, prior resolution reference | Routing, quality metrics |
+| `ownership.handoff_outcome.recorded.v1` | Core | outcome ID, request ID, assignment ID, organization ID, disposition, reason code, source event ID, evidence reference count | Handoff Guard, analytics, audit |
 
 ## AI events
 
@@ -85,4 +86,3 @@ The envelope never carries a citizen name, phone number, full street address, un
 4. Event retention and replay rights follow the payload classification, not the topic name.
 5. Analytics uses `occurred_at` only when its quality is acceptable for the metric. Otherwise it uses `observed_at` and labels the result accordingly.
 6. No consumer may infer a missing business timestamp from row order or file modification time.
-

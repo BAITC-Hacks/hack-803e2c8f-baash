@@ -123,6 +123,13 @@ time may be used as an explicitly labelled policy-time fallback. Conflicting rul
 handoff rejection remain visible to the operator. The endpoint is advisory and never changes an
 assignment. Local/test without PostgreSQL returns no invented catalog facts.
 
+`POST /v1/requests/{request_id}/assignments/{assignment_id}/handoff-outcomes` records an
+operator-confirmed acceptance or rejection for a region-bound assignment. Its outcome, appeal
+timeline entry, audit event, outbox event and idempotency receipt share one PostgreSQL transaction.
+The submitted organization must match the assignment unit identifier, and evidence is limited to
+SHA-256 content addresses. The local in-memory profile returns `handoff_store_unavailable` for
+this durable command.
+
 ## Governed Situation Center
 
 `POST /v1/analytics/query` accepts only catalogued metric IDs, dimensions, filters, and granularities;

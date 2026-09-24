@@ -27,15 +27,33 @@ def test_openapi_31_contract_is_valid_and_stable() -> None:
         if method in {"get", "post", "put", "patch", "delete"}
     ]
     assert document["openapi"] == "3.1.0"
-    assert len(operations) == 21
-    assert len({item["operationId"] for item in operations}) == 21
-    assert len(document["components"]["schemas"]) == 32
+    assert len(operations) == 22
+    assert len({item["operationId"] for item in operations}) == 22
+    assert len(document["components"]["schemas"]) == 34
 
 
 def test_canonical_request_schema_is_valid() -> None:
     schema = load_json(ROOT / "contracts/canonical_request.schema.json")
     Draft202012Validator.check_schema(schema)
     assert schema["$id"].endswith("/1.0.0")
+
+
+def test_handoff_command_contract_requires_content_addressed_evidence() -> None:
+    with (ROOT / "contracts/openapi.yaml").open(encoding="utf-8") as stream:
+        document = yaml.safe_load(stream)
+    schema = document["components"]["schemas"]["HandoffOutcomeCommand"]
+    validator = Draft202012Validator(schema)
+    command = {
+        "organization_id": "org:roads",
+        "disposition": "accepted",
+        "reason_code": "operator_confirmed",
+        "source_event_id": "regional-event-1",
+        "evidence_refs": ["sha256:" + "a" * 64],
+    }
+
+    assert list(validator.iter_errors(command)) == []
+    command["evidence_refs"] = ["https://example.test/private/citizen-address"]
+    assert list(validator.iter_errors(command))
 
 
 def test_event_envelope_accepts_missing_business_time() -> None:

@@ -128,6 +128,48 @@ paths:
           $ref: '#/components/responses/NotFound'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
+  /v1/requests/{request_id}/assignments/{assignment_id}/handoff-outcomes:
+    post:
+      tags: [Ownership]
+      summary: Record a human-confirmed outcome for a durable assignment
+      operationId: recordHandoffOutcome
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+        - $ref: '#/components/parameters/AssignmentId'
+        - $ref: '#/components/parameters/RegionId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/CorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HandoffOutcomeCommand'
+      responses:
+        '201':
+          description: Outcome, audit and outbox committed atomically
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HandoffOutcomeReceipt'
+        '200':
+          description: Idempotent replay of the committed outcome
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HandoffOutcomeReceipt'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /v1/requests/{request_id}/classifications:
     post:
       tags: [Requests]
@@ -614,6 +656,13 @@ components:
       schema:
         type: string
         format: uuid
+    AssignmentId:
+      name: assignment_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
   headers:
     CorrelationId:
       schema:
@@ -660,6 +709,32 @@ components:
           schema:
             $ref: '#/components/schemas/Problem'
   schemas:
+    HandoffOutcomeCommand:
+      type: object
+      additionalProperties: false
+      required: [organization_id, disposition, reason_code, source_event_id]
+      properties:
+        organization_id: { type: string, minLength: 1, maxLength: 128, pattern: '^[A-Za-z0-9][A-Za-z0-9:_-]*$' }
+        disposition: { type: string, enum: [accepted, rejected] }
+        reason_code: { type: string, minLength: 1, maxLength: 128, pattern: '^[A-Za-z][A-Za-z0-9_:-]*$' }
+        source_event_id: { type: string, minLength: 1, maxLength: 256, pattern: '^[A-Za-z0-9][A-Za-z0-9:._-]*$' }
+        evidence_refs:
+          type: array
+          maxItems: 50
+          items: { type: string, pattern: '^sha256:[0-9a-f]{64}$' }
+    HandoffOutcomeReceipt:
+      type: object
+      additionalProperties: false
+      required: [outcome_id, request_id, assignment_id, region_id, disposition, audit_event_id, outbox_event_id, replayed]
+      properties:
+        outcome_id: { type: string, format: uuid }
+        request_id: { type: string, format: uuid }
+        assignment_id: { type: string, format: uuid }
+        region_id: { type: string }
+        disposition: { type: string, enum: [accepted, rejected] }
+        audit_event_id: { type: string, format: uuid }
+        outbox_event_id: { type: string, format: uuid }
+        replayed: { type: boolean }
     OwnershipRuleEvidence:
       type: object
       additionalProperties: false

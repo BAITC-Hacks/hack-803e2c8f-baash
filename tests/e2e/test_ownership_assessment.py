@@ -55,3 +55,19 @@ def test_ownership_assessment_requires_human_service_and_never_assigns() -> None
 
         wrong_region = client.get(route, headers={"X-Region-Id": "ASTANA"})
         assert wrong_region.status_code in {403, 404}
+
+        handoff = client.post(
+            f"/v1/requests/{request_id}/assignments/{uuid4()}/handoff-outcomes",
+            headers={
+                "X-Region-Id": "ALA",
+                "Idempotency-Key": f"handoff-{nonce}",
+            },
+            json={
+                "organization_id": "org:roads",
+                "disposition": "accepted",
+                "reason_code": "synthetic_operator_review",
+                "source_event_id": f"synthetic-{nonce}",
+            },
+        )
+        assert handoff.status_code == 503
+        assert handoff.json()["detail"]["code"] == "handoff_store_unavailable"

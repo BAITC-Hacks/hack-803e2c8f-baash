@@ -6,7 +6,50 @@ from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+
+class HandoffOutcomeCommand(BaseModel):
+    """Operator-confirmed regional outcome for one recorded assignment."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    organization_id: str = Field(
+        min_length=1, max_length=128, pattern=r"^[A-Za-z0-9][A-Za-z0-9:_-]*$"
+    )
+    disposition: Literal["accepted", "rejected"]
+    reason_code: str = Field(min_length=1, max_length=128, pattern=r"^[A-Za-z][A-Za-z0-9_:-]*$")
+    source_event_id: str = Field(
+        min_length=1, max_length=256, pattern=r"^[A-Za-z0-9][A-Za-z0-9:._-]*$"
+    )
+    evidence_refs: list[str] = Field(default_factory=list, max_length=50)
+
+    @field_validator("evidence_refs")
+    @classmethod
+    def require_content_addressed_evidence(cls, refs: list[str]) -> list[str]:
+        if any(
+            len(ref) != 71
+            or not ref.startswith("sha256:")
+            or any(char not in "0123456789abcdef" for char in ref[7:])
+            for ref in refs
+        ):
+            raise ValueError("evidence refs must be lowercase sha256 content addresses")
+        return refs
+
+
+class HandoffOutcomeReceipt(BaseModel):
+    """Identifiers proving an outcome and its side effects committed."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    outcome_id: UUID
+    request_id: UUID
+    assignment_id: UUID
+    region_id: str
+    disposition: Literal["accepted", "rejected"]
+    audit_event_id: UUID
+    outbox_event_id: UUID
+    replayed: bool = False
 
 
 class OwnershipRuleEvidence(BaseModel):

@@ -404,6 +404,17 @@ Record implementation decisions here when the repository, contracts or available
 - **Evidence:** `services/core/src/pulse109/decisions/inference_provider.py`, provider-injection test and existing manual-path E2E flow.
 - **Revisit when:** B02/B08/B10 approve real features, privacy handling and operational inference.
 
+### D-039 — Bind handoff outcomes to a durable assignment
+
+- **Date:** 2026-09-24
+- **Status:** accepted
+- **Context:** handoff loop evidence must refer to a particular appeal assignment and cannot be inferred from free text or a model proposal.
+- **Decision:** only an operator, supervisor or administrator can record accepted/rejected outcomes through an idempotent, region-scoped command. The assignment unit identifier must match the organization identifier until a governed organization/unit crosswalk exists. The outcome, timeline, audit, outbox and receipt commit together; evidence references are content addressed.
+- **Alternatives:** infer rejection from status transitions; accept an unbound organization; record outcome without a timeline or audit event.
+- **Consequences:** replayed commands return the same receipt and wrong-region requests cannot expose a receipt. Assignments without an organization-bound unit cannot yet record an outcome.
+- **Evidence:** ownership outcome repository and API, contract/event catalog and PostgreSQL integration test.
+- **Revisit when:** approved organization/unit mapping and regional handoff protocol are available.
+
 ### D-XXX — Short title
 
 - **Date:** YYYY-MM-DD

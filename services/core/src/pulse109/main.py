@@ -26,6 +26,7 @@ from pulse109.manual_path import (
     create_manual_router,
 )
 from pulse109.observability import configure_observability
+from pulse109.ownership.outcomes import HandoffOutcomeService
 from pulse109.ownership.repository import EmptyOwnershipRepository, PostgresOwnershipRepository
 from pulse109.ownership.router import create_ownership_router
 from pulse109.ownership.service import OwnershipService
@@ -54,11 +55,14 @@ else:
     manual_repository = InMemoryManualRepository()
     manual_service = ManualPathService(manual_repository)
 app.include_router(create_manual_router(manual_service))
-ownership_repository = (
-    PostgresOwnershipRepository(settings.database_url)
-    if use_postgres_manual_path
-    else EmptyOwnershipRepository()
-)
+ownership_repository: PostgresOwnershipRepository | EmptyOwnershipRepository
+handoff_service: HandoffOutcomeService | None
+if use_postgres_manual_path:
+    ownership_repository = PostgresOwnershipRepository(settings.database_url)
+    handoff_service = HandoffOutcomeService(ownership_repository)
+else:
+    ownership_repository = EmptyOwnershipRepository()
+    handoff_service = None
 app.include_router(
     create_ownership_router(
         manual_service,
@@ -66,6 +70,7 @@ app.include_router(
             ownership_repository,
             allow_synthetic=settings.environment in {"local", "development", "test"},
         ),
+        handoff_service,
     )
 )
 app.include_router(
