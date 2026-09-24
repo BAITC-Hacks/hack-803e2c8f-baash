@@ -453,7 +453,7 @@ Record implementation decisions here when the repository, contracts or available
 - **Date:** 2026-09-25
 - **Status:** accepted
 - **Context:** a region-wide confidence threshold could be applied to an unrelated model or taxonomy and misrepresent its calibration.
-- **Decision:** store append-only, approved and effective confidence policies keyed by region, model artifact SHA-256, taxonomy version and preprocessing version. The reader permits only one matching version and excludes synthetic policies in operational mode. The gateway verifies the same binding before using thresholds and withholds its confidence band when the policy is absent or mismatched.
+- **Decision:** store append-only, approved and effective confidence policies keyed by region, model artifact SHA-256, taxonomy version and preprocessing version. The reader permits only one matching version and excludes synthetic policies in operational mode. The gateway verifies the same binding before using thresholds and withholds its confidence band when the policy is absent or mismatched. The catalog API shows confidence policies only from this typed table; older unbound `catalog.policy_version` confidence rows cannot drive runtime decisions or appear as current policy.
 - **Alternatives:** one threshold for all models in a region; trust the model-supplied confidence band without a policy binding.
 - **Consequences:** a new artifact or taxonomy requires its own reviewed policy. Operational use remains unavailable until a policy is approved and the feature snapshot is authorized.
 - **Evidence:** migration `0014_m8_confidence_policy`, policy repository and gateway tests.

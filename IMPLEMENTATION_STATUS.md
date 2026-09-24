@@ -55,6 +55,9 @@
 - A new append-only confidence policy catalog keys thresholds to region, model artifact hash,
   taxonomy and preprocessing versions. The reader rejects overlaps and unapproved synthetic facts
   in operational mode; live migration and database checks await CI.
+- The catalog policy API reads confidence policies from the same typed table and hides synthetic
+  rows in operational mode. Legacy confidence rows without artifact binding are not presented as
+  current policy.
 - The merged regional research corpus now contains withheld text markers only. Quarantine artifacts
   contain hashes and counts without source row values. New regional ingest withholds executor prose;
   training and evaluation stop on withheld data, and historical reports block quality claims.
@@ -128,6 +131,10 @@ CI run <https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/3601223721
 passed every job after adding the handoff outcome command and public contract.
 CI run <https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/36013109806>
 passed every job after migration `0013`, including nine PostgreSQL integration tests and restore.
+CI run <https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/36046696404>
+passed quality and security, but its container job stopped at a hardcoded `0013` migration-head
+assertion after `0014` was added. The assertion and restore check now target `0014`; database
+integration and restore evidence are pending the next run.
 
 ## Known Limitations And External Blockers
 

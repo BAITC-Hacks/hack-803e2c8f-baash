@@ -6,6 +6,7 @@ from uuid import uuid4
 
 import psycopg
 import pytest
+from pulse109.catalog.service import PolicyService
 from pulse109.decisions.policy_repository import PostgresConfidencePolicyRepository
 
 
@@ -31,6 +32,15 @@ def test_confidence_policy_is_region_scoped_and_synthetic_gated() -> None:
                        'synthetic://confidence-policy', 'synthetic-author',
                        'synthetic-reviewer', 'synthetic-approval', true)""",
             (uuid4(), region_id, artifact_sha256, taxonomy_version, preprocess_version, at),
+        )
+        cursor.execute(
+            """INSERT INTO catalog.policy_version
+               (policy_type, region_id, version, state, effective_from,
+                parameters, created_by_token, reviewed_by_token, approval_ref, synthetic_only)
+               VALUES ('confidence', %s, 'legacy-unbound', 'approved', %s,
+                       '{"high_min":0.1}', 'synthetic-author', 'synthetic-reviewer',
+                       'synthetic-approval', true)""",
+            (region_id, at),
         )
 
     repository = PostgresConfidencePolicyRepository(database_url)
@@ -60,3 +70,11 @@ def test_confidence_policy_is_region_scoped_and_synthetic_gated() -> None:
         )
         is None
     )
+    assert PolicyService(database_url).list_policies(region_id=region_id, effective_at=at) == []
+    visible = PolicyService(database_url, allow_synthetic=True).list_policies(
+        region_id=region_id, effective_at=at
+    )
+    assert len(visible) == 1
+    assert visible[0].policy_type == "confidence"
+    assert visible[0].version == "v1"
+    assert visible[0].parameters["artifact_sha256"] == artifact_sha256

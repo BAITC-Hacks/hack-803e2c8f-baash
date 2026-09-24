@@ -17,8 +17,9 @@ def _psycopg_url(database_url: str) -> str:
 
 
 class PolicyService:
-    def __init__(self, database_url: str | None = None) -> None:
+    def __init__(self, database_url: str | None = None, *, allow_synthetic: bool = False) -> None:
         self.database_url = database_url
+        self.allow_synthetic = allow_synthetic
 
     def list_policies(
         self, *, region_id: str, effective_at: datetime, include_drafts: bool = False
@@ -33,15 +34,45 @@ class PolicyService:
                            effective_to, parameters, approval_ref, rollback_version,
                            synthetic_only
                     FROM catalog.policy_version
+                    WHERE region_id = %s AND policy_type <> 'confidence'
+                      AND (%s OR state = 'approved')
+                      AND (state <> 'approved' OR effective_from <= %s)
+                      AND (effective_to IS NULL OR effective_to > %s)
+                      AND (%s OR NOT synthetic_only)
+                    ORDER BY policy_type, version
+                    """,
+                    (
+                        region_id,
+                        include_drafts,
+                        effective_at,
+                        effective_at,
+                        self.allow_synthetic,
+                    ),
+                )
+                policies = [self._from_row(row) for row in cursor.fetchall()]
+                cursor.execute(
+                    """
+                    SELECT region_id, version, state, effective_from, effective_to,
+                           artifact_sha256, taxonomy_version, preprocess_version,
+                           high_min, medium_min, abstain_below, approval_ref, synthetic_only
+                    FROM triage.confidence_policy_version
                     WHERE region_id = %s
                       AND (%s OR state = 'approved')
                       AND (state <> 'approved' OR effective_from <= %s)
                       AND (effective_to IS NULL OR effective_to > %s)
-                    ORDER BY policy_type, version
+                      AND (%s OR NOT synthetic_only)
+                    ORDER BY version
                     """,
-                    (region_id, include_drafts, effective_at, effective_at),
+                    (
+                        region_id,
+                        include_drafts,
+                        effective_at,
+                        effective_at,
+                        self.allow_synthetic,
+                    ),
                 )
-                return [self._from_row(row) for row in cursor.fetchall()]
+                policies.extend(self._confidence_from_row(row) for row in cursor.fetchall())
+                return sorted(policies, key=lambda policy: (policy.policy_type, policy.version))
 
     @staticmethod
     def _from_row(row: dict[str, Any]) -> PolicyDefinition:
@@ -58,6 +89,28 @@ class PolicyService:
             parameters=parameters,
             approval_ref=row["approval_ref"],
             rollback_version=row["rollback_version"],
+            synthetic_only=row["synthetic_only"],
+        )
+
+    @staticmethod
+    def _confidence_from_row(row: dict[str, Any]) -> PolicyDefinition:
+        return PolicyDefinition(
+            policy_type="confidence",
+            region_id=row["region_id"],
+            version=row["version"],
+            state=row["state"],
+            effective_from=row["effective_from"],
+            effective_to=row["effective_to"],
+            parameters={
+                "artifact_sha256": row["artifact_sha256"],
+                "taxonomy_version": row["taxonomy_version"],
+                "preprocess_version": row["preprocess_version"],
+                "high_min": float(row["high_min"]),
+                "medium_min": float(row["medium_min"]),
+                "abstain_below": float(row["abstain_below"]),
+            },
+            approval_ref=row["approval_ref"],
+            rollback_version=None,
             synthetic_only=row["synthetic_only"],
         )
 
