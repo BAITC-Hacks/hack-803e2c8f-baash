@@ -52,6 +52,16 @@ The envelope never carries a citizen name, phone number, full street address, un
 | `ai.model.promoted.v1` | Model registry workflow | model name, old alias, new alias, approval ID, metrics | Serving, audit |
 | `ai.model.rolled_back.v1` | Operations | model name, from version, to version, reason | Serving, incident log |
 
+## Confidence policy governance events
+
+| Event | Producer | Minimum payload | Primary consumers |
+| --- | --- | --- | --- |
+| `confidence.policy.proposed.v1` | Core policy administration | proposal ID, version | Review queue, audit |
+| `confidence.policy.approved.v1` | Core after independent review | proposal ID, review ID, policy ID, decision | Policy resolver, audit |
+| `confidence.policy.rejected.v1` | Core after independent review | proposal ID, review ID, null policy ID, decision | Review queue, audit |
+
+Proposals, review decisions, approved policy rows, audit records and outbox events are immutable. The author cannot approve their own proposal. Evidence references are SHA-256 digests; event payloads contain no model artifact bytes or citizen data.
+
 ## Incident and alert events
 
 | Event | Producer | Minimum payload | Primary consumers |
@@ -86,3 +96,11 @@ The envelope never carries a citizen name, phone number, full street address, un
 4. Event retention and replay rights follow the payload classification, not the topic name.
 5. Analytics uses `occurred_at` only when its quality is acceptable for the metric. Otherwise it uses `observed_at` and labels the result accordingly.
 6. No consumer may infer a missing business timestamp from row order or file modification time.
+
+## M9 closure integrity events
+
+| Event | Producer | Minimum payload | Primary consumers |
+| --- | --- | --- | --- |
+| `appeal.closed.v1` | Core after explicit operator confirmation | closure ID, appeal ID, resolution code, evidence-set SHA-256, evidence reference count, reason code | Timeline, audit, regional adapter, analytics |
+
+The closure preflight is an advisory command and does not emit a business event or alter the appeal. Confirmation requires a live content-addressed attachment belonging to the same appeal, a matching appeal version and region, and an explicit human confirmation. Source status alone never establishes resolution. The closure event carries evidence hashes and counts, never evidence bytes or appeal text.

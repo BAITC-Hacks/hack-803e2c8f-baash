@@ -273,7 +273,9 @@ h2 {
 
 .queue-row:focus-visible,
 button:focus-visible,
-select:focus-visible {
+select:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
   outline: 3px solid #85c9c1;
   outline-offset: -2px;
 }
@@ -385,6 +387,229 @@ select:focus-visible {
 .activity-grid {
   margin-left: 24px;
   margin-right: 24px;
+}
+
+.ownership-panel {
+  margin: 24px;
+  padding: 22px;
+  border: 1px solid #c6ded9;
+  border-radius: 6px;
+  background: #f8fbfa;
+}
+
+.ownership-heading,
+.ownership-load,
+.ownership-candidate-title,
+.ownership-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.ownership-heading h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.ownership-heading p:last-child,
+.ownership-help,
+.ownership-reasons {
+  margin: 7px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.advisory-chip {
+  flex: none;
+  padding: 6px 10px;
+  border-radius: 999px;
+  color: #185e58;
+  background: #e0f1ee;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.ownership-load {
+  align-items: end;
+  margin-top: 16px;
+}
+
+.ownership-load label,
+.ownership-outcome-form label {
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.ownership-load label {
+  flex: 1;
+}
+
+.ownership-load input,
+.ownership-outcome-form input,
+.ownership-outcome-form select,
+.ownership-outcome-form textarea {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid #b9ceca;
+  border-radius: 4px;
+  background: white;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+}
+
+.ownership-outcome-form textarea {
+  resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.ownership-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 24px;
+  margin-top: 14px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.ownership-facts strong {
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.ownership-alerts {
+  display: grid;
+  gap: 7px;
+  margin-top: 12px;
+}
+
+.ownership-alerts p,
+.ownership-error {
+  margin: 0;
+  padding: 9px 11px;
+  border-radius: 4px;
+  color: #704313;
+  background: #fff3d9;
+  font-size: 13px;
+}
+
+.ownership-candidates {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.ownership-candidate {
+  min-width: 0;
+  padding: 13px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: white;
+}
+
+.ownership-candidate-title {
+  align-items: flex-start;
+  font-size: 13px;
+}
+
+.ownership-candidate-title strong,
+.ownership-candidate li span,
+.ownership-assignment strong {
+  overflow-wrap: anywhere;
+}
+
+.ownership-candidate-title span,
+.ownership-history {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.ownership-history {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.ownership-candidate ul {
+  display: grid;
+  gap: 7px;
+  margin: 10px 0 0;
+  padding-left: 17px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.ownership-candidate li strong {
+  color: var(--ink);
+}
+
+.ownership-assignment {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.ownership-outcome-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.ownership-evidence-input,
+.ownership-confirmation,
+.ownership-outcome-form > .ownership-error,
+.ownership-receipt,
+.ownership-actions {
+  grid-column: 1 / -1;
+}
+
+.ownership-receipt {
+  display: grid;
+  gap: 5px;
+  padding: 11px;
+  border-radius: 4px;
+  color: #185e58;
+  background: #e0f1ee;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.ownership-receipt small {
+  font-size: 11px;
+}
+
+.ownership-actions {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.ownership-confirmation {
+  display: flex !important;
+  align-items: flex-start;
+  gap: 9px !important;
+  color: var(--ink) !important;
+  font-size: 13px !important;
+  line-height: 1.45;
+}
+
+.ownership-confirmation input {
+  flex: none;
+  width: 18px;
+  min-height: 18px;
+  margin: 1px 0 0;
+  accent-color: var(--teal);
 }
 
 .advisory-heading {
@@ -1542,8 +1767,25 @@ select:focus-visible {
 
   .recommendation-grid,
   .activity-grid,
-  .manual-fields {
+  .manual-fields,
+  .ownership-outcome-form {
     grid-template-columns: 1fr;
+  }
+
+  .ownership-panel {
+    margin: 18px 16px;
+    padding: 15px;
+  }
+
+  .ownership-heading,
+  .ownership-load {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .ownership-load label,
+  .ownership-load button {
+    width: 100%;
   }
 
   .workflow-state {

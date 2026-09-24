@@ -11,6 +11,8 @@ from pulse109.analytics import AlertStore, AnalyticsService, create_analytics_ro
 from pulse109.catalog import PolicyService, create_catalog_router
 from pulse109.config import get_settings
 from pulse109.database import get_engine
+from pulse109.decisions.publication import ConfidencePublicationService
+from pulse109.decisions.publication_router import create_confidence_publication_router
 from pulse109.incidents import (
     IncidentService,
     InMemoryIncidentRepository,
@@ -32,6 +34,11 @@ from pulse109.manual_path import (
     create_manual_router,
 )
 from pulse109.observability import configure_observability
+from pulse109.outcomes import (
+    ClosureIntegrityService,
+    PostgresClosureRepository,
+    create_closure_router,
+)
 from pulse109.ownership.outcomes import HandoffOutcomeService
 from pulse109.ownership.repository import EmptyOwnershipRepository, PostgresOwnershipRepository
 from pulse109.ownership.router import create_ownership_router
@@ -95,6 +102,23 @@ app.include_router(
 app.include_router(
     create_catalog_router(
         PolicyService(settings.database_url if use_postgres_manual_path else None)
+    )
+)
+app.include_router(
+    create_confidence_publication_router(
+        ConfidencePublicationService(
+            settings.database_url,
+            allow_synthetic=settings.environment in {"local", "development", "test"},
+        )
+        if use_postgres_manual_path
+        else None
+    )
+)
+app.include_router(
+    create_closure_router(
+        ClosureIntegrityService(PostgresClosureRepository(settings.database_url))
+        if use_postgres_manual_path
+        else None
     )
 )
 

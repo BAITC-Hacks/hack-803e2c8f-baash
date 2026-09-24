@@ -15,6 +15,7 @@ import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import { Intake } from "./intake";
 import { AdminPanel } from "./admin-panel";
 import { SituationCenter } from "./situation-center";
+import { OwnershipHandoffPanel } from "./ownership-handoff-panel";
 
 type Recommendation = { id: string; label: string; score: number };
 type Appeal = {
@@ -29,6 +30,12 @@ type Appeal = {
   ood: number;
   topics: Recommendation[];
   services: Recommendation[];
+};
+type LatestAssignment = {
+  assignment_id: string;
+  request_id: string;
+  service_id: string;
+  assignee_unit_id: string | null;
 };
 
 type Locale = "ru" | "kk";
@@ -184,6 +191,8 @@ export default function OperatorWorkspace() {
   );
   const [locale, setLocale] = useState<Locale>("ru");
   const [selectedId, setSelectedId] = useState(appeals[0].id);
+  const [latestAssignment, setLatestAssignment] =
+    useState<LatestAssignment | null>(null);
   const [decision, setDecision] = useState<"pending" | "confirmed" | "manual">(
     "pending",
   );
@@ -216,6 +225,36 @@ export default function OperatorWorkspace() {
   useEffect(() => {
     document.documentElement.lang = locale === "ru" ? "ru" : "kk";
   }, [locale]);
+
+  useEffect(() => {
+    if (
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+        selectedId,
+      )
+    )
+      return;
+    let cancelled = false;
+    fetch(
+      `/api/core/requests/${encodeURIComponent(selectedId)}/assignments/latest`,
+      {
+        headers: { "X-Region-Id": appeal.region },
+        cache: "no-store",
+      },
+    )
+      .then(async (response) => {
+        if (!response.ok) throw new Error("assignment_unavailable");
+        return (await response.json()) as LatestAssignment;
+      })
+      .then((assignment) => {
+        if (!cancelled) setLatestAssignment(assignment);
+      })
+      .catch(() => {
+        if (!cancelled) setLatestAssignment(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [appeal.region, selectedId]);
 
   useEffect(() => {
     if (decisionAction && dialogRef.current && !dialogRef.current.open) {
@@ -660,6 +699,27 @@ export default function OperatorWorkspace() {
                     </div>
                   </div>
                 </div>
+                <OwnershipHandoffPanel
+                  key={selectedId}
+                  locale={locale}
+                  regionId={appeal.region}
+                  initialRequestId={appeal.id}
+                  assignmentId={
+                    latestAssignment?.request_id === selectedId
+                      ? latestAssignment.assignment_id
+                      : undefined
+                  }
+                  assignmentServiceId={
+                    latestAssignment?.request_id === selectedId
+                      ? latestAssignment.service_id
+                      : undefined
+                  }
+                  assignmentUnitId={
+                    latestAssignment?.request_id === selectedId
+                      ? latestAssignment.assignee_unit_id
+                      : undefined
+                  }
+                />
               </section>
             )}
 

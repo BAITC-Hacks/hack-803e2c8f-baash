@@ -2,9 +2,10 @@
 
 ## Current Milestone
 
-- Milestone: M8 governed ownership and Handoff Guard, first vertical slice.
-- Status: active. M8 ownership, handoff outcome and adaptive intake slices have passed database CI;
-  confidence policy publication and gateway integration are in progress.
+- Milestone: cross-cutting governed decision, handoff and evidence-backed closure slices.
+- Status: active. The prior M8 ownership, handoff outcome and adaptive intake slices passed database
+  CI. New publication, assignment read and closure changes are implemented and await the batched
+  database CI run; the full scope from both supplied texts remains in progress.
 - Branch: `codex/production-platform-20260923`, created without discarding the pre-existing local
   changes. The newer upstream regional-import and ML commits have been merged into the branch.
 - Scope from the two supplied texts: durable manual journey first, then Handoff Guard, Replay Lab,
@@ -60,13 +61,23 @@
   current policy.
 - Catalog policy queries require `effective_at` with an explicit timezone offset; naive local time
   is rejected at the API and service boundaries.
+- Confidence policy proposals and independent reviews now have authenticated, region-scoped APIs.
+  The approved policy, review, audit and outbox write in one database transaction; database
+  constraints reject overlapping approved intervals and same-person review.
+- The operator workspace displays ownership candidates, rule evidence, ambiguity and loop risk,
+  then resolves the latest durable assignment ID from the appeal. It requires an explicit human
+  confirmation before recording a handoff result and reuses the idempotency key after uncertain
+  network failures.
+- Evidence-backed closure now has a status-preserving preflight against appeal-owned attachment hashes and
+  a separate human confirmation that atomically records closure, timeline, audit, outbox and replay
+  receipt. Source status alone does not qualify as closure evidence.
 - The merged regional research corpus now contains withheld text markers only. Quarantine artifacts
   contain hashes and counts without source row values. New regional ingest withholds executor prose;
   training and evaluation stop on withheld data, and historical reports block quality claims.
 
 ## Contracts And Migrations Changed
 
-- OpenAPI includes 23 operations and 36 schemas. Create and status-event time-quality rules now
+- OpenAPI includes 28 operations and 46 schemas. Create and status-event time-quality rules now
   agree with the canonical JSON schema; no timestamp is derived from observation time.
 - Added Alembic revisions `0008_m7_manual_path_persistence` through
   `0011_m7_incident_persistence` after the previously accepted `0001`-`0007` chain.
@@ -78,6 +89,9 @@
   CI applied the migration and verified its reader.
 - Added `0014_m8_confidence_policy` for approved, effective and artifact-bound confidence thresholds;
   CI applied the migration and verified the query.
+- Added `0015_m8_confidence_publication` for immutable proposal/review records and exclusion of
+  overlapping approved confidence intervals. Added `0016_m9_closure_integrity` for immutable
+  appeal-bound closure preflights. Both are awaiting the next database CI run.
 
 ## Verification
 
@@ -102,6 +116,13 @@
 | M8 jurisdiction resolution          | passed | 4 service tests; CI run `36014297057` passed the PostgreSQL boundary cases.             |
 | M8 confidence policy                | passed | CI run `36047169856` applied `0014`, passed PostgreSQL tests and restore.               |
 | Catalog policy time validation      | local  | 3 focused tests passed; the new validation needs no PostgreSQL access.                  |
+| Current batched local checks         | passed | Ruff format/check, mypy (96 files), Prettier, ESLint and TypeScript passed.             |
+| Current batched Python tests         | passed | 158 passed; 13 PostgreSQL-only tests skipped without `PULSE109_TEST_DATABASE_URL`.      |
+| Current contract and E2E checks      | passed | 19 contract and 11 E2E tests passed; OpenAPI validates with 28 unique operations.       |
+| Current build and migration head     | passed | Python package and Next.js production build; Alembic reports sole `0016` head.         |
+
+The `make` executable is unavailable in this Windows shell. The equivalent root commands were
+run directly with `uv` and `pnpm`; CI uses the root task runner and performs the database tests.
 
 Earlier M4-M6 clean-run CI evidence:
 <https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/34685618121>.
@@ -166,12 +187,13 @@ passed quality, security, PostgreSQL integration and a disposable restore throug
   local MinIO profile currently cannot be pulled from Quay and needs a maintained S3-compatible
   provider before object-storage certification.
 - M8 does not yet provide an admin publication workflow for ownership or intake catalog versions.
+  Confidence publication is implemented but has not yet passed database CI.
   The Decision Gateway is a pure component and is not yet wired to an approved operational confidence
   policy or durable recommendation path.
   The handoff outcome command requires an
   assignment whose unit identifier is the organization identifier; no governed organization/unit
   crosswalk exists yet. No live regional adapter, complete Handoff Guard lifecycle, Replay Lab,
-  verified outcome memory, closure evidence gate, full adaptive case schema, recurrence engine or
+  verified outcome memory, full adaptive case schema, recurrence engine or
   federated control plane is complete.
 
 ## Decisions Recorded
@@ -187,9 +209,12 @@ passed quality, security, PostgreSQL integration and a disposable restore throug
 - D-038 isolates lexical inference behind a typed provider; D-039 binds handoff outcomes to an
   authenticated, durable and region-scoped assignment command.
 - D-040 requires an approved effective policy for value-free multilingual intake questions.
+- D-044 through D-046 record independent confidence publication, appeal-bound closure evidence and
+  durable assignment lookup for the operator handoff panel.
 
 ## Exact Next Milestone
 
-Add verified jurisdiction resolution, Decision Gateway policy evaluation, governed catalog
-publication, conditional evidence requirements and an organization/unit crosswalk. Keep live adapters, representative
-model claims, binding SLA and real PII processing gated by B01-B10.
+Complete the batched database CI for confidence publication and closure, then continue durable
+Decision Gateway assessments, the organization/unit crosswalk, Replay Lab and verified outcome
+memory. Keep live adapters, representative model claims, binding SLA and real PII processing
+dependent on B01-B10.

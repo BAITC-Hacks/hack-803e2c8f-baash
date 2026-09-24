@@ -159,6 +159,71 @@ paths:
           $ref: '#/components/responses/NotFound'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
+  /v1/requests/{request_id}/closure-preflight:
+    post:
+      tags: [Requests]
+      summary: Validate appeal-bound evidence before closure
+      description: Advisory integrity check only; it never changes appeal status and does not infer resolution from source status.
+      operationId: preflightClosure
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+        - $ref: '#/components/parameters/RegionId'
+        - $ref: '#/components/parameters/CorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClosurePreflightCommand'
+      responses:
+        '200':
+          description: Appeal-bound content-addressed evidence ready for human review
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClosurePreflightReceipt'
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+  /v1/requests/{request_id}/closure-confirmations:
+    post:
+      tags: [Requests]
+      summary: Human-confirm closure using a validated evidence preflight
+      operationId: confirmClosure
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+        - $ref: '#/components/parameters/RegionId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/CorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClosureConfirmationCommand'
+      responses:
+        '201':
+          description: Appeal, audit and outbox committed atomically
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClosureReceipt'
+        '200':
+          description: Idempotent replay of the committed closure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClosureReceipt'
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
   /v1/requests/{request_id}/assignments/{assignment_id}/handoff-outcomes:
     post:
       tags: [Ownership]
@@ -289,6 +354,26 @@ paths:
                 $ref: '#/components/schemas/SyncReceipt'
         '409':
           $ref: '#/components/responses/Conflict'
+  /v1/requests/{request_id}/assignments/latest:
+    get:
+      tags: [Decisions]
+      summary: Read the latest durable assignment for operator handoff review
+      operationId: getLatestAssignment
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+        - $ref: '#/components/parameters/RegionId'
+      responses:
+        '200':
+          description: Latest assignment in the authorized region
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LatestAssignment'
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
   /v1/requests/{request_id}/status-events:
     post:
       tags: [Requests]
@@ -623,6 +708,77 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/PolicyDefinition'
+  /v1/catalog/confidence-proposals:
+    post:
+      tags: [Catalog]
+      summary: Propose a model-bound confidence policy for independent review
+      operationId: proposeConfidencePolicy
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/RegionId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/CorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfidenceProposalCommand'
+      responses:
+        '201':
+          description: Immutable proposal recorded with audit and outbox
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfidenceProposalReceipt'
+        '200':
+          description: Idempotent replay
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfidenceProposalReceipt'
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+  /v1/catalog/confidence-proposals/{proposal_id}/reviews:
+    post:
+      tags: [Catalog]
+      summary: Approve or reject a confidence policy through independent review
+      operationId: reviewConfidencePolicy
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/RegionId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/CorrelationId'
+        - name: proposal_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfidenceReviewCommand'
+      responses:
+        '201':
+          description: Immutable independent review, policy, audit and outbox committed atomically
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfidenceReviewReceipt'
+        '200':
+          description: Idempotent replay
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfidenceReviewReceipt'
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
   /v1/health/live:
     get:
       tags: [Operations]
@@ -784,6 +940,60 @@ components:
           type: array
           maxItems: 50
           items: { type: string, pattern: '^sha256:[0-9a-f]{64}$' }
+    ClosureEvidence:
+      type: object
+      additionalProperties: false
+      required: [reference, evidence_type]
+      properties:
+        reference: { type: string, pattern: '^sha256:[0-9a-f]{64}$' }
+        evidence_type: { type: string, minLength: 1, maxLength: 64, pattern: '^[a-z][a-z0-9_]{0,63}$' }
+    ClosurePreflightCommand:
+      type: object
+      additionalProperties: false
+      required: [resolution_code, evidence, expected_appeal_version]
+      properties:
+        resolution_code: { type: string, minLength: 1, maxLength: 64, pattern: '^[A-Z][A-Z0-9_]{0,63}$' }
+        evidence:
+          type: array
+          minItems: 1
+          maxItems: 50
+          items: { $ref: '#/components/schemas/ClosureEvidence' }
+        expected_appeal_version: { type: integer, minimum: 1 }
+    ClosurePreflightReceipt:
+      type: object
+      additionalProperties: false
+      required: [preflight_id, request_id, region_id, evidence_hash, expected_appeal_version, requires_human_confirmation, source_status_sufficient]
+      properties:
+        preflight_id: { type: string, format: uuid }
+        request_id: { type: string, format: uuid }
+        region_id: { type: string }
+        evidence_hash: { type: string, pattern: '^[0-9a-f]{64}$' }
+        expected_appeal_version: { type: integer, minimum: 1 }
+        requires_human_confirmation: { type: boolean, const: true }
+        source_status_sufficient: { type: boolean, const: false }
+    ClosureConfirmationCommand:
+      type: object
+      additionalProperties: false
+      required: [preflight_id, evidence_hash, confirm, reason_code, expected_appeal_version]
+      properties:
+        preflight_id: { type: string, format: uuid }
+        evidence_hash: { type: string, pattern: '^[0-9a-f]{64}$' }
+        confirm: { type: boolean, const: true }
+        reason_code: { type: string, minLength: 1, maxLength: 64, pattern: '^[A-Z][A-Z0-9_]{0,63}$' }
+        expected_appeal_version: { type: integer, minimum: 1 }
+    ClosureReceipt:
+      type: object
+      additionalProperties: false
+      required: [closure_id, request_id, region_id, status, evidence_hash, audit_event_id, outbox_event_id, replayed]
+      properties:
+        closure_id: { type: string, format: uuid }
+        request_id: { type: string, format: uuid }
+        region_id: { type: string }
+        status: { type: string, const: closed }
+        evidence_hash: { type: string, pattern: '^[0-9a-f]{64}$' }
+        audit_event_id: { type: string, format: uuid }
+        outbox_event_id: { type: string, format: uuid }
+        replayed: { type: boolean }
     HandoffOutcomeReceipt:
       type: object
       additionalProperties: false
@@ -1156,6 +1366,64 @@ components:
           format: date-time
         policy_version:
           type: string
+    LatestAssignment:
+      type: object
+      additionalProperties: false
+      required: [assignment_id, request_id, request_version, new_version, service_id, assignee_unit_id, assigned_at]
+      properties:
+        assignment_id: { type: string, format: uuid }
+        request_id: { type: string, format: uuid }
+        request_version: { type: integer, minimum: 1 }
+        new_version: { type: integer, minimum: 2 }
+        service_id: { type: string }
+        assignee_unit_id: { type: [string, 'null'] }
+        assigned_at: { type: string, format: date-time }
+    ConfidenceProposalCommand:
+      type: object
+      additionalProperties: false
+      required: [region_id, artifact_sha256, taxonomy_version, preprocess_version, version, effective_from, high_min, medium_min, abstain_below, source_sha256]
+      properties:
+        region_id: { type: string, pattern: '^[A-Z0-9_-]{2,32}$' }
+        artifact_sha256: { type: string, pattern: '^[0-9a-f]{64}$' }
+        taxonomy_version: { type: string, pattern: '^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}$' }
+        preprocess_version: { type: string, pattern: '^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}$' }
+        version: { type: string, pattern: '^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}$' }
+        effective_from: { type: string, format: date-time }
+        effective_to: { type: [string, 'null'], format: date-time }
+        high_min: { type: number, minimum: 0, maximum: 1 }
+        medium_min: { type: number, minimum: 0, maximum: 1 }
+        abstain_below: { type: number, minimum: 0, maximum: 1 }
+        source_sha256: { type: string, pattern: '^[0-9a-f]{64}$' }
+        synthetic_only: { type: boolean }
+    ConfidenceProposalReceipt:
+      type: object
+      additionalProperties: false
+      required: [proposal_id, region_id, version, proposal_hash, replayed]
+      properties:
+        proposal_id: { type: string, format: uuid }
+        region_id: { type: string }
+        version: { type: string }
+        proposal_hash: { type: string, pattern: '^[0-9a-f]{64}$' }
+        replayed: { type: boolean }
+    ConfidenceReviewCommand:
+      type: object
+      additionalProperties: false
+      required: [decision, proposal_hash, reason_code]
+      properties:
+        decision: { type: string, enum: [approve, reject] }
+        proposal_hash: { type: string, pattern: '^[0-9a-f]{64}$' }
+        reason_code: { type: string, pattern: '^[A-Z][A-Z0-9_]{0,63}$' }
+        approval_sha256: { type: [string, 'null'], pattern: '^[0-9a-f]{64}$' }
+    ConfidenceReviewReceipt:
+      type: object
+      additionalProperties: false
+      required: [review_id, proposal_id, decision, policy_id, replayed]
+      properties:
+        review_id: { type: string, format: uuid }
+        proposal_id: { type: string, format: uuid }
+        decision: { type: string, enum: [approve, reject] }
+        policy_id: { type: [string, 'null'], format: uuid }
+        replayed: { type: boolean }
     StatusEventInput:
       type: object
       additionalProperties: false

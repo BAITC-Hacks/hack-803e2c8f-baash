@@ -459,6 +459,39 @@ Record implementation decisions here when the repository, contracts or available
 - **Evidence:** migration `0014_m8_confidence_policy`, policy repository and gateway tests.
 - **Revisit when:** approved model calibration evidence and regional publication workflow are available.
 
+### D-044 — Publish confidence thresholds through independent review
+
+- **Date:** 2026-09-25
+- **Status:** accepted
+- **Context:** artifact-bound confidence thresholds need a controlled path from proposal to effective use, with evidence that a second person reviewed the exact values.
+- **Decision:** record immutable, region-scoped proposals with a canonical command digest and SHA-256 source reference. A different authenticated administrator or supervisor approves or rejects the digest. Approval atomically writes the immutable policy, review, audit and outbox; overlapping approved intervals are prohibited in PostgreSQL. Synthetic policies are rejected in operational profiles.
+- **Alternatives:** direct edits to the confidence policy table; in-place approval flag; optimistic review without database constraints.
+- **Consequences:** approval requires a future effective start and cannot silently replace an active policy. The regional taxonomy and real calibration evidence remain external inputs.
+- **Evidence:** migration `0015_m8_confidence_publication`, publication API and PostgreSQL integration test.
+- **Revisit when:** regional policy authority and production artifact registry are available.
+
+### D-045 — Close only with appeal-bound evidence and a human command
+
+- **Date:** 2026-09-25
+- **Status:** accepted
+- **Context:** an imported or regional status alone cannot prove that an appeal was resolved, and a closure must preserve every appeal's own history.
+- **Decision:** preflight validates content-addressed attachment references against the same appeal, region and current version without changing its status. A separate explicit operator confirmation atomically changes status, consumes the preflight, records the timeline and audit events, queues outbox delivery and stores an idempotent receipt. Any intervening appeal version invalidates the preflight.
+- **Alternatives:** close from source status; accept a free-form evidence URI; update status before recording audit.
+- **Consequences:** closure requires an existing durable attachment reference and operator review. Evidence existence does not by itself attest to substantive resolution; the reason and decision remain accountable to the operator.
+- **Evidence:** migration `0016_m9_closure_integrity`, closure API and PostgreSQL integration test.
+- **Revisit when:** regional evidence classes and legally approved closure criteria are supplied.
+
+### D-046 — Resolve the handoff assignment from the durable appeal
+
+- **Date:** 2026-09-25
+- **Status:** accepted
+- **Context:** operators must not guess or manually enter an opaque assignment UUID before confirming a handoff outcome.
+- **Decision:** expose the latest persisted assignment through a region-scoped, authenticated read route and feed that ID into the handoff panel. The panel disables outcome recording when no assignment exists and preserves the same idempotency key for a retry after an uncertain network result.
+- **Alternatives:** UUID entry field; derive assignment ID from the appeal ID; submit outcome without assignment binding.
+- **Consequences:** outcomes remain tied to a real assignment. A completed regional organization/unit crosswalk is still needed for broader operational handoff coverage.
+- **Evidence:** latest-assignment API, operator panel, and manual-path integration assertion.
+- **Revisit when:** a governed organization/unit crosswalk is approved.
+
 ### D-XXX — Short title
 
 - **Date:** YYYY-MM-DD

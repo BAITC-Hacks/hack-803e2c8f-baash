@@ -21,6 +21,7 @@ from .models import (
     ClassificationRecommendation,
     CreateRequest,
     DecisionReceipt,
+    LatestAssignment,
     OperatorDecision,
     RankedLabel,
     ServiceDefinition,
@@ -556,6 +557,25 @@ class ManualPathService:
             self._event(state, request_id, "appeal.assigned.v1", actor, payload)
             self._audit(state, "appeal.assigned", request_id, region_id, actor, payload)
             outbox_id = self._outbox(state, "appeal.assigned.v1", request_id, region_id, payload)
+            state.assignments.setdefault(request_id, []).append(
+                LatestAssignment(
+                    assignment_id=uuid4(),
+                    request_id=request_id,
+                    request_version=command.request_version,
+                    new_version=appeal.version,
+                    service_id=command.service_id,
+                    assignee_unit_id=command.assignee_unit_id,
+                    assigned_at=_now(),
+                ).model_dump(mode="json")
+            )
             receipt = SyncReceipt(outbox_event_id=outbox_id, status="queued")
             state.idempotency[key] = (request_hash, receipt.model_dump(mode="json"))
             return receipt
+
+    def latest_assignment(self, request_id: UUID, *, region_id: str) -> LatestAssignment:
+        state = self.repository.state
+        self._get(state, request_id, region_id)
+        assignments = state.assignments.get(request_id, [])
+        if not assignments:
+            raise ManualPathError("assignment_not_found", "No assignment is recorded.", 404)
+        return LatestAssignment.model_validate(assignments[-1])

@@ -204,6 +204,18 @@ class SyncReceipt(BaseModel):
     next_attempt_at: datetime | None = None
 
 
+class LatestAssignment(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    assignment_id: UUID
+    request_id: UUID
+    request_version: int = Field(ge=1)
+    new_version: int = Field(ge=2)
+    service_id: str
+    assignee_unit_id: str | None = None
+    assigned_at: datetime
+
+
 class TimelineEvent(BaseModel):
     event_id: UUID
     event_type: str

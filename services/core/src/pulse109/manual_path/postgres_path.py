@@ -32,6 +32,7 @@ from .models import (
     ClassificationRecommendation,
     CreateRequest,
     DecisionReceipt,
+    LatestAssignment,
     OperatorDecision,
     RankedLabel,
     ServiceDefinition,
@@ -1321,6 +1322,23 @@ class PostgresManualPathService:
                 response_status=202,
             )
             return receipt
+
+    def latest_assignment(self, request_id: UUID, *, region_id: str) -> LatestAssignment:
+        with self.repository.connection() as connection, connection.cursor() as cursor:
+            appeal = self._appeal(cursor, request_id)
+            self._scope(appeal.region_id, region_id)
+            cursor.execute(
+                """SELECT assignment_id, request_id, request_version, new_version,
+                          to_service_id AS service_id, assignee_unit_id, assigned_at
+                   FROM appeals.assignment
+                   WHERE request_id = %s AND region_id = %s
+                   ORDER BY assigned_at DESC, assignment_id DESC LIMIT 1""",
+                (request_id, region_id),
+            )
+            row = cursor.fetchone()
+        if row is None:
+            raise ManualPathError("assignment_not_found", "No assignment is recorded.", 404)
+        return LatestAssignment.model_validate(row)
 
     def list_services(self, *, region_id: str, effective_at: datetime) -> list[ServiceDefinition]:
         with self.repository.connection() as connection, connection.cursor() as cursor:

@@ -6,6 +6,7 @@ from datetime import datetime
 from typing import Annotated
 from uuid import UUID, uuid4
 
+import psycopg
 from fastapi import APIRouter, Header, HTTPException, Query, Response, status
 
 from pulse109.security import AuthenticatedActor
@@ -18,6 +19,7 @@ from .models import (
     ClassificationRecommendation,
     CreateRequest,
     DecisionReceipt,
+    LatestAssignment,
     OperatorDecision,
     ServiceDefinition,
     StatusEventInput,
@@ -178,6 +180,31 @@ def create_manual_router(
             )
         except ManualPathError as error:
             raise _error(error) from error
+
+    @router.get(
+        "/requests/{request_id}/assignments/latest",
+        response_model=LatestAssignment,
+        operation_id="getLatestAssignment",
+    )
+    def get_latest_assignment(
+        request_id: UUID,
+        identity: AuthenticatedActor,
+        region_id: str = Header(alias="X-Region-Id", pattern=r"^[A-Z0-9_-]{2,32}$"),
+    ) -> LatestAssignment:
+        identity.require_any_role("operator", "supervisor", "auditor", "admin")
+        identity.require_region(region_id)
+        try:
+            return service.latest_assignment(request_id, region_id=region_id)
+        except ManualPathError as error:
+            raise _error(error) from error
+        except psycopg.Error as error:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail={
+                    "code": "assignment_store_unavailable",
+                    "message": "The latest assignment cannot be read right now.",
+                },
+            ) from error
 
     @router.get("/catalog/services", response_model=list[ServiceDefinition], tags=["Catalog"])
     def list_services(

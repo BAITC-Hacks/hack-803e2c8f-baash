@@ -69,6 +69,11 @@ def test_manual_decision_and_outbox_commit_as_one_durable_path() -> None:
         actor="synthetic-operator",
     )
     assert assignment.status == "queued"
+    latest_assignment = service.latest_assignment(appeal.request_id, region_id="ALA")
+    assert latest_assignment.request_version == 2
+    assert latest_assignment.new_version == 3
+    assert latest_assignment.service_id == "service:water"
+    assert latest_assignment.request_id == appeal.request_id
 
     second_source_id = f"{source_id}-second"
     second_appeal, _ = service.create(
