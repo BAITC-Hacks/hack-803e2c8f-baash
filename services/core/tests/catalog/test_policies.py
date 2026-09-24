@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 
+import pytest
 from fastapi.testclient import TestClient
 from pulse109.catalog import PolicyService
 from pulse109.main import app
@@ -27,3 +28,15 @@ def test_policy_route_is_region_scoped() -> None:
 
     assert response.status_code == 200
     assert len(response.json()) == 3
+
+
+def test_policy_time_requires_an_explicit_timezone() -> None:
+    with pytest.raises(ValueError, match="timezone offset"):
+        PolicyService().list_policies(region_id="ALA", effective_at=datetime(2026, 9, 13))
+
+    response = TestClient(app).get(
+        "/v1/catalog/policies",
+        params={"effective_at": "2026-09-13T00:00:00"},
+        headers={"X-Region-Id": "ALA"},
+    )
+    assert response.status_code == 422

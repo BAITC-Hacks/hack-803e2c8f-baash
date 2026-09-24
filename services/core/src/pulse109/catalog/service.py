@@ -24,6 +24,8 @@ class PolicyService:
     def list_policies(
         self, *, region_id: str, effective_at: datetime, include_drafts: bool = False
     ) -> list[PolicyDefinition]:
+        if effective_at.tzinfo is None or effective_at.utcoffset() is None:
+            raise ValueError("effective_at must include a timezone offset")
         if self.database_url is None:
             return self._synthetic(region_id, effective_at, include_drafts)
         with psycopg.connect(_psycopg_url(self.database_url), row_factory=dict_row) as connection:

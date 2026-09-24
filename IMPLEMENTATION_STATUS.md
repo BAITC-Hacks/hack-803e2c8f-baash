@@ -54,10 +54,12 @@
   persistence of gateway assessments are still pending.
 - A new append-only confidence policy catalog keys thresholds to region, model artifact hash,
   taxonomy and preprocessing versions. The reader rejects overlaps and unapproved synthetic facts
-  in operational mode; live migration and database checks await CI.
+  in operational mode; CI applied the migration and checked the database reader.
 - The catalog policy API reads confidence policies from the same typed table and hides synthetic
   rows in operational mode. Legacy confidence rows without artifact binding are not presented as
   current policy.
+- Catalog policy queries require `effective_at` with an explicit timezone offset; naive local time
+  is rejected at the API and service boundaries.
 - The merged regional research corpus now contains withheld text markers only. Quarantine artifacts
   contain hashes and counts without source row values. New regional ingest withholds executor prose;
   training and evaluation stop on withheld data, and historical reports block quality claims.
@@ -75,7 +77,7 @@
 - Added `0013_m8_intake_policy` with approved, effective and append-only regional intake policies;
   CI applied the migration and verified its reader.
 - Added `0014_m8_confidence_policy` for approved, effective and artifact-bound confidence thresholds;
-  live migration and query require CI verification.
+  CI applied the migration and verified the query.
 
 ## Verification
 
@@ -98,7 +100,8 @@
 | M8 Adaptive Intake                  | passed | CI run `36013109806` applied `0013`, passed nine DB tests and all release jobs.         |
 | M8 Decision Gateway evaluator       | passed | 11 focused tests and Ruff; no operational route is exposed yet.                         |
 | M8 jurisdiction resolution          | passed | 4 service tests; CI run `36014297057` passed the PostgreSQL boundary cases.             |
-| M8 confidence policy                | local  | Focused tests and mypy passed; PostgreSQL migration/query await CI.                     |
+| M8 confidence policy                | passed | CI run `36047169856` applied `0014`, passed PostgreSQL tests and restore.               |
+| Catalog policy time validation      | local  | 3 focused tests passed; the new validation needs no PostgreSQL access.                  |
 
 Earlier M4-M6 clean-run CI evidence:
 <https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/34685618121>.
@@ -133,8 +136,9 @@ CI run <https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/3601310980
 passed every job after migration `0013`, including nine PostgreSQL integration tests and restore.
 CI run <https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/36046696404>
 passed quality and security, but its container job stopped at a hardcoded `0013` migration-head
-assertion after `0014` was added. The assertion and restore check now target `0014`; database
-integration and restore evidence are pending the next run.
+assertion after `0014` was added. The assertion and restore check now target `0014`.
+CI run <https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/36047169856>
+passed quality, security, PostgreSQL integration and a disposable restore through migration `0014`.
 
 ## Known Limitations And External Blockers
 

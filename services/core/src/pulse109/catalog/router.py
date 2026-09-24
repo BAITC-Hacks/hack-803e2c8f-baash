@@ -1,9 +1,9 @@
 """Catalog policy API."""
 
-from datetime import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Header, Query
+from pydantic import AwareDatetime
 
 from pulse109.security import AuthenticatedActor
 
@@ -16,7 +16,7 @@ def create_catalog_router(service: PolicyService) -> APIRouter:
 
     @router.get("/policies", response_model=list[PolicyDefinition], operation_id="listPolicies")
     def list_policies(
-        effective_at: Annotated[datetime, Query()],
+        effective_at: Annotated[AwareDatetime, Query()],
         identity: AuthenticatedActor,
         region_id: str = Header(alias="X-Region-Id", pattern=r"^[A-Z0-9_-]{2,32}$"),
         include_drafts: bool = Query(default=False),
