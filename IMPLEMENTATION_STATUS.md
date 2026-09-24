@@ -73,8 +73,12 @@ PostgreSQL's outer-join lock rule. CI run
 <https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/35900618132> passed quality and
 container-smoke after `FOR UPDATE OF a`. Its supply-chain job found two false positives on the
 same synthetic idempotency token in a test. A path, rule and literal-scoped Gitleaks allowlist is
-staged and passed a local full-history scan. The image vulnerability scan and SBOM remain to be
-verified in the next CI run.
+staged and passed a local full-history scan. CI run
+<https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/36007324306> then passed quality
+and Gitleaks, but Quay refused the legacy MinIO image during Compose startup. Trivy produced an
+SBOM and rejected the old Python 3.12.8 Bookworm image with high/critical OS vulnerabilities.
+Object storage is now an optional Compose profile, and the runtime Dockerfile pins the current
+Python 3.12.14 slim Trixie image. These changes await CI verification.
 
 ## Known Limitations And External Blockers
 
@@ -95,7 +99,9 @@ verified in the next CI run.
   source values. HEAD now withholds both and labels all derived model reports historical and
   unverified. Earlier Git blobs remain reachable; a repository-owner retention and history
   remediation decision is still required. No published history was rewritten.
-- Docker Desktop is not running on this host; database-backed evidence comes from CI.
+- Docker Desktop is not running on this host; database-backed evidence comes from CI. The optional
+  local MinIO profile currently cannot be pulled from Quay and needs a maintained S3-compatible
+  provider before object-storage certification.
 - No live regional adapter, Handoff Guard lifecycle, Replay Lab, verified outcome memory, closure
   evidence gate, adaptive case schema, recurrence engine or federated control plane is complete.
 

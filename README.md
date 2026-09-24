@@ -30,7 +30,7 @@ make test            # run unit, architecture and database integration tests
 make contract-test   # validate OpenAPI, JSON Schema and event envelopes
 make e2e             # run manual, retrieval, incident and situation-report flows
 make build           # build the Python wheel and Next.js application
-make up              # build and start the complete local Compose profile
+make up              # build and start the local critical-path Compose profile
 make down            # stop the local profile without deleting volumes
 make migrate         # apply the forward-only Alembic migration chain
 make dq-report       # reproduce the synthetic M1 data-quality report
@@ -55,8 +55,9 @@ contains Cyrillic characters.
 ## Local Runtime
 
 Copy `.env.example` to `.env` only when overriding the safe local defaults, then run `make up` or
-`.\scripts\tasks.ps1 up`. The web workspace is exposed at `http://localhost:3000`, the core API at
-`http://localhost:8080`, PostgreSQL at `localhost:5432`, and MinIO at `http://localhost:9000`.
+`.\scripts\tasks.ps1 up`. Object storage is a separate Compose profile. It can be started with
+`docker compose -f infra/compose/docker-compose.yml --profile object-storage up -d minio` when its
+image is available; the manual critical path does not depend on it.
 
 The core readiness probe depends only on PostgreSQL. ML, object storage and the regional adapter are
 outside the manual critical path. Local/test profiles may use the explicit in-memory repository;
@@ -65,9 +66,10 @@ and outbox writes in the same transaction. The worker claims adapter events with
 leases and `FOR UPDATE SKIP LOCKED`.
 
 The web workspace is exposed at `http://localhost:3000`, the core API at `http://localhost:8080`,
-inference at `http://localhost:8081`, worker at `http://localhost:8082`, replay adapter at
+worker at `http://localhost:8081`, inference at `http://localhost:8082`, replay adapter at
 `http://localhost:8083`, the isolated synthetic Open311 sandbox at `http://localhost:8084`,
-PostgreSQL at `localhost:5432`, and MinIO at `http://localhost:9000`.
+and PostgreSQL at `localhost:5432`. The optional object-storage profile exposes MinIO at
+`http://localhost:9000`.
 
 ## Synthetic Ingestion
 

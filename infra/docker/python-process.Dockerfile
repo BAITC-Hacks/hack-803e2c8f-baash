@@ -1,6 +1,6 @@
 FROM ghcr.io/astral-sh/uv:0.11.28 AS uv
 
-FROM python:3.12.8-slim-bookworm
+FROM python:3.12.14-slim-trixie@sha256:2f17fc044b579bab302c2e8054d3a686e2cb9a83de48e70534b94cd8ebbe06a9
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -20,4 +20,3 @@ RUN uv sync --frozen --no-dev
 USER pulse109
 EXPOSE 8080
 CMD ["uvicorn", "pulse109.main:app", "--host", "0.0.0.0", "--port", "8080"]
-
