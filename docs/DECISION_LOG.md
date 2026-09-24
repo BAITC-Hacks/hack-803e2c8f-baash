@@ -426,6 +426,17 @@ Record implementation decisions here when the repository, contracts or available
 - **Evidence:** migration `0013_m8_intake_policy`, intake component, route, OpenAPI and integration tests.
 - **Revisit when:** approved regional intake requirements, localized wording and evidence classes are supplied.
 
+### D-041 — Decision Gateway needs explicit approved inputs
+
+- **Date:** 2026-09-24
+- **Status:** accepted
+- **Context:** inference confidence and ownership suggestions must never become an autonomous routing decision. A missing required-field policy or ownership evidence from another appeal cannot be treated as valid evidence.
+- **Decision:** keep the gateway a pure advisory evaluator. It accepts an approved effective confidence policy, explicit required-field states, and ownership evidence bound to the same appeal and version. Missing field policy yields `INSUFFICIENT_DATA`; mismatched ownership is discarded. All outcomes require human confirmation and never set an assignee.
+- **Alternatives:** use model confidence as an assignment threshold; infer a complete field policy from an empty input; reuse ownership evidence by service alone.
+- **Consequences:** the evaluator can be tested with synthetic evidence, but operational use awaits governed policy publication and approved feature snapshots.
+- **Evidence:** `services/core/src/pulse109/decisions/gateway.py` and focused gateway tests.
+- **Revisit when:** approved regional confidence thresholds, intake requirements and model validation evidence are available.
+
 ### D-XXX — Short title
 
 - **Date:** YYYY-MM-DD

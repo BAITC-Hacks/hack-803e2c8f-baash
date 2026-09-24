@@ -46,6 +46,10 @@
 - Adaptive Intake now has a pure value-free question selector, an append-only approved policy table,
   a region-scoped policy reader and a pre-create advisory plan endpoint. It never receives raw field
   values or appeal text and fails closed when no single approved policy exists.
+- M8 Decision Gateway has a pure advisory evaluator for model and ownership candidates. It requires
+  an approved confidence policy and explicit required-field states, rejects ownership evidence from
+  a different appeal version, and always requires human confirmation. Runtime policy publication and
+  persistence of gateway assessments are still pending.
 - The merged regional research corpus now contains withheld text markers only. Quarantine artifacts
   contain hashes and counts without source row values. New regional ingest withholds executor prose;
   training and evaluation stop on withheld data, and historical reports block quality claims.
@@ -82,6 +86,7 @@
 | Inference provider boundary         | passed | 2 focused tests passed; CI run `36010905991` passed every job.                             |
 | M8 handoff outcome                  | passed | CI run `36012237217` passed the transaction, API replay, quality and security checks.      |
 | M8 Adaptive Intake                  | passed | CI run `36013109806` applied `0013`, passed nine DB tests and all release jobs.            |
+| M8 Decision Gateway evaluator       | passed | 10 focused tests and Ruff; no operational route is exposed yet.                            |
 
 Earlier M4-M6 clean-run CI evidence:
 <https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/34685618121>.
@@ -141,6 +146,8 @@ passed every job after migration `0013`, including nine PostgreSQL integration t
   local MinIO profile currently cannot be pulled from Quay and needs a maintained S3-compatible
   provider before object-storage certification.
 - M8 does not yet provide an admin publication workflow for ownership or intake catalog versions.
+  The Decision Gateway is a pure component and is not yet wired to an approved operational confidence
+  policy or durable recommendation path.
   The handoff outcome command requires an
   assignment whose unit identifier is the organization identifier; no governed organization/unit
   crosswalk exists yet. No live regional adapter, complete Handoff Guard lifecycle, Replay Lab,
