@@ -179,7 +179,7 @@ class PostgresGatewayAssessmentRepository:
                     "SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))",
                     (
                         f"gateway-assessment:{request_id}:{request_version}:"
-                        f"{inference.recommendation_id}:{input_sha256}:{evidence_sha256}"
+                        f"{inference.recommendation_id}:{input_sha256}:{evidence_sha256}",
                     ),
                 )
                 cursor.execute(

@@ -69,6 +69,7 @@ class _Cursor:
         return None
 
     def execute(self, query, params):
+        assert isinstance(params, tuple | list | dict), "SQL parameters must be a collection"
         self.query = query
         self.calls.append((query, params))
 

@@ -8,8 +8,9 @@
   passed quality and security but exposed a migration `0019` SQL bind-parsing defect during
   container startup. CI run `36172718369` applied `0019` and passed the new Handoff Guard metrics
   integration scenarios, but revealed a strict UUID fixture error in the gateway test and a
-  Markdown format error. Both are corrected in the current local batch; the full scope from both
-  supplied texts remains in progress.
+  Markdown format error. CI run `36173283815` passed quality and security, then found a Psycopg
+  single-parameter tuple error in the gateway repository. The call and its focused test are fixed
+  locally; the full scope from both supplied texts remains in progress.
 - Branch: `codex/production-platform-20260923`, created without discarding the pre-existing local
   changes. The newer upstream regional-import and ML commits have been merged into the branch.
 - Scope from the two supplied texts: durable manual journey, Handoff Guard, Replay Lab, Outcome
@@ -189,6 +190,8 @@
 | Final local lint and typecheck      | passed | Ruff, Prettier, ESLint, strict mypy (110 files) and TypeScript checks.                    |
 | Final local tests                   | passed | 197 passed, 19 PostgreSQL-only skips; 19 contract and 11 E2E tests passed.                |
 | Final local build                   | passed | Python sdist/wheel and Next.js production build.                                          |
+| CI run `36173283815`                | failed | Quality/security passed; DB suite stopped at the gateway advisory-lock parameter shape.   |
+| Gateway parameter focused checks    | passed | 9 assessment tests and strict mypy after the tuple correction.                            |
 
 The `make` executable is unavailable in this Windows shell. The equivalent root commands were
 run directly with `uv` and `pnpm`; CI uses the root task runner and performs the database tests.
@@ -247,6 +250,10 @@ CI run <https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/3617271836
 applied migration `0019` and passed the new handoff metric PostgreSQL scenarios. Its gateway
 assessment fixture passed a string for a strict UUID field, and the quality job detected status
 Markdown formatting. Both test-only issues are corrected locally; CI rerun is pending.
+CI run <https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/36173283815>
+passed quality and security. Its PostgreSQL suite reached the gateway assessment repository and
+found an advisory-lock string passed as the second Psycopg argument instead of a one-item tuple.
+The call and the mock cursor's parameter-shape assertion are corrected; database rerun is pending.
 
 ## Known Limitations And External Blockers
 
