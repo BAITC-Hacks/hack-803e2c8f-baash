@@ -45,6 +45,7 @@ The envelope never carries a citizen name, phone number, full street address, un
 | --- | --- | --- | --- |
 | `ai.classification.produced.v1` | Classification service | model and taxonomy versions, feature snapshot, top topics, top services, confidence, OOD score, rule hits | Operator workspace, audit |
 | `ai.classification.failed.v1` | Classification service | model version, stable error code, retryability | Operations, fallback workflow |
+| `decision.gateway.assessed.v1` | Core | assessment ID, request ID and version, advisory decision, input and evidence digests | Operator workspace, audit, evaluation |
 | `ai.retrieval.produced.v1` | Retrieval service | model/index versions, query snapshot, ranked IDs and scores | Operator workspace, evaluation log |
 | `ai.duplicate.proposed.v1` | Incident service | candidate IDs, scores, geo/time evidence, model version | Operator workspace |
 | `ai.draft.produced.v1` | Draft service | template/model version, evidence references, output hash | Operator workspace, audit |

@@ -569,6 +569,17 @@ Record implementation decisions here when the repository, contracts or available
 - **Evidence:** Replay Lab persistence repository, focused tests and PostgreSQL integration smoke scenario.
 - **Revisit when:** B02/B04/B05 provide approved representative snapshots and policy artifacts.
 
+### D-054 — Persist advisory gateway assessments against verified inputs
+
+- **Date:** 2026-09-25
+- **Status:** accepted
+- **Context:** a transient gateway result does not establish which appeal version, model recommendation, candidate set and confidence policy an operator saw.
+- **Decision:** lock the appeal at its current version, verify the complete persisted recommendation and ranked candidates, and resolve any claimed confidence policy against the approved effective catalog in the same transaction. Store an immutable result with input/evidence digests and an exact-retry key, plus audit and outbox rows. Every result remains advisory and requires human confirmation; no assignment action is exposed.
+- **Alternatives:** trust caller-supplied model or policy fields; record only the winning candidate; reuse one assessment after the appeal changes.
+- **Consequences:** historical assessments are reproducible and stale or mismatched evidence fails closed. The database schema gains a composite recommendation binding and append-only assessment table. Operational publication waits for approved model and intake artifacts.
+- **Evidence:** migration `0019_m8_gateway_assessment`, assessment repository, focused tests and PostgreSQL integration scenario.
+- **Revisit when:** B02/B04/B05 provide approved model snapshots, taxonomy and calibration evidence.
+
 ### D-XXX — Short title
 
 - **Date:** YYYY-MM-DD
