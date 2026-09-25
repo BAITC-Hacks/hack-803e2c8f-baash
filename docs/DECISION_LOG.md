@@ -558,6 +558,17 @@ Record implementation decisions here when the repository, contracts or available
 - **Evidence:** assignment service, OpenAPI command, route authorization test and PostgreSQL handoff integration scenario.
 - **Revisit when:** an approved regional unit directory and supervisor escalation policy are supplied.
 
+### D-053 — Bind offline replay receipts to immutable snapshot content
+
+- **Date:** 2026-09-25
+- **Status:** accepted
+- **Context:** the replay schema stores manifest and report metadata, but a report ID alone cannot prove that the compared cases match the saved object.
+- **Decision:** canonicalize pseudonymous snapshot bytes, verify their SHA-256 before storing them through an injected immutable object store, and persist the content address with the manifest. Report writes require the original typed dataset and verify its region, ID, cutoff, engine digest and content hash against the stored manifest. Reports remain descriptive and cannot be promoted.
+- **Alternatives:** trust caller-supplied snapshot hashes; persist reports without checking dataset binding; store raw case snapshots in PostgreSQL.
+- **Consequences:** a failed database write may leave an unreferenced immutable object for lifecycle cleanup. No operational run endpoint exists until approved datasets and policies are available.
+- **Evidence:** Replay Lab persistence repository, focused tests and PostgreSQL integration smoke scenario.
+- **Revisit when:** B02/B04/B05 provide approved representative snapshots and policy artifacts.
+
 ### D-XXX — Short title
 
 - **Date:** YYYY-MM-DD

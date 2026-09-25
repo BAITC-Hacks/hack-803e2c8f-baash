@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 
 import pytest
-from pulse109.replay import ReplayCase, ReplayDataset, ReplayEngine, ReplayLabel
+from pulse109.replay import ReplayCase, ReplayDataset, ReplayEngine, ReplayLabel, snapshot_sha256
 from pydantic import ValidationError
 
 DECISION_AT = datetime(2026, 8, 1, 12, tzinfo=timezone.utc)
@@ -43,7 +43,7 @@ def _case(key: str, *, synthetic: bool = False, route: str | None = "water") -> 
 
 
 def _dataset(cases: tuple[ReplayCase, ...]) -> ReplayDataset:
-    return ReplayDataset(
+    dataset = ReplayDataset(
         dataset_id="immutable-2026-08",
         region_id="ALA",
         snapshot_sha256="a" * 64,
@@ -52,6 +52,7 @@ def _dataset(cases: tuple[ReplayCase, ...]) -> ReplayDataset:
         allowed_features=frozenset({"channel"}),
         cutoff_at=datetime(2026, 9, 1, tzinfo=timezone.utc),
     )
+    return dataset.model_copy(update={"snapshot_sha256": snapshot_sha256(dataset)})
 
 
 def test_replay_is_deterministic_excludes_synthetic_and_never_promotes() -> None:

@@ -8,6 +8,7 @@ import psycopg
 import pytest
 from pulse109.manual_path import PostgresManualPathService, PostgresManualRepository
 from pulse109.manual_path.models import CreateRequest, StatusEventInput
+from pulse109.outcome_memory.postgres import PostgresOutcomeMemoryReader
 from pulse109.outcomes import (
     ClosureConfirmation,
     ClosureEvidence,
@@ -150,6 +151,12 @@ def test_closure_requires_appeal_bound_evidence_and_human_confirmation() -> None
     )
     assert replay.closure_id == receipt.closure_id
     assert replay.replayed is True
+
+    inspection = PostgresOutcomeMemoryReader(database_url).inspect(appeal.request_id, "ALA")
+    assert inspection.evidence_count == 1
+    assert "evidence_attachment_mismatch" not in inspection.reasons
+    assert "approved_corpus_missing" in inspection.reasons
+    assert inspection.candidate_ready is False
 
     with psycopg.connect(url) as connection, connection.cursor() as cursor:
         cursor.execute(

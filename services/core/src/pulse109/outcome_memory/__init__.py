@@ -7,14 +7,22 @@ from .models import (
     OutcomeMemoryResult,
     OutcomeProvenance,
 )
+from .postgres import (
+    OutcomeAssemblyInspection,
+    OutcomeCorpusUnavailable,
+    PostgresOutcomeMemoryReader,
+)
 from .service import OutcomeMemory, OutcomeMemoryReader
 
 __all__ = [
     "EvidenceProvenance",
+    "OutcomeAssemblyInspection",
     "OutcomeCandidate",
+    "OutcomeCorpusUnavailable",
     "OutcomeMemory",
     "OutcomeMemoryQuery",
     "OutcomeMemoryReader",
     "OutcomeMemoryResult",
     "OutcomeProvenance",
+    "PostgresOutcomeMemoryReader",
 ]

@@ -3,10 +3,10 @@
 ## Current Milestone
 
 - Milestone: cross-cutting governed decision, handoff and evidence-backed closure slices.
-- Status: active. CI passed confidence publication, assignment lookup, closure, recurrence and the
-  offline replay schema through `0017`. CI for `0018` exposed an Alembic revision-length defect;
-  the revision and CI head assertions are corrected locally for the next batched run. The full
-  scope from both supplied texts remains in progress.
+- Status: active. CI run `36168423107` passed quality, PostgreSQL/container checks and security
+  through `0018`, including supervised repeat-handoff behavior and the adaptive intake UI. Replay
+  persistence and outcome proof inspection are the current local batch; the full scope from both
+  supplied texts remains in progress.
 - Branch: `codex/production-platform-20260923`, created without discarding the pre-existing local
   changes. The newer upstream regional-import and ML commits have been merged into the branch.
 - Scope from the two supplied texts: durable manual journey, Handoff Guard, Replay Lab, Outcome
@@ -94,6 +94,13 @@
   including approved regional unit mappings. Repeating that handoff requires a supervisor/admin
   override with a controlled reason code; the decision is included in audit, timeline and outbox.
   Assignments without a known target organization remain available on the manual critical path.
+- Replay Lab now has an immutable snapshot-store seam and PostgreSQL manifest/report writer. It
+  verifies canonical content hashes, binds each report to the exact saved dataset and region,
+  supports exact retries, records synthetic counts separately and has no promotion path.
+- A read-only Outcome Memory inspector checks the persisted region, source, closure event and
+  attachment chain for one appeal without loading raw text. It reports missing governance facts
+  explicitly and refuses candidate enumeration until evidence-verification provenance, approved
+  corpus, controlled terms and retention approval exist.
 - The merged regional research corpus now contains withheld text markers only. Quarantine artifacts
   contain hashes and counts without source row values. New regional ingest withholds executor prose;
   training and evaluation stop on withheld data, and historical reports block quality claims.
@@ -155,6 +162,8 @@
 | Handoff guard/API/contract focused  | passed | 29 local tests, Ruff and web typecheck; PostgreSQL guard test awaits batched CI.        |
 | CI run `36167195469`                | failed | Quality and security passed; container migration failed on Alembic's 32-char ID column. |
 | Alembic revision-length check       | passed | All 18 revisions are <=32 characters and one head resolves after the local fix.         |
+| CI run `36168423107`                | passed | Quality, container/PostgreSQL integration, restore and security all succeeded.          |
+| Replay/outcome reader focused       | passed | 22 Python tests, Ruff and mypy; new PostgreSQL smoke scenarios await batched CI.        |
 
 The `make` executable is unavailable in this Windows shell. The equivalent root commands were
 run directly with `uv` and `pnpm`; CI uses the root task runner and performs the database tests.
@@ -200,7 +209,9 @@ passed quality, security, PostgreSQL integration and restore through migration `
 CI run <https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/36167195469>
 passed quality and security but failed in container-smoke while migrating `0018`: the revision ID
 exceeded Alembic's default `alembic_version.version_num` length. The shorter revision ID and CI
-assertions are staged for the next batched run.
+assertions passed in the next batched run.
+CI run <https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/36168423107>
+passed every job with the shortened revision ID, PostgreSQL integration and restore.
 
 ## Known Limitations And External Blockers
 
@@ -257,10 +268,10 @@ assertions are staged for the next batched run.
 - D-050 adds independently reviewed regional unit mappings for human-confirmed handoff outcomes.
 - D-051 extends the value-free intake policy with conditional evidence requirements.
 - D-052 requires supervised, reasoned override for an organization that already rejected the appeal.
+- D-053 binds offline replay reports to canonical snapshots stored through an immutable object seam.
 
 ## Exact Next Milestone
 
-Run one batched database CI for the corrected unit crosswalk, Handoff Guard and adaptive UI, then
-continue durable Decision Gateway assessments, replay persistence and verified outcome memory read
-models. Keep live adapters, representative model claims, binding SLA and real PII processing
-dependent on B01-B10.
+Run one batched database CI for Replay Lab persistence and outcome proof inspection, then continue
+durable Decision Gateway assessments and governed outcome-memory corpus preparation. Keep live
+adapters, representative model claims, binding SLA and real PII processing dependent on B01-B10.
