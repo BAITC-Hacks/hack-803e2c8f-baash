@@ -7,7 +7,7 @@ from uuid import uuid4
 import psycopg
 import pytest
 from pulse109.manual_path import PostgresManualPathService, PostgresManualRepository
-from pulse109.manual_path.models import CreateRequest
+from pulse109.manual_path.models import CreateRequest, StatusEventInput
 from pulse109.outcomes import (
     ClosureConfirmation,
     ClosureEvidence,
@@ -46,10 +46,38 @@ def test_closure_requires_appeal_bound_evidence_and_human_confirmation() -> None
     repository = PostgresClosureRepository(database_url)
     closure = ClosureIntegrityService(repository)
     evidence_hash = "a" * 64
-    preflight_command = ClosurePreflight(
+    unresolved_command = ClosurePreflight(
         resolution_code="COMPLETED",
         evidence=[ClosureEvidence(reference=f"sha256:{evidence_hash}", evidence_type="document")],
         expected_appeal_version=appeal.version,
+    )
+    with pytest.raises(ClosureIntegrityError) as unresolved:
+        closure.preflight(
+            appeal.request_id,
+            "ALA",
+            unresolved_command,
+            actor="synthetic-operator",
+            correlation_id=source_id,
+        )
+    assert unresolved.value.code == "resolution_required"
+    manual.status(
+        appeal.request_id,
+        StatusEventInput(
+            source_event_id=f"resolved-{source_id}",
+            status="resolved",
+            occurred_at=None,
+            occurred_at_quality="missing",
+            source_system="synthetic-m9-integration",
+            reason_code="SYNTHETIC_RESOLUTION",
+        ),
+        idempotency_key=f"status-{source_id}",
+        region_id="ALA",
+        actor="synthetic-operator",
+    )
+    preflight_command = ClosurePreflight(
+        resolution_code="COMPLETED",
+        evidence=[ClosureEvidence(reference=f"sha256:{evidence_hash}", evidence_type="document")],
+        expected_appeal_version=appeal.version + 1,
     )
     with pytest.raises(ClosureIntegrityError) as missing:
         closure.preflight(
@@ -92,14 +120,14 @@ def test_closure_requires_appeal_bound_evidence_and_human_confirmation() -> None
             "SELECT status, version FROM appeals.appeal WHERE request_id=%s",
             (appeal.request_id,),
         )
-        assert cursor.fetchone() == ("new", appeal.version)
+        assert cursor.fetchone() == ("resolved", appeal.version + 1)
 
     confirmation = ClosureConfirmation(
         preflight_id=preflight["preflight_id"],
         evidence_hash=preflight["evidence_hash"],
         confirm=True,
         reason_code="EVIDENCE_REVIEWED",
-        expected_appeal_version=appeal.version,
+        expected_appeal_version=appeal.version + 1,
     )
     key = f"closure-{uuid4()}"
     receipt = closure.confirm(
@@ -128,7 +156,7 @@ def test_closure_requires_appeal_bound_evidence_and_human_confirmation() -> None
             "SELECT status, version FROM appeals.appeal WHERE request_id=%s",
             (appeal.request_id,),
         )
-        assert cursor.fetchone() == ("closed", appeal.version + 1)
+        assert cursor.fetchone() == ("closed", appeal.version + 2)
         cursor.execute(
             "SELECT count(*) FROM appeals.appeal_event "
             "WHERE appeal_id=%s AND event_type='appeal.closed.v1'",

@@ -70,7 +70,8 @@
   network failures.
 - Evidence-backed closure now has a status-preserving preflight against appeal-owned attachment hashes and
   a separate human confirmation that atomically records closure, timeline, audit, outbox and replay
-  receipt. Source status alone does not qualify as closure evidence.
+  receipt. A recorded resolved state is required, but source status alone does not qualify as
+  closure evidence.
 - A read-only recurrence assessment now counts distinct confirmed incidents on the same object and
   human-selected topic only when an appeal has a verified, operator-confirmed closure before the
   new exact event time. Missing object, topic or exact time produces an explicit abstention.

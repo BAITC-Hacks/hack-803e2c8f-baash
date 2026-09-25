@@ -184,7 +184,7 @@ paths:
     post:
       tags: [Requests]
       summary: Validate appeal-bound evidence before closure
-      description: Advisory integrity check only; it never changes appeal status and does not infer resolution from source status.
+      description: Requires a recorded resolved state and appeal-owned evidence. The preflight never changes appeal status, and resolved status alone is insufficient proof.
       operationId: preflightClosure
       security:
         - bearerAuth: []

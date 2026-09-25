@@ -43,9 +43,10 @@ class PostgresClosureRepository:
                 raise ClosureIntegrityError(
                     "appeal_not_found", "The appeal is not available in this region.", 404
                 )
-            if appeal["status"] == "closed":
+            if appeal["status"] != "resolved":
                 raise ClosureIntegrityError(
-                    "appeal_already_closed", "The appeal is already closed."
+                    "resolution_required",
+                    "A recorded resolution is required before closure evidence can be reviewed.",
                 )
             if appeal["version"] != command.expected_appeal_version:
                 raise ClosureIntegrityError(
@@ -151,9 +152,9 @@ class PostgresClosureRepository:
                 raise ClosureIntegrityError(
                     "appeal_version_conflict", "The appeal changed after preflight."
                 )
-            if appeal["status"] in {"cancelled", "closed"}:
+            if appeal["status"] != "resolved":
                 raise ClosureIntegrityError(
-                    "appeal_not_closable", "This appeal cannot be closed in its current state."
+                    "resolution_required", "The appeal must remain resolved until confirmation."
                 )
             if preflight["confirmed_at"] is not None:
                 raise ClosureIntegrityError(

@@ -9,7 +9,12 @@ import pytest
 from pulse109.incidents import PostgresIncidentRepository, PostgresIncidentService
 from pulse109.incidents.models import CreateIncident, IncidentDecision, MembershipCommand
 from pulse109.manual_path import PostgresManualPathService, PostgresManualRepository
-from pulse109.manual_path.models import CreateRequest, LocationInput, OperatorDecision
+from pulse109.manual_path.models import (
+    CreateRequest,
+    LocationInput,
+    OperatorDecision,
+    StatusEventInput,
+)
 from pulse109.outcomes import (
     ClosureConfirmation,
     ClosureEvidence,
@@ -106,13 +111,27 @@ def test_verified_closure_supports_region_scoped_recurrence_assessment() -> None
                VALUES (%s, %s, %s, 'internal')""",
             (prior_one.request_id, "synthetic://repaired-pipe", "c" * 64),
         )
+    manual.status(
+        prior_one.request_id,
+        StatusEventInput(
+            source_event_id=f"resolved-{source}",
+            status="resolved",
+            occurred_at=None,
+            occurred_at_quality="missing",
+            source_system="synthetic-m9-recurrence",
+            reason_code="SYNTHETIC_REPAIRED",
+        ),
+        idempotency_key=f"status-{source}",
+        region_id="ALA",
+        actor="synthetic-operator",
+    )
     preflight = closure.preflight(
         prior_one.request_id,
         "ALA",
         ClosurePreflight(
             resolution_code="REPAIRED",
             evidence=[ClosureEvidence(reference="sha256:" + "c" * 64, evidence_type="document")],
-            expected_appeal_version=1,
+            expected_appeal_version=2,
         ),
         actor="synthetic-operator",
         correlation_id=source,
@@ -125,7 +144,7 @@ def test_verified_closure_supports_region_scoped_recurrence_assessment() -> None
             evidence_hash=preflight["evidence_hash"],
             confirm=True,
             reason_code="SYNTHETIC_VERIFIED",
-            expected_appeal_version=1,
+            expected_appeal_version=2,
         ),
         actor="synthetic-operator",
         idempotency_key=f"close-{source}",

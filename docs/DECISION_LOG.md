@@ -475,7 +475,7 @@ Record implementation decisions here when the repository, contracts or available
 - **Date:** 2026-09-25
 - **Status:** accepted
 - **Context:** an imported or regional status alone cannot prove that an appeal was resolved, and a closure must preserve every appeal's own history.
-- **Decision:** preflight validates content-addressed attachment references against the same appeal, region and current version without changing its status. A separate explicit operator confirmation atomically changes status, consumes the preflight, records the timeline and audit events, queues outbox delivery and stores an idempotent receipt. Any intervening appeal version invalidates the preflight.
+- **Decision:** preflight requires a recorded `resolved` state and validates content-addressed attachment references against the same appeal, region and current version without changing its status. A separate explicit operator confirmation atomically changes status, consumes the preflight, records the timeline and audit events, queues outbox delivery and stores an idempotent receipt. Any intervening appeal version invalidates the preflight. Resolved status alone never proves closure.
 - **Alternatives:** close from source status; accept a free-form evidence URI; update status before recording audit.
 - **Consequences:** closure requires an existing durable attachment reference and operator review. Evidence existence does not by itself attest to substantive resolution; the reason and decision remain accountable to the operator.
 - **Evidence:** migration `0016_m9_closure_integrity`, closure API and PostgreSQL integration test.
