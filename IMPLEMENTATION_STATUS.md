@@ -6,8 +6,10 @@
 - Status: active. CI run `36169565278` passed quality, PostgreSQL/container checks and security
   through `0018`, including replay persistence and outcome proof inspection. CI run `36171024892`
   passed quality and security but exposed a migration `0019` SQL bind-parsing defect during
-  container startup. The migration fix and opt-in Handoff Guard operational metrics are the current
-  batch; the full scope from both supplied texts remains in progress.
+  container startup. CI run `36172718369` applied `0019` and passed the new Handoff Guard metrics
+  integration scenarios, but revealed a strict UUID fixture error in the gateway test and a
+  Markdown format error. Both are corrected in the current local batch; the full scope from both
+  supplied texts remains in progress.
 - Branch: `codex/production-platform-20260923`, created without discarding the pre-existing local
   changes. The newer upstream regional-import and ML commits have been merged into the branch.
 - Scope from the two supplied texts: durable manual journey, Handoff Guard, Replay Lab, Outcome
@@ -144,45 +146,49 @@
 
 ## Verification
 
-| Command                             | Result | Evidence or note                                                                        |
-| ----------------------------------- | ------ | --------------------------------------------------------------------------------------- |
-| `./scripts/tasks.ps1 lint`          | passed | Ruff format/check, Prettier and ESLint after the M8 confidence policy change.           |
-| `./scripts/tasks.ps1 typecheck`     | passed | Strict mypy over 88 source files and TypeScript checks.                                 |
-| `./scripts/tasks.ps1 test`          | passed | 151 passed, 11 PostgreSQL-only tests skipped without `PULSE109_TEST_DATABASE_URL`.      |
-| `./scripts/tasks.ps1 contract-test` | passed | 19 passed; time-quality, handoff, intake and OpenAPI validation included.               |
-| `./scripts/tasks.ps1 e2e`           | passed | 11 passed, including manual, incident, ownership and intake availability flows.         |
-| `./scripts/tasks.ps1 build`         | passed | Python wheel/sdist and Next.js 16.3.4 production build.                                 |
-| Alembic offline SQL                 | passed | Forward chain renders through `0013_m8_intake_policy`.                                  |
-| `docker compose ... config --quiet` | passed | Compose model parses without a running daemon.                                          |
-| PostgreSQL integration              | passed | CI run `36010385477` applied M8 and passed all 7 integration tests and Compose checks.  |
-| Gitleaks 8.30.1 history scan        | passed | Local full-history scan with the exact synthetic test-token allowlist.                  |
-| PostgreSQL restore drill            | passed | CI run `36008801557` restored into a new database and compared counts, hashes and head. |
-| M8 focused local checks             | passed | 16 passed, one PostgreSQL-only test skipped; Ruff and strict mypy passed.               |
-| Inference provider boundary         | passed | 2 focused tests passed; CI run `36010905991` passed every job.                          |
-| M8 handoff outcome                  | passed | CI run `36012237217` passed the transaction, API replay, quality and security checks.   |
-| M8 Adaptive Intake                  | passed | CI run `36013109806` applied `0013`, passed nine DB tests and all release jobs.         |
-| M8 Decision Gateway evaluator       | passed | 11 focused tests and Ruff; no operational route is exposed yet.                         |
-| M8 jurisdiction resolution          | passed | 4 service tests; CI run `36014297057` passed the PostgreSQL boundary cases.             |
-| M8 confidence policy                | passed | CI run `36047169856` applied `0014`, passed PostgreSQL tests and restore.               |
-| Catalog policy time validation      | local  | 3 focused tests passed; the new validation needs no PostgreSQL access.                  |
-| Current batched local checks        | passed | Ruff format/check, mypy (96 files), Prettier, ESLint and TypeScript passed.             |
-| Current batched Python tests        | passed | 158 passed; 13 PostgreSQL-only tests skipped without `PULSE109_TEST_DATABASE_URL`.      |
-| Previous contract and E2E checks    | passed | 19 contract and 11 E2E tests passed; OpenAPI then had 28 unique operations.             |
-| Previous build and migration head   | passed | Python package and Next.js production build; the prior Alembic head was `0016`.         |
-| Recurrence/replay/memory focused    | passed | 39 focused and contract tests; Ruff and mypy pass across 106 source files.              |
-| Previous Alembic head               | passed | Sole `0017_m11_replay_lab` head applied by CI.                                          |
-| CI run `36051195070`                | passed | Quality, security, PostgreSQL integration and restore through `0017` all succeeded.     |
-| Crosswalk/intake focused            | passed | 32 intake/contract tests, Ruff and mypy (106 files); sole Alembic head is `0018`.       |
-| Handoff guard/API/contract focused  | passed | 29 local tests, Ruff and web typecheck; PostgreSQL guard test awaits batched CI.        |
-| CI run `36167195469`                | failed | Quality and security passed; container migration failed on Alembic's 32-char ID column. |
-| Alembic revision-length check       | passed | All 18 revisions are <=32 characters and one head resolves after the local fix.         |
-| CI run `36168423107`                | passed | Quality, container/PostgreSQL integration, restore and security all succeeded.          |
-| Replay/outcome reader focused       | passed | 22 Python tests, Ruff and mypy; PostgreSQL smoke scenarios passed CI.                   |
-| CI run `36169565278`                | passed | Quality, PostgreSQL integration and restore, security, including replay/outcome smoke.  |
-| Gateway assessment focused          | passed | 20 gateway tests and one DB-only skip; Ruff and mypy pass locally.                      |
-| CI run `36171024892`                | failed | Quality/security passed; PostgreSQL startup stopped while applying `0019` JSON check.  |
-| Alembic `0019` offline SQL           | passed | Full migration chain compiles after replacing the JSON literal with `jsonb_build_object`. |
-| Handoff metric focused checks        | passed | 4 tests and two local PostgreSQL-only skips; Ruff and strict mypy passed.                |
+| Command                             | Result | Evidence or note                                                                          |
+| ----------------------------------- | ------ | ----------------------------------------------------------------------------------------- |
+| `./scripts/tasks.ps1 lint`          | passed | Ruff format/check, Prettier and ESLint after the M8 confidence policy change.             |
+| `./scripts/tasks.ps1 typecheck`     | passed | Strict mypy over 88 source files and TypeScript checks.                                   |
+| `./scripts/tasks.ps1 test`          | passed | 151 passed, 11 PostgreSQL-only tests skipped without `PULSE109_TEST_DATABASE_URL`.        |
+| `./scripts/tasks.ps1 contract-test` | passed | 19 passed; time-quality, handoff, intake and OpenAPI validation included.                 |
+| `./scripts/tasks.ps1 e2e`           | passed | 11 passed, including manual, incident, ownership and intake availability flows.           |
+| `./scripts/tasks.ps1 build`         | passed | Python wheel/sdist and Next.js 16.3.4 production build.                                   |
+| Alembic offline SQL                 | passed | Forward chain renders through `0013_m8_intake_policy`.                                    |
+| `docker compose ... config --quiet` | passed | Compose model parses without a running daemon.                                            |
+| PostgreSQL integration              | passed | CI run `36010385477` applied M8 and passed all 7 integration tests and Compose checks.    |
+| Gitleaks 8.30.1 history scan        | passed | Local full-history scan with the exact synthetic test-token allowlist.                    |
+| PostgreSQL restore drill            | passed | CI run `36008801557` restored into a new database and compared counts, hashes and head.   |
+| M8 focused local checks             | passed | 16 passed, one PostgreSQL-only test skipped; Ruff and strict mypy passed.                 |
+| Inference provider boundary         | passed | 2 focused tests passed; CI run `36010905991` passed every job.                            |
+| M8 handoff outcome                  | passed | CI run `36012237217` passed the transaction, API replay, quality and security checks.     |
+| M8 Adaptive Intake                  | passed | CI run `36013109806` applied `0013`, passed nine DB tests and all release jobs.           |
+| M8 Decision Gateway evaluator       | passed | 11 focused tests and Ruff; no operational route is exposed yet.                           |
+| M8 jurisdiction resolution          | passed | 4 service tests; CI run `36014297057` passed the PostgreSQL boundary cases.               |
+| M8 confidence policy                | passed | CI run `36047169856` applied `0014`, passed PostgreSQL tests and restore.                 |
+| Catalog policy time validation      | local  | 3 focused tests passed; the new validation needs no PostgreSQL access.                    |
+| Current batched local checks        | passed | Ruff format/check, mypy (96 files), Prettier, ESLint and TypeScript passed.               |
+| Current batched Python tests        | passed | 158 passed; 13 PostgreSQL-only tests skipped without `PULSE109_TEST_DATABASE_URL`.        |
+| Previous contract and E2E checks    | passed | 19 contract and 11 E2E tests passed; OpenAPI then had 28 unique operations.               |
+| Previous build and migration head   | passed | Python package and Next.js production build; the prior Alembic head was `0016`.           |
+| Recurrence/replay/memory focused    | passed | 39 focused and contract tests; Ruff and mypy pass across 106 source files.                |
+| Previous Alembic head               | passed | Sole `0017_m11_replay_lab` head applied by CI.                                            |
+| CI run `36051195070`                | passed | Quality, security, PostgreSQL integration and restore through `0017` all succeeded.       |
+| Crosswalk/intake focused            | passed | 32 intake/contract tests, Ruff and mypy (106 files); sole Alembic head is `0018`.         |
+| Handoff guard/API/contract focused  | passed | 29 local tests, Ruff and web typecheck; PostgreSQL guard test awaits batched CI.          |
+| CI run `36167195469`                | failed | Quality and security passed; container migration failed on Alembic's 32-char ID column.   |
+| Alembic revision-length check       | passed | All 18 revisions are <=32 characters and one head resolves after the local fix.           |
+| CI run `36168423107`                | passed | Quality, container/PostgreSQL integration, restore and security all succeeded.            |
+| Replay/outcome reader focused       | passed | 22 Python tests, Ruff and mypy; PostgreSQL smoke scenarios passed CI.                     |
+| CI run `36169565278`                | passed | Quality, PostgreSQL integration and restore, security, including replay/outcome smoke.    |
+| Gateway assessment focused          | passed | 20 gateway tests and one DB-only skip; Ruff and mypy pass locally.                        |
+| CI run `36171024892`                | failed | Quality/security passed; PostgreSQL startup stopped while applying `0019` JSON check.     |
+| Alembic `0019` offline SQL          | passed | Full migration chain compiles after replacing the JSON literal with `jsonb_build_object`. |
+| Handoff metric focused checks       | passed | 4 tests and two local PostgreSQL-only skips; Ruff and strict mypy passed.                 |
+| CI run `36172718369`                | failed | `0019` applied and 18 DB tests passed; gateway fixture UUID and status formatting failed. |
+| Final local lint and typecheck      | passed | Ruff, Prettier, ESLint, strict mypy (110 files) and TypeScript checks.                    |
+| Final local tests                   | passed | 197 passed, 19 PostgreSQL-only skips; 19 contract and 11 E2E tests passed.                |
+| Final local build                   | passed | Python sdist/wheel and Next.js production build.                                          |
 
 The `make` executable is unavailable in this Windows shell. The equivalent root commands were
 run directly with `uv` and `pnpm`; CI uses the root task runner and performs the database tests.
@@ -237,6 +243,10 @@ CI run <https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/3617102489
 passed quality and security but failed in container-smoke because SQLAlchemy interpreted the
 JSON colon inside a migration `op.execute` literal as a bind parameter. The fixed migration
 compiles into offline SQL; the PostgreSQL application check is included in the next batch.
+CI run <https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/36172718369>
+applied migration `0019` and passed the new handoff metric PostgreSQL scenarios. Its gateway
+assessment fixture passed a string for a strict UUID field, and the quality job detected status
+Markdown formatting. Both test-only issues are corrected locally; CI rerun is pending.
 
 ## Known Limitations And External Blockers
 

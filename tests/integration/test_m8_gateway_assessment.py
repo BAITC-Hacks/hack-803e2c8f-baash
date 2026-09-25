@@ -52,7 +52,7 @@ def test_gateway_assessment_persists_one_advisory_receipt_and_replays_it() -> No
             "input_contract_version": "1.0.0",
             "preprocess_version": "synthetic-prep-v1",
             "taxonomy_version": "synthetic-taxonomy-v1",
-            "feature_snapshot_id": str(uuid4()),
+            "feature_snapshot_id": uuid4(),
             "top_topics": labels,
             "top_services": labels,
             "priority": "routine",
