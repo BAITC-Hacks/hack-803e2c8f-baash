@@ -130,6 +130,11 @@ class _Cursor:
             rows.extend(self.candidate_overrides.get("extra", []))
             if "candidate_id" in self.candidate_overrides:
                 rows[0]["candidate_id"] = self.candidate_overrides["candidate_id"]
+            if "score" in self.candidate_overrides:
+                rows[0]["score"] = self.candidate_overrides["score"]
+            if self.candidate_overrides.get("round_scores"):
+                for row in rows:
+                    row["score"] = round(row["score"], 12)
             return sorted(rows, key=lambda row: (row["candidate_kind"], row["rank"]))
         return []
 
@@ -289,12 +294,35 @@ def test_candidate_binding_orders_by_rank_not_lexical_identifier(monkeypatch):
     assert receipt.result.candidates[0].candidate_id == "z-topic"
 
 
+def test_candidate_binding_accepts_database_numeric_rounding(monkeypatch):
+    request_id = uuid4()
+    inference = _inference(request_id)
+    cursor = _Cursor()
+    cursor.inference = inference
+    cursor.candidate_overrides = {"round_scores": True}
+    monkeypatch.setattr(
+        "pulse109.decisions.assessment.psycopg.connect", lambda *a, **k: _Connection(cursor)
+    )
+
+    receipt = PostgresGatewayAssessmentRepository("postgresql://unused").assess(
+        request_id=request_id,
+        region_id="ALA",
+        request_version=3,
+        inference=inference,
+        policy=_policy(),
+        required_field_states={},
+        correlation_id="corr-rounding",
+    )
+    assert receipt.result.requires_human_confirmation is True
+
+
 @pytest.mark.parametrize(
     ("recommendation_overrides", "candidate_overrides"),
     [
         ({"confidence": 0.21}, {}),
         ({"model_alias": "mock"}, {}),
         ({}, {"candidate_id": "fabricated-candidate"}),
+        ({}, {"score": 0.1}),
         (
             {},
             {

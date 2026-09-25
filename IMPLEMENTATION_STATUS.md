@@ -3,14 +3,11 @@
 ## Current Milestone
 
 - Milestone: cross-cutting governed decision, handoff and evidence-backed closure slices.
-- Status: active. CI run `36169565278` passed quality, PostgreSQL/container checks and security
-  through `0018`, including replay persistence and outcome proof inspection. CI run `36171024892`
-  passed quality and security but exposed a migration `0019` SQL bind-parsing defect during
-  container startup. CI run `36172718369` applied `0019` and passed the new Handoff Guard metrics
-  integration scenarios, but revealed a strict UUID fixture error in the gateway test and a
-  Markdown format error. CI run `36173283815` passed quality and security, then found a Psycopg
-  single-parameter tuple error in the gateway repository. The call and its focused test are fixed
-  locally; the full scope from both supplied texts remains in progress.
+- Status: active. CI run `36173878045` passed quality and security, applied migration `0019` and
+  passed the new Handoff Guard metrics integration scenarios. Its gateway assessment test reached
+  persisted candidate comparison and exposed a numeric representation mismatch. An exact identity
+  and rank comparison with a bounded `1e-12` score tolerance is the current local fix; the full
+  scope from both supplied texts remains in progress.
 - Branch: `codex/production-platform-20260923`, created without discarding the pre-existing local
   changes. The newer upstream regional-import and ML commits have been merged into the branch.
 - Scope from the two supplied texts: durable manual journey, Handoff Guard, Replay Lab, Outcome
@@ -192,6 +189,8 @@
 | Final local build                   | passed | Python sdist/wheel and Next.js production build.                                          |
 | CI run `36173283815`                | failed | Quality/security passed; DB suite stopped at the gateway advisory-lock parameter shape.   |
 | Gateway parameter focused checks    | passed | 9 assessment tests and strict mypy after the tuple correction.                            |
+| CI run `36173878045`                | failed | Quality/security and 18 DB tests passed; gateway candidate score comparison failed.       |
+| Candidate score focused checks      | passed | 11 tests cover database rounding and material score changes; Ruff and mypy passed.        |
 
 The `make` executable is unavailable in this Windows shell. The equivalent root commands were
 run directly with `uv` and `pnpm`; CI uses the root task runner and performs the database tests.
@@ -254,6 +253,11 @@ CI run <https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/3617328381
 passed quality and security. Its PostgreSQL suite reached the gateway assessment repository and
 found an advisory-lock string passed as the second Psycopg argument instead of a one-item tuple.
 The call and the mock cursor's parameter-shape assertion are corrected; database rerun is pending.
+CI run <https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/36173878045>
+passed quality and security and 18 PostgreSQL scenarios. The gateway scenario then rejected its
+persisted candidates; binary-float to PostgreSQL `numeric` conversion is the likely cause.
+Candidate identity and rank remain exact; scores now use a strict
+absolute `1e-12` tolerance, with focused acceptance and rejection tests. Database rerun is pending.
 
 ## Known Limitations And External Blockers
 

@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from uuid import UUID, uuid4
@@ -309,7 +310,11 @@ class PostgresGatewayAssessmentRepository:
                     )
                     for row in stored_candidates
                 ]
-                if actual_candidates != expected_candidates:
+                if len(actual_candidates) != len(expected_candidates) or any(
+                    actual[:3] != expected[:3]
+                    or not math.isclose(actual[3], expected[3], rel_tol=0, abs_tol=1e-12)
+                    for actual, expected in zip(actual_candidates, expected_candidates, strict=True)
+                ):
                     raise AssessmentContextConflict(
                         "recommendation candidates do not match the persisted inference"
                     )
