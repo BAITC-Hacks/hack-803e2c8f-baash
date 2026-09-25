@@ -3,14 +3,14 @@
 ## Current Milestone
 
 - Milestone: cross-cutting governed decision, handoff and evidence-backed closure slices.
-- Status: active. The prior M8 ownership, handoff outcome and adaptive intake slices passed database
-  CI. New publication, assignment read and closure changes are implemented and await the batched
-  database CI run; the full scope from both supplied texts remains in progress.
+- Status: active. CI passed confidence publication, assignment lookup, closure, recurrence and the
+  offline replay schema through `0017`. The new unit crosswalk and conditional intake rules await
+  the next batched database CI; the full scope from both supplied texts remains in progress.
 - Branch: `codex/production-platform-20260923`, created without discarding the pre-existing local
   changes. The newer upstream regional-import and ML commits have been merged into the branch.
-- Scope from the two supplied texts: durable manual journey first, then Handoff Guard, Replay Lab,
-  Outcome Memory, Closure Integrity, Adaptive Case Schema, recurrence and federation. These later
-  capabilities are planned and are not represented as delivered production behavior.
+- Scope from the two supplied texts: durable manual journey, Handoff Guard, Replay Lab, Outcome
+  Memory, Closure Integrity, Adaptive Case Schema, recurrence and federation. Implemented components
+  and operationally unavailable parts are listed separately below.
 
 ## Delivered Behavior
 
@@ -80,13 +80,19 @@
 - Outcome Memory now has a strict verified-record retrieval boundary: controlled terms, appeal-owned
   evidence, human closure provenance, regional isolation, explicit synthetic labels and abstention.
   No operational reader or public endpoint is mounted while approved corpus and privacy rules are absent.
+- Handoff outcomes can now bind a regional unit ID to a canonical organization through one approved,
+  effective, independently reviewed crosswalk entry at the assignment time. The mapping ID is saved
+  with the outcome; ambiguous, absent or operationally synthetic mappings fail closed.
+- Adaptive Intake now evaluates policy-authored conditional field dependencies and exposes required
+  evidence types after their prerequisites become known. It still receives only field-presence states,
+  not submitted values or raw appeal text.
 - The merged regional research corpus now contains withheld text markers only. Quarantine artifacts
   contain hashes and counts without source row values. New regional ingest withholds executor prose;
   training and evaluation stop on withheld data, and historical reports block quality claims.
 
 ## Contracts And Migrations Changed
 
-- OpenAPI includes 29 operations and 48 schemas. Create and status-event time-quality rules now
+- OpenAPI includes 29 operations and 49 schemas. Create and status-event time-quality rules now
   agree with the canonical JSON schema; no timestamp is derived from observation time.
 - Added Alembic revisions `0008_m7_manual_path_persistence` through
   `0011_m7_incident_persistence` after the previously accepted `0001`-`0007` chain.
@@ -100,9 +106,11 @@
   CI applied the migration and verified the query.
 - Added `0015_m8_confidence_publication` for immutable proposal/review records and exclusion of
   overlapping approved confidence intervals. Added `0016_m9_closure_integrity` for immutable
-  appeal-bound closure preflights. Both are awaiting the next database CI run.
+  appeal-bound closure preflights. CI applied both and passed database checks.
 - Added `0017_m11_replay_lab` for immutable snapshot manifests and non-promoting aggregate replay
-  reports. It is awaiting database CI with the other new migrations.
+  reports. CI applied the migration and passed database checks and restore.
+- Added `0018_m8_unit_organization_crosswalk` for approved, immutable mappings between regional unit
+  IDs and organization IDs; handoff outcomes record the mapping used. It awaits the next batched CI.
 
 ## Verification
 
@@ -129,10 +137,12 @@
 | Catalog policy time validation      | local  | 3 focused tests passed; the new validation needs no PostgreSQL access.                  |
 | Current batched local checks        | passed | Ruff format/check, mypy (96 files), Prettier, ESLint and TypeScript passed.             |
 | Current batched Python tests        | passed | 158 passed; 13 PostgreSQL-only tests skipped without `PULSE109_TEST_DATABASE_URL`.      |
-| Current contract and E2E checks     | passed | 19 contract and 11 E2E tests passed; OpenAPI validates with 28 unique operations.       |
+| Previous contract and E2E checks    | passed | 19 contract and 11 E2E tests passed; OpenAPI then had 28 unique operations.             |
 | Previous build and migration head   | passed | Python package and Next.js production build; the prior Alembic head was `0016`.         |
 | Recurrence/replay/memory focused    | passed | 39 focused and contract tests; Ruff and mypy pass across 106 source files.              |
-| Current Alembic head                | passed | Sole `0017_m11_replay_lab` head; PostgreSQL application awaits batched CI.              |
+| Previous Alembic head               | passed | Sole `0017_m11_replay_lab` head applied by CI.                                          |
+| CI run `36051195070`                | passed | Quality, security, PostgreSQL integration and restore through `0017` all succeeded.     |
+| Crosswalk/intake focused            | passed | 32 intake/contract tests, Ruff and mypy (106 files); sole Alembic head is `0018`.       |
 
 The `make` executable is unavailable in this Windows shell. The equivalent root commands were
 run directly with `uv` and `pnpm`; CI uses the root task runner and performs the database tests.
@@ -173,6 +183,8 @@ passed quality and security, but its container job stopped at a hardcoded `0013`
 assertion after `0014` was added. The assertion and restore check now target `0014`.
 CI run <https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/36047169856>
 passed quality, security, PostgreSQL integration and a disposable restore through migration `0014`.
+CI run <https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/36051195070>
+passed quality, security, PostgreSQL integration and restore through migration `0017`.
 
 ## Known Limitations And External Blockers
 
@@ -200,12 +212,11 @@ passed quality, security, PostgreSQL integration and a disposable restore throug
   local MinIO profile currently cannot be pulled from Quay and needs a maintained S3-compatible
   provider before object-storage certification.
 - M8 does not yet provide an admin publication workflow for ownership or intake catalog versions.
-  Confidence publication is implemented but has not yet passed database CI.
+  Confidence publication passed database CI, but real calibration evidence has not arrived.
   The Decision Gateway is a pure component and is not yet wired to an approved operational confidence
   policy or durable recommendation path.
-  The handoff outcome command requires an
-  assignment whose unit identifier is the organization identifier; no governed organization/unit
-  crosswalk exists yet. No live regional adapter, complete Handoff Guard lifecycle, operational
+  The handoff outcome command supports direct organization IDs or a reviewed unit crosswalk, but
+  no real regional unit directory has been supplied. No live regional adapter, complete Handoff Guard lifecycle, operational
   Replay Lab pipeline, operational outcome memory reader, full adaptive case schema, or
   federated control plane is complete.
 
@@ -227,10 +238,12 @@ passed quality, security, PostgreSQL integration and a disposable restore throug
 - D-047 limits recurrence evidence to verified closure and exact time on the same asset and topic.
 - D-048 and D-049 constrain Replay Lab to descriptive offline evidence and Outcome Memory to verified
   retrieval without post-decision intake features.
+- D-050 adds independently reviewed regional unit mappings for human-confirmed handoff outcomes.
+- D-051 extends the value-free intake policy with conditional evidence requirements.
 
 ## Exact Next Milestone
 
-Complete the batched database CI for confidence publication, closure and recurrence, then continue
-durable Decision Gateway assessments, the organization/unit crosswalk, replay persistence and
-verified outcome memory read models. Keep live adapters, representative model claims, binding SLA and real PII processing
+Complete one batched database CI for the unit crosswalk and conditional intake changes, then
+continue durable Decision Gateway assessments, replay persistence and verified outcome memory read
+models. Keep live adapters, representative model claims, binding SLA and real PII processing
 dependent on B01-B10.

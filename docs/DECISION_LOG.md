@@ -525,6 +525,28 @@ Record implementation decisions here when the repository, contracts or available
 - **Evidence:** `pulse109.outcome_memory` and focused eligibility tests.
 - **Revisit when:** approved source corpus, redaction, taxonomy and legal retention rules are available.
 
+### D-050 — Resolve regional unit IDs through approved organization mappings
+
+- **Date:** 2026-09-25
+- **Status:** accepted
+- **Context:** regional assignments may carry a unit ID that is different from the canonical organization ID used by Handoff Guard. Treating them as equal blocks valid outcomes or invites arbitrary operator input.
+- **Decision:** keep direct identity matching for existing assignments. Otherwise require one append-only, independently reviewed, effective regional mapping for the exact service and unit at assignment time, linked to an approved organization version. Synthetic mappings are excluded in operational profiles. Store the mapping ID with the outcome and its audit/event payload.
+- **Alternatives:** trust an organization ID supplied with the outcome; fuzzy name matching; accept a mapping published after the assignment as retroactive proof.
+- **Consequences:** unmatched units remain unavailable for outcome recording, and real crosswalk entries need approval before assignments use them. Existing direct-ID assignments remain compatible.
+- **Evidence:** migration `0018_m8_unit_organization_crosswalk`, handoff repository and PostgreSQL integration scenario.
+- **Revisit when:** the first regional unit directory and publication authority are supplied.
+
+### D-051 — Select conditional evidence without intake values
+
+- **Date:** 2026-09-25
+- **Status:** accepted
+- **Context:** different issue types need different evidence, and an approved policy may require a later field only after a prerequisite is known.
+- **Decision:** extend the immutable intake policy payload with optional `when_states` predicates referencing earlier unconditional fields and a controlled `evidence_type`. Evaluate only trusted `known`/`missing`/`unknown` states. Inactive conditional fields are omitted from the question plan; an active missing field produces its authored question and evidence type. Reject unknown, forward or cyclic dependencies.
+- **Alternatives:** inspect raw citizen answers to choose evidence; use arbitrary policy expressions; ask every possible field up front.
+- **Consequences:** policies can adapt without backend code changes or PII in the planning seam. Conditions on categorical answer values and final attachment validation still require approved regional schema and storage rules.
+- **Evidence:** adaptive intake service, PostgreSQL reader, OpenAPI response and focused tests.
+- **Revisit when:** approved regional field taxonomy and evidence classes are provided.
+
 ### D-XXX — Short title
 
 - **Date:** YYYY-MM-DD

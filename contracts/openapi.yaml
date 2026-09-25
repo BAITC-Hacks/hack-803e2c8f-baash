@@ -931,6 +931,14 @@ components:
           propertyNames: { pattern: '^[A-Za-z0-9_]+$' }
           additionalProperties: { type: string, enum: [known, missing, unknown] }
         max_questions: { type: integer, minimum: 0, maximum: 10, default: 5 }
+    IntakeQuestionItem:
+      type: object
+      additionalProperties: false
+      required: [field_id, prompt, evidence_type]
+      properties:
+        field_id: { type: string, pattern: '^[A-Za-z0-9_]+$' }
+        prompt: { type: string, minLength: 1 }
+        evidence_type: { type: [string, 'null'], pattern: '^[a-z][a-z0-9_]{0,63}$' }
     IntakePlanResponse:
       type: object
       additionalProperties: false
@@ -947,6 +955,12 @@ components:
         questions:
           type: array
           items: { type: string }
+        question_items:
+          type: array
+          items: { $ref: '#/components/schemas/IntakeQuestionItem' }
+        required_evidence_types:
+          type: array
+          items: { type: string, pattern: '^[a-z][a-z0-9_]{0,63}$' }
         advisory_only: { type: boolean, const: true }
     HandoffOutcomeCommand:
       type: object

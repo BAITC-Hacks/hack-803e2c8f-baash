@@ -37,7 +37,7 @@ The envelope never carries a citizen name, phone number, full street address, un
 | `appeal.status.changed.v1` | Core or adapter | previous status, new status, source event ID, reason | Timeline, notifications, analytics |
 | `appeal.resolved.v1` | Core or adapter | result reference, evidence references, resolution code | Retrieval corpus, citizen notification |
 | `appeal.reopened.v1` | Core or adapter | reason, prior resolution reference | Routing, quality metrics |
-| `ownership.handoff_outcome.recorded.v1` | Core | outcome ID, request ID, assignment ID, organization ID, disposition, reason code, source event ID, evidence reference count | Handoff Guard, analytics, audit |
+| `ownership.handoff_outcome.recorded.v1` | Core | outcome ID, request ID, assignment ID, organization ID, disposition, reason code, source event ID, evidence reference count; approved unit mapping ID when used | Handoff Guard, analytics, audit |
 
 ## AI events
 

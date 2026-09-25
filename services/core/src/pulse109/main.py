@@ -89,7 +89,10 @@ app.include_router(
 ownership_repository: PostgresOwnershipRepository | EmptyOwnershipRepository
 handoff_service: HandoffOutcomeService | None
 if use_postgres_manual_path:
-    ownership_repository = PostgresOwnershipRepository(settings.database_url)
+    ownership_repository = PostgresOwnershipRepository(
+        settings.database_url,
+        allow_synthetic=settings.environment in {"local", "development", "test"},
+    )
     handoff_service = HandoffOutcomeService(ownership_repository)
 else:
     ownership_repository = EmptyOwnershipRepository()

@@ -94,8 +94,9 @@ class EmptyOwnershipRepository:
 class PostgresOwnershipRepository:
     """Only approved, effective and region-bound facts may reach the engine."""
 
-    def __init__(self, database_url: str) -> None:
+    def __init__(self, database_url: str, *, allow_synthetic: bool = False) -> None:
         self.database_url = database_url.replace("postgresql+psycopg://", "postgresql://", 1)
+        self.allow_synthetic = allow_synthetic
 
     @contextmanager
     def connection(self) -> Iterator[psycopg.Connection[dict[str, Any]]]:
@@ -128,7 +129,7 @@ class PostgresOwnershipRepository:
         scope = f"handoff-outcome:{request_id}:{actor_scope}"
         with self.connection() as connection, connection.cursor() as cursor:
             cursor.execute(
-                """SELECT a.region_id, a.assignee_unit_id
+                """SELECT a.region_id, a.to_service_id, a.assignee_unit_id, a.assigned_at
                    FROM appeals.assignment AS a
                    JOIN appeals.appeal AS p ON p.request_id = a.request_id
                    WHERE a.assignment_id = %s AND a.request_id = %s
@@ -141,11 +142,47 @@ class PostgresOwnershipRepository:
                 raise HandoffOutcomeError(
                     "assignment_not_found", "The assignment is not available in this region.", 404
                 )
+            mapping_id = None
             if assignment["assignee_unit_id"] != command.organization_id:
-                raise HandoffOutcomeError(
-                    "organization_assignment_mismatch",
-                    "The outcome organization does not match the assigned organization.",
+                cursor.execute(
+                    """SELECT m.mapping_id
+                       FROM ownership.unit_organization_mapping AS m
+                       JOIN ownership.organization_version AS o
+                         ON o.region_id = m.region_id
+                        AND o.organization_id = m.organization_id
+                        AND o.version = m.organization_version
+                       WHERE m.region_id = %s AND m.service_id = %s
+                         AND m.unit_id = %s AND m.organization_id = %s
+                         AND m.state = 'approved' AND o.state = 'approved'
+                         AND o.reviewed_by_token <> o.created_by_token
+                         AND m.effective_from <= %s
+                         AND (m.effective_to IS NULL OR m.effective_to > %s)
+                         AND o.effective_from <= %s
+                         AND (o.effective_to IS NULL OR o.effective_to > %s)
+                         AND m.created_at <= %s AND o.created_at <= %s
+                         AND (%s OR (NOT m.synthetic_only AND NOT o.synthetic_only))
+                       LIMIT 2""",
+                    (
+                        region_id,
+                        assignment["to_service_id"],
+                        assignment["assignee_unit_id"],
+                        command.organization_id,
+                        assignment["assigned_at"],
+                        assignment["assigned_at"],
+                        assignment["assigned_at"],
+                        assignment["assigned_at"],
+                        assignment["assigned_at"],
+                        assignment["assigned_at"],
+                        self.allow_synthetic,
+                    ),
                 )
+                mappings = cursor.fetchall()
+                if len(mappings) != 1:
+                    raise HandoffOutcomeError(
+                        "organization_assignment_mismatch",
+                        "The outcome organization does not match an approved assignment mapping.",
+                    )
+                mapping_id = mappings[0]["mapping_id"]
 
             cursor.execute(
                 "SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))",
@@ -203,13 +240,14 @@ class PostgresOwnershipRepository:
                 "reason_code": command.reason_code,
                 "source_event_id": command.source_event_id,
                 "evidence_ref_count": len(command.evidence_refs),
+                "mapping_id": str(mapping_id) if mapping_id else None,
             }
             cursor.execute(
                 """INSERT INTO ownership.handoff_outcome
                    (outcome_id, region_id, request_id, assignment_id, organization_id,
                     disposition, reason_code, source_event_id, evidence_refs,
-                    recorded_by_token, correlation_id)
-                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s::jsonb, %s, %s)""",
+                    recorded_by_token, correlation_id, mapping_id)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s::jsonb, %s, %s, %s)""",
                 (
                     outcome_id,
                     region_id,
@@ -222,6 +260,7 @@ class PostgresOwnershipRepository:
                     self._json(command.evidence_refs),
                     actor,
                     correlation_id,
+                    mapping_id,
                 ),
             )
             cursor.execute(

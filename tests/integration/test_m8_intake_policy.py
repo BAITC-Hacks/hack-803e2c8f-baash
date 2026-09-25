@@ -7,6 +7,7 @@ from uuid import uuid4
 
 import psycopg
 import pytest
+from pulse109.intake import AdaptiveIntake, AppealFacts
 from pulse109.intake.repository import PostgresIntakePolicyRepository
 
 
@@ -47,7 +48,15 @@ def test_intake_policy_is_effective_region_scoped_and_synthetic_gated() -> None:
                 topic_id,
                 at,
                 json.dumps(
-                    [{"field_id": "location", "questions": {"kk": "Қайда?", "ru": "Где?"}}],
+                    [
+                        {"field_id": "location", "questions": {"kk": "Қайда?", "ru": "Где?"}},
+                        {
+                            "field_id": "photo",
+                            "questions": {"kk": "Фото қосыңыз.", "ru": "Добавьте фото."},
+                            "when_states": {"location": "known"},
+                            "evidence_type": "photo",
+                        },
+                    ],
                     ensure_ascii=False,
                 ),
             ),
@@ -63,6 +72,11 @@ def test_intake_policy_is_effective_region_scoped_and_synthetic_gated() -> None:
     )
     assert policy is not None
     assert policy.required_fields[0].questions["ru"] == "Где?"
+    plan = AdaptiveIntake().plan(
+        policy=policy, facts=AppealFacts({"location": "known"}), locale="ru"
+    )
+    assert plan.questions == ("Добавьте фото.",)
+    assert plan.required_evidence_types == ("photo",)
     assert (
         repository.resolve(
             region_id="ASTANA",

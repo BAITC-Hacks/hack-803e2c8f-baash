@@ -29,7 +29,7 @@ def test_openapi_31_contract_is_valid_and_stable() -> None:
     assert document["openapi"] == "3.1.0"
     assert len(operations) == 29
     assert len({item["operationId"] for item in operations}) == 29
-    assert len(document["components"]["schemas"]) == 48
+    assert len(document["components"]["schemas"]) == 49
 
 
 def test_canonical_request_schema_is_valid() -> None:

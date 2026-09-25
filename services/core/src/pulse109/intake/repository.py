@@ -111,7 +111,12 @@ class PostgresIntakePolicyRepository:
             if not isinstance(raw_fields, list):
                 raise ValueError("required_fields must be an array")
             fields = tuple(
-                RequiredField(field_id=item["field_id"], questions=item["questions"])
+                RequiredField(
+                    field_id=item["field_id"],
+                    questions=item["questions"],
+                    when_states=item.get("when_states", {}),
+                    evidence_type=item.get("evidence_type"),
+                )
                 for item in raw_fields
             )
             return IntakePolicy(

@@ -59,9 +59,13 @@ def test_application_plan_excludes_fact_values_and_limits_questions() -> None:
     payload = plan.model_dump(mode="json")
 
     assert payload["questions"] == ["Укажите время."]
+    assert payload["question_items"] == [
+        {"field_id": "time", "prompt": "Укажите время.", "evidence_type": None}
+    ]
     assert payload["field_states"] == {"location": "known", "time": "missing"}
     assert payload["complete"] is False
     assert payload["policy_version"] == "synthetic-v1"
+    assert payload["required_evidence_types"] == []
     assert "values" not in payload
     assert "text" not in payload
 

@@ -28,6 +28,14 @@ class IntakePlanInput(BaseModel):
         return value
 
 
+class IntakeQuestionItemResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    field_id: str = Field(pattern=r"^[A-Za-z0-9_]+$")
+    prompt: str = Field(min_length=1)
+    evidence_type: str | None = Field(default=None, pattern=r"^[a-z][a-z0-9_]{0,63}$")
+
+
 class IntakePlanResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -38,4 +46,6 @@ class IntakePlanResponse(BaseModel):
     complete: bool
     field_states: dict[str, FieldState]
     questions: list[str]
+    question_items: list[IntakeQuestionItemResponse] = Field(default_factory=list)
+    required_evidence_types: list[str] = Field(default_factory=list)
     advisory_only: Literal[True] = True

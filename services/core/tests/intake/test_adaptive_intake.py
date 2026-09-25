@@ -127,3 +127,55 @@ def test_rejects_duplicate_policy_fields() -> None:
     field = RequiredField("location", {"kk": "Мекенжай", "ru": "Адрес"})
     with pytest.raises(ValueError, match="unique"):
         IntakePolicy("service", "topic", "v1", True, (field, field))
+
+
+def test_conditional_evidence_is_asked_only_after_prerequisite_state() -> None:
+    conditional = IntakePolicy(
+        service_id="roads",
+        topic_id="road_damage",
+        version="synthetic-conditional-v1",
+        approved=True,
+        required_fields=(
+            RequiredField("location", {"kk": "Қайда?", "ru": "Где?"}),
+            RequiredField(
+                "photo",
+                {"kk": "Фото қосыңыз.", "ru": "Добавьте фото."},
+                when_states={"location": FieldState.KNOWN},
+                evidence_type="photo",
+            ),
+        ),
+    )
+    before_location = AdaptiveIntake().plan(policy=conditional, facts=AppealFacts({}), locale="ru")
+    assert before_location.questions == ("Где?",)
+    assert before_location.required_evidence_types == ()
+    assert before_location.complete is False
+
+    after_location = AdaptiveIntake().plan(
+        policy=conditional,
+        facts=AppealFacts({"location": "known", "photo": "missing"}),
+        locale="ru",
+    )
+    assert after_location.questions == ("Добавьте фото.",)
+    assert after_location.question_items[0].field_id == "photo"
+    assert after_location.question_items[0].evidence_type == "photo"
+    assert after_location.required_evidence_types == ("photo",)
+    assert after_location.complete is False
+
+
+def test_conditional_policy_rejects_unknown_or_cyclic_dependencies() -> None:
+    first = RequiredField(
+        "photo", {"kk": "Фото", "ru": "Фото"}, when_states={"location": FieldState.KNOWN}
+    )
+    with pytest.raises(ValueError, match="earlier unconditional"):
+        IntakePolicy("roads", "road_damage", "v1", True, (first,))
+    with pytest.raises(ValueError, match="earlier unconditional"):
+        IntakePolicy(
+            "roads",
+            "road_damage",
+            "v1",
+            True,
+            (
+                first,
+                RequiredField("location", {"kk": "Қайда?", "ru": "Где?"}),
+            ),
+        )

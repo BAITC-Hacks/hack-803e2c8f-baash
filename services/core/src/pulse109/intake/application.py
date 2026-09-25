@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from datetime import datetime, timezone
 
-from .models import IntakePlanInput, IntakePlanResponse
+from .models import IntakePlanInput, IntakePlanResponse, IntakeQuestionItemResponse
 from .repository import IntakePolicyConflict, IntakePolicyRepository
 from .service import AdaptiveIntake, AppealFacts
 
@@ -67,4 +67,13 @@ class IntakeApplicationService:
             complete=result.complete,
             field_states=dict(result.field_states),
             questions=list(result.questions),
+            question_items=[
+                IntakeQuestionItemResponse(
+                    field_id=item.field_id,
+                    prompt=item.prompt,
+                    evidence_type=item.evidence_type,
+                )
+                for item in result.question_items
+            ],
+            required_evidence_types=list(result.required_evidence_types),
         )
