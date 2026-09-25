@@ -4,9 +4,10 @@
 
 - Milestone: cross-cutting governed decision, handoff and evidence-backed closure slices.
 - Status: active. CI run `36169565278` passed quality, PostgreSQL/container checks and security
-  through `0018`, including replay persistence and outcome proof inspection. The durable Decision
-  Gateway assessment with migration `0019` is the current local batch; the full scope from both
-  supplied texts remains in progress.
+  through `0018`, including replay persistence and outcome proof inspection. CI run `36171024892`
+  passed quality and security but exposed a migration `0019` SQL bind-parsing defect during
+  container startup. The migration fix and opt-in Handoff Guard operational metrics are the current
+  batch; the full scope from both supplied texts remains in progress.
 - Branch: `codex/production-platform-20260923`, created without discarding the pre-existing local
   changes. The newer upstream regional-import and ML commits have been merged into the branch.
 - Scope from the two supplied texts: durable manual journey, Handoff Guard, Replay Lab, Outcome
@@ -52,8 +53,9 @@
   values or appeal text and fails closed when no single approved policy exists.
 - M8 Decision Gateway has a pure advisory evaluator for model and ownership candidates. It requires
   an approved confidence policy and explicit required-field states, rejects ownership evidence from
-  a different appeal version, and always requires human confirmation. Runtime policy publication and
-  persistence of gateway assessments are still pending.
+  a different appeal version, and always requires human confirmation. Confidence policy publication
+  and durable assessment receipts are implemented; an operational assessment route remains unmounted
+  until the evidence sources are approved.
 - A new append-only confidence policy catalog keys thresholds to region, model artifact hash,
   taxonomy and preprocessing versions. The reader rejects overlaps and unapproved synthetic facts
   in operational mode; CI applied the migration and checked the database reader.
@@ -106,6 +108,10 @@
   confidence policy in the same transaction, stores only digests and controlled advisory output,
   writes audit/outbox atomically and replays identical assessments without duplicate effects.
   No operational assessment route is mounted while approved model and intake evidence is absent.
+- An opt-in Handoff Guard metric reader counts first-pass acceptance and repeat handoffs after a
+  recorded rejection from explicit regional assignment cohorts. It excludes synthetic test-only
+  appeals, requires an operational source allowlist, reports missing and unmapped evidence and
+  preserves zero-denominator rates as unavailable. No operational dashboard route is mounted.
 - The merged regional research corpus now contains withheld text markers only. Quarantine artifacts
   contain hashes and counts without source row values. New regional ingest withholds executor prose;
   training and evaluation stop on withheld data, and historical reports block quality claims.
@@ -133,7 +139,8 @@
   IDs and organization IDs; handoff outcomes record the mapping used. Its revision ID was shortened
   to `0018_m8_unit_org_crosswalk` to fit Alembic's version column; CI applied it and passed restore.
 - Added `0019_m8_gateway_assessment` for immutable, recommendation-bound advisory decisions with
-  digest-based idempotency. Its database checks await the next batched CI.
+  digest-based idempotency. Its first CI run exposed SQLAlchemy parsing a JSON colon as a bind
+  parameter; the corrected check uses `jsonb_build_object` and awaits the next batched CI.
 
 ## Verification
 
@@ -173,6 +180,9 @@
 | Replay/outcome reader focused       | passed | 22 Python tests, Ruff and mypy; PostgreSQL smoke scenarios passed CI.                   |
 | CI run `36169565278`                | passed | Quality, PostgreSQL integration and restore, security, including replay/outcome smoke.  |
 | Gateway assessment focused          | passed | 20 gateway tests and one DB-only skip; Ruff and mypy pass locally.                      |
+| CI run `36171024892`                | failed | Quality/security passed; PostgreSQL startup stopped while applying `0019` JSON check.  |
+| Alembic `0019` offline SQL           | passed | Full migration chain compiles after replacing the JSON literal with `jsonb_build_object`. |
+| Handoff metric focused checks        | passed | 4 tests and two local PostgreSQL-only skips; Ruff and strict mypy passed.                |
 
 The `make` executable is unavailable in this Windows shell. The equivalent root commands were
 run directly with `uv` and `pnpm`; CI uses the root task runner and performs the database tests.
@@ -223,6 +233,10 @@ CI run <https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/3616842310
 passed every job with the shortened revision ID, PostgreSQL integration and restore.
 CI run <https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/36169565278>
 passed every job with the Replay Lab persistence and Outcome Memory proof inspection scenarios.
+CI run <https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/36171024892>
+passed quality and security but failed in container-smoke because SQLAlchemy interpreted the
+JSON colon inside a migration `op.execute` literal as a bind parameter. The fixed migration
+compiles into offline SQL; the PostgreSQL application check is included in the next batch.
 
 ## Known Limitations And External Blockers
 
@@ -251,8 +265,8 @@ passed every job with the Replay Lab persistence and Outcome Memory proof inspec
   provider before object-storage certification.
 - M8 does not yet provide an admin publication workflow for ownership or intake catalog versions.
   Confidence publication passed database CI, but real calibration evidence has not arrived.
-  The Decision Gateway is a pure component and is not yet wired to an approved operational confidence
-  policy or durable recommendation path.
+  The Decision Gateway has a durable recommendation-bound receipt but is not yet wired to approved
+  operational model and intake evidence or exposed as an operator action.
   The handoff outcome command supports direct organization IDs or a reviewed unit crosswalk, but
   no real regional unit directory has been supplied. No live regional adapter, complete Handoff Guard lifecycle, operational
   Replay Lab pipeline, operational outcome memory reader, full adaptive case schema, or
@@ -281,10 +295,12 @@ passed every job with the Replay Lab persistence and Outcome Memory proof inspec
 - D-052 requires supervised, reasoned override for an organization that already rejected the appeal.
 - D-053 binds offline replay reports to canonical snapshots stored through an immutable object seam.
 - D-054 records fail-closed, version-bound Decision Gateway assessments without acting on them.
+- D-055 defines operational handoff metric cohorts, missing rates and synthetic exclusion.
 
 ## Exact Next Milestone
 
-Run one batched database CI for the Decision Gateway assessment migration and atomic receipt.
+Run one batched database CI for the corrected Decision Gateway assessment migration, atomic
+receipt and operational handoff metric SQL.
 Continue governed outcome-memory corpus preparation, incident lifecycle operations and adaptive
 case evidence capture. Keep live adapters, representative model claims, binding SLA and real PII
 processing dependent on B01-B10.

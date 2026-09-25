@@ -580,6 +580,17 @@ Record implementation decisions here when the repository, contracts or available
 - **Evidence:** migration `0019_m8_gateway_assessment`, assessment repository, focused tests and PostgreSQL integration scenario.
 - **Revisit when:** B02/B04/B05 provide approved model snapshots, taxonomy and calibration evidence.
 
+### D-055 — Measure handoff outcomes from explicit operational cohorts
+
+- **Date:** 2026-09-25
+- **Status:** accepted
+- **Context:** a first-pass acceptance rate or repeated rejected handoff count can be misleading if the cohort silently includes synthetic fixtures, lacks an outcome, counts a later assignment as the first, or guesses a regional unit's organization.
+- **Decision:** compute read-only metrics for one region and a bounded UTC assignment-time interval, using the interval end as the outcome observation cutoff. First-pass acceptance uses the globally first assignment per appeal and its earliest unambiguous observed outcome before the cutoff; unknown outcomes remain unclassified. Repeated rejected handoffs require one approved, effective, non-synthetic organization identity and a recorded rejection on an earlier assignment before the current assignment time. An explicit operational source-system allowlist excludes synthetic test-only appeals. Return raw numerators, denominators, quality and provenance; zero denominators produce an unavailable rate.
+- **Alternatives:** infer outcomes from source status; count the first assignment inside each reporting window; divide by all appeals regardless of outcome; map units by name.
+- **Consequences:** this repository is opt-in and has no dashboard route until the regional source allowlist and publication authority are approved. Unmapped or ambiguous assignments remain visible as data-quality counts.
+- **Evidence:** `pulse109.ownership.metrics`, focused tests and PostgreSQL integration smoke.
+- **Revisit when:** a regional unit directory, approved source registry and reporting definitions are available.
+
 ### D-XXX — Short title
 
 - **Date:** YYYY-MM-DD

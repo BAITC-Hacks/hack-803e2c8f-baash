@@ -29,8 +29,10 @@ def upgrade() -> None:
             evidence_sha256 char(64) NOT NULL CHECK (evidence_sha256 ~ '^[0-9a-f]{64}$'),
             result jsonb NOT NULL CHECK (
                 jsonb_typeof(result) = 'object'
-                AND result @> '{"requires_human_confirmation":true,
-                                 "assigned_organization_id":null}'::jsonb
+                AND result @> jsonb_build_object(
+                    'requires_human_confirmation', true,
+                    'assigned_organization_id', null
+                )
                 AND result ? 'decision'
                 AND result->>'decision' = decision
             ),
