@@ -547,6 +547,17 @@ Record implementation decisions here when the repository, contracts or available
 - **Evidence:** adaptive intake service, PostgreSQL reader, OpenAPI response and focused tests.
 - **Revisit when:** approved regional field taxonomy and evidence classes are provided.
 
+### D-052 — Require supervised review of a repeated rejected handoff
+
+- **Date:** 2026-09-25
+- **Status:** accepted
+- **Context:** the ownership assessment warned about prior rejection, but a manual assignment could still repeat the same organization without a reviewed reason.
+- **Decision:** while locking the appeal for assignment, check recorded rejection for the proposed organization ID or one currently approved unit-to-organization mapping. Refuse the repeat with a conflict until a supervisor or administrator supplies a controlled override reason. Store the override in the appeal event, audit and outbox payload. Keep manual routing available when no organization identity can be established.
+- **Alternatives:** silently permit repeated rejected routes; prohibit all reassignment; infer a target organization from a service name.
+- **Consequences:** a rejected organization's repeat route becomes reviewable and idempotent. Unknown unit identity cannot be guarded until the regional directory is approved; role enforcement depends on the authenticated API boundary.
+- **Evidence:** assignment service, OpenAPI command, route authorization test and PostgreSQL handoff integration scenario.
+- **Revisit when:** an approved regional unit directory and supervisor escalation policy are supplied.
+
 ### D-XXX — Short title
 
 - **Date:** YYYY-MM-DD

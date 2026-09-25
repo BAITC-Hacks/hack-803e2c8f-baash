@@ -4,8 +4,9 @@
 
 - Milestone: cross-cutting governed decision, handoff and evidence-backed closure slices.
 - Status: active. CI passed confidence publication, assignment lookup, closure, recurrence and the
-  offline replay schema through `0017`. The new unit crosswalk and conditional intake rules await
-  the next batched database CI; the full scope from both supplied texts remains in progress.
+  offline replay schema through `0017`. CI for `0018` exposed an Alembic revision-length defect;
+  the revision and CI head assertions are corrected locally for the next batched run. The full
+  scope from both supplied texts remains in progress.
 - Branch: `codex/production-platform-20260923`, created without discarding the pre-existing local
   changes. The newer upstream regional-import and ML commits have been merged into the branch.
 - Scope from the two supplied texts: durable manual journey, Handoff Guard, Replay Lab, Outcome
@@ -87,6 +88,12 @@
 - Adaptive Intake now evaluates policy-authored conditional field dependencies and exposes required
   evidence types after their prerequisites become known. It still receives only field-presence states,
   not submitted values or raw appeal text.
+- The web intake journey renders the value-free policy questions and evidence guidance in a separate
+  step; unavailable policy guidance is labelled without blocking the existing draft journey.
+- The manual assignment command now checks recorded rejection of the proposed organization,
+  including approved regional unit mappings. Repeating that handoff requires a supervisor/admin
+  override with a controlled reason code; the decision is included in audit, timeline and outbox.
+  Assignments without a known target organization remain available on the manual critical path.
 - The merged regional research corpus now contains withheld text markers only. Quarantine artifacts
   contain hashes and counts without source row values. New regional ingest withholds executor prose;
   training and evaluation stop on withheld data, and historical reports block quality claims.
@@ -111,7 +118,8 @@
 - Added `0017_m11_replay_lab` for immutable snapshot manifests and non-promoting aggregate replay
   reports. CI applied the migration and passed database checks and restore.
 - Added `0018_m8_unit_organization_crosswalk` for approved, immutable mappings between regional unit
-  IDs and organization IDs; handoff outcomes record the mapping used. It awaits the next batched CI.
+  IDs and organization IDs; handoff outcomes record the mapping used. Its revision ID was shortened
+  to `0018_m8_unit_org_crosswalk` to fit Alembic's version column; CI awaits the next batched run.
 
 ## Verification
 
@@ -144,6 +152,9 @@
 | Previous Alembic head               | passed | Sole `0017_m11_replay_lab` head applied by CI.                                          |
 | CI run `36051195070`                | passed | Quality, security, PostgreSQL integration and restore through `0017` all succeeded.     |
 | Crosswalk/intake focused            | passed | 32 intake/contract tests, Ruff and mypy (106 files); sole Alembic head is `0018`.       |
+| Handoff guard/API/contract focused  | passed | 29 local tests, Ruff and web typecheck; PostgreSQL guard test awaits batched CI.        |
+| CI run `36167195469`                | failed | Quality and security passed; container migration failed on Alembic's 32-char ID column. |
+| Alembic revision-length check       | passed | All 18 revisions are <=32 characters and one head resolves after the local fix.         |
 
 The `make` executable is unavailable in this Windows shell. The equivalent root commands were
 run directly with `uv` and `pnpm`; CI uses the root task runner and performs the database tests.
@@ -186,6 +197,10 @@ CI run <https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/3604716985
 passed quality, security, PostgreSQL integration and a disposable restore through migration `0014`.
 CI run <https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/36051195070>
 passed quality, security, PostgreSQL integration and restore through migration `0017`.
+CI run <https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/36167195469>
+passed quality and security but failed in container-smoke while migrating `0018`: the revision ID
+exceeded Alembic's default `alembic_version.version_num` length. The shorter revision ID and CI
+assertions are staged for the next batched run.
 
 ## Known Limitations And External Blockers
 
@@ -241,10 +256,11 @@ passed quality, security, PostgreSQL integration and restore through migration `
   retrieval without post-decision intake features.
 - D-050 adds independently reviewed regional unit mappings for human-confirmed handoff outcomes.
 - D-051 extends the value-free intake policy with conditional evidence requirements.
+- D-052 requires supervised, reasoned override for an organization that already rejected the appeal.
 
 ## Exact Next Milestone
 
-Complete one batched database CI for the unit crosswalk and conditional intake changes, then
+Run one batched database CI for the corrected unit crosswalk, Handoff Guard and adaptive UI, then
 continue durable Decision Gateway assessments, replay persistence and verified outcome memory read
 models. Keep live adapters, representative model claims, binding SLA and real PII processing
 dependent on B01-B10.

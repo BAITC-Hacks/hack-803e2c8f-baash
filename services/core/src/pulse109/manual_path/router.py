@@ -170,6 +170,8 @@ def create_manual_router(
     ) -> SyncReceipt:
         identity.require_any_role("operator", "supervisor", "admin")
         identity.require_region(region_id)
+        if command.handoff_override_reason_code is not None:
+            identity.require_any_role("supervisor", "admin")
         try:
             return service.assign(
                 request_id,
@@ -177,6 +179,7 @@ def create_manual_router(
                 idempotency_key=idempotency_key,
                 region_id=region_id,
                 actor=identity.actor_id,
+                override_authorized=bool(identity.roles.intersection({"supervisor", "admin"})),
             )
         except ManualPathError as error:
             raise _error(error) from error

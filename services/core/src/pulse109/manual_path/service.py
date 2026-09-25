@@ -529,6 +529,7 @@ class ManualPathService:
         idempotency_key: str,
         region_id: str,
         actor: str,
+        override_authorized: bool = False,
     ) -> SyncReceipt:
         with self.repository.transaction() as state:
             appeal = self._get(state, request_id, region_id)
@@ -544,6 +545,18 @@ class ManualPathService:
             if appeal.version != command.request_version:
                 raise ManualPathError(
                     "stale_version", "The appeal changed since the operator opened it."
+                )
+            if command.handoff_override_reason_code is not None:
+                if not override_authorized:
+                    raise ManualPathError(
+                        "handoff_override_forbidden",
+                        "A supervisor or administrator must authorize the handoff override.",
+                        403,
+                    )
+                raise ManualPathError(
+                    "handoff_override_not_required",
+                    "No prior rejection supports a handoff override for this assignee.",
+                    409,
                 )
             appeal.status, appeal.version = "assigned", appeal.version + 1
             state.appeals[request_id] = appeal.model_dump(mode="json")

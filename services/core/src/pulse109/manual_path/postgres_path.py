@@ -1225,6 +1225,7 @@ class PostgresManualPathService:
         region_id: str,
         actor: str,
         correlation_id: str = "local-correlation",
+        override_authorized: bool = False,
     ) -> SyncReceipt:
         request_hash = _hash(command.model_dump(mode="json"))
         scope = f"assignment:{request_id}"
@@ -1238,12 +1239,72 @@ class PostgresManualPathService:
                 raise ManualPathError(
                     "stale_version", "The appeal changed since the operator opened it."
                 )
+            if command.handoff_override_reason_code and not override_authorized:
+                raise ManualPathError(
+                    "handoff_override_forbidden",
+                    "A supervisor or administrator must authorize the handoff override.",
+                    403,
+                )
+            loop_risk = False
+            if command.assignee_unit_id is not None:
+                cursor.execute(
+                    """SELECT EXISTS (
+                           SELECT 1 FROM ownership.handoff_outcome AS outcome
+                           WHERE outcome.region_id = %s AND outcome.request_id = %s
+                             AND outcome.disposition = 'rejected'
+                             AND (
+                               outcome.organization_id = %s
+                               OR EXISTS (
+                                 SELECT 1 FROM ownership.unit_organization_mapping AS mapping
+                                 JOIN ownership.organization_version AS org
+                                   ON org.region_id = mapping.region_id
+                                  AND org.organization_id = mapping.organization_id
+                                  AND org.version = mapping.organization_version
+                                 WHERE mapping.region_id = %s AND mapping.service_id = %s
+                                   AND mapping.unit_id = %s
+                                   AND mapping.organization_id = outcome.organization_id
+                                   AND mapping.state = 'approved' AND org.state = 'approved'
+                                   AND NOT mapping.synthetic_only AND NOT org.synthetic_only
+                                   AND mapping.effective_from <= now()
+                                   AND (mapping.effective_to IS NULL
+                                        OR mapping.effective_to > now())
+                                   AND org.effective_from <= now()
+                                   AND (org.effective_to IS NULL OR org.effective_to > now())
+                               )
+                             )
+                       ) AS loop_risk""",
+                    (
+                        region_id,
+                        request_id,
+                        command.assignee_unit_id,
+                        region_id,
+                        command.service_id,
+                        command.assignee_unit_id,
+                    ),
+                )
+                loop_result = cursor.fetchone()
+                loop_risk = bool(loop_result and loop_result["loop_risk"])
+            if loop_risk and command.handoff_override_reason_code is None:
+                raise ManualPathError(
+                    "handoff_loop_requires_supervisor",
+                    "This organization rejected the appeal before; "
+                    "a supervisor must review the handoff.",
+                    409,
+                )
+            if not loop_risk and command.handoff_override_reason_code is not None:
+                raise ManualPathError(
+                    "handoff_override_not_required",
+                    "No prior rejection supports a handoff override for this assignee.",
+                    409,
+                )
             new_version = appeal.version + 1
             payload = {
                 "source_system": appeal.source_system,
                 "service_id": command.service_id,
                 "assignee_unit_id": command.assignee_unit_id,
                 "reason_code": command.reason_code,
+                "handoff_loop_overridden": loop_risk,
+                "handoff_override_reason_code": command.handoff_override_reason_code,
                 "policy_version": command.policy_version,
                 "due_at": command.expected_due_at.isoformat() if command.expected_due_at else None,
             }

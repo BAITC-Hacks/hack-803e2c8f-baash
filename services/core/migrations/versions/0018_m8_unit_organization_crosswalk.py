@@ -2,7 +2,7 @@
 
 from alembic import op
 
-revision = "0018_m8_unit_organization_crosswalk"
+revision = "0018_m8_unit_org_crosswalk"
 down_revision = "0017_m11_replay_lab"
 branch_labels = None
 depends_on = None

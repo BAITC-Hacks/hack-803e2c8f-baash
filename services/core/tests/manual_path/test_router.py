@@ -73,3 +73,53 @@ def test_router_classification_is_versioned_idempotent_and_human_controlled():
     assert unavailable.status_code == 503
     assert unavailable.json()["detail"]["code"] == "model_alias_unavailable"
     assert all("test@example.invalid" not in str(item) for item in repository.state.audit)
+
+
+def test_handoff_override_requires_supervisor_and_a_real_rejection():
+    app = FastAPI()
+    app.include_router(create_manual_router(ManualPathService(InMemoryManualRepository())))
+    with TestClient(app) as client:
+        created = client.post(
+            "/v1/requests",
+            headers={"X-Region-Id": "ALA", "Idempotency-Key": "override-create-001"},
+            json={
+                "source_system": "synthetic-crm",
+                "source_request_id": "OVERRIDE-1",
+                "region_id": "ALA",
+                "received_at": None,
+                "received_at_quality": "missing",
+                "channel": "web",
+                "language": "ru",
+            },
+        )
+        assert created.status_code == 201
+        path = f"/v1/requests/{created.json()['request_id']}/assignments"
+        command = {
+            "request_version": 1,
+            "service_id": "service:roads",
+            "assignee_unit_id": "org:roads",
+            "reason_code": "reviewed_route",
+            "handoff_override_reason_code": "reviewed_again",
+        }
+        operator = client.post(
+            path,
+            headers={
+                "X-Region-Id": "ALA",
+                "X-Actor-Roles": "operator",
+                "Idempotency-Key": "override-operator-001",
+            },
+            json=command,
+        )
+        supervisor = client.post(
+            path,
+            headers={
+                "X-Region-Id": "ALA",
+                "X-Actor-Roles": "supervisor",
+                "Idempotency-Key": "override-supervisor-001",
+            },
+            json=command,
+        )
+    assert operator.status_code == 403
+    assert operator.json()["detail"]["code"] == "role_scope_denied"
+    assert supervisor.status_code == 409
+    assert supervisor.json()["detail"]["code"] == "handoff_override_not_required"

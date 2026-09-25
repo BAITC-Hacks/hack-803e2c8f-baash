@@ -1428,6 +1428,12 @@ components:
           format: date-time
         policy_version:
           type: string
+        handoff_override_reason_code:
+          type: string
+          minLength: 1
+          maxLength: 128
+          pattern: '^[A-Za-z][A-Za-z0-9_:-]*$'
+          description: Supervisor or administrator reason required only when the proposed organization previously rejected this appeal.
     LatestAssignment:
       type: object
       additionalProperties: false

@@ -8,6 +8,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from pulse109.manual_path import PostgresManualPathService, PostgresManualRepository
 from pulse109.manual_path.models import AssignmentCommand, CreateRequest, OperatorDecision
+from pulse109.manual_path.service import ManualPathError
 from pulse109.ownership import (
     HandoffOutcomeCommand,
     HandoffOutcomeError,
@@ -210,7 +211,7 @@ def test_handoff_outcome_atomically_records_append_only_audit_outbox_and_idempot
     service = HandoffOutcomeService(PostgresOwnershipRepository(database_url))
     command = HandoffOutcomeCommand(
         organization_id="org:roads",
-        disposition="accepted",
+        disposition="rejected",
         reason_code="regional_operator_confirmed",
         source_event_id=f"regional-outcome-{source_id}",
         evidence_refs=["sha256:" + "a" * 64],
@@ -274,7 +275,7 @@ def test_handoff_outcome_atomically_records_append_only_audit_outbox_and_idempot
         service.record(
             appeal.request_id,
             assignment_id,
-            command.model_copy(update={"disposition": "rejected"}),
+            command.model_copy(update={"disposition": "accepted"}),
             region_id="ALA",
             actor="synthetic-operator",
             idempotency_key=f"outcome-{source_id}",
@@ -293,6 +294,41 @@ def test_handoff_outcome_atomically_records_append_only_audit_outbox_and_idempot
             correlation_id=f"correlation-{source_id}",
         )
     assert wrong_assignee.value.code == "organization_assignment_mismatch"
+
+    repeated = AssignmentCommand(
+        request_version=3,
+        service_id="service:roads",
+        assignee_unit_id="org:roads",
+        reason_code="synthetic_repeat_route",
+    )
+    with pytest.raises(ManualPathError) as blocked:
+        manual.assign(
+            appeal.request_id,
+            repeated,
+            idempotency_key=f"repeat-blocked-{source_id}",
+            region_id="ALA",
+            actor="synthetic-operator",
+        )
+    assert blocked.value.code == "handoff_loop_requires_supervisor"
+    with pytest.raises(ManualPathError) as unauthorized:
+        manual.assign(
+            appeal.request_id,
+            repeated.model_copy(update={"handoff_override_reason_code": "reviewed_again"}),
+            idempotency_key=f"repeat-unauthorized-{source_id}",
+            region_id="ALA",
+            actor="synthetic-operator",
+        )
+    assert unauthorized.value.code == "handoff_override_forbidden"
+    approved = manual.assign(
+        appeal.request_id,
+        repeated.model_copy(update={"handoff_override_reason_code": "reviewed_again"}),
+        idempotency_key=f"repeat-approved-{source_id}",
+        region_id="ALA",
+        actor="synthetic-supervisor",
+        override_authorized=True,
+    )
+    assert approved.status == "queued"
+    assert manual.detail(appeal.request_id, region_id="ALA").version == 4
 
     with psycopg.connect(url) as connection, connection.cursor() as cursor:
         cursor.execute(

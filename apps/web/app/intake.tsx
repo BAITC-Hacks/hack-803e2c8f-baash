@@ -14,6 +14,16 @@ type DuplicateCandidate = {
   reasons: string[];
   distance_m?: number | null;
 };
+type IntakeQuestionItem = {
+  field_id: string;
+  prompt: string;
+  evidence_type: string | null;
+};
+type IntakePlan = {
+  question_items?: IntakeQuestionItem[];
+  required_evidence_types?: string[];
+  policy_version?: string;
+};
 
 const labels = {
   ru: {
@@ -25,8 +35,15 @@ const labels = {
       "Что произошло?",
       "Где это произошло?",
       "Как с вами связаться?",
+      "Уточните детали обращения",
       "Проверьте возможные дубликаты",
     ],
+    adaptiveTitle: "Вопросы для уточнения",
+    adaptiveIntro:
+      "Оператор может задать эти вопросы, чтобы собрать недостающие сведения. Ответы здесь не записываются.",
+    evidence: "Что может подтвердить ответ",
+    planUnavailable: "Дополнительные вопросы сейчас недоступны.",
+    noQuestions: "Дополнительные вопросы не требуются.",
     description: "Опишите проблему",
     location: "Адрес или ориентир",
     contact: "Предпочтительный канал",
@@ -63,8 +80,15 @@ const labels = {
       "Не болды?",
       "Бұл қай жерде болды?",
       "Сізбен қалай байланысуға болады?",
+      "Өтініш туралы мәліметтерді нақтылаңыз",
       "Ықтимал дубликаттарды тексеріңіз",
     ],
+    adaptiveTitle: "Нақтылау сұрақтары",
+    adaptiveIntro:
+      "Оператор жетіспейтін мәліметтерді жинау үшін осы сұрақтарды қоя алады. Жауаптар мұнда жазылмайды.",
+    evidence: "Жауапты растайтын мәліметтер",
+    planUnavailable: "Қосымша сұрақтар қазір қолжетімсіз.",
+    noQuestions: "Қосымша сұрақтар қажет емес.",
     description: "Мәселені сипаттаңыз",
     location: "Мекенжай немесе бағдар",
     contact: "Қалаулы байланыс арнасы",
@@ -112,10 +136,12 @@ export function Intake({ locale }: { locale: Locale }) {
   const [preflightState, setPreflightState] = useState<
     "idle" | "loading" | "ready" | "unavailable"
   >("idle");
+  const [intakePlan, setIntakePlan] = useState<IntakePlan | null>(null);
+  const [intakePlanUnavailable, setIntakePlanUnavailable] = useState(false);
   const [submittedNumber, setSubmittedNumber] = useState("");
   const [offline, setOffline] = useState(false);
 
-  const progress = useMemo(() => `${step + 1} / 4`, [step]);
+  const progress = useMemo(() => `${step + 1} / 5`, [step]);
 
   function updateDraft<K extends keyof IntakeDraft>(
     key: K,
@@ -140,6 +166,31 @@ export function Intake({ locale }: { locale: Locale }) {
       return;
     }
     if (step === 2) {
+      setIntakePlan(null);
+      setIntakePlanUnavailable(false);
+      const category = inferSyntheticCategory(draft.description);
+      try {
+        const response = await fetch("/api/core/intake/plans", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Region-Id": "ALA",
+          },
+          body: JSON.stringify({
+            service_id: `service:${category}`,
+            topic_id: `topic:${category}`,
+            locale,
+            field_states: { description: "known", location: "known" },
+            max_questions: 5,
+          }),
+        });
+        if (!response.ok) throw new Error("intake_plan_failed");
+        setIntakePlan((await response.json()) as IntakePlan);
+      } catch {
+        setIntakePlanUnavailable(true);
+      }
+    }
+    if (step === 3) {
       setPreflightState("loading");
       const category = inferSyntheticCategory(draft.description);
       try {
@@ -170,7 +221,7 @@ export function Intake({ locale }: { locale: Locale }) {
       }
     }
     setError("");
-    setStep((current) => Math.min(3, current + 1));
+    setStep((current) => Math.min(4, current + 1));
   }
 
   async function submit() {
@@ -251,7 +302,7 @@ export function Intake({ locale }: { locale: Locale }) {
           </span>
         </div>
         <div className="progress-track" aria-hidden="true">
-          <span style={{ width: `${((step + 1) / 4) * 100}%` }} />
+          <span style={{ width: `${((step + 1) / 5) * 100}%` }} />
         </div>
         <p className="step-label">{copy.question[step]}</p>
 
@@ -310,6 +361,41 @@ export function Intake({ locale }: { locale: Locale }) {
           </fieldset>
         )}
         {step === 3 && (
+          <div
+            className="adaptive-intake"
+            aria-labelledby="adaptive-intake-title"
+          >
+            <h2 id="adaptive-intake-title">{copy.adaptiveTitle}</h2>
+            <p>{copy.adaptiveIntro}</p>
+            {intakePlanUnavailable ? (
+              <p role="status">{copy.planUnavailable}</p>
+            ) : (intakePlan?.question_items?.length ?? 0) > 0 ? (
+              <ol className="adaptive-question-list">
+                {intakePlan?.question_items?.map((item) => (
+                  <li key={item.field_id}>
+                    <strong>{item.prompt}</strong>
+                    {item.evidence_type && (
+                      <span className="evidence-tag">{item.evidence_type}</span>
+                    )}
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <p role="status">{copy.noQuestions}</p>
+            )}
+            {(intakePlan?.required_evidence_types?.length ?? 0) > 0 && (
+              <div className="required-evidence">
+                <span>{copy.evidence}</span>
+                <ul>
+                  {intakePlan?.required_evidence_types?.map((evidenceType) => (
+                    <li key={evidenceType}>{evidenceType}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+        {step === 4 && (
           <div className="duplicate-review" aria-labelledby="duplicate-title">
             <h2 id="duplicate-title">{copy.duplicates}</h2>
             <p>{copy.duplicateHint}</p>
@@ -379,7 +465,7 @@ export function Intake({ locale }: { locale: Locale }) {
           >
             {copy.back}
           </button>
-          {step < 3 ? (
+          {step < 4 ? (
             <button className="primary-action" type="button" onClick={goNext}>
               {copy.next}
             </button>

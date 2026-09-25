@@ -32,7 +32,7 @@ The envelope never carries a citizen name, phone number, full street address, un
 | `appeal.content.redacted.v1` | Privacy pipeline | redaction version, redacted text reference, detected PII classes | ML feature builder, operator workspace |
 | `appeal.location.normalized.v1` | Location resolver | geo ID, object ID, precision, match status | Routing, incident detection |
 | `appeal.decision.recorded.v1` | Core | selected topic, service, priority, action, recommendation ID, correction reason | Assignment, feedback dataset, audit |
-| `appeal.assigned.v1` | Core | service ID, unit ID, SLA policy version, due time | Regional adapter, analytics |
+| `appeal.assigned.v1` | Core | service ID, unit ID, SLA policy version, due time, handoff-loop override flag and controlled supervisor reason when applicable | Regional adapter, analytics |
 | `appeal.reassigned.v1` | Core | from service, to service, reason, due-time policy | Regional adapter, misroute metrics |
 | `appeal.status.changed.v1` | Core or adapter | previous status, new status, source event ID, reason | Timeline, notifications, analytics |
 | `appeal.resolved.v1` | Core or adapter | result reference, evidence references, resolution code | Retrieval corpus, citizen notification |

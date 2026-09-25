@@ -159,6 +159,9 @@ class AssignmentCommand(BaseModel):
     reason_code: str = Field(min_length=1)
     expected_due_at: datetime | None = None
     policy_version: str | None = None
+    handoff_override_reason_code: str | None = Field(
+        default=None, min_length=1, max_length=128, pattern=r"^[A-Za-z][A-Za-z0-9_:-]*$"
+    )
 
     @model_validator(mode="after")
     def require_policy_for_due_time(self) -> AssignmentCommand:
