@@ -8,3 +8,11 @@ condition = "AND"
 regexTarget = "line"
 regexes = ['''idempotency_key="synthetic-key-1234"''']
 paths = ['''^services/core/tests/manual_path/test_operational_privacy\.py$''']
+
+[[allowlists]]
+description = "Two fixed synthetic lifecycle idempotency keys in commit fcbac41; later tests generate them"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "line"
+regexes = ['''"Idempotency-Key": "incident-(resolve-0001|bad-reason-01)"''']
+paths = ['''^tests/e2e/test_incident_membership\.py$''']

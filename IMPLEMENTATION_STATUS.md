@@ -3,10 +3,12 @@
 ## Current Milestone
 
 - Milestone: cross-cutting governed decision, handoff and evidence-backed closure slices.
-- Status: active. CI run `36174294807` passed quality, PostgreSQL integration and restore, and
-  security after the Decision Gateway and handoff metric corrections. Current work adds a supervised
-  incident lifecycle, signed bundle verification and a synthetic-only browser intake safety fix;
-  the full scope from both supplied texts remains in progress.
+- Status: active. CI run `36224587228` passed quality and PostgreSQL integration/restore but the
+  full-history secret scan flagged two fixed synthetic lifecycle test keys. The test now generates
+  those keys; a path- and value-scoped history exception preserves the published commit without
+  weakening unrelated scan rules. The corrected scan passes locally and awaits one final CI.
+  Supervised incident lifecycle, signed bundle verification and synthetic-only browser intake are
+  implemented; the full scope from both supplied texts remains in progress.
 - Branch: `codex/production-platform-20260923`, created without discarding the pre-existing local
   changes. The newer upstream regional-import and ML commits have been merged into the branch.
 - Scope from the two supplied texts: durable manual journey, Handoff Guard, Replay Lab, Outcome
@@ -203,6 +205,8 @@
 | Current contract and E2E            | passed | 20 contract and 11 E2E tests passed after the lifecycle OpenAPI update.                   |
 | Current lint and typecheck          | passed | Ruff, Prettier, ESLint, mypy across 112 files and TypeScript passed.                      |
 | Current package and web build       | passed | Python wheel/sdist and Next.js production build completed locally.                        |
+| CI run `36224587228`                | failed | Quality and PostgreSQL/restore passed; history scan found two fixed synthetic test keys.  |
+| Gitleaks 8.30.1 current history     | passed | Exact path/value exception for those historical fixtures; new test keys are generated.    |
 | Final local lint and typecheck      | passed | Ruff, Prettier, ESLint, strict mypy (110 files) and TypeScript checks.                    |
 | Final local tests                   | passed | 197 passed, 19 PostgreSQL-only skips; 19 contract and 11 E2E tests passed.                |
 | Final local build                   | passed | Python sdist/wheel and Next.js production build.                                          |

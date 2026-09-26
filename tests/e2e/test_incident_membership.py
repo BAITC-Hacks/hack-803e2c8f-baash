@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from uuid import uuid4
 
 from fastapi.testclient import TestClient
 from pulse109.main import app, incident_repository
@@ -103,9 +104,10 @@ def test_human_confirmed_incident_preserves_member_appeal_identity() -> None:
     assert client.get(f"/v1/requests/{first_id}", headers={"X-Region-Id": "ALA"}).status_code == 200
 
     lifecycle_headers = {**headers, "X-Actor-Token": "synthetic-supervisor"}
+    close_key = str(uuid4())
     monitoring = client.post(
         f"/v1/incidents/{incident_id}/lifecycle",
-        headers={**lifecycle_headers, "Idempotency-Key": "incident-monitor-0001"},
+        headers={**lifecycle_headers, "Idempotency-Key": str(uuid4())},
         json={
             "incident_version": 2,
             "target_state": "monitoring",
@@ -116,7 +118,7 @@ def test_human_confirmed_incident_preserves_member_appeal_identity() -> None:
     assert monitoring.json()["state"] == "monitoring"
     resolved = client.post(
         f"/v1/incidents/{incident_id}/lifecycle",
-        headers={**lifecycle_headers, "Idempotency-Key": "incident-resolve-0001"},
+        headers={**lifecycle_headers, "Idempotency-Key": str(uuid4())},
         json={
             "incident_version": 3,
             "target_state": "resolved",
@@ -128,7 +130,7 @@ def test_human_confirmed_incident_preserves_member_appeal_identity() -> None:
     assert resolved.json()["state"] == "resolved"
     closed = client.post(
         f"/v1/incidents/{incident_id}/lifecycle",
-        headers={**lifecycle_headers, "Idempotency-Key": "incident-close-0001"},
+        headers={**lifecycle_headers, "Idempotency-Key": close_key},
         json={
             "incident_version": 4,
             "target_state": "closed",
@@ -150,7 +152,7 @@ def test_human_confirmed_incident_preserves_member_appeal_identity() -> None:
     )
     replay = client.post(
         f"/v1/incidents/{incident_id}/lifecycle",
-        headers={**lifecycle_headers, "Idempotency-Key": "incident-close-0001"},
+        headers={**lifecycle_headers, "Idempotency-Key": close_key},
         json={
             "incident_version": 4,
             "target_state": "closed",
@@ -163,7 +165,7 @@ def test_human_confirmed_incident_preserves_member_appeal_identity() -> None:
     assert len(incident_repository.state.events) == len(events)
     malformed_evidence = client.post(
         f"/v1/incidents/{incident_id}/lifecycle",
-        headers={**lifecycle_headers, "Idempotency-Key": "incident-bad-evidence-01"},
+        headers={**lifecycle_headers, "Idempotency-Key": str(uuid4())},
         json={
             "incident_version": 5,
             "target_state": "closed",
@@ -174,7 +176,7 @@ def test_human_confirmed_incident_preserves_member_appeal_identity() -> None:
     assert malformed_evidence.status_code == 422
     malformed_reason = client.post(
         f"/v1/incidents/{incident_id}/lifecycle",
-        headers={**lifecycle_headers, "Idempotency-Key": "incident-bad-reason-01"},
+        headers={**lifecycle_headers, "Idempotency-Key": str(uuid4())},
         json={
             "incident_version": 5,
             "target_state": "closed",
