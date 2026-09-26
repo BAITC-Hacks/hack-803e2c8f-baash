@@ -72,7 +72,8 @@ class PostgresOutboxRepository:
                     RETURNING outbox.event_id, outbox.event_type, outbox.subject_id,
                               outbox.region_id, outbox.payload, outbox.correlation_id,
                               outbox.status, outbox.attempts, outbox.available_at,
-                              outbox.external_id, outbox.last_error_code, outbox.worker_id
+                              outbox.external_id, outbox.last_error_code, outbox.worker_id,
+                              outbox.processing_started_at
                     """,
                     (now, limit, now, worker_id),
                 )
@@ -96,6 +97,7 @@ class PostgresOutboxRepository:
             external_id=row["external_id"],
             last_error_code=row["last_error_code"],
             claim_worker_id=str(row["worker_id"]),
+            processing_started_at=row.get("processing_started_at"),
         )
         return envelope
 

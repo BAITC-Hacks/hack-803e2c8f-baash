@@ -146,3 +146,35 @@ def test_source_freshness_exposes_timestamp_without_inventing_missing_row() -> N
     assert freshness.rows[0][2] is not None
     assert all(row[0] != "KAR" for row in freshness.rows)
     assert freshness.missing_regions == ["KAR"]
+
+
+def test_alert_review_route() -> None:
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from pulse109.analytics.router import create_analytics_router
+
+    store = AlertStore()
+    alert = store.detect(
+        alert_type="data_quality",
+        region_id="ALA",
+        metric_id="coverage",
+        metric_version="1.0.0",
+        severity="warning",
+        detected_at=datetime.now(timezone.utc),
+        observed_value=None,
+        baseline=None,
+        evidence={"source": "synthetic"},
+    )
+    router = create_analytics_router(AnalyticsService(), store)
+    app = FastAPI()
+    app.include_router(router)
+    client = TestClient(app)
+
+    response = client.post(
+        f"/v1/alerts/{alert.alert_id}/reviews",
+        headers={"X-Region-Id": "ALA"},
+        json={"action": "acknowledge", "disposition": "verified", "evidence_refs": ["ref-1"]},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "acknowledged"

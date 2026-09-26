@@ -27,9 +27,26 @@ def test_openapi_31_contract_is_valid_and_stable() -> None:
         if method in {"get", "post", "put", "patch", "delete"}
     ]
     assert document["openapi"] == "3.1.0"
-    assert len(operations) == 34
-    assert len({item["operationId"] for item in operations}) == 34
-    assert len(document["components"]["schemas"]) == 56
+    assert len(operations) == 35
+    assert len({item["operationId"] for item in operations}) == 35
+    assert len(document["components"]["schemas"]) == 57
+
+
+def test_alert_review_contract_is_valid() -> None:
+    with (ROOT / "contracts/openapi.yaml").open(encoding="utf-8") as stream:
+        document = yaml.safe_load(stream)
+    validator = Draft202012Validator(document["components"]["schemas"]["AlertReviewCommand"])
+    valid_command = {
+        "action": "acknowledge",
+        "disposition": "verified_by_supervisor",
+        "evidence_refs": ["ref-123"],
+    }
+    assert list(validator.iter_errors(valid_command)) == []
+    invalid_command = {
+        "action": "invalid_action",
+        "disposition": "verified",
+    }
+    assert list(validator.iter_errors(invalid_command))
 
 
 def test_incident_lifecycle_contract_requires_controlled_evidence_refs() -> None:

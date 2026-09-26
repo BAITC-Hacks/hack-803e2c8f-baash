@@ -41,3 +41,33 @@ def test_structured_logging_rejects_raw_or_unbounded_fields() -> None:
     log_safe(logger, logging.INFO, "assignment queued", region_id="ALA", status="queued")
     with pytest.raises(ValueError, match="unsafe"):
         log_safe(logger, logging.INFO, "must not log body", appeal_text="private")
+    with pytest.raises(ValueError, match="unsafe"):
+        log_safe(logger, logging.INFO, "must not log phone", phone="+77001234567")
+    with pytest.raises(ValueError, match="unsafe"):
+        log_safe(logger, logging.INFO, "must not log citizen", citizen_name="John Doe")
+    with pytest.raises(ValueError, match="unsafe"):
+        log_safe(logger, logging.INFO, "must not log address", address="Abay Ave 10")
+
+
+def test_json_formatter_never_serializes_unauthorized_fields() -> None:
+    formatter = JsonFormatter()
+    record = logging.LogRecord(
+        name="test",
+        level=logging.INFO,
+        pathname="test.py",
+        lineno=1,
+        msg="safe status update",
+        args=(),
+        exc_info=None,
+    )
+    # Even if someone bypassed log_safe and set safe_fields containing unsafe fields
+    record.safe_fields = {  # type: ignore[attr-defined]
+        "region_id": "ALA",
+        "raw_text": "leak candidate",
+        "phone": "+77019998877",
+    }
+    formatted = formatter.format(record)
+    assert "region_id" in formatted
+    assert "leak candidate" not in formatted
+    assert "+77019998877" not in formatted
+    assert "phone" not in formatted

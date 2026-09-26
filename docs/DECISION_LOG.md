@@ -657,6 +657,28 @@ Record implementation decisions here when the repository, contracts or available
 - **Evidence:** `contracts/openapi.yaml`, `services/core/src/pulse109/replay/`, `apps/web/app/incident-topology-panel.tsx`, `apps/web/app/replay-lab-panel.tsx`, `tests/contract/test_contracts.py`, `services/core/tests/replay/test_router.py`.
 - **Revisit when:** approved production candidate policies and live regional datasets are ingested.
 
+### D-062 — Governed anomaly detectors and actionable Situation Center alert review
+
+- **Date:** 2026-09-26
+- **Status:** accepted
+- **Context:** operators and regional supervisors require automated detection of operational anomalies (handoff loops, reopen spikes, adapter lag, override spikes) and the ability to review, acknowledge, or dismiss alerts with controlled disposition codes without losing audit trail.
+- **Decision:** implement modular detectors (`HandoffLoopDetector`, `ReopenSpikeDetector`, `AdapterLagDetector`, `OverrideSpikeDetector`) orchestrated by `AlertDetectorEngine` with active alert deduplication. Map detected anomalies to existing database-constrained alert types (`volume_spike`, `incident_growth`, `sla_risk`, `data_quality`, `model_drift`) with specific detector metadata in evidence. Mount `POST /v1/alerts/{alert_id}/reviews` with authenticated role checks (`operator`, `supervisor`, `analyst`, `auditor`, `admin`), regional isolation, and controlled action codes (`acknowledge`, `resolve`, `dismiss`). Provide interactive alert triage in Situation Center frontend.
+- **Alternatives:** autonomous automated rule mutators; unstructured string alerts; unmonitored outbox backlogs.
+- **Consequences:** operations team can detect handoff ping-pong ($A \to B \to A$), delivery delays, and routing model drift early; every alert review produces immutable audit and timeline evidence.
+- **Evidence:** `contracts/openapi.yaml`, `services/core/src/pulse109/analytics/detectors.py`, `services/core/tests/analytics/test_detectors.py`, `apps/web/app/situation-center.tsx`, `tests/contract/test_contracts.py`.
+- **Revisit when:** real-time streaming event processing or WebSocket push alerts are approved.
+
+### D-063 — Privacy reference boundary and immutable PII access audit
+
+- **Date:** 2026-09-26
+- **Status:** accepted
+- **Context:** citizen PII (names, phone numbers, addresses, personal identifiers) must be isolated from feature data, inference pipelines, traces, metric labels, and application logs. Resolving private references or unmasking data requires strict access scope validation and an immutable audit trail.
+- **Decision:** implement `pulse109.privacy` service backed by `privacy.private_ref` and `audit.audit_event`. Require authenticated actor roles to intersect the reference's `access_scope` and match regional bounds before returning private details. Whenever a private reference is accessed, atomically write an immutable audit event (`PII_VIEWED`, `PII_REVEALED`, `PII_EXPORTED`) recording actor, action, timestamp, and purpose code. Never include raw PII text in audit payloads, metric labels, logger output, or OpenTelemetry trace spans.
+- **Alternatives:** plain text storage in application database; un-audited token resolution; ad-hoc regex redaction at log egress.
+- **Consequences:** zero PII leakage guarantee across the platform; compliance with citizen data protection laws and access governance; every PII view is fully accountable.
+- **Evidence:** `services/core/src/pulse109/privacy/`, `services/core/tests/privacy/test_privacy_service.py`, `services/core/tests/test_observability.py`.
+- **Revisit when:** HSM / external vault integration and homomorphic encryption are specified.
+
 ### D-XXX — Short title
 
 - **Date:** YYYY-MM-DD

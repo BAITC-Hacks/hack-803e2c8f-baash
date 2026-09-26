@@ -684,6 +684,37 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Alert'
+  /v1/alerts/{alert_id}/reviews:
+    post:
+      tags: [Analytics]
+      summary: Review, acknowledge, or dismiss an actionable alert
+      operationId: reviewAlert
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: alert_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/RegionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlertReviewCommand'
+      responses:
+        '200':
+          description: Alert reviewed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alert'
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
   /v1/analytics/query:
     post:
       tags: [Analytics]
@@ -2043,6 +2074,24 @@ components:
           type: number
           minimum: 0
           maximum: 1
+    AlertReviewCommand:
+      type: object
+      additionalProperties: false
+      required: [action, disposition]
+      properties:
+        action:
+          type: string
+          enum: [acknowledge, resolve, dismiss]
+        disposition:
+          type: string
+          minLength: 1
+          maxLength: 256
+        evidence_refs:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 256
     AnalyticsQuery:
       type: object
       additionalProperties: false

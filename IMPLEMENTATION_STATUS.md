@@ -384,10 +384,19 @@ absolute `1e-12` tolerance, with focused acceptance and rejection tests. Databas
 - D-056 through D-058 record supervised incident transitions, signed-bundle trust and safe browser
   submission behavior.
 - D-059 makes every membership decision advance the incident aggregate version.
+- D-060 implements supervised incident topology operations (merge, split, reopen) with cycle prevention,
+  attachment evidence checks, and aggregate version lineage.
+- D-061 implements Replay Lab inspection API, demographic/language slice breakdowns (KK, RU, mixed),
+  and operator UI panels for Topology and Replay.
+- D-062 implements governed anomaly detectors (handoff loops, reopen spikes, adapter lag, override spikes),
+  active alert deduplication, authenticated alert review API (`POST /v1/alerts/{alert_id}/reviews`),
+  and interactive triage in Situation Center.
+- D-063 establishes the strict privacy reference boundary (`pulse109.privacy`) with role-based access scope
+  enforcement, immutable PII access audit emission (`PII_VIEWED`, `PII_REVEALED`, `PII_EXPORTED`), and zero
+  PII leakage in logs, metrics, and traces.
 
 ## Exact Next Milestone
 
-Finish local checks for membership versioning, bundle activation and the operator closure panel,
-then run one batched CI. Continue governed incident merge/split/reopen and adaptive case evidence
-capture. Keep live adapters, representative model claims, binding SLA and real PII processing
-dependent on B01-B10.
+Deploy updated containers to CI/staging environment. Run live PostgreSQL integration tests and verify
+end-to-end incident topology, control plane bundle activation, and Situation Center alert triage.
+Keep external CRM live connectivity dependent on B01-B10 sandbox approval.

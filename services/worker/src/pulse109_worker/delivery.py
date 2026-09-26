@@ -36,6 +36,7 @@ class OutboxEnvelope:
     external_id: str | None = None
     last_error_code: str | None = None
     claim_worker_id: str | None = None
+    processing_started_at: datetime | None = None
 
 
 @dataclass(frozen=True)
@@ -54,6 +55,23 @@ class DeliveryRepository:
     attempts: list[DeliveryAttempt] = field(default_factory=list)
     dead_letters: dict[str, str] = field(default_factory=dict)
 
+    def recover_expired_leases(self, *, at: datetime, lease_seconds: int = 300) -> int:
+        cutoff = at - timedelta(seconds=lease_seconds)
+        recovered = 0
+        for record in self.outbox.values():
+            if (
+                record.status == "processing"
+                and record.processing_started_at is not None
+                and record.processing_started_at < cutoff
+            ):
+                record.status = "retrying"
+                record.processing_started_at = None
+                record.claim_worker_id = None
+                record.last_error_code = "delivery_lease_expired"
+                record.next_attempt_at = at
+                recovered += 1
+        return recovered
+
 
 class OutboxDeliveryService:
     def __init__(
@@ -69,14 +87,26 @@ class OutboxDeliveryService:
         *,
         jitter_value: float = 0.0,
         at: datetime | None = None,
+        lease_seconds: int = 300,
     ) -> OutboxEnvelope:
         record = self.repository.outbox[event_id]
         now = at or datetime.now(timezone.utc)
         if record.status in {"published", "dead_letter"}:
             return record
+        if record.status == "processing":
+            if (
+                record.processing_started_at is not None
+                and now - record.processing_started_at < timedelta(seconds=lease_seconds)
+            ):
+                return record
+            # Lease has expired; recover to retrying
+            record.status = "retrying"
+            record.last_error_code = "delivery_lease_expired"
+            record.processing_started_at = None
         if record.status == "retrying" and record.next_attempt_at and record.next_attempt_at > now:
             return record
         record.status = "processing"
+        record.processing_started_at = now
         record.attempts += 1
         try:
             if record.event_type in {"appeal.assigned.v1", "appeal.reassigned.v1"}:
@@ -117,6 +147,7 @@ class OutboxDeliveryService:
             record.external_id = result.external_id
             record.last_error_code = None
             record.next_attempt_at = None
+            record.processing_started_at = None
             self.repository.attempts.append(
                 DeliveryAttempt(
                     record.event_id,
@@ -129,6 +160,7 @@ class OutboxDeliveryService:
             )
         except AdapterError as error:
             record.last_error_code = error.code
+            record.processing_started_at = None
             if not error.retryable or record.attempts >= self.policy.max_attempts:
                 record.status = "dead_letter"
                 self.repository.dead_letters[record.event_id] = error.code

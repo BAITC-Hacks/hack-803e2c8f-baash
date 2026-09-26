@@ -50,6 +50,27 @@ class AlertStore:
         )
         return self.create(alert)
 
+    def get(self, alert_id: UUID) -> Alert | None:
+        alert = self.alerts.get(alert_id)
+        return deepcopy(alert) if alert is not None else None
+
+    def list(
+        self,
+        *,
+        region_id: str | None = None,
+        status: str | None = None,
+        from_: datetime | None = None,
+        to: datetime | None = None,
+    ) -> list[Alert]:
+        return [
+            deepcopy(item)
+            for item in self.alerts.values()
+            if (region_id is None or region_id == "ALL" or item.region_id == region_id)
+            and (status is None or item.status == status)
+            and (from_ is None or item.detected_at >= from_)
+            and (to is None or item.detected_at <= to)
+        ]
+
     def review(self, review: AlertReview) -> Alert:
         current = self.alerts.get(review.alert_id)
         if current is None:

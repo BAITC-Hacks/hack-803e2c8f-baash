@@ -4,24 +4,113 @@ import {
   AlertTriangle,
   BarChart3,
   Check,
+  CheckCircle2,
   Clock3,
   FileSpreadsheet,
   FileText,
   MapPinned,
   RefreshCw,
+  ShieldAlert,
+  XCircle,
 } from "lucide-react";
 import { useState } from "react";
 
 import { SituationMap } from "./situation-map";
 
+interface ActionableAlert {
+  id: string;
+  type: "data_quality" | "model_drift" | "incident_growth" | "sla_risk";
+  title: string;
+  region: string;
+  severity: "critical" | "high" | "warning" | "info";
+  status: "new" | "acknowledged" | "resolved" | "dismissed";
+  evidence: string;
+  detector: string;
+  metricId: string;
+}
+
+const initialAlerts: ActionableAlert[] = [
+  {
+    id: "alert-dq-01",
+    type: "data_quality",
+    title: "Data quality alert",
+    region: "KAR",
+    severity: "warning",
+    status: "new",
+    evidence: "Source batch missing",
+    detector: "source_freshness",
+    metricId: "coverage · v1.0.0",
+  },
+  {
+    id: "alert-hl-02",
+    type: "model_drift",
+    title: "Handoff loop alert",
+    region: "ALA",
+    severity: "high",
+    status: "new",
+    evidence: "Cycle: roads -> utilities -> roads (req-ala-109)",
+    detector: "handoff_loop",
+    metricId: "appeals_volume · v1.0.0",
+  },
+  {
+    id: "alert-rs-03",
+    type: "incident_growth",
+    title: "Reopen spike alert",
+    region: "AST",
+    severity: "high",
+    status: "new",
+    evidence: "3 reopens within 24h on heating infrastructure",
+    detector: "reopen_spike",
+    metricId: "appeals_volume · v1.0.0",
+  },
+  {
+    id: "alert-al-04",
+    type: "sla_risk",
+    title: "Adapter delivery lag",
+    region: "ALA",
+    severity: "warning",
+    status: "new",
+    evidence: "Outbox delivery delay 420s (2 retries)",
+    detector: "adapter_lag",
+    metricId: "sla_risk · v1.0.0",
+  },
+];
+
 const trend = [8, 10, 9, 12, 11, 13, 8];
 const maxTrend = Math.max(...trend);
 
 export function SituationCenter() {
-  const [alertState, setAlertState] = useState<"new" | "acknowledged">("new");
+  const [alerts, setAlerts] = useState<ActionableAlert[]>(initialAlerts);
+  const [selectedAlertId, setSelectedAlertId] = useState<string>("alert-dq-01");
+  const [dispositionCode, setDispositionCode] = useState<string>(
+    "VERIFIED_BY_OPERATOR",
+  );
+  const [lastReviewReceipt, setLastReviewReceipt] = useState<string | null>(
+    null,
+  );
   const [reportState, setReportState] = useState<"idle" | "pdf" | "xlsx">(
     "idle",
   );
+
+  const selectedAlert =
+    alerts.find((a) => a.id === selectedAlertId) ?? alerts[0];
+
+  function handleReview(action: "acknowledge" | "resolve" | "dismiss") {
+    const targetStatus =
+      action === "acknowledge"
+        ? "acknowledged"
+        : action === "resolve"
+          ? "resolved"
+          : "dismissed";
+    setAlerts((prev) =>
+      prev.map((a) =>
+        a.id === selectedAlert.id ? { ...a, status: targetStatus } : a,
+      ),
+    );
+    setLastReviewReceipt(
+      `Alert ${selectedAlert.id} [${action.toUpperCase()}]: ${dispositionCode} at ${new Date().toISOString()}`,
+    );
+  }
 
   return (
     <section className="situation" aria-labelledby="situation-title">
@@ -114,33 +203,172 @@ export function SituationCenter() {
         <section className="alert-panel" aria-labelledby="alert-title">
           <div className="panel-heading">
             <div>
-              <p className="eyebrow">Action required</p>
-              <h2 id="alert-title">Data quality alert</h2>
+              <p className="eyebrow">
+                Action required · {selectedAlert.detector}
+              </p>
+              <h2 id="alert-title">{selectedAlert.title}</h2>
             </div>
             <AlertTriangle aria-hidden="true" size={20} />
           </div>
+
+          <div
+            style={{
+              display: "flex",
+              gap: "6px",
+              margin: "8px 0 12px 0",
+              overflowX: "auto",
+              paddingBottom: "4px",
+            }}
+          >
+            {alerts.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setSelectedAlertId(item.id)}
+                style={{
+                  fontSize: "12px",
+                  padding: "4px 8px",
+                  borderRadius: "4px",
+                  border:
+                    item.id === selectedAlert.id
+                      ? "1px solid var(--accent, #0066cc)"
+                      : "1px solid var(--line, #ccc)",
+                  background:
+                    item.id === selectedAlert.id
+                      ? "var(--accent-subtle, #e6f0fa)"
+                      : "transparent",
+                  cursor: "pointer",
+                  fontWeight: item.id === selectedAlert.id ? 600 : 400,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {item.region}: {item.title.replace(" alert", "")} (
+                {item.status.slice(0, 3)})
+              </button>
+            ))}
+          </div>
+
           <dl className="alert-details">
             <div>
               <dt>Region</dt>
-              <dd>KAR</dd>
+              <dd>{selectedAlert.region}</dd>
             </div>
             <div>
               <dt>State</dt>
-              <dd>{alertState}</dd>
+              <dd>{selectedAlert.status}</dd>
+            </div>
+            <div>
+              <dt>Severity</dt>
+              <dd>{selectedAlert.severity.toUpperCase()}</dd>
             </div>
             <div>
               <dt>Evidence</dt>
-              <dd>Source batch missing</dd>
+              <dd>{selectedAlert.evidence}</dd>
             </div>
           </dl>
-          <button
-            className="secondary-action"
-            disabled={alertState === "acknowledged"}
-            onClick={() => setAlertState("acknowledged")}
-            type="button"
+
+          <div
+            style={{
+              margin: "8px 0",
+              display: "flex",
+              flexDirection: "column",
+              gap: "4px",
+            }}
           >
-            <Check aria-hidden="true" size={16} /> Acknowledge
-          </button>
+            <label
+              htmlFor="disposition-select"
+              style={{ fontSize: "11px", color: "var(--muted, #666)" }}
+            >
+              Review disposition code:
+            </label>
+            <select
+              id="disposition-select"
+              value={dispositionCode}
+              onChange={(e) => setDispositionCode(e.target.value)}
+              style={{
+                fontSize: "12px",
+                padding: "4px 8px",
+                borderRadius: "4px",
+                border: "1px solid var(--line, #ccc)",
+                background: "var(--surface, #fff)",
+              }}
+            >
+              <option value="VERIFIED_BY_OPERATOR">VERIFIED_BY_OPERATOR</option>
+              <option value="RECONFIGURED">RECONFIGURED</option>
+              <option value="EXTERNAL_BATCH_RETRIEVED">
+                EXTERNAL_BATCH_RETRIEVED
+              </option>
+              <option value="FALSE_POSITIVE">FALSE_POSITIVE</option>
+              <option value="ESCALATED_TO_SUPERVISOR">
+                ESCALATED_TO_SUPERVISOR
+              </option>
+            </select>
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              gap: "8px",
+              marginTop: "auto",
+              flexWrap: "wrap",
+            }}
+          >
+            <button
+              className="secondary-action"
+              disabled={selectedAlert.status !== "new"}
+              onClick={() => handleReview("acknowledge")}
+              type="button"
+            >
+              <Check aria-hidden="true" size={16} /> Acknowledge
+            </button>
+            <button
+              className="secondary-action"
+              disabled={
+                selectedAlert.status === "resolved" ||
+                selectedAlert.status === "dismissed"
+              }
+              onClick={() => handleReview("resolve")}
+              type="button"
+              style={{ color: "var(--success, #008800)" }}
+            >
+              <CheckCircle2 aria-hidden="true" size={16} /> Resolve
+            </button>
+            <button
+              className="secondary-action"
+              disabled={
+                selectedAlert.status === "resolved" ||
+                selectedAlert.status === "dismissed"
+              }
+              onClick={() => handleReview("dismiss")}
+              type="button"
+              style={{ color: "var(--muted, #888)" }}
+            >
+              <XCircle aria-hidden="true" size={16} /> Dismiss
+            </button>
+          </div>
+
+          {lastReviewReceipt && (
+            <p
+              style={{
+                fontSize: "11px",
+                color: "var(--muted, #666)",
+                marginTop: "8px",
+                wordBreak: "break-all",
+              }}
+            >
+              <ShieldAlert
+                aria-hidden="true"
+                size={12}
+                style={{ display: "inline", marginRight: "4px" }}
+              />
+              {lastReviewReceipt}
+            </p>
+          )}
+
+          <div className="metric-footer" style={{ marginTop: "8px" }}>
+            <span>Metric ID: {selectedAlert.metricId}</span>
+            <strong>{selectedAlert.severity}</strong>
+          </div>
         </section>
 
         <section className="forecast-panel" aria-labelledby="forecast-title">
