@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -193,17 +194,26 @@ else:
     alert_store = AlertStore()
 
 if synthetic_read_models:
-    alert_store.detect(
-        alert_type="data_quality",
-        region_id="KAR",
-        metric_id="coverage",
-        metric_version="1.0.0",
-        severity="warning",
-        detected_at=datetime(2026, 9, 10, 23, 59, tzinfo=timezone.utc),
-        observed_value=None,
-        baseline=None,
-        evidence={"state": "missing", "source": "synthetic://m6/read-model/1.0.0"},
-    )
+    # Seeding demo alerts is a convenience, never a startup requirement. In
+    # postgres mode this is a real INSERT, and an unreachable database at
+    # import time used to exit the process with code 1 instead of letting
+    # /v1/health/ready report the real state. Degrade instead of dying.
+    try:
+        alert_store.detect(
+            alert_type="data_quality",
+            region_id="KAR",
+            metric_id="coverage",
+            metric_version="1.0.0",
+            severity="warning",
+            detected_at=datetime(2026, 9, 10, 23, 59, tzinfo=timezone.utc),
+            observed_value=None,
+            baseline=None,
+            evidence={"state": "missing", "source": "synthetic://m6/read-model/1.0.0"},
+        )
+    except Exception:
+        logging.getLogger(__name__).warning(
+            "demo alert seed skipped, storage unavailable at import", exc_info=True
+        )
 app.include_router(create_analytics_router(analytics_service, alert_store))
 
 report_runtime = ReportRuntime(analytics_service)

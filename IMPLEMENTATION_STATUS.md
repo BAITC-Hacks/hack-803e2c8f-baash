@@ -445,4 +445,3 @@ absolute `1e-12` tolerance, with focused acceptance and rejection tests. Databas
 Deploy updated containers to CI/staging environment. Run live PostgreSQL integration tests and verify
 end-to-end incident topology, control plane bundle activation, and Situation Center alert triage.
 Keep external CRM live connectivity dependent on B01-B10 sandbox approval.
-

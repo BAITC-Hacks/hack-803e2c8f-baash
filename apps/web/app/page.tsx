@@ -505,7 +505,9 @@ export default function OperatorWorkspace() {
             <div
               className="queue"
               role="table"
-              aria-label={isLive ? "Live appeal queue" : "Synthetic appeal queue"}
+              aria-label={
+                isLive ? "Live appeal queue" : "Synthetic appeal queue"
+              }
             >
               <div className="queue-head" role="row">
                 <span role="columnheader">Appeal</span>

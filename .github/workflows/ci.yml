@@ -49,6 +49,14 @@ jobs:
         run: uv sync --all-groups --frozen
       - name: Start local topology and wait for health
         run: docker compose -f infra/compose/docker-compose.yml up --build --wait --wait-timeout 300
+
+      - name: Dump container logs on failure
+        if: failure()
+        run: |
+          # Without this, a container that exits non-zero shows only
+          # "dependency failed to start" and the real traceback is lost.
+          docker compose -f infra/compose/docker-compose.yml ps -a
+          docker compose -f infra/compose/docker-compose.yml logs --no-color --tail=200
       - name: Verify service endpoints
         run: |
           curl --fail http://127.0.0.1:8080/v1/health/ready
