@@ -20,6 +20,7 @@ class IncidentState:
     events: list[dict[str, Any]] = field(default_factory=list)
     audit: list[dict[str, Any]] = field(default_factory=list)
     outbox: list[dict[str, Any]] = field(default_factory=list)
+    topology_decisions: list[dict[str, Any]] = field(default_factory=list)
 
 
 class InMemoryIncidentRepository:

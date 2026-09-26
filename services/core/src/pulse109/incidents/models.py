@@ -35,7 +35,7 @@ class CreateIncident(BaseModel):
 
 class Incident(BaseModel):
     incident_id: UUID
-    state: Literal["proposed", "confirmed", "rejected", "monitoring", "resolved", "closed"]
+    state: Literal["proposed", "confirmed", "rejected", "monitoring", "resolved", "closed", "superseded"]
     region_id: str
     topic_id: str
     service_id: str | None = None
@@ -84,4 +84,36 @@ class IncidentLifecycleCommand(BaseModel):
     def require_resolution_evidence(self) -> "IncidentLifecycleCommand":
         if self.target_state in {"resolved", "closed"} and not self.evidence_refs:
             raise ValueError("resolution and closure require evidence_refs")
+        return self
+
+
+class IncidentMergeCommand(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    target_incident_id: UUID
+    source_version: int = Field(ge=1)
+    target_version: int = Field(ge=1)
+    member_request_ids: list[UUID] = Field(min_length=2, max_length=500)
+    reason_code: str = Field(pattern=r"^[A-Z][A-Z0-9_]{0,63}$")
+    evidence_refs: list[Annotated[str, Field(pattern=r"^[0-9a-f]{64}$")]] = Field(min_length=1, max_length=20)
+
+    @model_validator(mode="after")
+    def unique_members(self) -> "IncidentMergeCommand":
+        if len(set(self.member_request_ids)) != len(self.member_request_ids):
+            raise ValueError("member_request_ids must be unique")
+        return self
+
+
+class IncidentSplitCommand(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    source_version: int = Field(ge=1)
+    member_request_ids: list[UUID] = Field(min_length=2, max_length=500)
+    reason_code: str = Field(pattern=r"^[A-Z][A-Z0-9_]{0,63}$")
+    evidence_refs: list[Annotated[str, Field(pattern=r"^[0-9a-f]{64}$")]] = Field(min_length=1, max_length=20)
+
+    @model_validator(mode="after")
+    def unique_members(self) -> "IncidentSplitCommand":
+        if len(set(self.member_request_ids)) != len(self.member_request_ids):
+            raise ValueError("member_request_ids must be unique")
         return self
