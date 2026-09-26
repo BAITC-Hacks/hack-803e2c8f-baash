@@ -1,6 +1,6 @@
 """Governed analytics ownership boundary."""
 
-from .alerts import AlertStore
+from .alerts import AlertStore, PostgresAlertStore
 from .detectors import (
     AdapterLagDetector,
     AlertDetectorEngine,
@@ -18,6 +18,7 @@ __all__ = [
     "AnalyticsService",
     "HandoffLoopDetector",
     "OverrideSpikeDetector",
+    "PostgresAlertStore",
     "ReopenSpikeDetector",
     "create_analytics_router",
 ]

@@ -27,9 +27,9 @@ def test_openapi_31_contract_is_valid_and_stable() -> None:
         if method in {"get", "post", "put", "patch", "delete"}
     ]
     assert document["openapi"] == "3.1.0"
-    assert len(operations) == 37
-    assert len({item["operationId"] for item in operations}) == 37
-    assert len(document["components"]["schemas"]) == 60
+    assert len(operations) == 42
+    assert len({item["operationId"] for item in operations}) == 42
+    assert len(document["components"]["schemas"]) == 67
 
 
 def test_control_plane_bundle_contract_is_valid() -> None:
@@ -305,3 +305,71 @@ def test_replay_report_contract_validates_structure() -> None:
         "language_slice_agreement": {"kk": 0.82, "ru": 0.86, "mixed": 0.80},
     }
     assert list(metrics_validator.iter_errors(metrics)) == []
+
+
+def test_attachment_contract_schemas_are_valid() -> None:
+    with (ROOT / "contracts/openapi.yaml").open(encoding="utf-8") as stream:
+        document = yaml.safe_load(stream)
+
+    upload_validator = Draft202012Validator(
+        document["components"]["schemas"]["AttachmentUploadInput"]
+    )
+    ref_validator = Draft202012Validator(document["components"]["schemas"]["AttachmentRef"])
+
+    valid_upload = {
+        "filename": "photo.jpg",
+        "content_b64": "aGVsbG8=",
+        "media_type": "image/jpeg",
+        "data_classification": "public",
+    }
+    assert list(upload_validator.iter_errors(valid_upload)) == []
+
+    valid_ref = {
+        "id": "00000000-0000-0000-0000-000000000001",
+        "appeal_id": "00000000-0000-0000-0000-000000000002",
+        "object_ref": "s3://attachments/file.jpg",
+        "object_hash": "a" * 64,
+        "media_type": "image/jpeg",
+        "byte_size": 1024,
+        "data_classification": "public",
+        "created_at": "2026-09-26T12:00:00Z",
+    }
+    assert list(ref_validator.iter_errors(valid_ref)) == []
+
+
+def test_privacy_contract_schemas_are_valid() -> None:
+    with (ROOT / "contracts/openapi.yaml").open(encoding="utf-8") as stream:
+        document = yaml.safe_load(stream)
+
+    resolve_validator = Draft202012Validator(
+        document["components"]["schemas"]["ResolvePrivateRefInput"]
+    )
+    ref_validator = Draft202012Validator(document["components"]["schemas"]["PrivateRefResponse"])
+    audit_validator = Draft202012Validator(
+        document["components"]["schemas"]["PIIAccessAuditResponse"]
+    )
+
+    valid_resolve = {"action": "view", "reason_code": "VERIFY_CITIZEN"}
+    assert list(resolve_validator.iter_errors(valid_resolve)) == []
+
+    valid_ref = {
+        "token": "token-123",
+        "vault_ref": "vault://addr/123",
+        "classification": "pii_address",
+        "access_scope": ["operator", "supervisor"],
+        "retention_class": "retention-3y",
+        "created_at": "2026-09-26T12:00:00Z",
+    }
+    assert list(ref_validator.iter_errors(valid_ref)) == []
+
+    valid_audit = {
+        "audit_event_id": "00000000-0000-0000-0000-000000000001",
+        "action": "PII_VIEWED",
+        "token": "token-123",
+        "actor_token": "operator-01",
+        "region_id": "ALA",
+        "reason_code": "VERIFY_CITIZEN",
+        "observed_at": "2026-09-26T12:01:00Z",
+        "payload": {"classification": "pii_address"},
+    }
+    assert list(audit_validator.iter_errors(valid_audit)) == []

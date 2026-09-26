@@ -15,6 +15,8 @@ from .models import (
     Appeal,
     AppealDetail,
     AssignmentCommand,
+    AttachmentRef,
+    AttachmentUploadInput,
     ClassificationInput,
     ClassificationRecommendation,
     CreateRequest,
@@ -68,6 +70,26 @@ def create_manual_router(
         except ManualPathError as error:
             raise _error(error) from error
 
+    @router.get("/requests", response_model=list[Appeal], operation_id="listRequests")
+    def list_requests(
+        identity: AuthenticatedActor,
+        region_id: str = Header(alias="X-Region-Id", pattern=r"^(ALL|[A-Z0-9_-]{2,32})$"),
+        status_filter: str | None = Query(default=None, alias="status"),
+        limit: int = Query(default=50, ge=1, le=100),
+        offset: int = Query(default=0, ge=0),
+    ) -> list[Appeal]:
+        identity.require_any_role("operator", "supervisor", "analyst", "auditor", "admin")
+        identity.require_region(region_id)
+        try:
+            return service.list_appeals(
+                region_id=region_id,
+                status=status_filter,
+                limit=limit,
+                offset=offset,
+            )
+        except ManualPathError as error:
+            raise _error(error) from error
+
     @router.get("/requests/{request_id}", response_model=AppealDetail)
     def get_request(
         request_id: UUID,
@@ -78,6 +100,49 @@ def create_manual_router(
         identity.require_region(region_id)
         try:
             return service.detail(request_id, region_id=region_id)
+        except ManualPathError as error:
+            raise _error(error) from error
+
+    @router.post(
+        "/requests/{request_id}/attachments",
+        response_model=AttachmentRef,
+        status_code=status.HTTP_201_CREATED,
+        operation_id="uploadAttachment",
+    )
+    def upload_attachment(
+        request_id: UUID,
+        command: AttachmentUploadInput,
+        identity: AuthenticatedActor,
+        region_id: str = Header(alias="X-Region-Id", pattern=r"^[A-Z0-9_-]{2,32}$"),
+    ) -> AttachmentRef:
+        identity.require_any_role("citizen", "intake", "operator", "supervisor", "admin")
+        identity.require_region(region_id)
+        try:
+            return service.upload_attachment(
+                request_id,
+                command,
+                region_id=region_id,
+                actor=identity.actor_id,
+            )
+        except ManualPathError as error:
+            raise _error(error) from error
+
+    @router.get(
+        "/requests/{request_id}/attachments",
+        response_model=list[AttachmentRef],
+        operation_id="listAttachments",
+    )
+    def list_attachments(
+        request_id: UUID,
+        identity: AuthenticatedActor,
+        region_id: str = Header(alias="X-Region-Id", pattern=r"^[A-Z0-9_-]{2,32}$"),
+    ) -> list[AttachmentRef]:
+        identity.require_any_role(
+            "citizen", "intake", "operator", "supervisor", "analyst", "auditor", "admin"
+        )
+        identity.require_region(region_id)
+        try:
+            return service.list_attachments(request_id, region_id=region_id)
         except ManualPathError as error:
             raise _error(error) from error
 

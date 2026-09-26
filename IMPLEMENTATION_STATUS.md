@@ -171,10 +171,21 @@
   appeal creation, inspection, manual decision, assignment, status events, and zero-PII audit trail
   operate without dependency on ML inference or external regional CRMs.
 
+- Operational Attachment Ingestion API: exposed `POST /v1/requests/{request_id}/attachments` and
+  `GET /v1/requests/{request_id}/attachments` with binary magic byte inspection, executable header rejection,
+  and pluggable malware scanning before persisting to `appeals.attachment_ref` and recording `attachment.uploaded` in timeline.
+- Operational Appeal Queue Listing: exposed `GET /v1/requests` with cursor/limit pagination, status filtering,
+  and region scoping, enabling the frontend Operator Workspace to triage live database appeals.
+- Operational Privacy Reference Resolution: exposed authenticated `POST /v1/privacy/references/{token}/resolve`
+  and `GET /v1/privacy/references/{token}/audits` with role/scope enforcement and immutable `PII_VIEWED`/`PII_REVEALED` audit logging.
+- Persistent Alert Store: implemented `PostgresAlertStore` for atomic alert status transitions and review logs in `analytics.alert` and `analytics.alert_review`.
+- Persistent Replay Snapshot Storage: wired `FileSnapshotStore` into `PostgresReplayRepository` to preserve case datasets across service restarts.
+- Web API Proxy Search Parameter Preservation: updated Next.js API proxy to forward URL query parameters to the backend.
+
 ## Contracts And Migrations Changed
 
-- OpenAPI (`contracts/openapi.yaml`) includes 37 operations and 60 schemas. Endpoints cover intake,
-  requests, decisions, ownership, incidents (membership, lifecycle, merge, split), alerts (list, review),
+- OpenAPI (`contracts/openapi.yaml`) includes 42 operations and 67 schemas. Endpoints cover intake,
+  requests, attachments (upload, list), privacy references (resolve, audit), decisions, ownership, incidents (membership, lifecycle, merge, split), alerts (list, review),
   analytics, reports, catalog, replay reports, control-plane bundles (active, activate), and operational probes.
 - Event catalog (`contracts/event_catalog.md`) documents `incident.merged.v1`, `incident.split.v1`,
   `incident.membership.transferred.v1`, and `incident.reopened.v1`.

@@ -256,3 +256,27 @@ class ServiceDefinition(BaseModel):
     required_fields: list[str]
     active: bool
     synthetic_only: bool = True
+
+
+class AttachmentUploadInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    file_name: str = Field(min_length=1, max_length=256)
+    mime_type: str = Field(min_length=3, max_length=128)
+    content_base64: str = Field(min_length=1)
+
+
+class AttachmentRef(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    attachment_id: UUID
+    appeal_id: UUID
+    object_ref: str
+    file_name: str
+    mime_type: str
+    byte_size: int
+    object_hash: str
+    data_classification: Literal["public", "internal", "confidential", "restricted", "security"] = (
+        "internal"
+    )
+    created_at: datetime

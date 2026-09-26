@@ -12,6 +12,7 @@ import json
 from collections.abc import Callable, Mapping
 from contextlib import AbstractContextManager
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Protocol, cast
 
 import psycopg
@@ -38,6 +39,31 @@ class MemorySnapshotStore:
             raise ValueError("payload SHA-256 does not match specified digest")
         self.objects.setdefault(sha256, payload)
         return f"sha256:{sha256}"
+
+
+class FileSnapshotStore:
+    """Filesystem content-addressed store for durable replay dataset snapshots."""
+
+    def __init__(self, base_directory: Path | str) -> None:
+        self.base_dir = Path(base_directory)
+        self.base_dir.mkdir(parents=True, exist_ok=True)
+
+    def put_immutable(self, payload: bytes, *, sha256: str) -> str:
+        digest = hashlib.sha256(payload).hexdigest()
+        if digest != sha256:
+            raise ValueError("payload SHA-256 does not match specified digest")
+        target_path = self.base_dir / sha256
+        if not target_path.exists():
+            temp_path = self.base_dir / f".tmp_{sha256}"
+            temp_path.write_bytes(payload)
+            temp_path.replace(target_path)
+        return f"sha256:{sha256}"
+
+    def get_immutable(self, sha256: str) -> bytes | None:
+        target_path = self.base_dir / sha256
+        if target_path.is_file():
+            return target_path.read_bytes()
+        return None
 
 
 ConnectionFactory = Callable[..., AbstractContextManager[Any]]

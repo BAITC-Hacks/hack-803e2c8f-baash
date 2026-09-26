@@ -197,6 +197,8 @@ export default function OperatorWorkspace() {
     "queue" | "situation" | "intake" | "admin" | "topology" | "replay"
   >("queue");
   const [locale, setLocale] = useState<Locale>("ru");
+  const [appealsList, setAppealsList] = useState<Appeal[]>(appeals);
+  const [isLive, setIsLive] = useState(false);
   const [selectedId, setSelectedId] = useState(appeals[0].id);
   const [latestAssignment, setLatestAssignment] =
     useState<LatestAssignment | null>(null);
@@ -215,8 +217,8 @@ export default function OperatorWorkspace() {
   const [manualService, setManualService] = useState("City services");
   const [priority, setPriority] = useState("Routine");
   const appeal = useMemo(
-    () => appeals.find((item) => item.id === selectedId) ?? appeals[0],
-    [selectedId],
+    () => appealsList.find((item) => item.id === selectedId) ?? appealsList[0],
+    [appealsList, selectedId],
   );
   const hasDecision = decision !== "pending";
   const decisionLabel =
@@ -232,6 +234,72 @@ export default function OperatorWorkspace() {
   useEffect(() => {
     document.documentElement.lang = locale === "ru" ? "ru" : "kk";
   }, [locale]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/core/requests?limit=50", {
+      headers: { "X-Region-Id": "ALL" },
+      cache: "no-store",
+    })
+      .then(async (res) => {
+        if (!res.ok) return null;
+        return res.json();
+      })
+      .then((data) => {
+        if (
+          cancelled ||
+          !data ||
+          !Array.isArray(data.items) ||
+          data.items.length === 0
+        ) {
+          return;
+        }
+        const live: Appeal[] = data.items.map(
+          (item: Record<string, unknown>) => ({
+            id: String(item.request_id || item.id),
+            region: String(item.region_id || "ALA"),
+            channel: String(item.channel || "web"),
+            time: String(item.received_at_quality || "exact"),
+            state: String(item.status || "new"),
+            observed: item.created_at
+              ? new Date(String(item.created_at)).toLocaleString("en-GB", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+              : "Recently",
+            summary: String(
+              item.text || item.summary || "Citizen appeal description.",
+            ),
+            confidence: "high" as const,
+            ood: 0.05,
+            topics: [
+              {
+                id: String(item.category || "roads"),
+                label: String(item.category || "Road maintenance"),
+                score: 0.88,
+              },
+              { id: "utilities", label: "Utilities", score: 0.42 },
+            ],
+            services: [
+              { id: "roads-service", label: "Roads department", score: 0.85 },
+              { id: "district", label: "District office", score: 0.35 },
+            ],
+          }),
+        );
+        setAppealsList(live);
+        setIsLive(true);
+        setSelectedId(live[0].id);
+      })
+      .catch(() => {
+        // Core offline; keep synthetic fallback
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (
@@ -399,7 +467,11 @@ export default function OperatorWorkspace() {
                 <p className="eyebrow">{text.queue}</p>
                 <h1>{text.appeals}</h1>
               </div>
-              <span className="count">3 {text.synthetic}</span>
+              <span className="count">
+                {isLive
+                  ? `${appealsList.length} ${locale === "ru" ? "обращений" : "өтініш"}`
+                  : `3 ${text.synthetic}`}
+              </span>
             </div>
             <section
               className="workflow-state"
@@ -433,7 +505,7 @@ export default function OperatorWorkspace() {
             <div
               className="queue"
               role="table"
-              aria-label="Synthetic appeal queue"
+              aria-label={isLive ? "Live appeal queue" : "Synthetic appeal queue"}
             >
               <div className="queue-head" role="row">
                 <span role="columnheader">Appeal</span>
@@ -443,7 +515,7 @@ export default function OperatorWorkspace() {
                 <span role="columnheader">State</span>
                 <span aria-hidden="true" />
               </div>
-              {appeals.map((item) => (
+              {appealsList.map((item) => (
                 <button
                   className={`queue-row ${item.id === selectedId ? "selected" : ""}`}
                   key={item.id}

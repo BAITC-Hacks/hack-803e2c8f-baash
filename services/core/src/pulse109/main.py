@@ -1,21 +1,31 @@
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey, Ed25519PublicKey
 from fastapi import FastAPI, HTTPException, Request, Response, status
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from starlette.middleware.base import RequestResponseEndpoint
 
 from pulse109 import __version__
-from pulse109.analytics import AlertStore, AnalyticsService, create_analytics_router
+from pulse109.analytics import (
+    AlertStore,
+    AnalyticsService,
+    PostgresAlertStore,
+    create_analytics_router,
+)
 from pulse109.catalog import PolicyService, create_catalog_router
-from pulse109.config import get_settings
+from pulse109.config import Settings, get_settings
 from pulse109.control_plane import (
     BundleRepository,
+    BundleVerifier,
     MemoryBundleRepository,
     PostgresBundleRepository,
     create_control_plane_router,
 )
+from pulse109.control_plane.router import BundleVerifierProvider
 from pulse109.database import get_engine
 from pulse109.decisions.publication import ConfidencePublicationService
 from pulse109.decisions.publication_router import create_confidence_publication_router
@@ -49,14 +59,20 @@ from pulse109.ownership.outcomes import HandoffOutcomeService
 from pulse109.ownership.repository import EmptyOwnershipRepository, PostgresOwnershipRepository
 from pulse109.ownership.router import create_ownership_router
 from pulse109.ownership.service import OwnershipService
+from pulse109.privacy import (
+    InMemoryPrivateRefRepository,
+    PostgresPrivateRefRepository,
+    PrivacyService,
+    create_privacy_router,
+)
 from pulse109.recurrence import (
     PostgresRecurrenceRepository,
     RecurrenceService,
     create_recurrence_router,
 )
 from pulse109.replay import (
+    FileSnapshotStore,
     MemoryReplayRepository,
-    MemorySnapshotStore,
     PolicyMetrics,
     PostgresReplayRepository,
     ReplayReport,
@@ -170,7 +186,12 @@ else:
 app.include_router(create_incident_router(incident_service))
 
 analytics_service = AnalyticsService(synthetic=synthetic_read_models)
-alert_store = AlertStore()
+alert_store: AlertStore
+if use_postgres_manual_path:
+    alert_store = PostgresAlertStore(settings.database_url)
+else:
+    alert_store = AlertStore()
+
 if synthetic_read_models:
     alert_store.detect(
         alert_type="data_quality",
@@ -188,9 +209,18 @@ app.include_router(create_analytics_router(analytics_service, alert_store))
 report_runtime = ReportRuntime(analytics_service)
 app.include_router(create_report_router(report_runtime))
 
+privacy_repository: InMemoryPrivateRefRepository | PostgresPrivateRefRepository
+if use_postgres_manual_path:
+    privacy_repository = PostgresPrivateRefRepository(settings.database_url)
+else:
+    privacy_repository = InMemoryPrivateRefRepository()
+privacy_service = PrivacyService(privacy_repository)
+app.include_router(create_privacy_router(privacy_service))
+
 replay_repository: ReplayRepository | None
 if use_postgres_manual_path:
-    replay_repository = PostgresReplayRepository(settings.database_url, MemorySnapshotStore())
+    snapshot_store = FileSnapshotStore(settings.replay_snapshot_dir)
+    replay_repository = PostgresReplayRepository(settings.database_url, snapshot_store)
 elif synthetic_read_models:
     mem_repo = MemoryReplayRepository()
     mem_repo.persist_report(
@@ -240,12 +270,39 @@ else:
     replay_repository = None
 app.include_router(create_replay_router(replay_repository, allow_synthetic=synthetic_read_models))
 
+
+def _resolve_control_plane_verifier(s: Settings) -> BundleVerifierProvider | None:
+    trusted_keys: dict[str, Ed25519PublicKey] = {}
+    for entry in s.control_plane_trusted_keys:
+        key_id, sep, path_or_key = entry.partition("=")
+        if sep and key_id and path_or_key:
+            p = Path(path_or_key)
+            if p.is_file():
+                loaded = serialization.load_pem_public_key(p.read_bytes())
+                if isinstance(loaded, Ed25519PublicKey):
+                    trusted_keys[key_id] = loaded
+    if trusted_keys:
+        return lambda reg: BundleVerifier(trusted_keys, expected_region_id=reg)
+    if s.environment in {"local", "development", "test"}:
+        dev_key = Ed25519PrivateKey.generate().public_key()
+        return lambda reg: BundleVerifier(
+            {"synthetic-test-key": dev_key, "key-kar": dev_key},
+            expected_region_id=reg,
+        )
+    return None
+
+
 bundle_repository: BundleRepository
 if use_postgres_manual_path:
     bundle_repository = PostgresBundleRepository(settings.database_url)
 else:
     bundle_repository = MemoryBundleRepository()
-app.include_router(create_control_plane_router(bundle_repository))
+app.include_router(
+    create_control_plane_router(
+        bundle_repository,
+        verifier=_resolve_control_plane_verifier(settings),
+    )
+)
 
 
 @app.middleware("http")

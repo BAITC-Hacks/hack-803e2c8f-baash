@@ -198,3 +198,32 @@ def validate_attachment(
         sha256=digest,
         byte_size=size,
     )
+
+
+_PDF_DANGEROUS_PATTERNS = (
+    rb"/JavaScript",
+    rb"/JS",
+    rb"/Launch",
+    rb"/EmbeddedFiles",
+    rb"/RichMedia",
+)
+
+
+def sanitize_filename(filename: str) -> str:
+    """Sanitize filename to prevent path traversal, control chars, and null bytes."""
+    name = re.sub(r"[/\\]+", "/", filename).split("/")[-1]
+    name = re.sub(r"[\x00-\x1f\x7f]", "", name)
+    name = name.strip(". ")
+    if not name or len(name) > 255:
+        return "attachment.bin"
+    return name
+
+
+def check_pdf_active_content(content: bytes) -> str | None:
+    """Detect executable scripts or active embedded actions in PDF structure."""
+    if not content.startswith(b"%PDF-"):
+        return None
+    for pattern in _PDF_DANGEROUS_PATTERNS:
+        if pattern in content:
+            return "pdf_active_content_forbidden"
+    return None

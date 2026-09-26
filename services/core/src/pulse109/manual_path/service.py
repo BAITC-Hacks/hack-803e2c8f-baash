@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import hashlib
 import json
 import re
@@ -12,11 +13,19 @@ from uuid import NAMESPACE_URL, UUID, uuid4, uuid5
 from pulse109_inference.models import InferenceRequest
 
 from pulse109.decisions import InferenceProvider, LocalLexicalInferenceProvider
+from pulse109.security import (
+    MockMalwareScanner,
+    check_pdf_active_content,
+    sanitize_filename,
+    validate_attachment,
+)
 
 from .models import (
     Appeal,
     AppealDetail,
     AssignmentCommand,
+    AttachmentRef,
+    AttachmentUploadInput,
     ClassificationInput,
     ClassificationRecommendation,
     CreateRequest,
@@ -260,6 +269,96 @@ class ManualPathService:
             current_decision=decision,
             synchronization=sync_receipt,
         )
+
+    def list_appeals(
+        self,
+        *,
+        region_id: str,
+        status: str | None = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> list[Appeal]:
+        state = self.repository.state
+        matched = [
+            Appeal.model_validate(appeal)
+            for appeal in state.appeals.values()
+            if (region_id == "ALL" or appeal.get("region_id") == region_id)
+            and (status is None or appeal.get("status") == status)
+        ]
+        matched.sort(key=lambda a: a.created_at, reverse=True)
+        return matched[offset : offset + limit]
+
+    def upload_attachment(
+        self,
+        request_id: UUID,
+        command: AttachmentUploadInput,
+        *,
+        region_id: str,
+        actor: str,
+    ) -> AttachmentRef:
+        with self.repository.transaction() as state:
+            self._get(state, request_id, region_id)
+            try:
+                content = base64.b64decode(command.content_base64)
+            except Exception as exc:
+                raise ManualPathError(
+                    "invalid_attachment_encoding", "Base64 decoding failed.", 422
+                ) from exc
+
+            sanitized_name = sanitize_filename(command.file_name)
+            validation = validate_attachment(content, command.mime_type)
+            if not validation.is_valid:
+                raise ManualPathError(
+                    validation.error_code or "invalid_attachment",
+                    validation.error_message or "Attachment validation failed.",
+                    422,
+                )
+
+            if validation.detected_mime == "application/pdf":
+                pdf_err = check_pdf_active_content(content)
+                if pdf_err:
+                    raise ManualPathError(pdf_err, "PDF contains active scripts or actions.", 422)
+
+            scanner = MockMalwareScanner()
+            scan_res = scanner.scan(content, validation.sha256)
+            if not scan_res.is_clean:
+                raise ManualPathError("malware_detected", "Malware detected in attachment.", 422)
+
+            attachment_id = uuid4()
+            now = datetime.now(timezone.utc)
+            object_ref = f"attachment://{validation.sha256}/{sanitized_name}"
+            record = {
+                "attachment_id": attachment_id,
+                "appeal_id": request_id,
+                "object_ref": object_ref,
+                "file_name": sanitized_name,
+                "mime_type": validation.detected_mime or command.mime_type,
+                "byte_size": validation.byte_size,
+                "object_hash": validation.sha256,
+                "data_classification": "internal",
+                "created_at": now,
+            }
+            state.attachments.setdefault(request_id, []).append(record)
+            self._audit(
+                state,
+                "attachment.uploaded",
+                request_id,
+                region_id,
+                actor,
+                {
+                    "attachment_id": str(attachment_id),
+                    "file_name": sanitized_name,
+                    "object_hash": validation.sha256,
+                    "data_classification": "internal",
+                },
+            )
+            return AttachmentRef.model_validate(record)
+
+    def list_attachments(self, request_id: UUID, *, region_id: str) -> list[AttachmentRef]:
+        state = self.repository.state
+        self._get(state, request_id, region_id)
+        records = state.attachments.get(request_id, [])
+        return [AttachmentRef.model_validate(r) for r in records]
 
     def classify(
         self,

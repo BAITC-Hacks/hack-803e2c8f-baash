@@ -11,7 +11,8 @@ async function proxy(request: Request, path: string[]) {
     );
   }
 
-  const target = new URL(`/v1/${path.join("/")}`, apiUrl);
+  const reqUrl = new URL(request.url);
+  const target = new URL(`/v1/${path.join("/")}${reqUrl.search}`, apiUrl);
   const headers = new Headers();
   // Forward only the public API contract headers. In particular, never trust
   // browser-supplied development identity or proxy headers.

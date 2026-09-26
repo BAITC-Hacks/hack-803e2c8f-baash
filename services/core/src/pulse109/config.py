@@ -31,6 +31,8 @@ class Settings(BaseSettings):
     manual_repository_mode: Literal["memory", "postgres"] = "memory"
     approved_legal_basis: str | None = None
     approved_retention_class: str | None = None
+    replay_snapshot_dir: str = ".data/snapshots"
+    control_plane_trusted_keys: list[str] = Field(default_factory=list)
 
 
 @lru_cache

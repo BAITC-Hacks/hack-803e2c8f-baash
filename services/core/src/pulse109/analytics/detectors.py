@@ -179,6 +179,15 @@ class ReopenSpikeDetector:
         return []
 
 
+ADAPTER_DELIVERABLE_EVENT_TYPES = frozenset(
+    {
+        "appeal.assigned.v1",
+        "appeal.reassigned.v1",
+        "appeal.status.changed.v1",
+    }
+)
+
+
 class AdapterLagDetector:
     """Detects pending or retrying outbox events exceeding delivery SLA."""
 
@@ -200,6 +209,9 @@ class AdapterLagDetector:
 
         for item in outbox_records:
             if region_id != "ALL" and item.get("region_id") != region_id:
+                continue
+            event_type = item.get("event_type")
+            if event_type is not None and event_type not in ADAPTER_DELIVERABLE_EVENT_TYPES:
                 continue
             status = str(item.get("status", ""))
             if status not in {"pending", "retrying"}:

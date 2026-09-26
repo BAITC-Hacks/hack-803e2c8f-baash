@@ -86,15 +86,12 @@ def create_analytics_router(service: AnalyticsService, alerts: AlertStore) -> AP
     ) -> list[Alert]:
         identity.require_any_role("operator", "supervisor", "analyst", "auditor", "admin")
         identity.require_region(region_id)
-        values = list(alerts.alerts.values())
-        return [
-            item
-            for item in values
-            if (region_id == "ALL" or item.region_id == region_id)
-            and (alert_status is None or item.status == alert_status)
-            and (from_ is None or item.detected_at >= from_)
-            and (to is None or item.detected_at <= to)
-        ]
+        return alerts.list(
+            region_id=region_id,
+            status=alert_status,
+            from_=from_,
+            to=to,
+        )
 
     @router.post("/alerts/{alert_id}/reviews", response_model=Alert)
     def review_alert(

@@ -21,6 +21,7 @@ tags:
   - name: Catalog
   - name: Operations
   - name: Replay Lab
+  - name: Privacy
 paths:
   /v1/intake/plans:
     post:
@@ -79,6 +80,54 @@ paths:
         '422':
           $ref: '#/components/responses/Unprocessable'
   /v1/requests:
+    get:
+      tags: [Requests]
+      summary: List appeals with filtering and pagination
+      operationId: listRequests
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: X-Region-Id
+          in: header
+          required: false
+          schema:
+            type: string
+            pattern: '^(ALL|[A-Z0-9_-]{2,32})$'
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [new, triage, assigned, in_progress, resolved, closed, reopened, cancelled]
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 50
+            minimum: 1
+            maximum: 200
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+      responses:
+        '200':
+          description: List of appeals matching the criteria
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppealListResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
     post:
       tags: [Requests]
       summary: Create or import an appeal
@@ -117,6 +166,67 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
+  /v1/requests/{request_id}/attachments:
+    post:
+      tags: [Requests]
+      summary: Ingest and validate an attachment for an appeal
+      operationId: uploadAttachment
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+        - name: X-Region-Id
+          in: header
+          required: false
+          schema:
+            type: string
+            pattern: '^(ALL|[A-Z0-9_-]{2,32})$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttachmentUploadInput'
+      responses:
+        '201':
+          description: Attachment metadata recorded and content stored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttachmentRef'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+    get:
+      tags: [Requests]
+      summary: List registered attachments for an appeal
+      operationId: listAttachments
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+        - name: X-Region-Id
+          in: header
+          required: false
+          schema:
+            type: string
+            pattern: '^(ALL|[A-Z0-9_-]{2,32})$'
+      responses:
+        '200':
+          description: List of attachments
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttachmentListResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /v1/requests/{request_id}:
     get:
       tags: [Requests]
@@ -1041,6 +1151,72 @@ paths:
           $ref: '#/components/responses/Unprocessable'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
+  /v1/privacy/references/{token}/resolve:
+    post:
+      tags: [Privacy]
+      summary: Resolve a private token reference with mandatory audit
+      operationId: resolvePrivateRef
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: X-Region-Id
+          in: header
+          required: false
+          schema:
+            type: string
+            pattern: '^(ALL|[A-Z0-9_-]{2,32})$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResolvePrivateRefInput'
+      responses:
+        '200':
+          description: Resolved private reference
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrivateRefResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/privacy/references/{token}/audits:
+    get:
+      tags: [Privacy]
+      summary: List audit log for a private reference token
+      operationId: listPrivacyAudits
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: X-Region-Id
+          in: header
+          required: false
+          schema:
+            type: string
+            pattern: '^(ALL|[A-Z0-9_-]{2,32})$'
+      responses:
+        '200':
+          description: Audit history of access to this private token
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PIIAccessAuditResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
 components:
   securitySchemes:
     bearerAuth:
@@ -2575,3 +2751,163 @@ components:
         status:
           type: string
           enum: [activated]
+    AppealListResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - items
+        - total
+        - limit
+        - offset
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Appeal'
+        total:
+          type: integer
+          minimum: 0
+        limit:
+          type: integer
+          minimum: 1
+        offset:
+          type: integer
+          minimum: 0
+    AttachmentUploadInput:
+      type: object
+      additionalProperties: false
+      required:
+        - filename
+        - content_b64
+        - media_type
+      properties:
+        filename:
+          type: string
+          minLength: 1
+          maxLength: 255
+        content_b64:
+          type: string
+        media_type:
+          type: string
+        data_classification:
+          type: string
+          default: public
+    AttachmentRef:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - appeal_id
+        - object_ref
+        - object_hash
+        - media_type
+        - byte_size
+        - data_classification
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        appeal_id:
+          type: string
+          format: uuid
+        object_ref:
+          type: string
+        object_hash:
+          type: string
+          pattern: '^[0-9a-f]{64}$'
+        media_type:
+          type: string
+        byte_size:
+          type: integer
+          minimum: 0
+        data_classification:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+    AttachmentListResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttachmentRef'
+    ResolvePrivateRefInput:
+      type: object
+      additionalProperties: false
+      required:
+        - action
+        - reason_code
+      properties:
+        action:
+          type: string
+          enum: [view, reveal, export]
+        reason_code:
+          type: string
+          minLength: 3
+          maxLength: 128
+    PrivateRefResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - token
+        - vault_ref
+        - classification
+        - access_scope
+        - retention_class
+        - created_at
+      properties:
+        token:
+          type: string
+        vault_ref:
+          type: string
+        classification:
+          type: string
+        access_scope:
+          type: array
+          items:
+            type: string
+        retention_class:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        deletion_due_at:
+          type: [string, 'null']
+          format: date-time
+    PIIAccessAuditResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - audit_event_id
+        - action
+        - token
+        - actor_token
+        - reason_code
+        - observed_at
+        - payload
+      properties:
+        audit_event_id:
+          type: string
+          format: uuid
+        action:
+          type: string
+          enum: [PII_VIEWED, PII_REVEALED, PII_EXPORTED]
+        token:
+          type: string
+        actor_token:
+          type: string
+        region_id:
+          type: [string, 'null']
+        reason_code:
+          type: string
+        observed_at:
+          type: string
+          format: date-time
+        payload:
+          type: object
+          additionalProperties: true

@@ -132,6 +132,38 @@ def test_adapter_lag_detector_identifies_stale_outbox_events():
     assert alert.evidence["lagged_count"] == 1
 
 
+def test_adapter_lag_detector_ignores_non_adapter_events():
+    detector = AdapterLagDetector(max_lag_seconds=300.0)
+    now = datetime(2026, 9, 26, 12, 0, tzinfo=timezone.utc)
+
+    # Stale record, but non-adapter event type (internal audit)
+    stale_internal = [
+        {
+            "event_id": str(uuid4()),
+            "event_type": "audit.log.recorded.v1",
+            "region_id": "ALA",
+            "status": "retrying",
+            "created_at": (now - timedelta(seconds=600)).isoformat(),
+            "attempts": 3,
+        }
+    ]
+    assert len(detector.detect(stale_internal, region_id="ALA", at=now)) == 0
+
+    # Stale record with adapter-deliverable event type triggers alert
+    stale_adapter = [
+        {
+            "event_id": str(uuid4()),
+            "event_type": "appeal.assigned.v1",
+            "region_id": "ALA",
+            "status": "retrying",
+            "created_at": (now - timedelta(seconds=600)).isoformat(),
+            "attempts": 3,
+        }
+    ]
+    alerts = detector.detect(stale_adapter, region_id="ALA", at=now)
+    assert len(alerts) == 1
+
+
 def test_override_spike_detector_identifies_routing_divergence():
     detector = OverrideSpikeDetector(threshold_rate=0.30, min_cohort_size=5)
     now = datetime(2026, 9, 26, 12, 0, tzinfo=timezone.utc)

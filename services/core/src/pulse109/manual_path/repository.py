@@ -23,6 +23,7 @@ class InMemoryState:
     outbox: list[dict[str, Any]] = field(default_factory=list)
     audit: list[dict[str, Any]] = field(default_factory=list)
     feedback: list[dict[str, Any]] = field(default_factory=list)
+    attachments: dict[UUID, list[dict[str, Any]]] = field(default_factory=dict)
 
 
 class InMemoryManualRepository:

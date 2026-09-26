@@ -196,3 +196,25 @@ def test_report_rejects_empty_actor_token() -> None:
     )
     with pytest.raises(ValueError, match="created_by_token"):
         repo.persist_report(None, _dataset(), created_by_token="")  # type: ignore[arg-type]
+
+
+def test_file_snapshot_store_persistence(tmp_path: Any) -> None:
+    import hashlib
+
+    from pulse109.replay import FileSnapshotStore
+
+    store = FileSnapshotStore(tmp_path / "snapshots")
+    payload = b"test immutable snapshot content"
+    digest = hashlib.sha256(payload).hexdigest()
+
+    ref = store.put_immutable(payload, sha256=digest)
+    assert ref == f"sha256:{digest}"
+    assert store.get_immutable(digest) == payload
+
+    # Re-putting identical content succeeds idempotently
+    ref2 = store.put_immutable(payload, sha256=digest)
+    assert ref2 == ref
+
+    # Mismatched digest raises ValueError
+    with pytest.raises(ValueError, match="payload SHA-256 does not match"):
+        store.put_immutable(payload, sha256="0" * 64)

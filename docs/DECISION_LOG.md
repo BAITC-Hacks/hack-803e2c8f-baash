@@ -701,6 +701,17 @@ Record implementation decisions here when the repository, contracts or available
 - **Evidence:** `services/core/src/pulse109/security/attachments.py`, `tests/security/test_attachments.py`.
 - **Revisit when:** ClamAV / external cloud threat detection API is connected in staging.
 
+### D-066 — Attachment ingestion, queue listing, persistent alert store, and privacy API exposure
+
+- **Date:** 2026-09-26
+- **Status:** accepted
+- **Context:** an independent audit revealed critical seams preventing production operator use: attachments had validation functions but no operational HTTP upload/list endpoint (blocking closure preflight and incident resolution evidence chains); the operator workspace had to fall back to hardcoded IDs due to a missing appeal listing endpoint; alert reviews and states were in-memory despite existing PostgreSQL tables; privacy reference resolution was unmounted; replay snapshot bytes were lost on restart; and the Next.js web proxy dropped query strings.
+- **Decision:** expose authenticated `POST /v1/requests/{id}/attachments` and `GET /v1/requests/{id}/attachments` validating magic bytes, executable markers, and malware scanning before persisting to `appeals.attachment_ref` and recording `action='attachment.uploaded'` in timeline. Expose `GET /v1/requests` with cursor/limit pagination, status filtering, and region isolation. Wire `PostgresAlertStore` into `analytics` to persist alerts and reviews in `analytics.alert` and `analytics.alert_review`. Expose authenticated `POST /v1/privacy/references/{token}/resolve` and `GET /v1/privacy/references/{token}/audits`. Wire `FileSnapshotStore` into `PostgresReplayRepository`. Forward query search strings in `apps/web/app/api/core/[...path]/route.ts`.
+- **Alternatives:** keep in-memory mock endpoints; let operators upload attachments directly via raw SQL fixtures; bypass query params in web tier.
+- **Consequences:** complete evidence ingestion, appeal queue triage, and privacy audit lifecycle are now fully operational end-to-end over HTTP; persistent stores survive restart; operator workspace displays live backend data.
+- **Evidence:** `contracts/openapi.yaml` (42 operations, 67 schemas), `docs/PRODUCTION_AUDIT.md`, `services/core/tests/manual_path/test_router.py`, `services/core/tests/privacy/test_privacy_router.py`, `services/core/tests/analytics/test_detectors.py`.
+- **Revisit when:** S3 direct presigned upload URLs with async scanning webhooks are introduced.
+
 ### D-XXX — Short title
 
 - **Date:** YYYY-MM-DD

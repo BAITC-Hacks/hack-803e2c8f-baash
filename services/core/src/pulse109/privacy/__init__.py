@@ -6,16 +6,26 @@ from .repository import (
     PostgresPrivateRefRepository,
     PrivateRefRepository,
 )
+from .router import (
+    PIIAccessAuditResponse,
+    PrivateRefResponse,
+    ResolvePrivateRefInput,
+    create_privacy_router,
+)
 from .service import PrivacyAccessError, PrivacyService
 
 __all__ = [
     "InMemoryPrivateRefRepository",
     "PIIAccessAction",
     "PIIAccessAudit",
+    "PIIAccessAuditResponse",
     "PostgresPrivateRefRepository",
     "PrivacyAccessError",
     "PrivacyClassification",
     "PrivacyService",
     "PrivateRef",
     "PrivateRefRepository",
+    "PrivateRefResponse",
+    "ResolvePrivateRefInput",
+    "create_privacy_router",
 ]

@@ -8,6 +8,7 @@ append-only event, audit row, idempotency receipt, and outbox event together.
 
 from __future__ import annotations
 
+import base64
 import json
 import re
 from collections.abc import Iterator
@@ -23,11 +24,19 @@ from pulse109_inference.models import InferenceRequest
 
 from pulse109.config import get_settings
 from pulse109.decisions import InferenceProvider, LocalLexicalInferenceProvider
+from pulse109.security import (
+    MockMalwareScanner,
+    check_pdf_active_content,
+    sanitize_filename,
+    validate_attachment,
+)
 
 from .models import (
     Appeal,
     AppealDetail,
     AssignmentCommand,
+    AttachmentRef,
+    AttachmentUploadInput,
     ClassificationInput,
     ClassificationRecommendation,
     CreateRequest,
@@ -285,6 +294,161 @@ class PostgresManualPathService:
         if row is None:
             raise ManualPathError("not_found", "Appeal not found.", 404)
         return self._appeal_from_row(row)
+
+    def list_appeals(
+        self,
+        *,
+        region_id: str,
+        status: str | None = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> list[Appeal]:
+        with self.repository.connection() as connection, connection.cursor() as cursor:
+            query = """
+                SELECT a.*, ss.system_code AS source_system, sr.raw_payload_ref,
+                       ac.redacted_text, ST_Y(a.location::geometry) AS latitude,
+                       ST_X(a.location::geometry) AS longitude
+                FROM appeals.appeal AS a
+                JOIN integration.source_system AS ss ON ss.id = a.source_system_id
+                JOIN integration.source_record AS sr ON sr.id = a.source_record_id
+                LEFT JOIN privacy.appeal_content AS ac ON ac.appeal_id = a.request_id
+                WHERE (a.region_id = %s OR %s = 'ALL')
+            """
+            params: list[Any] = [region_id, region_id]
+            if status is not None:
+                query += " AND a.status = %s"
+                params.append(status)
+            query += " ORDER BY a.observed_at DESC, a.request_id DESC LIMIT %s OFFSET %s"
+            params.extend([limit, offset])
+            cursor.execute(query, tuple(params))
+            return [self._appeal_from_row(row) for row in cursor.fetchall()]
+
+    def upload_attachment(
+        self,
+        request_id: UUID,
+        command: AttachmentUploadInput,
+        *,
+        region_id: str,
+        actor: str,
+    ) -> AttachmentRef:
+        with self.repository.connection() as connection, connection.cursor() as cursor:
+            appeal = self._appeal(cursor, request_id, lock=True)
+            self._scope(appeal.region_id, region_id)
+
+            try:
+                content = base64.b64decode(command.content_base64)
+            except Exception as exc:
+                raise ManualPathError(
+                    "invalid_attachment_encoding", "Base64 decoding failed.", 422
+                ) from exc
+
+            sanitized_name = sanitize_filename(command.file_name)
+            validation = validate_attachment(content, command.mime_type)
+            if not validation.is_valid:
+                raise ManualPathError(
+                    validation.error_code or "invalid_attachment",
+                    validation.error_message or "Attachment validation failed.",
+                    422,
+                )
+
+            if validation.detected_mime == "application/pdf":
+                pdf_err = check_pdf_active_content(content)
+                if pdf_err:
+                    raise ManualPathError(pdf_err, "PDF contains active scripts or actions.", 422)
+
+            scanner = MockMalwareScanner()
+            scan_res = scanner.scan(content, validation.sha256)
+            if not scan_res.is_clean:
+                raise ManualPathError("malware_detected", "Malware detected in attachment.", 422)
+
+            attachment_id = uuid4()
+            at = _now()
+            object_ref = f"attachment://{validation.sha256}/{sanitized_name}"
+            cursor.execute(
+                """
+                INSERT INTO appeals.attachment_ref
+                    (id, appeal_id, object_ref, object_hash, media_type,
+                     byte_size, data_classification, created_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (appeal_id, object_hash) DO UPDATE SET
+                    media_type = EXCLUDED.media_type
+                RETURNING id, appeal_id, object_ref, object_hash, media_type,
+                          byte_size, data_classification, created_at
+                """,
+                (
+                    attachment_id,
+                    request_id,
+                    object_ref,
+                    validation.sha256,
+                    validation.detected_mime or command.mime_type,
+                    validation.byte_size,
+                    "internal",
+                    at,
+                ),
+            )
+            row = cursor.fetchone()
+            if row is None:
+                raise ManualPathError("attachment_save_failed", "Failed to store attachment.", 500)
+
+            self._audit(
+                cursor,
+                action="attachment.uploaded",
+                aggregate_id=appeal.request_id,
+                region_id=appeal.region_id,
+                actor_type="user",
+                actor_token=actor,
+                correlation_id=str(request_id),
+                payload={
+                    "attachment_id": str(row["id"]),
+                    "file_name": sanitized_name,
+                    "object_hash": str(row["object_hash"]).strip(),
+                    "data_classification": str(row["data_classification"]),
+                },
+            )
+            return AttachmentRef(
+                attachment_id=row["id"],
+                appeal_id=row["appeal_id"],
+                object_ref=str(row["object_ref"]),
+                file_name=sanitized_name,
+                mime_type=str(row["media_type"] or command.mime_type),
+                byte_size=int(row["byte_size"] or 0),
+                object_hash=str(row["object_hash"]).strip(),
+                data_classification=row["data_classification"],
+                created_at=row["created_at"],
+            )
+
+    def list_attachments(self, request_id: UUID, *, region_id: str) -> list[AttachmentRef]:
+        with self.repository.connection() as connection, connection.cursor() as cursor:
+            appeal = self._appeal(cursor, request_id, lock=False)
+            self._scope(appeal.region_id, region_id)
+            cursor.execute(
+                """
+                SELECT id, appeal_id, object_ref, object_hash, media_type,
+                       byte_size, data_classification, created_at
+                FROM appeals.attachment_ref
+                WHERE appeal_id = %s
+                ORDER BY created_at ASC
+                """,
+                (request_id,),
+            )
+            result: list[AttachmentRef] = []
+            for row in cursor.fetchall():
+                obj_ref = str(row["object_ref"])
+                fname = obj_ref.split("/")[-1] if "/" in obj_ref else obj_ref
+                result.append(
+                    AttachmentRef(
+                        attachment_id=row["id"],
+                        appeal_id=row["appeal_id"],
+                        object_ref=obj_ref,
+                        file_name=fname,
+                        mime_type=str(row["media_type"] or "application/octet-stream"),
+                        byte_size=int(row["byte_size"] or 0),
+                        object_hash=str(row["object_hash"]).strip(),
+                        data_classification=row["data_classification"],
+                        created_at=row["created_at"],
+                    )
+                )
+            return result
 
     def _event(
         self,

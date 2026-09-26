@@ -10,6 +10,7 @@ from pulse109.replay.engine import (
     ReplayReport,
 )
 from pulse109.replay.persistence import (
+    FileSnapshotStore,
     ImmutableSnapshotStore,
     MemoryReplayRepository,
     MemorySnapshotStore,
@@ -21,6 +22,7 @@ from pulse109.replay.persistence import (
 from pulse109.replay.router import ReplayReportSummary, create_replay_router
 
 __all__ = [
+    "FileSnapshotStore",
     "ImmutableSnapshotStore",
     "MemoryReplayRepository",
     "MemorySnapshotStore",
