@@ -8,6 +8,15 @@ OpenTelemetry, synthetic MLOps evidence and release runbooks. Intake, manual dec
 audit and queued synchronization remain usable without ML or a regional system. It does not claim
 national coverage, a live regional integration, autonomous decisions or real-world model quality.
 
+## Как мы работали на GovTech Camp
+
+Понедельный разбор работы команды, что сделано, кто чем занимался, что работает
+сейчас и что впереди: [docs/PROJECT_JOURNAL.md](docs/PROJECT_JOURNAL.md).
+
+Сценарий живого показа MVP: [docs/DEMO_FLOW.md](docs/DEMO_FLOW.md).
+Дорожная карта до production: [docs/PRODUCTION_ROADMAP.md](docs/PRODUCTION_ROADMAP.md).
+Вопросы к заказчику по бизнес-логике: [docs/BUSINESS_LOGIC_QUESTIONS.md](docs/BUSINESS_LOGIC_QUESTIONS.md).
+
 ## Prerequisites
 
 - Python 3.10-3.13 and `uv` 0.11.28
