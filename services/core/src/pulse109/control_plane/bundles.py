@@ -19,7 +19,7 @@ from types import MappingProxyType
 from typing import Protocol
 
 from cryptography.exceptions import InvalidSignature
-from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey, Ed25519PublicKey
 
 MAX_ENVELOPE_BYTES = 256_000
 MAX_ARTIFACTS = 128
@@ -294,3 +294,98 @@ class BundleVerifier:
         if not repository.activate_if_newer(bundle):
             raise BundleError("bundle is a replay or downgrade")
         return bundle
+
+
+def build_signed_bundle(
+    *,
+    private_key: Ed25519PrivateKey,
+    key_id: str,
+    bundle_id: str,
+    region_id: str,
+    version: int,
+    sequence: int,
+    content: Mapping[str, object],
+    now: datetime | None = None,
+    validity: timedelta = timedelta(days=30),
+) -> bytes:
+    """Build and sign a canonical envelope for a regional release bundle."""
+    if not _ID.fullmatch(bundle_id):
+        raise BundleError("bundle_id is invalid")
+    if not _ID.fullmatch(region_id):
+        raise BundleError("region_id is invalid")
+    if not _ID.fullmatch(key_id):
+        raise BundleError("key_id is invalid")
+    if not 1 <= version <= _MAX_COUNTER or not 1 <= sequence <= _MAX_COUNTER:
+        raise BundleError("version and sequence must be positive integers")
+    validated_content = _validate_content(dict(content))
+    current = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
+    issued_at = current
+    expires_at = current + validity
+    body = {
+        "bundle_id": bundle_id,
+        "region_id": region_id,
+        "version": version,
+        "sequence": sequence,
+        "issued_at": issued_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "expires_at": expires_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "schema_version": "regional_release_bundle/1",
+        "content": validated_content,
+    }
+    signature = private_key.sign(canonical_bundle_bytes(body))
+    envelope = {
+        "body": body,
+        "key_id": key_id,
+        "signature": base64.urlsafe_b64encode(signature).decode().rstrip("="),
+    }
+    return json.dumps(envelope, sort_keys=True, separators=(",", ":")).encode("ascii")
+
+
+def create_rollback_bundle(
+    *,
+    target_bundle_envelope: bytes,
+    active_bundle: VerifiedBundle,
+    private_key: Ed25519PrivateKey,
+    key_id: str,
+    now: datetime | None = None,
+    validity: timedelta = timedelta(days=30),
+) -> bytes:
+    """Create a new signed bundle rolling back to target bundle content
+    while advancing version and sequence.
+    """
+    try:
+        target_envelope = json.loads(
+            target_bundle_envelope, object_pairs_hook=_pairs_without_duplicates
+        )
+    except (json.JSONDecodeError, UnicodeDecodeError, RecursionError) as exc:
+        raise BundleError("target envelope is not valid JSON") from exc
+    if not isinstance(target_envelope, dict) or "body" not in target_envelope:
+        raise BundleError("target envelope is invalid")
+    target_body = target_envelope["body"]
+    if not isinstance(target_body, dict):
+        raise BundleError("target bundle body is invalid")
+    target_region = target_body.get("region_id")
+    if target_region != active_bundle.region_id:
+        raise BundleError("target bundle region does not match active bundle region")
+
+    target_content = _validate_content(target_body.get("content"))
+    target_version = target_body.get("version")
+    target_sequence = target_body.get("sequence")
+    if not isinstance(target_version, int) or not isinstance(target_sequence, int):
+        raise BundleError("target version or sequence is invalid")
+
+    next_version = max(active_bundle.version, target_version) + 1
+    next_sequence = max(active_bundle.sequence, target_sequence) + 1
+    raw_id = f"rollback-{target_body.get('bundle_id', 'bundle')}-to-v{next_version}"
+    rollback_bundle_id = re.sub(r"[^A-Za-z0-9._:/-]", "-", raw_id)[:128]
+
+    return build_signed_bundle(
+        private_key=private_key,
+        key_id=key_id,
+        bundle_id=rollback_bundle_id,
+        region_id=active_bundle.region_id,
+        version=next_version,
+        sequence=next_sequence,
+        content=target_content,
+        now=now,
+        validity=validity,
+    )

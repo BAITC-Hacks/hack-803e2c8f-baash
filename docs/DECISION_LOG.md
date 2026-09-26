@@ -712,7 +712,19 @@ Record implementation decisions here when the repository, contracts or available
 - **Evidence:** `contracts/openapi.yaml` (42 operations, 67 schemas), `docs/PRODUCTION_AUDIT.md`, `services/core/tests/manual_path/test_router.py`, `services/core/tests/privacy/test_privacy_router.py`, `services/core/tests/analytics/test_detectors.py`.
 - **Revisit when:** S3 direct presigned upload URLs with async scanning webhooks are introduced.
 
+### D-067 — Monotonic control plane rollback CLI and quarantine closure integrity verification
+
+- **Date:** 2026-09-26
+- **Status:** accepted
+- **Context:** (1) The signed bundle control plane implements strict anti-rollback counters (`version` and `sequence`), but lacked a dedicated command to safely rollback to an earlier configuration without disabling monotonic protections. (2) Closure integrity requires verified evidence attachments, but previously did not explicitly assert that referenced files were not security-quarantined or flagged.
+- **Decision:** (1) Implement `create_rollback_bundle` in `pulse109.control_plane.bundles` and add `pulse109-bundle rollback` CLI action. The rollback command reads the target bundle's content, sets `version = max(active.version, target.version) + 1` and `sequence = max(active.sequence, target.sequence) + 1`, re-signs the bundle with an authorized Ed25519 private key, and atomically installs it to PostgreSQL. (2) In `PostgresClosureRepository.create_preflight` and `confirm`, query `data_classification` from `appeals.attachment_ref` and reject any evidence item marked `security` with HTTP 422 `evidence_quarantined`. Re-verify attachment presence and clean status during confirmation before atomic closure.
+- **Alternatives:** allow manual decrement of sequence watermarks in the database; disable anti-rollback during emergency incidents; accept quarantined evidence with a warning flag.
+- **Consequences:** emergency rollbacks are fully supported while preserving strict monotonic tamper resistance and anti-replay invariants; zero risk of malicious or quarantined files being accepted as closure proof.
+- **Evidence:** `services/core/src/pulse109/control_plane/bundles.py`, `services/core/src/pulse109/control_plane/cli.py`, `services/core/src/pulse109/outcomes/postgres.py`, `services/core/tests/control_plane/test_bundles.py`, `services/core/tests/control_plane/test_cli.py`, `tests/integration/test_m9_closure_integrity.py`.
+- **Revisit when:** multi-signature threshold approval for rollback releases is mandated.
+
 ### D-XXX — Short title
+
 
 - **Date:** YYYY-MM-DD
 - **Status:** proposed | accepted | superseded

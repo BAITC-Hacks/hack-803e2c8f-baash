@@ -55,17 +55,26 @@ class PostgresClosureRepository:
             # Every content hash must resolve to an immutable attachment owned by this appeal.
             refs = [item.reference[7:] for item in command.evidence]
             cur.execute(
-                "SELECT object_hash FROM appeals.attachment_ref "
+                "SELECT object_hash, data_classification FROM appeals.attachment_ref "
                 "WHERE appeal_id=%s AND lower(object_hash)=ANY(%s) FOR KEY SHARE",
                 (request_id, refs),
             )
-            available = {row["object_hash"].lower() for row in cur.fetchall()}
+            rows = cur.fetchall()
+            available = {row["object_hash"].lower() for row in rows}
             if available != set(refs):
                 raise ClosureIntegrityError(
                     "evidence_not_found",
                     "One or more evidence items are not attached to this appeal.",
                     422,
                 )
+            for row in rows:
+                if row.get("data_classification") == "security":
+                    raise ClosureIntegrityError(
+                        "evidence_quarantined",
+                        "Quarantined or security-flagged attachments "
+                        "cannot be used as closure evidence.",
+                        422,
+                    )
             cur.execute(
                 """INSERT INTO appeals.closure_preflight
                 (preflight_id, request_id, region_id, appeal_version, resolution_code,
@@ -160,6 +169,31 @@ class PostgresClosureRepository:
                 raise ClosureIntegrityError(
                     "preflight_already_used", "This preflight has already been consumed."
                 )
+            evidence_items = preflight["evidence"]
+            if isinstance(evidence_items, str):
+                evidence_items = json.loads(evidence_items)
+            refs = [item["reference"][7:] for item in evidence_items]
+            cur.execute(
+                "SELECT object_hash, data_classification FROM appeals.attachment_ref "
+                "WHERE appeal_id=%s AND lower(object_hash)=ANY(%s) FOR KEY SHARE",
+                (request_id, refs),
+            )
+            rows = cur.fetchall()
+            available = {row["object_hash"].lower() for row in rows}
+            if available != set(refs):
+                raise ClosureIntegrityError(
+                    "evidence_not_found",
+                    "One or more evidence items are no longer attached to this appeal.",
+                    422,
+                )
+            for row in rows:
+                if row.get("data_classification") == "security":
+                    raise ClosureIntegrityError(
+                        "evidence_quarantined",
+                        "Quarantined or security-flagged attachments "
+                        "cannot be used as closure evidence.",
+                        422,
+                    )
             closure_id, audit_id, outbox_id, event_id = uuid4(), uuid4(), uuid4(), uuid4()
             payload = {
                 "closure_id": str(closure_id),

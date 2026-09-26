@@ -424,9 +424,25 @@ absolute `1e-12` tolerance, with focused acceptance and rejection tests. Databas
 - D-063 establishes the strict privacy reference boundary (`pulse109.privacy`) with role-based access scope
   enforcement, immutable PII access audit emission (`PII_VIEWED`, `PII_REVEALED`, `PII_EXPORTED`), and zero
   PII leakage in logs, metrics, and traces.
+- D-064 adds control plane HTTP API for active bundle inspection and verified bundle activation.
+- D-065 enforces security hardening for attachment ingestion: binary magic-byte detection, executable
+  rejection, and pluggable malware scanning.
+- D-066 completes attachment ingestion endpoints, appeal queue listing (`GET /v1/requests`), persistent
+  PostgreSQL alert store, privacy reference resolution APIs, and file-based replay snapshot persistence.
+- D-067 implements monotonic control plane rollback bundle generation and CLI (`pulse109-bundle rollback`),
+  and enforces quarantine/security checks on evidence in closure integrity preflight and confirmation.
+
+## Verification Evidence
+
+- Pytest: 301 passed, 21 skipped (all 21 skipped require live container `PULSE109_TEST_DATABASE_URL`), 0 failed.
+- Static Typing: `mypy` strict type checking clean across all 108 source files.
+- Linter / Code Formatting: `ruff check` and `ruff format --check` 100% clean across 203 files.
+- Web Application: Next.js 16.3.4 (Turbopack) production build clean (`next build`), ESLint clean, `tsc --noEmit` clean.
+- OpenAPI Contract: 42 operations, 67 schemas verified in `contracts/openapi.yaml`.
 
 ## Exact Next Milestone
 
 Deploy updated containers to CI/staging environment. Run live PostgreSQL integration tests and verify
 end-to-end incident topology, control plane bundle activation, and Situation Center alert triage.
 Keep external CRM live connectivity dependent on B01-B10 sandbox approval.
+

@@ -98,6 +98,27 @@ def test_closure_requires_appeal_bound_evidence_and_human_confirmation() -> None
                VALUES (%s, %s, %s, 'internal')""",
             (appeal.request_id, "synthetic://closure-evidence", evidence_hash),
         )
+        cursor.execute(
+            """INSERT INTO appeals.attachment_ref
+               (appeal_id, object_ref, object_hash, data_classification)
+               VALUES (%s, %s, %s, 'security')""",
+            (appeal.request_id, "synthetic://quarantined-evidence", "b" * 64),
+        )
+
+    quarantined_cmd = ClosurePreflight(
+        resolution_code="COMPLETED",
+        evidence=[ClosureEvidence(reference="sha256:" + "b" * 64, evidence_type="document")],
+        expected_appeal_version=appeal.version + 1,
+    )
+    with pytest.raises(ClosureIntegrityError) as quarantined:
+        closure.preflight(
+            appeal.request_id,
+            "ALA",
+            quarantined_cmd,
+            actor="synthetic-operator",
+            correlation_id=source_id,
+        )
+    assert quarantined.value.code == "evidence_quarantined"
 
     with pytest.raises(ClosureIntegrityError) as wrong_region:
         closure.preflight(

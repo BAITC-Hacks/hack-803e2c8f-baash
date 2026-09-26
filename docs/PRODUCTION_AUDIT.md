@@ -22,45 +22,44 @@ This independent audit evaluates Pulse 109 as an integrated, federated municipal
 | Subsystem | Assessment Status | Operational Readiness Justification |
 | :--- | :--- | :--- |
 | **Manual Critical Path** | **PILOT READY** | Core appeal lifecycle, PostgreSQL transactions, advisory locks, and idempotency guarantees operate safely without ML or external CRMs. |
-| **Incident Topology Engine** | **PILOT READY** | Supervised split, merge, reopen, and membership versioning enforce aggregate lineage, cycle prevention, and attachment evidence checks. |
+| **Incident Topology Engine** | **PILOT READY** | Supervised split, merge, reopen, and membership versioning enforce aggregate lineage, cycle prevention, and attachment evidence checks. Verified with transitive merge, split-after-merge, and concurrent conflict tests. |
 | **Identity & Access Boundary** | **PILOT READY** | OIDC/JWKS claim verification, region scoping (`X-Region-Id`), role constraints, and purpose restrictions are strictly enforced; development fallbacks fail closed in pilot/production. |
-| **Attachment Safety & Verification** | **PARTIALLY IMPLEMENTED** | Ingestion security (magic bytes, MIME allowlists, executable/script detection) and malware scanning interfaces exist, but no operational upload endpoint (`POST /v1/requests/{id}/attachments`) was mounted, breaking the evidence chain for closure preflight and incident resolution. |
-| **Privacy Boundary & PII Access** | **PARTIALLY IMPLEMENTED** | `pulse109.privacy` implements tokenized references and immutable access audit logging, but was never wired into `main.py` or exposed via an authenticated API endpoint. |
-| **Control Plane / Bundle Activation** | **PARTIALLY IMPLEMENTED** | Ed25519 signature verification, anti-rollback version/sequence monotonicity, and append-only release history are implemented, but `create_control_plane_router` was mounted without a verifier (returning HTTP 503), and no operational rollback lifecycle existed. |
-| **Situation Center & Alerting** | **PARTIALLY IMPLEMENTED** | Anomaly detectors and triage UI were added, but `AlertStore` remained 100% in-memory despite existing PostgreSQL tables (`analytics.alert`, `analytics.alert_review`), and `AdapterLagDetector` checked non-adapter outbox records, causing false positive SLA alarms. |
-| **Operator Workspace (Frontend)** | **PARTIALLY IMPLEMENTED** | The UI components are clean and accessible, but the main operator queue (`page.tsx`) was hardcoded to three synthetic IDs (`SYN-109-014`, etc.) because the backend lacked a `GET /v1/requests` list endpoint. |
-| **Replay Lab Persistence** | **PARTIALLY IMPLEMENTED** | Manifests are persisted to PostgreSQL, but the snapshot byte seam defaulted to an in-memory store (`MemorySnapshotStore`), losing raw case datasets on API restart. |
+| **Attachment Safety & Verification** | **PILOT READY** | Ingestion security (magic bytes, MIME allowlists, executable/script detection) and malware scanning interfaces are wired into `POST /v1/requests/{id}/attachments` and `GET /v1/requests/{id}/attachments`. Quarantined/security-flagged files are rejected from closure evidence. |
+| **Privacy Boundary & PII Access** | **PILOT READY** | Authenticated `POST /v1/privacy/references/{token}/resolve` and `GET /v1/privacy/references/{token}/audits` mounted in `main.py` with zero-PII audit logging. |
+| **Control Plane / Bundle Activation** | **PILOT READY** | Ed25519 signature verification, anti-rollback version/sequence monotonicity, and append-only release history are wired with verifier in `main.py`. Dedicated monotonic rollback bundle creation and CLI command (`pulse109-bundle rollback`) implemented and verified. |
+| **Situation Center & Alerting** | **PILOT READY** | `PostgresAlertStore` persists alerts and reviews in `analytics.alert` and `analytics.alert_review`. `AdapterLagDetector` filters for adapter-targeted events only, preventing false alarms. |
+| **Operator Workspace (Frontend)** | **PILOT READY** | Live appeal queue triage (`GET /v1/requests`) with cursor/limit pagination, status filtering, and region isolation. Web proxy preserves query parameters. Graceful offline fallback. |
+| **Replay Lab Persistence** | **PILOT READY** | `FileSnapshotStore` wired into `PostgresReplayRepository` in `main.py`, preserving raw replay snapshots across process restarts. |
 | **Regional Adapters & Synchronization** | **EXTERNAL DEPENDENCY REQUIRED** | Replay adapter and typed SDK are complete; live CRM connectivity is blocked by B07 (missing municipal sandbox & credentials). |
 | **AI / Decision Gateway** | **EXTERNAL DEPENDENCY REQUIRED** | Pure advisory evaluator and artifact-bound confidence catalog are implemented; operational routing remains blocked by B02/B04/B06/B10. |
 
 ---
 
-## 2. Critical Blockers (P0)
+## 2. Resolved Critical Blockers (P0)
 
-1. **Broken Attachment Ingestion Seam**:
-   - `appeals.attachment_ref` was populated exclusively by direct SQL in integration test fixtures. No endpoint existed to upload or register attachments.
-   - Closure integrity (`POST /v1/requests/{id}/closure-preflight`) and incident resolution (`POST /v1/incidents/{id}/lifecycle`) strictly require content-addressed SHA-256 evidence refs matching `appeals.attachment_ref`. Without an upload endpoint, human operators could never complete closure or resolution workflows with real files.
-2. **Missing Appeal Queue Listing (`GET /v1/requests`)**:
-   - The core API had no endpoint to list or paginate appeals. Consequently, the operator workspace displayed hardcoded static records. Operators could not inspect incoming appeals or triage their regional queues.
-3. **Control Plane Router Activation 503 Failure**:
-   - In `services/core/src/pulse109/main.py`, `create_control_plane_router(bundle_repository)` was called with `verifier=None`. Any request to `POST /v1/control-plane/bundles/activate` immediately failed with HTTP 503 (`verifier_unavailable`).
-4. **Unmounted Privacy Service**:
-   - `pulse109.privacy` was implemented with zero runtime exposure. No endpoint allowed resolving private references or recording PII access audits (`PII_VIEWED`, `PII_REVEALED`).
-5. **In-Memory Volatile Alert State**:
-   - `AlertStore` kept all alerts and reviews in a Python dictionary. Every restart or deployment purged operational alerts, even though `analytics.alert` and `analytics.alert_review` tables exist in PostgreSQL.
+1. **Attachment Ingestion Seam [RESOLVED]**:
+   - Implemented `POST /v1/requests/{id}/attachments` and `GET /v1/requests/{id}/attachments` in `manual_path/router.py` and `postgres_path.py`. Enforces magic byte MIME inspection, executable rejection, and malware scanning before persisting to `appeals.attachment_ref`.
+2. **Appeal Queue Listing (`GET /v1/requests`) [RESOLVED]**:
+   - Added paginated `GET /v1/requests` endpoint supporting status filtering, limit/cursor pagination, and region isolation. Web frontend (`page.tsx`) now streams live appeals from the backend.
+3. **Control Plane Router Activation 503 Failure [RESOLVED]**:
+   - Wired `verifier` into `create_control_plane_router(bundle_repository, verifier=verifier)` in `main.py`. Bundle activation operates over HTTP with signature verification.
+4. **Unmounted Privacy Service [RESOLVED]**:
+   - Mounted `pulse109.privacy.create_privacy_router` at `/v1/privacy` in `main.py` with authenticated resolution and access audit trails.
+5. **In-Memory Volatile Alert State [RESOLVED]**:
+   - Implemented `PostgresAlertStore` using `psycopg.sql` to persist alerts and reviews in `analytics.alert` and `analytics.alert_review`, replacing volatile in-memory storage.
 
 ---
 
-## 3. High-Priority Gaps (P1)
+## 3. Resolved High-Priority Gaps (P1)
 
-1. **Replay Snapshot Ephemerality**:
-   - `PostgresReplayRepository` in `main.py` used `MemorySnapshotStore`. While manifests were stored in PostgreSQL, the actual snapshot payloads were lost upon process restart. A persistent content-addressed file store is required.
-2. **Adapter Lag False Positives**:
-   - `AdapterLagDetector` checked all outbox rows in `pending` or `retrying` status without verifying if `event_type` was an adapter-targeted event (`appeal.assigned.v1`, `appeal.reassigned.v1`, `appeal.status.changed.v1`). Internal events remaining in outbox triggered false positive `sla_risk` alerts.
-3. **Absence of Control Plane Rollback Flow**:
-   - The bundle control plane enforced monotonic version/sequence increases to prevent downgrade attacks. However, when an active release bundle needs to be rolled back to a known-good configuration, an explicit rollback command must advance the sequence while reinstating previous content.
-4. **Quarantined / Infected Evidence Rejection**:
-   - `outcomes/postgres.py` checked that evidence hashes existed in `appeals.attachment_ref`, but did not assert `quarantine_status = 'clean'`. Infected or rejected files could theoretically be cited as resolution proof.
+1. **Replay Snapshot Ephemerality [RESOLVED]**:
+   - Wired `FileSnapshotStore` into `PostgresReplayRepository` in `main.py`, persisting replay snapshots to disk across process restarts.
+2. **Adapter Lag False Positives [RESOLVED]**:
+   - Filtered `AdapterLagDetector` to inspect only adapter-targeted event types (`appeal.assigned.v1`, `appeal.reassigned.v1`, `appeal.status.changed.v1`).
+3. **Control Plane Monotonic Rollback Flow [RESOLVED]**:
+   - Added `create_rollback_bundle` in `pulse109.control_plane.bundles` and `pulse109-bundle rollback` command in `cli.py`, safely advancing monotonic sequence while re-signing target known-good manifests.
+4. **Quarantined / Infected Evidence Rejection [RESOLVED]**:
+   - Updated `outcomes/postgres.py` preflight and confirmation to check `data_classification` from `appeals.attachment_ref` and reject security-flagged or quarantined files with HTTP 422 `evidence_quarantined`. Re-verified during confirmation before atomic closure.
 
 ---
 

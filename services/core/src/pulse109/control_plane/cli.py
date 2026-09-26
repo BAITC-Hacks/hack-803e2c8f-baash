@@ -10,11 +10,17 @@ from pathlib import Path
 
 import psycopg
 from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey, Ed25519PublicKey
 
 from pulse109.config import get_settings
 
-from .bundles import MAX_ENVELOPE_BYTES, BundleError, BundleVerifier, VerifiedBundle
+from .bundles import (
+    MAX_ENVELOPE_BYTES,
+    BundleError,
+    BundleVerifier,
+    VerifiedBundle,
+    create_rollback_bundle,
+)
 from .postgres import PostgresBundleRepository
 
 
@@ -59,7 +65,7 @@ def _print_receipt(bundle: VerifiedBundle, *, action: str) -> None:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="pulse109-bundle")
-    parser.add_argument("action", choices=("verify", "activate", "show-active"))
+    parser.add_argument("action", choices=("verify", "activate", "show-active", "rollback"))
     parser.add_argument("--region", required=True)
     parser.add_argument(
         "--trusted-key",
@@ -69,18 +75,85 @@ def main(argv: list[str] | None = None) -> int:
         help="explicit Ed25519 public key; repeat during rotation",
     )
     parser.add_argument("--bundle", type=Path, help="signed JSON envelope for verify or activate")
+    parser.add_argument(
+        "--target-bundle",
+        type=Path,
+        help="signed JSON envelope of the target bundle to roll back to",
+    )
+    parser.add_argument(
+        "--signing-key",
+        type=Path,
+        help="PEM file containing Ed25519 private key for signing rollback bundle",
+    )
+    parser.add_argument("--key-id", type=str, help="key ID corresponding to the signing key")
+    parser.add_argument(
+        "--output",
+        type=Path,
+        help="optional file path to save the generated signed rollback envelope",
+    )
     args = parser.parse_args(argv)
-    if (args.action == "show-active") == (args.bundle is not None):
-        parser.error("--bundle is required for verify/activate and forbidden for show-active")
+
+    if args.action in ("verify", "activate"):
+        if args.bundle is None:
+            parser.error(f"--bundle is required for {args.action}")
+        if (
+            args.target_bundle is not None
+            or args.signing_key is not None
+            or args.key_id is not None
+        ):
+            parser.error(
+                f"--target-bundle, --signing-key, and --key-id are forbidden for {args.action}"
+            )
+    elif args.action == "show-active":
+        if (
+            args.bundle is not None
+            or args.target_bundle is not None
+            or args.signing_key is not None
+            or args.key_id is not None
+            or args.output is not None
+        ):
+            parser.error(
+                "flags other than --region and --trusted-key are forbidden for show-active"
+            )
+    elif args.action == "rollback":
+        if args.target_bundle is None or args.signing_key is None or args.key_id is None:
+            parser.error("--target-bundle, --signing-key, and --key-id are required for rollback")
+        if args.bundle is not None:
+            parser.error("--bundle is forbidden for rollback (use --target-bundle)")
 
     try:
         verifier = BundleVerifier(_trusted_keys(args.trusted_key), expected_region_id=args.region)
         now = datetime.now(timezone.utc)
         if args.action == "verify":
+            assert args.bundle is not None
             bundle = verifier.verify(_read_envelope(args.bundle), now=now)
+        elif args.action == "rollback":
+            assert args.target_bundle is not None
+            assert args.signing_key is not None
+            assert args.key_id is not None
+            repository = PostgresBundleRepository(get_settings().database_url)
+            envelope = repository.get_active_envelope(args.region)
+            if envelope is None:
+                raise BundleError("no active signed bundle exists to roll back from")
+            active_bundle = verifier.verify(envelope, now=now)
+            key_pem = Path(args.signing_key).read_bytes()
+            signing_key = serialization.load_pem_private_key(key_pem, password=None)
+            if not isinstance(signing_key, Ed25519PrivateKey):
+                raise ValueError("signing key must be an Ed25519 private key")
+            rollback_bytes = create_rollback_bundle(
+                target_bundle_envelope=_read_envelope(args.target_bundle),
+                active_bundle=active_bundle,
+                private_key=signing_key,
+                key_id=args.key_id,
+                now=now,
+            )
+            if args.output:
+                Path(args.output).write_bytes(rollback_bytes)
+            bundle = verifier.install(rollback_bytes, now=now, repository=repository)
         else:
             repository = PostgresBundleRepository(get_settings().database_url)
             if args.action == "activate":
+                assert args.bundle is not None
                 bundle = verifier.install(
                     _read_envelope(args.bundle), now=now, repository=repository
                 )

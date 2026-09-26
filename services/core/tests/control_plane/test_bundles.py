@@ -250,3 +250,85 @@ def test_repository_reads_exact_signed_envelope_for_current_verification(monkeyp
 
     assert stored == verified.signed_envelope
     assert verifier().verify(stored, now=NOW) == verified
+
+
+def test_build_signed_bundle_and_create_rollback_bundle() -> None:
+    from pulse109.control_plane.bundles import build_signed_bundle, create_rollback_bundle
+
+    v = verifier()
+    initial_content = {
+        "catalog_version": "cat-good",
+        "mapping_version": "map-good",
+        "policy_version": "pol-good",
+        "artifacts": [],
+    }
+    v1_envelope = build_signed_bundle(
+        private_key=PRIVATE,
+        key_id="region-a-key",
+        bundle_id="bundle-v1",
+        region_id="region-a",
+        version=1,
+        sequence=1,
+        content=initial_content,
+        now=NOW,
+    )
+    v1_verified = v.verify(v1_envelope, now=NOW)
+    assert v1_verified.version == 1
+    assert v1_verified.sequence == 1
+    assert v1_verified.content["catalog_version"] == "cat-good"
+
+    # Suppose active bundle progressed to v5 with a broken catalog
+    v5_content = {
+        "catalog_version": "cat-broken",
+        "mapping_version": "map-broken",
+        "policy_version": "pol-broken",
+        "artifacts": [],
+    }
+    v5_envelope = build_signed_bundle(
+        private_key=PRIVATE,
+        key_id="region-a-key",
+        bundle_id="bundle-v5",
+        region_id="region-a",
+        version=5,
+        sequence=5,
+        content=v5_content,
+        now=NOW,
+    )
+    active_v5 = v.verify(v5_envelope, now=NOW)
+    assert active_v5.version == 5
+
+    # Create a rollback bundle targeting v1
+    rollback_envelope = create_rollback_bundle(
+        target_bundle_envelope=v1_envelope,
+        active_bundle=active_v5,
+        private_key=PRIVATE,
+        key_id="region-a-key",
+        now=NOW,
+    )
+    rollback_verified = v.verify(rollback_envelope, now=NOW)
+    # Must advance monotonic counters beyond active_v5
+    assert rollback_verified.version == 6
+    assert rollback_verified.sequence == 6
+    # Must restore the target content
+    assert rollback_verified.content["catalog_version"] == "cat-good"
+    assert rollback_verified.content["mapping_version"] == "map-good"
+
+    # Test rollback cross-region mismatch rejection
+    other_region_envelope = build_signed_bundle(
+        private_key=PRIVATE,
+        key_id="region-a-key",
+        bundle_id="bundle-other",
+        region_id="region-other",
+        version=1,
+        sequence=1,
+        content=initial_content,
+        now=NOW,
+    )
+    with pytest.raises(BundleError, match="region does not match"):
+        create_rollback_bundle(
+            target_bundle_envelope=other_region_envelope,
+            active_bundle=active_v5,
+            private_key=PRIVATE,
+            key_id="region-a-key",
+            now=NOW,
+        )

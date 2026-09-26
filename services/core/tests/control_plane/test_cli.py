@@ -103,3 +103,93 @@ def test_cli_argument_validation(tmp_path: Path) -> None:
 
     with pytest.raises(SystemExit):
         cli.main(["show-active", "--region", "r1"])
+
+    with pytest.raises(SystemExit):
+        cli.main(["rollback", "--region", "r1", "--trusted-key", "k1=dummy.pem"])
+
+
+def _write_priv_pem(key_path: Path, private_key: Ed25519PrivateKey) -> None:
+    pem = private_key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.PKCS8,
+        encryption_algorithm=serialization.NoEncryption(),
+    )
+    key_path.write_bytes(pem)
+
+
+def test_cli_rollback_success(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    import base64
+
+    priv = Ed25519PrivateKey.generate()
+    pub_file = tmp_path / "trusted.pem"
+    priv_file = tmp_path / "signing.pem"
+    _write_pem(pub_file, priv)
+    _write_priv_pem(priv_file, priv)
+
+    target_file = tmp_path / "target.json"
+    _create_envelope_file(target_file, priv, region_id="region-test", key_id="key-1")
+
+    active_body = {
+        "bundle_id": "region-test-bundle-5",
+        "region_id": "region-test",
+        "version": 5,
+        "sequence": 5,
+        "issued_at": "2026-09-26T10:00:00Z",
+        "expires_at": "2026-10-26T10:00:00Z",
+        "schema_version": "regional_release_bundle/1",
+        "content": {
+            "catalog_version": "cat-5",
+            "mapping_version": "map-5",
+            "policy_version": "pol-5",
+            "artifacts": [],
+        },
+    }
+    raw_sig = priv.sign(canonical_bundle_bytes(active_body))
+    active_envelope = json.dumps(
+        {
+            "body": active_body,
+            "key_id": "key-1",
+            "signature": base64.urlsafe_b64encode(raw_sig).decode().rstrip("="),
+        }
+    ).encode()
+
+    class MockRepo:
+        def __init__(self, _dsn: str) -> None:
+            self.installed = None
+
+        def get_active_envelope(self, _region: str) -> bytes:
+            return active_envelope
+
+        def activate_if_newer(self, bundle: object) -> bool:
+            self.installed = bundle
+            return True
+
+    monkeypatch.setattr("pulse109.control_plane.cli.PostgresBundleRepository", MockRepo)
+
+    out_file = tmp_path / "rollback.json"
+    exit_code = cli.main(
+        [
+            "rollback",
+            "--region",
+            "region-test",
+            "--trusted-key",
+            f"key-1={pub_file}",
+            "--target-bundle",
+            str(target_file),
+            "--signing-key",
+            str(priv_file),
+            "--key-id",
+            "key-1",
+            "--output",
+            str(out_file),
+        ]
+    )
+    assert exit_code == 0
+    captured = capsys.readouterr()
+    receipt = json.loads(captured.out)
+    assert receipt["action"] == "rollback"
+    assert receipt["version"] == 6
+    assert receipt["sequence"] == 6
+    assert out_file.exists()

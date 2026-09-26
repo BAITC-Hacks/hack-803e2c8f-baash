@@ -6,7 +6,9 @@ from .bundles import (
     BundleVerifier,
     MemoryBundleRepository,
     VerifiedBundle,
+    build_signed_bundle,
     canonical_bundle_bytes,
+    create_rollback_bundle,
 )
 from .postgres import PostgresBundleRepository
 from .router import create_control_plane_router
@@ -18,6 +20,8 @@ __all__ = [
     "MemoryBundleRepository",
     "PostgresBundleRepository",
     "VerifiedBundle",
+    "build_signed_bundle",
     "canonical_bundle_bytes",
     "create_control_plane_router",
+    "create_rollback_bundle",
 ]

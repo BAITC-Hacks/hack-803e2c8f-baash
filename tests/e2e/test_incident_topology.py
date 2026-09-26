@@ -445,8 +445,14 @@ def test_incident_transitive_merge_and_superseded_rejection() -> None:
 
 def test_incident_split_after_merge() -> None:
     client = TestClient(app)
-    a1, a2 = _create_appeal(client, f"SAM-A1-{uuid4()}"), _create_appeal(client, f"SAM-A2-{uuid4()}")
-    b1, b2 = _create_appeal(client, f"SAM-B1-{uuid4()}"), _create_appeal(client, f"SAM-B2-{uuid4()}")
+    a1, a2 = (
+        _create_appeal(client, f"SAM-A1-{uuid4()}"),
+        _create_appeal(client, f"SAM-A2-{uuid4()}"),
+    )
+    b1, b2 = (
+        _create_appeal(client, f"SAM-B1-{uuid4()}"),
+        _create_appeal(client, f"SAM-B2-{uuid4()}"),
+    )
 
     inc_a, ver_a = _setup_confirmed_incident(client, [a1, a2], key_prefix="sam-a")
     inc_b, ver_b = _setup_confirmed_incident(client, [b1, b2], key_prefix="sam-b")
@@ -599,4 +605,3 @@ def test_same_appeal_proposed_in_two_incidents_preserves_identity() -> None:
     appeal_get = client.get(f"/v1/requests/{shared_appeal}", headers=headers)
     assert appeal_get.status_code == 200
     assert appeal_get.json()["request_id"] == shared_appeal
-
