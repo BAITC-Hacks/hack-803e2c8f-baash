@@ -27,9 +27,60 @@ def test_openapi_31_contract_is_valid_and_stable() -> None:
         if method in {"get", "post", "put", "patch", "delete"}
     ]
     assert document["openapi"] == "3.1.0"
-    assert len(operations) == 35
-    assert len({item["operationId"] for item in operations}) == 35
-    assert len(document["components"]["schemas"]) == 57
+    assert len(operations) == 37
+    assert len({item["operationId"] for item in operations}) == 37
+    assert len(document["components"]["schemas"]) == 60
+
+
+def test_control_plane_bundle_contract_is_valid() -> None:
+    with (ROOT / "contracts/openapi.yaml").open(encoding="utf-8") as stream:
+        document = yaml.safe_load(stream)
+
+    active_validator = Draft202012Validator(
+        document["components"]["schemas"]["ActiveBundleResponse"]
+    )
+    receipt_validator = Draft202012Validator(
+        document["components"]["schemas"]["BundleActivationReceipt"]
+    )
+    cmd_validator = Draft202012Validator(
+        document["components"]["schemas"]["BundleActivationCommand"]
+    )
+
+    valid_active = {
+        "bundle_id": "bundle-001",
+        "region_id": "KAR",
+        "version": 1,
+        "sequence": 1,
+        "schema_version": "regional_release_bundle/1",
+        "key_id": "key-kar-01",
+        "issued_at": "2026-09-26T12:00:00Z",
+        "expires_at": "2026-10-26T12:00:00Z",
+        "content_sha256": "a" * 64,
+        "catalog_version": "cat-v1",
+        "mapping_version": "map-v1",
+        "policy_version": "pol-v1",
+        "artifact_count": 2,
+    }
+    assert list(active_validator.iter_errors(valid_active)) == []
+
+    valid_receipt = {
+        "bundle_id": "bundle-001",
+        "region_id": "KAR",
+        "version": 1,
+        "sequence": 1,
+        "activated_at": "2026-09-26T12:05:00Z",
+        "status": "activated",
+    }
+    assert list(receipt_validator.iter_errors(valid_receipt)) == []
+
+    valid_cmd = {
+        "envelope": {
+            "body": {},
+            "key_id": "key-1",
+            "signature": "sig",
+        }
+    }
+    assert list(cmd_validator.iter_errors(valid_cmd)) == []
 
 
 def test_alert_review_contract_is_valid() -> None:

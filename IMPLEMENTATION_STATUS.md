@@ -148,15 +148,34 @@
 - Operator UI (`apps/web`) adds dedicated interactive panels for Incident Topology (member selection,
   cluster split, merge, supervised reopen) and Replay Lab (baseline vs candidate comparisons across
   language slices, override rates, and safety governance notices), wired directly into the workspace.
+- Actionable Anomaly Detectors & Situation Center Alert Review: implemented modular detectors
+  (`HandoffLoopDetector`, `ReopenSpikeDetector`, `AdapterLagDetector`, `OverrideSpikeDetector`)
+  orchestrated by `AlertDetectorEngine` with active alert deduplication. Exposed `POST /v1/alerts/{alert_id}/reviews`
+  with role-based access control, regional scoping, controlled action codes (`acknowledge`, `resolve`, `dismiss`),
+  and interactive triage UI in the Situation Center.
+- Privacy Boundary & PII Access Audit: implemented `pulse109.privacy` service backed by `privacy.private_ref`
+  and `audit.audit_event`. Enforced strict access scope matching and emitted immutable audit events
+  (`PII_VIEWED`, `PII_REVEALED`, `PII_EXPORTED`) on every private reference resolution. Zero raw citizen PII
+  in logs, metrics labels, and OpenTelemetry trace spans.
+- Worker Reliability & Crash Recovery: enhanced worker delivery pipeline with lease timestamp tracking,
+  automatic lease expiration recovery (`recover_expired_leases`), bounded exponential backoff, and
+  dead-letter quarantine for corrupted or poison-pill payloads.
+- Security Hardening for Attachment Ingestion: added binary magic byte inspection (`inspect_mime_type`),
+  strict allowlisted MIME validation (`application/pdf`, `image/jpeg`, `image/png`, `image/webp`, `text/plain`),
+  detection of disguised executable headers (`MZ`, `\x7fELF`, `\xca\xfe\xba\xbe`, `#!`) and scripts (`<script`),
+  and pluggable malware scanner integration (`MockMalwareScanner`).
+- Control Plane HTTP API: added `GET /v1/control-plane/bundles/active` and `POST /v1/control-plane/bundles/activate`
+  with role authorization (`supervisor`/`admin` for activation), regional matching, cryptographic signature
+  verification via `BundleVerifier`, and atomic anti-rollback sequence enforcement.
 - Critical path resilience suite (`tests/resilience/test_critical_path_without_ml.py`) verifies that
   appeal creation, inspection, manual decision, assignment, status events, and zero-PII audit trail
   operate without dependency on ML inference or external regional CRMs.
 
 ## Contracts And Migrations Changed
 
-- OpenAPI includes 34 operations and 56 schemas. Endpoints now cover intake, requests, decisions,
-  ownership, incidents (membership, lifecycle, merge, split), replay reports, analytics, reports,
-  catalog, and operational probes.
+- OpenAPI (`contracts/openapi.yaml`) includes 37 operations and 60 schemas. Endpoints cover intake,
+  requests, decisions, ownership, incidents (membership, lifecycle, merge, split), alerts (list, review),
+  analytics, reports, catalog, replay reports, control-plane bundles (active, activate), and operational probes.
 - Event catalog (`contracts/event_catalog.md`) documents `incident.merged.v1`, `incident.split.v1`,
   `incident.membership.transferred.v1`, and `incident.reopened.v1`.
 - Migration `0021_incident_topology.py` introduces `incidents.incident_relation_decision` and supports

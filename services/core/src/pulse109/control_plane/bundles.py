@@ -59,6 +59,34 @@ class BundleRepository(Protocol):
         Implementations must preserve the prior last-known-good bundle on failure.
         """
 
+    def get_active(self, region_id: str) -> VerifiedBundle | None:
+        """Return stored active bundle for region."""
+
+
+class MemoryBundleRepository:
+    """In-memory bundle repository for testing and fallback."""
+
+    def __init__(self) -> None:
+        self._bundles: dict[str, VerifiedBundle] = {}
+
+    def activate_if_newer(self, bundle: VerifiedBundle) -> bool:
+        current = self._bundles.get(bundle.region_id)
+        if current is not None and (
+            bundle.version <= current.version or bundle.sequence <= current.sequence
+        ):
+            return False
+        self._bundles[bundle.region_id] = bundle
+        return True
+
+    def get_active(self, region_id: str) -> VerifiedBundle | None:
+        return self._bundles.get(region_id)
+
+    def get_active_envelope(self, region_id: str) -> bytes | None:
+        bundle = self._bundles.get(region_id)
+        if bundle is None or not bundle.signed_envelope:
+            return None
+        return bundle.signed_envelope
+
 
 def _canonical(value: object) -> bytes:
     try:

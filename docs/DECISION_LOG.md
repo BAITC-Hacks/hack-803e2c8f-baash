@@ -679,6 +679,28 @@ Record implementation decisions here when the repository, contracts or available
 - **Evidence:** `services/core/src/pulse109/privacy/`, `services/core/tests/privacy/test_privacy_service.py`, `services/core/tests/test_observability.py`.
 - **Revisit when:** HSM / external vault integration and homomorphic encryption are specified.
 
+### D-064 — Control plane bundle inspection and atomic activation HTTP API
+
+- **Date:** 2026-09-26
+- **Status:** accepted
+- **Context:** regional deployments and operators need to inspect currently active verified release bundles and activate new Ed25519-signed bundles via the public API with role-based governance and anti-rollback guarantees.
+- **Decision:** expose authenticated API endpoints `GET /v1/control-plane/bundles/active` and `POST /v1/control-plane/bundles/activate`. Inspection requires operator/supervisor/analyst/auditor/admin role and concrete region isolation (`X-Region-Id`). Activation requires supervisor or admin role, validates the signed envelope cryptographically via `BundleVerifier`, asserts regional matching between envelope and header, and applies atomic monotonicity checks advancing both version and sequence. Contract is published in `contracts/openapi.yaml` (`37` operations, `60` schemas).
+- **Alternatives:** direct database manipulation; manual CLI deployment only; unauthenticated bundle activation.
+- **Consequences:** complete control-plane lifecycle exposed over HTTP with strict cryptographic verification and anti-rollback protection; fallback in memory preserves testing and offline operational safety.
+- **Evidence:** `contracts/openapi.yaml`, `services/core/src/pulse109/control_plane/router.py`, `services/core/tests/control_plane/test_router.py`, `tests/contract/test_contracts.py`.
+- **Revisit when:** multi-party signing threshold schemes (e.g. M-of-N Ed25519) are introduced.
+
+### D-065 — Security hardening of citizen attachment ingestion and malware scanning
+
+- **Date:** 2026-09-26
+- **Status:** accepted
+- **Context:** citizen appeal attachments uploaded to the platform present attack vectors including disguised executables, polyglot files, script injection, and malware.
+- **Decision:** implement comprehensive attachment validation pipeline in `pulse109.security.attachments`. Enforce strict allowlisted MIME types (`application/pdf`, `image/jpeg`, `image/png`, `image/webp`, `text/plain`), inspect binary magic bytes to prevent MIME sniffing evasion, scan for executable headers (`MZ`, `\x7fELF`, `\xca\xfe\xba\xbe`, shebang `#!`) and embedded scripts (`<script`), compute canonical SHA-256 digests, and integrate pluggable `MalwareScanner` abstraction (`MockMalwareScanner` with simulated EICAR and threat detection).
+- **Alternatives:** rely purely on client-supplied `Content-Type` header; store uninspected blobs directly into S3; client-side validation only.
+- **Consequences:** malicious or disguised payloads are blocked and quarantined at ingestion boundary before persisting to object storage or worker processing; zero executable execution risk.
+- **Evidence:** `services/core/src/pulse109/security/attachments.py`, `tests/security/test_attachments.py`.
+- **Revisit when:** ClamAV / external cloud threat detection API is connected in staging.
+
 ### D-XXX — Short title
 
 - **Date:** YYYY-MM-DD

@@ -10,6 +10,12 @@ from pulse109 import __version__
 from pulse109.analytics import AlertStore, AnalyticsService, create_analytics_router
 from pulse109.catalog import PolicyService, create_catalog_router
 from pulse109.config import get_settings
+from pulse109.control_plane import (
+    BundleRepository,
+    MemoryBundleRepository,
+    PostgresBundleRepository,
+    create_control_plane_router,
+)
 from pulse109.database import get_engine
 from pulse109.decisions.publication import ConfidencePublicationService
 from pulse109.decisions.publication_router import create_confidence_publication_router
@@ -233,6 +239,13 @@ elif synthetic_read_models:
 else:
     replay_repository = None
 app.include_router(create_replay_router(replay_repository, allow_synthetic=synthetic_read_models))
+
+bundle_repository: BundleRepository
+if use_postgres_manual_path:
+    bundle_repository = PostgresBundleRepository(settings.database_url)
+else:
+    bundle_repository = MemoryBundleRepository()
+app.include_router(create_control_plane_router(bundle_repository))
 
 
 @app.middleware("http")

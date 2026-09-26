@@ -4,16 +4,20 @@ from .bundles import (
     BundleError,
     BundleRepository,
     BundleVerifier,
+    MemoryBundleRepository,
     VerifiedBundle,
     canonical_bundle_bytes,
 )
 from .postgres import PostgresBundleRepository
+from .router import create_control_plane_router
 
 __all__ = [
     "BundleError",
     "BundleRepository",
     "BundleVerifier",
+    "MemoryBundleRepository",
     "PostgresBundleRepository",
     "VerifiedBundle",
     "canonical_bundle_bytes",
+    "create_control_plane_router",
 ]
