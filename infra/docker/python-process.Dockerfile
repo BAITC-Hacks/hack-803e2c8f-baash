@@ -17,6 +17,12 @@ COPY adapters ./adapters
 COPY contracts ./contracts
 RUN uv sync --frozen --no-dev
 
+# /app belongs to root, but the process runs as pulse109. The replay snapshot
+# store creates .data/snapshots at import, so it must exist and be writable by
+# the runtime user before privileges drop. Without this the container raises
+# PermissionError on '.data' and exits 1, taking the whole topology down.
+RUN mkdir -p /app/.data/snapshots && chown -R pulse109:pulse109 /app/.data
+
 USER pulse109
 EXPOSE 8080
 CMD ["uvicorn", "pulse109.main:app", "--host", "0.0.0.0", "--port", "8080"]
