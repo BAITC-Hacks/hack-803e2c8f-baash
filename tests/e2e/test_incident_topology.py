@@ -362,3 +362,241 @@ def test_incident_reopen_from_closed_and_resolved() -> None:
     )
     assert reopen_from_closed.status_code == 200
     assert reopen_from_closed.json()["state"] == "monitoring"
+
+
+def test_incident_transitive_merge_and_superseded_rejection() -> None:
+    client = TestClient(app)
+    a1, a2 = _create_appeal(client, f"TMA-1-{uuid4()}"), _create_appeal(client, f"TMA-2-{uuid4()}")
+    b1, b2 = _create_appeal(client, f"TMB-1-{uuid4()}"), _create_appeal(client, f"TMB-2-{uuid4()}")
+    c1, c2 = _create_appeal(client, f"TMC-1-{uuid4()}"), _create_appeal(client, f"TMC-2-{uuid4()}")
+
+    inc_a, ver_a = _setup_confirmed_incident(client, [a1, a2], key_prefix="tm-a")
+    inc_b, ver_b = _setup_confirmed_incident(client, [b1, b2], key_prefix="tm-b")
+    inc_c, ver_c = _setup_confirmed_incident(client, [c1, c2], key_prefix="tm-c")
+
+    headers = {"X-Region-Id": "ALA", "X-Actor-Token": "synthetic-supervisor"}
+
+    # Merge A into B
+    res_ab = client.post(
+        f"/v1/incidents/{inc_a}/merge",
+        headers={**headers, "Idempotency-Key": f"merge-ab-{uuid4()}"},
+        json={
+            "target_incident_id": inc_b,
+            "source_version": ver_a,
+            "target_version": ver_b,
+            "member_request_ids": [a1, a2],
+            "reason_code": "MERGE_A_INTO_B",
+            "evidence_refs": ["a" * 64],
+        },
+    )
+    assert res_ab.status_code == 200
+    data_ab = res_ab.json()
+    assert data_ab["source"]["state"] == "superseded"
+    assert data_ab["target"]["member_count"] == 4
+    ver_b2 = data_ab["target"]["version"]
+
+    # Attempt to merge or split superseded A must fail with 409 invalid_incident_state
+    res_a_again = client.post(
+        f"/v1/incidents/{inc_a}/merge",
+        headers={**headers, "Idempotency-Key": f"merge-a-again-{uuid4()}"},
+        json={
+            "target_incident_id": inc_c,
+            "source_version": ver_a + 1,
+            "target_version": ver_c,
+            "member_request_ids": [a1, a2],
+            "reason_code": "RE_MERGE_ATTEMPT",
+            "evidence_refs": ["a" * 64],
+        },
+    )
+    assert res_a_again.status_code == 409
+    assert res_a_again.json()["detail"]["code"] == "invalid_incident_state"
+
+    res_split_superseded = client.post(
+        f"/v1/incidents/{inc_a}/split",
+        headers={**headers, "Idempotency-Key": f"split-super-{uuid4()}"},
+        json={
+            "source_version": ver_a + 1,
+            "member_request_ids": [a1, a2],
+            "reason_code": "SPLIT_SUPERSEDED",
+            "evidence_refs": ["a" * 64],
+        },
+    )
+    assert res_split_superseded.status_code == 409
+    assert res_split_superseded.json()["detail"]["code"] == "invalid_incident_state"
+
+    # Merge B (which now contains A's members) into C
+    res_bc = client.post(
+        f"/v1/incidents/{inc_b}/merge",
+        headers={**headers, "Idempotency-Key": f"merge-bc-{uuid4()}"},
+        json={
+            "target_incident_id": inc_c,
+            "source_version": ver_b2,
+            "target_version": ver_c,
+            "member_request_ids": sorted([a1, a2, b1, b2]),
+            "reason_code": "MERGE_B_INTO_C",
+            "evidence_refs": ["b" * 64],
+        },
+    )
+    assert res_bc.status_code == 200
+    data_bc = res_bc.json()
+    assert data_bc["source"]["state"] == "superseded"
+    assert data_bc["target"]["member_count"] == 6
+
+
+def test_incident_split_after_merge() -> None:
+    client = TestClient(app)
+    a1, a2 = _create_appeal(client, f"SAM-A1-{uuid4()}"), _create_appeal(client, f"SAM-A2-{uuid4()}")
+    b1, b2 = _create_appeal(client, f"SAM-B1-{uuid4()}"), _create_appeal(client, f"SAM-B2-{uuid4()}")
+
+    inc_a, ver_a = _setup_confirmed_incident(client, [a1, a2], key_prefix="sam-a")
+    inc_b, ver_b = _setup_confirmed_incident(client, [b1, b2], key_prefix="sam-b")
+
+    headers = {"X-Region-Id": "ALA", "X-Actor-Token": "synthetic-supervisor"}
+
+    # Merge A into B
+    res_merge = client.post(
+        f"/v1/incidents/{inc_a}/merge",
+        headers={**headers, "Idempotency-Key": f"sam-merge-{uuid4()}"},
+        json={
+            "target_incident_id": inc_b,
+            "source_version": ver_a,
+            "target_version": ver_b,
+            "member_request_ids": [a1, a2],
+            "reason_code": "MERGE_FOR_SPLIT_TEST",
+            "evidence_refs": ["e" * 64],
+        },
+    )
+    assert res_merge.status_code == 200
+    ver_b_merged = res_merge.json()["target"]["version"]
+
+    # Split A's members back out into a new child incident
+    res_split = client.post(
+        f"/v1/incidents/{inc_b}/split",
+        headers={**headers, "Idempotency-Key": f"sam-split-{uuid4()}"},
+        json={
+            "source_version": ver_b_merged,
+            "member_request_ids": [a1, a2],
+            "reason_code": "SPLIT_RESTORE_AUTONOMY",
+            "evidence_refs": ["f" * 64],
+        },
+    )
+    assert res_split.status_code == 200
+    data_split = res_split.json()
+    assert data_split["source"]["member_count"] == 2
+    assert data_split["target"]["state"] == "proposed"
+
+
+def test_incident_concurrent_split_stale_version_conflict() -> None:
+    client = TestClient(app)
+    m1 = _create_appeal(client, f"CSC-1-{uuid4()}")
+    m2 = _create_appeal(client, f"CSC-2-{uuid4()}")
+    m3 = _create_appeal(client, f"CSC-3-{uuid4()}")
+    m4 = _create_appeal(client, f"CSC-4-{uuid4()}")
+    m5 = _create_appeal(client, f"CSC-5-{uuid4()}")
+
+    inc, ver = _setup_confirmed_incident(client, [m1, m2, m3, m4, m5], key_prefix="csc")
+    headers = {"X-Region-Id": "ALA", "X-Actor-Token": "synthetic-supervisor"}
+
+    # Operator 1 splits [m1, m2] at version ver
+    res1 = client.post(
+        f"/v1/incidents/{inc}/split",
+        headers={**headers, "Idempotency-Key": f"op1-split-{uuid4()}"},
+        json={
+            "source_version": ver,
+            "member_request_ids": [m1, m2],
+            "reason_code": "OP1_SPLIT",
+            "evidence_refs": ["1" * 64],
+        },
+    )
+    assert res1.status_code == 200
+
+    # Operator 2 concurrently attempts split with the old version ver
+    res2 = client.post(
+        f"/v1/incidents/{inc}/split",
+        headers={**headers, "Idempotency-Key": f"op2-split-{uuid4()}"},
+        json={
+            "source_version": ver,
+            "member_request_ids": [m3, m4],
+            "reason_code": "OP2_SPLIT_STALE",
+            "evidence_refs": ["2" * 64],
+        },
+    )
+    assert res2.status_code == 409
+    assert res2.json()["detail"]["code"] == "stale_version"
+
+
+def test_same_appeal_proposed_in_two_incidents_preserves_identity() -> None:
+    client = TestClient(app)
+    shared_appeal = _create_appeal(client, f"SHARED-{uuid4()}")
+    other_a = _create_appeal(client, f"OTHER-A-{uuid4()}")
+    other_b = _create_appeal(client, f"OTHER-B-{uuid4()}")
+
+    headers = {"X-Region-Id": "ALA", "X-Actor-Token": "synthetic-supervisor"}
+
+    # Incident 1
+    res1 = client.post(
+        "/v1/incidents",
+        headers={**headers, "Idempotency-Key": f"inc1-{uuid4()}"},
+        json={
+            "region_id": "ALA",
+            "topic_id": "topic:heating",
+            "service_id": "service:heating",
+            "member_request_ids": [shared_appeal, other_a],
+            "proposal_source": "rule",
+            "rationale": ["Heating complaints cluster"],
+        },
+    )
+    assert res1.status_code == 201
+    inc1_id = res1.json()["incident_id"]
+
+    # Incident 2
+    res2 = client.post(
+        "/v1/incidents",
+        headers={**headers, "Idempotency-Key": f"inc2-{uuid4()}"},
+        json={
+            "region_id": "ALA",
+            "topic_id": "topic:utilities",
+            "service_id": "service:utilities",
+            "member_request_ids": [shared_appeal, other_b],
+            "proposal_source": "rule",
+            "rationale": ["District wide utility outage"],
+        },
+    )
+    assert res2.status_code == 201
+    inc2_id = res2.json()["incident_id"]
+
+    assert inc1_id != inc2_id
+
+    # Confirm member in incident 1
+    mem1 = client.post(
+        f"/v1/incidents/{inc1_id}/members",
+        headers={**headers, "Idempotency-Key": f"mem1-{uuid4()}"},
+        json={
+            "request_id": shared_appeal,
+            "incident_version": 1,
+            "decision": "confirm",
+            "reason_code": "confirmed_in_inc1",
+            "evidence_refs": ["a" * 64],
+        },
+    )
+    assert mem1.status_code == 201
+
+    # Confirm the same appeal independently in incident 2 as well
+    mem2 = client.post(
+        f"/v1/incidents/{inc2_id}/members",
+        headers={**headers, "Idempotency-Key": f"mem2-{uuid4()}"},
+        json={
+            "request_id": shared_appeal,
+            "incident_version": 1,
+            "decision": "confirm",
+            "reason_code": "confirmed_in_inc2",
+            "evidence_refs": ["b" * 64],
+        },
+    )
+    assert mem2.status_code == 201
+
+    # Appeal itself is unmodified in its own core record and retains separate identity
+    appeal_get = client.get(f"/v1/requests/{shared_appeal}", headers=headers)
+    assert appeal_get.status_code == 200
+    assert appeal_get.json()["request_id"] == shared_appeal
+
