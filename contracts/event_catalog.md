@@ -76,6 +76,10 @@ Proposals, review decisions, approved policy rows, audit records and outbox even
 | `alert.acknowledged.v1` | Core | actor token, note | Operations, audit |
 | `alert.resolved.v1` | Core | actor token, resolution code, evidence references | Analytics, audit |
 
+Every incident event, audit record and outbox row carries the incident aggregate version after
+the operation. Confirm, reject and remove membership decisions each advance that version once;
+an exact idempotent replay creates no additional decision or event.
+
 ## Integration and data quality events
 
 | Event | Producer | Minimum payload | Primary consumers |

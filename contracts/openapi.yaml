@@ -531,7 +531,10 @@ paths:
                   maxLength: 1000
       responses:
         '201':
-          description: Membership decision recorded
+          description: >-
+            Membership decision recorded. Each new decision advances the incident aggregate
+            version; its event, audit and outbox records use the resulting version. An exact
+            idempotent replay returns the original result without advancing the version.
           content:
             application/json:
               schema:

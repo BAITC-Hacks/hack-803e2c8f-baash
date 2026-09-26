@@ -82,12 +82,12 @@ def test_verified_closure_supports_region_scoped_recurrence_assessment() -> None
         actor="synthetic-operator",
         correlation_id=source,
     )
-    for appeal in (prior_one, prior_two):
+    for version, appeal in enumerate((prior_one, prior_two), start=1):
         incident_service.decide_member(
             incident.incident_id,
             MembershipCommand(
                 request_id=appeal.request_id,
-                incident_version=1,
+                incident_version=version,
                 decision="confirm",
                 reason_code="SYNTHETIC_CONFIRMATION",
             ),
@@ -99,7 +99,7 @@ def test_verified_closure_supports_region_scoped_recurrence_assessment() -> None
     confirmed_incident = incident_service.decide_incident(
         incident.incident_id,
         IncidentDecision(
-            incident_version=1,
+            incident_version=3,
             decision="confirm",
             reason_code="SYNTHETIC_TWO_MEMBER_CONFIRMATION",
         ),

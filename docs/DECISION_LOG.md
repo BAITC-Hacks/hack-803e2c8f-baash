@@ -607,10 +607,10 @@ Record implementation decisions here when the repository, contracts or available
 - **Date:** 2026-09-26
 - **Status:** accepted
 - **Context:** federated policy and catalog distribution needs an integrity and downgrade boundary while central service connectivity may be unavailable.
-- **Decision:** use a bounded canonical JSON manifest signed with an explicitly trusted Ed25519 key. Verify signature, region, schema, validity window and artifact digests before an atomic repository activation that advances both version and sequence. Expose immutable verified content and preserve the last known good bundle on rejection.
+- **Decision:** use a bounded canonical JSON manifest signed with an explicitly trusted Ed25519 key. Verify signature, region, schema, validity window and artifact digests before an atomic PostgreSQL activation that advances both version and sequence. Persist append-only release history and the original signed bytes so current keys and time can reverify a stored release. Expose immutable verified content and preserve the last known good bundle on rejection.
 - **Alternatives:** accept unsigned configuration updates; trust a caller-supplied digest; permit a lower sequence to replace the active release.
-- **Consequences:** the pure verifier is implemented and tested; durable activation, artifact retrieval, key rotation, signing authority and regional deployment are still required before this becomes an operational control plane.
-- **Evidence:** `pulse109.control_plane.bundles` and focused tamper, replay, scope, expiry and immutability tests.
+- **Consequences:** verification and durable activation are implemented; artifact retrieval, key rotation, signing authority and regional deployment are still required before this becomes an operational control plane. A stored active row is historical evidence, so consumers must reverify its signed bytes against current trust and expiry before application.
+- **Evidence:** `pulse109.control_plane`, migration `0020_bundle_activation`, focused tamper, replay, scope, expiry and immutability tests, and PostgreSQL integration scenario.
 - **Revisit when:** signing keys, regional runtime and approved release artifacts are supplied.
 
 ### D-058 — Keep browser intake synthetic until private source storage exists
@@ -623,6 +623,17 @@ Record implementation decisions here when the repository, contracts or available
 - **Consequences:** the web journey is not an operational citizen channel until protected source storage and governance are integrated. The synthetic mode can exercise the UI and backend with fictitious data.
 - **Evidence:** `apps/web/app/intake.tsx`, frontend typecheck and lint, API fail-closed requirements.
 - **Revisit when:** B08/B10 provide approved identity, immutable source storage, legal basis and retention rules.
+
+### D-059 — Advance incident version for every membership decision
+
+- **Date:** 2026-09-26
+- **Status:** accepted
+- **Context:** membership decisions were append-only but did not advance the incident aggregate version, allowing a stale `incident_version` to authorize a later decision.
+- **Decision:** each confirmed, rejected or removed membership decision atomically advances the incident version. The membership decision, incident event, audit record and outbox event carry the resulting aggregate version. Idempotent replays return the original response before checking the submitted version, after region scope is verified.
+- **Alternatives:** version membership decisions independently; permit multiple decisions at one incident version.
+- **Consequences:** clients must submit the latest incident version after every membership decision; no schema migration is needed because existing version fields hold the aggregate version.
+- **Evidence:** in-memory E2E and PostgreSQL integration coverage.
+- **Revisit when:** membership becomes an independently versioned aggregate with an explicit cross-aggregate concurrency contract.
 
 ### D-XXX — Short title
 

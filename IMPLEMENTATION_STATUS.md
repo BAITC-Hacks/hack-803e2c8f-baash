@@ -3,12 +3,10 @@
 ## Current Milestone
 
 - Milestone: cross-cutting governed decision, handoff and evidence-backed closure slices.
-- Status: active. CI run `36224587228` passed quality and PostgreSQL integration/restore but the
-  full-history secret scan flagged two fixed synthetic lifecycle test keys. The test now generates
-  those keys; a path- and value-scoped history exception preserves the published commit without
-  weakening unrelated scan rules. The corrected scan passes locally and awaits one final CI.
-  Supervised incident lifecycle, signed bundle verification and synthetic-only browser intake are
-  implemented; the full scope from both supplied texts remains in progress.
+- Status: active. CI run `36224890794` passed quality, PostgreSQL integration/restore and security
+  for the supervised incident lifecycle, signed-bundle verifier and browser-intake safety changes.
+  Current work adds durable signed-bundle activation, incident membership versioning and an operator
+  closure/recurrence panel. The full scope from both supplied texts remains in progress.
 - Branch: `codex/production-platform-20260923`, created without discarding the pre-existing local
   changes. The newer upstream regional-import and ML commits have been merged into the branch.
 - Scope from the two supplied texts: durable manual journey, Handoff Guard, Replay Lab, Outcome
@@ -23,6 +21,9 @@
   automatic merge is absent and appeal identities remain separate.
 - Human-confirmed incident membership with region checks, audit/outbox evidence, idempotency, and a
   minimum confirmed-member rule.
+- Incident membership decisions now advance the incident aggregate version atomically; stale
+  submissions fail, exact replays remain idempotent, and audit/outbox records carry the resulting
+  version.
 - Typed adapter SDK, deterministic replay adapter, bounded retry/backoff, dead-letter state, source
   receipt deduplication, unknown-status review, and reconciliation checkpoints.
 - Versioned metric catalog and read models for coverage, freshness, volume trends, unavailable SLA
@@ -117,15 +118,18 @@
   version checks, exact retries, controlled reason codes, audit and outbox events. PostgreSQL
   verifies that resolution evidence hashes belong to attachments on currently confirmed member
   appeals in the same region; this does not independently verify the attachment contents.
-- A pure regional release-bundle verifier checks an explicit Ed25519 trust key, region, manifest,
-  validity window and content digest before an atomic activation repository seam. Verified content
-  is recursively immutable. Durable activation, key distribution and artifact application remain
-  to be implemented.
+- A regional release-bundle verifier checks an explicit Ed25519 trust key, region, manifest,
+  validity window and content digest before atomic PostgreSQL activation. Append-only history,
+  the last-known-good pointer and original signed bytes support fresh verification after restart.
+  Verified content is recursively immutable; key distribution and artifact application remain open.
 - Browser intake no longer claims success or invents a request number after a failed response.
   Retried submissions reuse one idempotency key and exact body. Legacy local drafts are removed
   from browser storage and restored in memory; normal mode blocks submit until approved private
   source storage is available. A flagged synthetic mode uses only test data and sends no raw address
   as an opaque private reference.
+- The operator workspace now separates appeal closure preflight from an explicit human confirmation.
+  An uncertain confirmation retains its exact idempotency key and body for retry; recurrence is
+  read-only, version-checked and displays abstention when verified context is unavailable.
 - The merged regional research corpus now contains withheld text markers only. Quarantine artifacts
   contain hashes and counts without source row values. New regional ingest withholds executor prose;
   training and evaluation stop on withheld data, and historical reports block quality claims.
@@ -154,6 +158,8 @@
   to `0018_m8_unit_org_crosswalk` to fit Alembic's version column; CI applied it and passed restore.
 - Added `0019_m8_gateway_assessment` for immutable, recommendation-bound advisory decisions with
   digest-based idempotency. The corrected migration and assessment passed PostgreSQL CI and restore.
+- Added `0020_bundle_activation` for append-only signed regional release history, active pointer
+  and bounded original envelope bytes. The new revision awaits PostgreSQL CI.
 - OpenAPI now includes the supervised incident lifecycle command with controlled evidence hashes.
   The bundle verifier is an internal seam and does not expose an operational API.
 
@@ -207,6 +213,11 @@
 | Current package and web build       | passed | Python wheel/sdist and Next.js production build completed locally.                        |
 | CI run `36224587228`                | failed | Quality and PostgreSQL/restore passed; history scan found two fixed synthetic test keys.  |
 | Gitleaks 8.30.1 current history     | passed | Exact path/value exception for those historical fixtures; new test keys are generated.    |
+| CI run `36224890794`                | passed | Quality, PostgreSQL integration/restore and security all succeeded.                       |
+| Bundle/membership/UI local tests    | passed | 216 Python tests; 20 DB-only skips, 20 contract and 11 E2E tests passed.                  |
+| Bundle/membership/UI lint and types | passed | Ruff, Prettier, ESLint, mypy across 113 files and TypeScript passed.                      |
+| Bundle/membership/UI build          | passed | Python wheel/sdist and Next.js production build completed locally.                        |
+| New Alembic head                    | passed | Sole `0020_bundle_activation` head resolves; PostgreSQL application awaits CI.            |
 | Final local lint and typecheck      | passed | Ruff, Prettier, ESLint, strict mypy (110 files) and TypeScript checks.                    |
 | Final local tests                   | passed | 197 passed, 19 PostgreSQL-only skips; 19 contract and 11 E2E tests passed.                |
 | Final local build                   | passed | Python sdist/wheel and Next.js production build.                                          |
@@ -303,7 +314,10 @@ absolute `1e-12` tolerance, with focused acceptance and rejection tests. Databas
 - Citizen browser submission is now disabled by default. The optional synthetic mode has no
   identity, address vault or approved regional intake configuration and must not receive real data.
   Incident evidence checks prove an attachment hash is linked to a member appeal, not that an
-  operator verified its contents. Signed bundles currently have no durable activation repository.
+  operator verified its contents. Signed-bundle storage has no approved key-distribution or artifact
+  application workflow.
+- The operator page's sample queue has synthetic identifiers. Closure and recurrence require an
+  actual appeal UUID and current version; the panel does not invent either value or upload evidence.
 - The merged regional corpus previously included address-bearing executor prose and quarantine
   source values. HEAD now withholds both and labels all derived model reports historical and
   unverified. Earlier Git blobs remain reachable; a repository-owner retention and history
@@ -346,10 +360,11 @@ absolute `1e-12` tolerance, with focused acceptance and rejection tests. Databas
 - D-055 defines operational handoff metric cohorts, missing rates and synthetic exclusion.
 - D-056 through D-058 record supervised incident transitions, signed-bundle trust and safe browser
   submission behavior.
+- D-059 makes every membership decision advance the incident aggregate version.
 
 ## Exact Next Milestone
 
-Finish local checks for this incident, bundle and browser-intake batch, then run one batched CI.
-Continue governed incident merge/split/reopen, durable bundle activation, adaptive case evidence
-capture and operator closure workflows. Keep live adapters, representative model claims, binding
-SLA and real PII processing dependent on B01-B10.
+Finish local checks for membership versioning, bundle activation and the operator closure panel,
+then run one batched CI. Continue governed incident merge/split/reopen and adaptive case evidence
+capture. Keep live adapters, representative model claims, binding SLA and real PII processing
+dependent on B01-B10.

@@ -27,6 +27,7 @@ MAX_VALIDITY = timedelta(days=90)
 _ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$")
 _SHA256 = re.compile(r"^[a-f0-9]{64}$")
 _B64 = re.compile(r"^[A-Za-z0-9_-]{86}$")  # unpadded Ed25519 signature
+_MAX_COUNTER = 2**63 - 1  # PostgreSQL bigint upper bound
 
 
 class BundleError(ValueError):
@@ -45,6 +46,8 @@ class VerifiedBundle:
     key_id: str
     content: Mapping[str, object]
     content_sha256: str
+    signer_signature_sha256: str
+    signed_envelope: bytes
 
 
 class BundleRepository(Protocol):
@@ -66,7 +69,7 @@ def _canonical(value: object) -> bytes:
             ensure_ascii=True,
             allow_nan=False,
         ).encode("ascii")
-    except (TypeError, ValueError, UnicodeEncodeError) as exc:
+    except (TypeError, ValueError, UnicodeEncodeError, RecursionError) as exc:
         raise BundleError("bundle contains non-canonical JSON values") from exc
 
 
@@ -168,7 +171,7 @@ class BundleVerifier:
             raise ValueError("now must be timezone-aware")
         try:
             envelope = json.loads(envelope_bytes, object_pairs_hook=_pairs_without_duplicates)
-        except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+        except (json.JSONDecodeError, UnicodeDecodeError, RecursionError) as exc:
             raise BundleError("envelope is not valid JSON") from exc
         if not isinstance(envelope, dict) or set(envelope) != {"body", "key_id", "signature"}:
             raise BundleError("envelope schema is invalid")
@@ -215,7 +218,12 @@ class BundleVerifier:
         if region_id != self.expected_region_id:
             raise BundleError("bundle is outside the configured region scope")
         version, sequence = body["version"], body["sequence"]
-        if type(version) is not int or version < 1 or type(sequence) is not int or sequence < 1:
+        if (
+            type(version) is not int
+            or not 1 <= version <= _MAX_COUNTER
+            or type(sequence) is not int
+            or not 1 <= sequence <= _MAX_COUNTER
+        ):
             raise BundleError("version and sequence must be positive integers")
         issued_at = _timestamp(body["issued_at"], "issued_at")
         expires_at = _timestamp(body["expires_at"], "expires_at")
@@ -242,6 +250,8 @@ class BundleVerifier:
             key_id,
             immutable_content,
             digest,
+            hashlib.sha256(signature).hexdigest(),
+            bytes(envelope_bytes),
         )
 
     def install(

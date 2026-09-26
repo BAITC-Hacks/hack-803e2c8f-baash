@@ -612,6 +612,117 @@ textarea:focus-visible {
   accent-color: var(--teal);
 }
 
+.closure-panel {
+  margin: 24px;
+  padding: 22px;
+  border: 1px solid #d5d9e8;
+  border-radius: 6px;
+  background: #fafaff;
+}
+
+.closure-heading,
+.closure-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.closure-heading h3,
+.recurrence-panel h4 {
+  margin: 0;
+}
+
+.closure-heading p:last-child,
+.recurrence-panel > p {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.closure-form,
+.closure-confirm-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.closure-form label,
+.closure-confirm-form > label:first-child {
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.closure-form input,
+.closure-confirm-form input:not([type="checkbox"]) {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid #b9ceca;
+  border-radius: 4px;
+  background: white;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+}
+
+.closure-wide {
+  grid-column: 1 / -1;
+}
+
+.closure-actions {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.closure-preflight,
+.closure-receipt {
+  display: grid;
+  gap: 6px;
+  margin-top: 14px;
+  padding: 12px;
+  border-radius: 4px;
+  color: #185e58;
+  background: #e0f1ee;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.closure-preflight code {
+  overflow-wrap: anywhere;
+}
+
+.closure-confirm-form {
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.recurrence-panel {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.recurrence-abstention {
+  padding: 10px;
+  border-radius: 4px;
+  color: #704313 !important;
+  background: #fff3d9;
+}
+
+.recurrence-panel ul {
+  display: grid;
+  gap: 6px;
+  padding-left: 20px;
+  color: var(--muted);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
 .advisory-heading {
   align-items: center;
   padding-top: 24px;
@@ -1852,7 +1963,8 @@ textarea:focus-visible {
   }
 
   .ownership-heading,
-  .ownership-load {
+  .ownership-load,
+  .closure-heading {
     align-items: flex-start;
     flex-direction: column;
   }
@@ -1860,6 +1972,16 @@ textarea:focus-visible {
   .ownership-load label,
   .ownership-load button {
     width: 100%;
+  }
+
+  .closure-panel {
+    margin: 18px 16px;
+    padding: 15px;
+  }
+
+  .closure-form,
+  .closure-confirm-form {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .workflow-state {

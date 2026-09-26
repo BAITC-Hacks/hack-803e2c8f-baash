@@ -97,6 +97,7 @@ class IncidentService:
             "event_id": str(uuid4()),
             "event_type": event_type,
             "incident_id": str(incident_id),
+            "aggregate_version": state.incidents[incident_id]["version"],
             "region_id": region_id,
             "actor_token": actor,
             "correlation_id": correlation_id,
@@ -199,6 +200,7 @@ class IncidentService:
                 raise IncidentError("member_not_found", "Appeal not found.", 422)
             self._scope(appeal_region, region_id)
             decided_at = _now()
+            incident["version"] += 1
             state.member_decisions.setdefault((incident_id, command.request_id), []).append(
                 {
                     **command.model_dump(mode="json"),

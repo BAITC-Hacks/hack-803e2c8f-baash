@@ -16,6 +16,7 @@ import { Intake } from "./intake";
 import { AdminPanel } from "./admin-panel";
 import { SituationCenter } from "./situation-center";
 import { OwnershipHandoffPanel } from "./ownership-handoff-panel";
+import { ClosureIntegrityPanel } from "./closure-integrity-panel";
 
 type Recommendation = { id: string; label: string; score: number };
 type Appeal = {
@@ -719,6 +720,12 @@ export default function OperatorWorkspace() {
                       ? latestAssignment.assignee_unit_id
                       : undefined
                   }
+                />
+                <ClosureIntegrityPanel
+                  key={`closure-${selectedId}`}
+                  locale={locale}
+                  regionId={appeal.region}
+                  initialRequestId={appeal.id}
                 />
               </section>
             )}

@@ -51,13 +51,14 @@ def test_human_confirmed_incident_preserves_member_appeal_identity() -> None:
     assert created.json()["state"] == "proposed"
     assert created.json()["member_count"] == 0
 
+    first_membership = None
     for index, request_id in enumerate((first_id, second_id), start=1):
         membership = client.post(
             f"/v1/incidents/{incident_id}/members",
             headers={**headers, "Idempotency-Key": f"member-confirm-000{index}"},
             json={
                 "request_id": request_id,
-                "incident_version": 1,
+                "incident_version": index,
                 "decision": "confirm",
                 "reason_code": "operator_verified",
                 "evidence_refs": [f"synthetic://evidence/{index}"],
@@ -65,12 +66,44 @@ def test_human_confirmed_incident_preserves_member_appeal_identity() -> None:
         )
         assert membership.status_code == 201
         assert membership.json()["request_id"] == request_id
+        if index == 1:
+            first_membership = membership.json()
+
+    events_after_membership = len(incident_repository.state.events)
+    replay = client.post(
+        f"/v1/incidents/{incident_id}/members",
+        headers={**headers, "Idempotency-Key": "member-confirm-0001"},
+        json={
+            "request_id": first_id,
+            "incident_version": 1,
+            "decision": "confirm",
+            "reason_code": "operator_verified",
+            "evidence_refs": ["synthetic://evidence/1"],
+        },
+    )
+    assert replay.status_code == 201
+    assert replay.json() == first_membership
+    assert len(incident_repository.state.events) == events_after_membership
+
+    stale = client.post(
+        f"/v1/incidents/{incident_id}/members",
+        headers={**headers, "Idempotency-Key": "member-stale-0001"},
+        json={
+            "request_id": first_id,
+            "incident_version": 1,
+            "decision": "reject",
+            "reason_code": "operator_verified",
+            "evidence_refs": [],
+        },
+    )
+    assert stale.status_code == 409
+    assert stale.json()["detail"]["code"] == "stale_version"
 
     confirmed = client.post(
         f"/v1/incidents/{incident_id}/confirm",
         headers={**headers, "Idempotency-Key": "incident-confirm-0001"},
         json={
-            "incident_version": 1,
+            "incident_version": 3,
             "decision": "confirm",
             "reason_code": "two_members_verified",
         },
@@ -78,6 +111,7 @@ def test_human_confirmed_incident_preserves_member_appeal_identity() -> None:
     assert confirmed.status_code == 200
     assert confirmed.json()["state"] == "confirmed"
     assert confirmed.json()["member_count"] == 2
+    assert confirmed.json()["version"] == 4
 
     first = client.get(f"/v1/requests/{first_id}", headers={"X-Region-Id": "ALA"})
     second = client.get(f"/v1/requests/{second_id}", headers={"X-Region-Id": "ALA"})
@@ -90,7 +124,7 @@ def test_human_confirmed_incident_preserves_member_appeal_identity() -> None:
         headers={**headers, "Idempotency-Key": "member-remove-0001"},
         json={
             "request_id": first_id,
-            "incident_version": 2,
+            "incident_version": 4,
             "decision": "remove",
             "reason_code": "operator_reversed_membership",
             "evidence_refs": ["synthetic://evidence/removal"],
@@ -109,7 +143,7 @@ def test_human_confirmed_incident_preserves_member_appeal_identity() -> None:
         f"/v1/incidents/{incident_id}/lifecycle",
         headers={**lifecycle_headers, "Idempotency-Key": str(uuid4())},
         json={
-            "incident_version": 2,
+            "incident_version": 5,
             "target_state": "monitoring",
             "reason_code": "ACTIVE_RESPONSE",
         },
@@ -120,7 +154,7 @@ def test_human_confirmed_incident_preserves_member_appeal_identity() -> None:
         f"/v1/incidents/{incident_id}/lifecycle",
         headers={**lifecycle_headers, "Idempotency-Key": str(uuid4())},
         json={
-            "incident_version": 3,
+            "incident_version": 6,
             "target_state": "resolved",
             "reason_code": "REPAIR_VERIFIED",
             "evidence_refs": ["a" * 64],
@@ -132,7 +166,7 @@ def test_human_confirmed_incident_preserves_member_appeal_identity() -> None:
         f"/v1/incidents/{incident_id}/lifecycle",
         headers={**lifecycle_headers, "Idempotency-Key": close_key},
         json={
-            "incident_version": 4,
+            "incident_version": 7,
             "target_state": "closed",
             "reason_code": "SUPERVISOR_CLOSED",
             "evidence_refs": ["b" * 64],
@@ -150,11 +184,17 @@ def test_human_confirmed_incident_preserves_member_appeal_identity() -> None:
         event["payload"]["new_state"] in {"monitoring", "resolved", "closed"}
         for event in events[-3:]
     )
+    assert [event["aggregate_version"] for event in events] == list(range(1, 9))
+    assert sorted(
+        decision["incident_version"]
+        for decisions in incident_repository.state.member_decisions.values()
+        for decision in decisions
+    ) == [2, 3, 5]
     replay = client.post(
         f"/v1/incidents/{incident_id}/lifecycle",
         headers={**lifecycle_headers, "Idempotency-Key": close_key},
         json={
-            "incident_version": 4,
+            "incident_version": 7,
             "target_state": "closed",
             "reason_code": "SUPERVISOR_CLOSED",
             "evidence_refs": ["b" * 64],
@@ -167,7 +207,7 @@ def test_human_confirmed_incident_preserves_member_appeal_identity() -> None:
         f"/v1/incidents/{incident_id}/lifecycle",
         headers={**lifecycle_headers, "Idempotency-Key": str(uuid4())},
         json={
-            "incident_version": 5,
+            "incident_version": 8,
             "target_state": "closed",
             "reason_code": "SUPERVISOR_CLOSED",
             "evidence_refs": ["sensitive free text must be rejected"],
@@ -178,7 +218,7 @@ def test_human_confirmed_incident_preserves_member_appeal_identity() -> None:
         f"/v1/incidents/{incident_id}/lifecycle",
         headers={**lifecycle_headers, "Idempotency-Key": str(uuid4())},
         json={
-            "incident_version": 5,
+            "incident_version": 8,
             "target_state": "closed",
             "reason_code": "citizen address should not be accepted",
             "evidence_refs": ["d" * 64],

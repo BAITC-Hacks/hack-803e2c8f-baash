@@ -10,6 +10,7 @@ import pytest
 from jsonschema import Draft202012Validator, FormatChecker
 from pulse109.incidents import PostgresIncidentRepository, PostgresIncidentService
 from pulse109.incidents.models import CreateIncident, IncidentDecision, MembershipCommand
+from pulse109.incidents.service import IncidentError
 from pulse109.manual_path import PostgresManualPathService, PostgresManualRepository
 from pulse109.manual_path.models import AssignmentCommand, CreateRequest, OperatorDecision
 
@@ -109,26 +110,60 @@ def test_manual_decision_and_outbox_commit_as_one_durable_path() -> None:
         correlation_id=f"correlation-incident-{source_id}",
     )
     assert incident_replayed is False
-    for request_id in (appeal.request_id, second_appeal.request_id):
+    first_membership = None
+    for version, request_id in enumerate((appeal.request_id, second_appeal.request_id), start=1):
+        member_command = MembershipCommand(
+            request_id=request_id,
+            incident_version=version,
+            decision="confirm",
+            reason_code="synthetic_operator_confirmation",
+        )
+        member_key = f"member-{incident.incident_id}-{request_id}"
         member = incident_service.decide_member(
             incident.incident_id,
-            MembershipCommand(
-                request_id=request_id,
-                incident_version=1,
-                decision="confirm",
-                reason_code="synthetic_operator_confirmation",
-            ),
-            idempotency_key=f"member-{incident.incident_id}-{request_id}",
+            member_command,
+            idempotency_key=member_key,
             region_id="ALA",
             actor="synthetic-operator",
             correlation_id=f"correlation-member-{request_id}",
         )
         assert member.decision == "confirm"
+        if version == 1:
+            first_membership = member
+    replayed_membership = incident_service.decide_member(
+        incident.incident_id,
+        MembershipCommand(
+            request_id=appeal.request_id,
+            incident_version=1,
+            decision="confirm",
+            reason_code="synthetic_operator_confirmation",
+        ),
+        idempotency_key=f"member-{incident.incident_id}-{appeal.request_id}",
+        region_id="ALA",
+        actor="synthetic-operator",
+        correlation_id="membership-replay",
+    )
+    assert replayed_membership == first_membership
+    with pytest.raises(IncidentError) as stale_membership:
+        incident_service.decide_member(
+            incident.incident_id,
+            MembershipCommand(
+                request_id=appeal.request_id,
+                incident_version=1,
+                decision="reject",
+                reason_code="synthetic_stale_decision",
+            ),
+            idempotency_key=f"stale-member-{incident.incident_id}",
+            region_id="ALA",
+            actor="synthetic-operator",
+            correlation_id="stale-membership",
+        )
+    assert stale_membership.value.code == "stale_version"
     removed = incident_service.decide_member(
         incident.incident_id,
         MembershipCommand(
             request_id=second_appeal.request_id,
-            incident_version=1,
+            incident_version=3,
             decision="remove",
             reason_code="synthetic_reversible_unlink",
         ),
@@ -142,7 +177,7 @@ def test_manual_decision_and_outbox_commit_as_one_durable_path() -> None:
         incident.incident_id,
         MembershipCommand(
             request_id=second_appeal.request_id,
-            incident_version=1,
+            incident_version=4,
             decision="confirm",
             reason_code="synthetic_reconfirmation",
         ),
@@ -154,7 +189,7 @@ def test_manual_decision_and_outbox_commit_as_one_durable_path() -> None:
     confirmed = incident_service.decide_incident(
         incident.incident_id,
         IncidentDecision(
-            incident_version=1,
+            incident_version=5,
             decision="confirm",
             reason_code="synthetic_two_member_confirmation",
         ),
@@ -164,7 +199,21 @@ def test_manual_decision_and_outbox_commit_as_one_durable_path() -> None:
         correlation_id=f"correlation-confirm-{incident.incident_id}",
     )
     assert confirmed.state == "confirmed"
-    assert confirmed.version == 2
+    assert confirmed.version == 6
+    with pytest.raises(IncidentError) as wrong_region_replay:
+        incident_service.decide_incident(
+            incident.incident_id,
+            IncidentDecision(
+                incident_version=5,
+                decision="confirm",
+                reason_code="synthetic_two_member_confirmation",
+            ),
+            idempotency_key=f"confirm-incident-{incident.incident_id}",
+            region_id="AST",
+            actor="synthetic-operator",
+            correlation_id="wrong-region-replay",
+        )
+    assert wrong_region_replay.value.code == "region_scope_denied"
 
     url = database_url.replace("postgresql+psycopg://", "postgresql://", 1)
     with psycopg.connect(url) as connection, connection.cursor() as cursor:
@@ -214,6 +263,24 @@ def test_manual_decision_and_outbox_commit_as_one_durable_path() -> None:
         assert "incident.proposed.v1" in incident_events
         assert "incident.member.removed.v1" in incident_events
         assert "incident.confirmed.v1" in incident_events
+        cursor.execute(
+            "SELECT incident_version FROM incidents.membership_decision "
+            "WHERE incident_id = %s ORDER BY decided_at, membership_decision_id",
+            (incident.incident_id,),
+        )
+        assert [row[0] for row in cursor.fetchall()] == [2, 3, 4, 5]
+        cursor.execute(
+            "SELECT aggregate_version FROM integration.outbox "
+            "WHERE subject_id = %s ORDER BY created_at",
+            (str(incident.incident_id),),
+        )
+        assert [row[0] for row in cursor.fetchall()] == [1, 2, 3, 4, 5, 6]
+        cursor.execute(
+            "SELECT payload->>'aggregate_version' FROM audit.audit_event "
+            "WHERE aggregate_id = %s ORDER BY observed_at",
+            (str(incident.incident_id),),
+        )
+        assert [row[0] for row in cursor.fetchall()] == ["1", "2", "3", "4", "5", "6"]
 
 
 @pytest.mark.integration

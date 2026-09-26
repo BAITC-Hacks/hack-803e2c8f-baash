@@ -178,7 +178,7 @@ class PostgresIncidentService:
                 incident.region_id,
                 correlation_id,
                 observed_at,
-                self._json(payload),
+                self._json({"aggregate_version": incident.version, **payload}),
             ),
         )
         cursor.execute(
@@ -300,10 +300,12 @@ class PostgresIncidentService:
         request_hash = _hash(command.model_dump(mode="json"))
         scope = f"incident-member:{incident_id}"
         with self.repository.connection() as connection, connection.cursor() as cursor:
+            # The aggregate lock serializes membership changes and makes a missing
+            # idempotency row safe to check before applying the decision.
+            incident = self._incident(cursor, incident_id, region_id, lock=True)
             prior = self._idempotency(cursor, scope, idempotency_key, request_hash)
             if prior is not None:
                 return IncidentMember.model_validate(prior)
-            incident = self._incident(cursor, incident_id, region_id, lock=True)
             if command.incident_version != incident.version:
                 raise IncidentError("stale_version", "The incident changed during review.")
             self._check_appeal(cursor, command.request_id, region_id)
@@ -330,7 +332,16 @@ class PostgresIncidentService:
                 current is None or current["decision"] != "confirm"
             ):
                 raise IncidentError("member_not_confirmed", "Member is not confirmed.", 422)
+            cursor.execute(
+                "UPDATE incidents.incident SET version = version + 1 "
+                "WHERE incident_id = %s AND version = %s RETURNING version",
+                (incident_id, incident.version),
+            )
+            updated_version = cursor.fetchone()
+            if updated_version is None:
+                raise IncidentError("stale_version", "The incident changed during review.")
             decided_at, decision_id = _now(), uuid4()
+            incident = incident.model_copy(update={"version": updated_version["version"]})
             cursor.execute(
                 """
                 INSERT INTO incidents.membership_decision
@@ -400,10 +411,10 @@ class PostgresIncidentService:
         request_hash = _hash(command.model_dump(mode="json"))
         scope = f"incident-review:{incident_id}"
         with self.repository.connection() as connection, connection.cursor() as cursor:
+            incident = self._incident(cursor, incident_id, region_id, lock=True)
             prior = self._idempotency(cursor, scope, idempotency_key, request_hash)
             if prior is not None:
                 return Incident.model_validate(prior)
-            incident = self._incident(cursor, incident_id, region_id, lock=True)
             if command.incident_version != incident.version:
                 raise IncidentError("stale_version", "The incident changed during review.")
             if incident.state != "proposed":

@@ -7,11 +7,13 @@ from .bundles import (
     VerifiedBundle,
     canonical_bundle_bytes,
 )
+from .postgres import PostgresBundleRepository
 
 __all__ = [
     "BundleError",
     "BundleRepository",
     "BundleVerifier",
+    "PostgresBundleRepository",
     "VerifiedBundle",
     "canonical_bundle_bytes",
 ]

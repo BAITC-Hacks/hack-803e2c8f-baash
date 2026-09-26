@@ -139,6 +139,28 @@ policy version and evaluation time. It never accepts or returns raw field values
 Unapproved, overlapping and absent policies fail closed; local/test without a configured policy
 returns `intake_policy_unavailable`.
 
+Browser submission is disabled by default while approved private source storage and retention
+policy are unavailable. `NEXT_PUBLIC_PULSE109_SYNTHETIC_ASSIST=true` enables a local synthetic UI
+trial only. The form never invents a success number; uncertain retries reuse the exact request and
+idempotency key. Do not enter real citizen data in the synthetic trial.
+
+## Incident And Closure Operations
+
+Supervisors can advance a confirmed incident through monitoring, resolution and closure with a
+current aggregate version, controlled reason and member-owned attachment hashes. Each membership
+decision also advances the incident version. Individual appeals retain their own status, history
+and SLA. The operator workspace can preflight appeal-owned closure evidence, record a separate
+human confirmation and inspect a read-only recurrence assessment. Recurrence abstains when its
+required business time or asset context is unavailable.
+
+## Signed Regional Releases
+
+The control-plane bundle boundary verifies a bounded Ed25519-signed regional manifest before
+atomic PostgreSQL activation. The database retains append-only release history, the active
+last-known-good pointer and original signed bytes for fresh verification with current keys and
+time. No public release API or artifact application is mounted until signing authority, artifact
+distribution and regional runtime are approved.
+
 ## Governed Situation Center
 
 `POST /v1/analytics/query` accepts only catalogued metric IDs, dimensions, filters, and granularities;
