@@ -12,7 +12,14 @@ from uuid import UUID, uuid4
 import psycopg
 from psycopg.rows import dict_row
 
-from .models import CreateIncident, Incident, IncidentDecision, IncidentMember, MembershipCommand
+from .models import (
+    CreateIncident,
+    Incident,
+    IncidentDecision,
+    IncidentLifecycleCommand,
+    IncidentMember,
+    MembershipCommand,
+)
 from .service import IncidentError, _hash
 
 
@@ -431,6 +438,91 @@ class PostgresIncidentService:
                 actor=actor,
                 correlation_id=correlation_id,
                 payload={"decision": command.decision, "reason_code": command.reason_code},
+            )
+            self._save(
+                cursor,
+                scope,
+                idempotency_key,
+                request_hash,
+                updated.model_dump(mode="json"),
+                incident_id,
+            )
+            return updated
+
+    def transition_lifecycle(
+        self,
+        incident_id: UUID,
+        command: IncidentLifecycleCommand,
+        *,
+        idempotency_key: str,
+        region_id: str,
+        actor: str,
+        correlation_id: str,
+    ) -> Incident:
+        request_hash = _hash(command.model_dump(mode="json"))
+        scope = f"incident-lifecycle:{incident_id}"
+        transitions = {"confirmed": "monitoring", "monitoring": "resolved", "resolved": "closed"}
+        with self.repository.connection() as connection, connection.cursor() as cursor:
+            current = self._incident(cursor, incident_id, region_id, lock=True)
+            prior = self._idempotency(cursor, scope, idempotency_key, request_hash)
+            if prior is not None:
+                return Incident.model_validate(prior)
+            if command.incident_version != current.version:
+                raise IncidentError("stale_version", "The incident changed during review.")
+            if transitions.get(current.state) != command.target_state:
+                raise IncidentError(
+                    "invalid_incident_transition", "Incident cannot enter that state."
+                )
+            if command.target_state in {"resolved", "closed"}:
+                cursor.execute(
+                    """
+                    SELECT lower(attachment.object_hash) AS object_hash
+                    FROM appeals.attachment_ref AS attachment
+                    JOIN appeals.appeal AS appeal
+                      ON appeal.request_id = attachment.appeal_id
+                    JOIN incidents.membership_decision AS membership
+                      ON membership.request_id = appeal.request_id
+                    WHERE membership.incident_id = %s
+                      AND membership.decision = 'confirm'
+                      AND appeal.region_id = %s
+                      AND lower(attachment.object_hash) = ANY(%s)
+                      AND NOT EXISTS (
+                          SELECT 1
+                          FROM incidents.membership_decision AS newer
+                          WHERE newer.incident_id = membership.incident_id
+                            AND newer.request_id = membership.request_id
+                            AND (newer.decided_at, newer.membership_decision_id) >
+                                (membership.decided_at, membership.membership_decision_id)
+                      )
+                    FOR KEY SHARE OF attachment
+                    """,
+                    (incident_id, region_id, command.evidence_refs),
+                )
+                available = {row["object_hash"] for row in cursor.fetchall()}
+                if available != set(command.evidence_refs):
+                    raise IncidentError(
+                        "evidence_not_found",
+                        "Evidence must be attached to a confirmed member appeal.",
+                        422,
+                    )
+            cursor.execute(
+                "UPDATE incidents.incident SET state = %s, version = version + 1 "
+                "WHERE incident_id = %s AND version = %s",
+                (command.target_state, incident_id, current.version),
+            )
+            updated = self._incident(cursor, incident_id, region_id, lock=False)
+            self._event(
+                cursor,
+                incident=updated,
+                event_type="incident.state.changed.v1",
+                actor=actor,
+                correlation_id=correlation_id,
+                payload={
+                    "previous_state": current.state,
+                    "new_state": command.target_state,
+                    "reason_code": command.reason_code,
+                    "evidence_refs": command.evidence_refs,
+                },
             )
             self._save(
                 cursor,

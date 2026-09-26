@@ -27,9 +27,25 @@ def test_openapi_31_contract_is_valid_and_stable() -> None:
         if method in {"get", "post", "put", "patch", "delete"}
     ]
     assert document["openapi"] == "3.1.0"
-    assert len(operations) == 29
-    assert len({item["operationId"] for item in operations}) == 29
-    assert len(document["components"]["schemas"]) == 49
+    assert len(operations) == 30
+    assert len({item["operationId"] for item in operations}) == 30
+    assert len(document["components"]["schemas"]) == 50
+
+
+def test_incident_lifecycle_contract_requires_controlled_evidence_refs() -> None:
+    with (ROOT / "contracts/openapi.yaml").open(encoding="utf-8") as stream:
+        document = yaml.safe_load(stream)
+    validator = Draft202012Validator(document["components"]["schemas"]["IncidentLifecycleCommand"])
+    command = {
+        "incident_version": 3,
+        "target_state": "resolved",
+        "reason_code": "REPAIR_VERIFIED",
+        "evidence_refs": ["a" * 64],
+    }
+    assert list(validator.iter_errors(command)) == []
+    assert list(validator.iter_errors(command | {"evidence_refs": []}))
+    assert list(validator.iter_errors(command | {"note": "private citizen text"}))
+    assert list(validator.iter_errors(command | {"reason_code": "private free text"}))
 
 
 def test_canonical_request_schema_is_valid() -> None:

@@ -101,3 +101,85 @@ def test_human_confirmed_incident_preserves_member_appeal_identity() -> None:
 
     # Removing membership never deletes, aliases, or rewrites the source appeal.
     assert client.get(f"/v1/requests/{first_id}", headers={"X-Region-Id": "ALA"}).status_code == 200
+
+    lifecycle_headers = {**headers, "X-Actor-Token": "synthetic-supervisor"}
+    monitoring = client.post(
+        f"/v1/incidents/{incident_id}/lifecycle",
+        headers={**lifecycle_headers, "Idempotency-Key": "incident-monitor-0001"},
+        json={
+            "incident_version": 2,
+            "target_state": "monitoring",
+            "reason_code": "ACTIVE_RESPONSE",
+        },
+    )
+    assert monitoring.status_code == 200
+    assert monitoring.json()["state"] == "monitoring"
+    resolved = client.post(
+        f"/v1/incidents/{incident_id}/lifecycle",
+        headers={**lifecycle_headers, "Idempotency-Key": "incident-resolve-0001"},
+        json={
+            "incident_version": 3,
+            "target_state": "resolved",
+            "reason_code": "REPAIR_VERIFIED",
+            "evidence_refs": ["a" * 64],
+        },
+    )
+    assert resolved.status_code == 200
+    assert resolved.json()["state"] == "resolved"
+    closed = client.post(
+        f"/v1/incidents/{incident_id}/lifecycle",
+        headers={**lifecycle_headers, "Idempotency-Key": "incident-close-0001"},
+        json={
+            "incident_version": 4,
+            "target_state": "closed",
+            "reason_code": "SUPERVISOR_CLOSED",
+            "evidence_refs": ["b" * 64],
+        },
+    )
+    assert closed.status_code == 200
+    assert closed.json()["state"] == "closed"
+    events = incident_repository.state.events
+    assert [event["event_type"] for event in events[-3:]] == [
+        "incident.state.changed.v1",
+        "incident.state.changed.v1",
+        "incident.state.changed.v1",
+    ]
+    assert all(
+        event["payload"]["new_state"] in {"monitoring", "resolved", "closed"}
+        for event in events[-3:]
+    )
+    replay = client.post(
+        f"/v1/incidents/{incident_id}/lifecycle",
+        headers={**lifecycle_headers, "Idempotency-Key": "incident-close-0001"},
+        json={
+            "incident_version": 4,
+            "target_state": "closed",
+            "reason_code": "SUPERVISOR_CLOSED",
+            "evidence_refs": ["b" * 64],
+        },
+    )
+    assert replay.status_code == 200
+    assert replay.json() == closed.json()
+    assert len(incident_repository.state.events) == len(events)
+    malformed_evidence = client.post(
+        f"/v1/incidents/{incident_id}/lifecycle",
+        headers={**lifecycle_headers, "Idempotency-Key": "incident-bad-evidence-01"},
+        json={
+            "incident_version": 5,
+            "target_state": "closed",
+            "reason_code": "SUPERVISOR_CLOSED",
+            "evidence_refs": ["sensitive free text must be rejected"],
+        },
+    )
+    assert malformed_evidence.status_code == 422
+    malformed_reason = client.post(
+        f"/v1/incidents/{incident_id}/lifecycle",
+        headers={**lifecycle_headers, "Idempotency-Key": "incident-bad-reason-01"},
+        json={
+            "incident_version": 5,
+            "target_state": "closed",
+            "reason_code": "citizen address should not be accepted",
+            "evidence_refs": ["d" * 64],
+        },
+    )
+    assert malformed_reason.status_code == 422

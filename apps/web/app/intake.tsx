@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type Locale = "ru" | "kk";
 type IntakeDraft = {
@@ -24,13 +24,17 @@ type IntakePlan = {
   required_evidence_types?: string[];
   policy_version?: string;
 };
+type SubmissionAttempt = {
+  idempotencyKey: string;
+  body: string;
+};
 
 const labels = {
   ru: {
     eyebrow: "Гражданский канал",
     title: "Подать обращение",
     intro:
-      "Ответьте на несколько коротких вопросов. Черновик сохраняется на этом устройстве.",
+      "Ответьте на несколько коротких вопросов. Ответы остаются только на этой странице до отправки.",
     question: [
       "Что произошло?",
       "Где это произошло?",
@@ -51,7 +55,15 @@ const labels = {
     phone: "Телефон будет добавлен оператором",
     next: "Далее",
     back: "Назад",
-    save: "Черновик сохранён",
+    sending: "Отправляем…",
+    retry: "Повторить отправку",
+    unconfirmed:
+      "Не удалось подтвердить отправку. Ответы сохранены на странице. Повторите попытку: будет использован тот же номер запроса.",
+    rejected: "Сервис отклонил обращение. Проверьте данные и попробуйте снова.",
+    demoOnly:
+      "Подача через сайт пока доступна только для синтетических испытаний. Рабочий приём откроется после подключения защищённого хранения исходных данных.",
+    demoNotice:
+      "Демонстрационный режим: используйте только вымышленные данные.",
     required: "Заполните это поле, чтобы продолжить.",
     duplicates: "Похожие открытые проблемы",
     duplicateHint:
@@ -69,13 +81,12 @@ const labels = {
     submitted: "Обращение принято",
     number: "Номер обращения",
     newAppeal: "Подать ещё одно обращение",
-    offline:
-      "Онлайн-сервис недоступен. Черновик сохранён; показан демонстрационный номер.",
   },
   kk: {
     eyebrow: "Азамат арнасы",
     title: "Өтініш беру",
-    intro: "Бірнеше қысқа сұраққа жауап беріңіз. Жоба осы құрылғыда сақталады.",
+    intro:
+      "Бірнеше қысқа сұраққа жауап беріңіз. Жауаптар жіберілгенше тек осы бетте қалады.",
     question: [
       "Не болды?",
       "Бұл қай жерде болды?",
@@ -96,7 +107,16 @@ const labels = {
     phone: "Телефонды оператор қосады",
     next: "Келесі",
     back: "Артқа",
-    save: "Жоба сақталды",
+    sending: "Жіберілуде…",
+    retry: "Қайта жіберу",
+    unconfirmed:
+      "Өтініштің жіберілгенін растау мүмкін болмады. Жауаптар осы бетте қалды. Қайта жіберіңіз: сол сұрау нөмірі қолданылады.",
+    rejected:
+      "Қызмет өтінішті қабылдамады. Деректерді тексеріп, қайта көріңіз.",
+    demoOnly:
+      "Сайт арқылы жіберу әзірге тек синтетикалық сынақтар үшін қолжетімді. Нақты қабылдау бастапқы деректердің қорғалған сақтау орны қосылғаннан кейін ашылады.",
+    demoNotice:
+      "Демонстрациялық режим: тек ойдан шығарылған деректерді қолданыңыз.",
     required: "Жалғастыру үшін бұл жолды толтырыңыз.",
     duplicates: "Ұқсас ашық мәселелер",
     duplicateHint: "Бұл тек ұсыныс. Өтініш автоматты түрде біріктірілмейді.",
@@ -113,8 +133,6 @@ const labels = {
     submitted: "Өтініш қабылданды",
     number: "Өтініш нөмірі",
     newAppeal: "Тағы өтініш беру",
-    offline:
-      "Онлайн қызмет қолжетімсіз. Жоба сақталды; демонстрациялық нөмір көрсетілді.",
   },
 } as const;
 
@@ -123,14 +141,18 @@ const initialDraft: IntakeDraft = {
   location: "",
   contact: "none",
 };
-const draftKey = "pulse109-guided-intake-draft";
+const syntheticAssistEnabled =
+  process.env.NEXT_PUBLIC_PULSE109_SYNTHETIC_ASSIST === "true";
 
 export function Intake({ locale }: { locale: Locale }) {
   const copy = labels[locale];
   const [step, setStep] = useState(0);
-  const [draft, setDraft] = useState<IntakeDraft>(() => readDraft());
+  const [draft, setDraft] = useState<IntakeDraft>(initialDraft);
   const [error, setError] = useState("");
-  const [saved, setSaved] = useState(() => hasDraft());
+  const [submitError, setSubmitError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [submissionLocked, setSubmissionLocked] = useState(false);
+  const attemptRef = useRef<SubmissionAttempt | null>(null);
   const [duplicateChoice, setDuplicateChoice] = useState("none");
   const [duplicates, setDuplicates] = useState<DuplicateCandidate[]>([]);
   const [preflightState, setPreflightState] = useState<
@@ -139,7 +161,29 @@ export function Intake({ locale }: { locale: Locale }) {
   const [intakePlan, setIntakePlan] = useState<IntakePlan | null>(null);
   const [intakePlanUnavailable, setIntakePlanUnavailable] = useState(false);
   const [submittedNumber, setSubmittedNumber] = useState("");
-  const [offline, setOffline] = useState(false);
+
+  useEffect(() => {
+    const oldDraft = window.localStorage.getItem(
+      "pulse109-guided-intake-draft",
+    );
+    window.localStorage.removeItem("pulse109-guided-intake-draft");
+    if (!oldDraft) return;
+    try {
+      const parsed: unknown = JSON.parse(oldDraft);
+      if (!parsed || typeof parsed !== "object") return;
+      const values = parsed as Record<string, unknown>;
+      const restored = {
+        description:
+          typeof values.description === "string" ? values.description : "",
+        location: typeof values.location === "string" ? values.location : "",
+        contact: values.contact === "phone" ? "phone" : "none",
+      } as const;
+      const timer = window.setTimeout(() => setDraft(restored), 0);
+      return () => window.clearTimeout(timer);
+    } catch {
+      // An unreadable legacy draft is removed without exposing its contents.
+    }
+  }, []);
 
   const progress = useMemo(() => `${step + 1} / 5`, [step]);
 
@@ -148,12 +192,10 @@ export function Intake({ locale }: { locale: Locale }) {
     value: IntakeDraft[K],
   ) {
     setDraft((current) => {
-      const next = { ...current, [key]: value };
-      window.localStorage.setItem(draftKey, JSON.stringify(next));
-      return next;
+      return { ...current, [key]: value };
     });
-    setSaved(true);
     setError("");
+    setSubmitError("");
   }
 
   async function goNext() {
@@ -167,57 +209,63 @@ export function Intake({ locale }: { locale: Locale }) {
     }
     if (step === 2) {
       setIntakePlan(null);
-      setIntakePlanUnavailable(false);
-      const category = inferSyntheticCategory(draft.description);
-      try {
-        const response = await fetch("/api/core/intake/plans", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Region-Id": "ALA",
-          },
-          body: JSON.stringify({
-            service_id: `service:${category}`,
-            topic_id: `topic:${category}`,
-            locale,
-            field_states: { description: "known", location: "known" },
-            max_questions: 5,
-          }),
-        });
-        if (!response.ok) throw new Error("intake_plan_failed");
-        setIntakePlan((await response.json()) as IntakePlan);
-      } catch {
-        setIntakePlanUnavailable(true);
+      setIntakePlanUnavailable(!syntheticAssistEnabled);
+      if (syntheticAssistEnabled) {
+        const category = inferSyntheticCategory(draft.description);
+        try {
+          const response = await fetch("/api/core/intake/plans", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-Region-Id": "ALA",
+            },
+            body: JSON.stringify({
+              service_id: `service:${category}`,
+              topic_id: `topic:${category}`,
+              locale,
+              field_states: { description: "known", location: "known" },
+              max_questions: 5,
+            }),
+          });
+          if (!response.ok) throw new Error("intake_plan_failed");
+          setIntakePlan((await response.json()) as IntakePlan);
+        } catch {
+          setIntakePlanUnavailable(true);
+        }
       }
     }
     if (step === 3) {
-      setPreflightState("loading");
-      const category = inferSyntheticCategory(draft.description);
-      try {
-        const response = await fetch("/api/core/appeals/preflight", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Region-Id": "ALA",
-          },
-          body: JSON.stringify({
-            region_id: "ALA",
-            service_id: `service:${category}`,
-            topic_id: `topic:${category}`,
-            text: draft.description,
-            occurred_at: new Date().toISOString(),
-            occurred_at_quality: "exact",
-          }),
-        });
-        if (!response.ok) throw new Error("preflight_failed");
-        const result = (await response.json()) as {
-          candidates?: DuplicateCandidate[];
-        };
-        setDuplicates(result.candidates ?? []);
-        setPreflightState("ready");
-      } catch {
-        setDuplicates([]);
+      if (!syntheticAssistEnabled) {
         setPreflightState("unavailable");
+      } else {
+        setPreflightState("loading");
+        const category = inferSyntheticCategory(draft.description);
+        try {
+          const response = await fetch("/api/core/appeals/preflight", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-Region-Id": "ALA",
+            },
+            body: JSON.stringify({
+              region_id: "ALA",
+              service_id: `service:${category}`,
+              topic_id: `topic:${category}`,
+              text: draft.description,
+              occurred_at: null,
+              occurred_at_quality: "missing",
+            }),
+          });
+          if (!response.ok) throw new Error("preflight_failed");
+          const result = (await response.json()) as {
+            candidates?: DuplicateCandidate[];
+          };
+          setDuplicates(result.candidates ?? []);
+          setPreflightState("ready");
+        } catch {
+          setDuplicates([]);
+          setPreflightState("unavailable");
+        }
       }
     }
     setError("");
@@ -225,37 +273,65 @@ export function Intake({ locale }: { locale: Locale }) {
   }
 
   async function submit() {
-    const sourceRequestId = `web-${crypto.randomUUID()}`;
-    const idempotencyKey = crypto.randomUUID();
+    if (!syntheticAssistEnabled) {
+      setSubmitError(copy.demoOnly);
+      return;
+    }
+    if (submitting) return;
+    setSubmitting(true);
+    setSubmitError("");
+    if (!attemptRef.current) {
+      const sourceRequestId = `web-${crypto.randomUUID()}`;
+      attemptRef.current = {
+        idempotencyKey: crypto.randomUUID(),
+        body: JSON.stringify({
+          source_system: "pulse109-web-synthetic",
+          source_request_id: sourceRequestId,
+          region_id: "ALA",
+          received_at: null,
+          received_at_quality: "missing",
+          channel: "web",
+          language: locale,
+          text: `${draft.description}\n${draft.location}`,
+        }),
+      };
+    }
+    setSubmissionLocked(true);
+    const attempt = attemptRef.current;
     try {
       const response = await fetch("/api/core/requests", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Idempotency-Key": idempotencyKey,
+          "Idempotency-Key": attempt.idempotencyKey,
           "X-Region-Id": "ALA",
         },
-        body: JSON.stringify({
-          source_system: "pulse109-web",
-          source_request_id: sourceRequestId,
-          region_id: "ALA",
-          received_at: new Date().toISOString(),
-          channel: "web",
-          language: locale,
-          text: draft.description,
-          location: { address_text_private_ref: draft.location },
-        }),
+        body: attempt.body,
       });
-      if (!response.ok) throw new Error("request_failed");
+      if (!response.ok) {
+        if (
+          response.status >= 400 &&
+          response.status < 500 &&
+          ![408, 409, 429].includes(response.status)
+        ) {
+          attemptRef.current = null;
+          setSubmissionLocked(false);
+          setSubmitError(copy.rejected);
+          return;
+        }
+        throw new Error("request_unconfirmed");
+      }
       const result = (await response.json()) as { request_id?: string };
-      setSubmittedNumber(
-        result.request_id ?? `SYN-109-${sourceRequestId.slice(-6)}`,
-      );
+      if (!result.request_id || !isUuid(result.request_id)) {
+        throw new Error("request_id_missing");
+      }
+      setSubmittedNumber(result.request_id);
+      attemptRef.current = null;
     } catch {
-      setOffline(true);
-      setSubmittedNumber(`SYN-109-${sourceRequestId.slice(-6)}`);
+      setSubmitError(copy.unconfirmed);
+    } finally {
+      setSubmitting(false);
     }
-    window.localStorage.removeItem(draftKey);
   }
 
   if (submittedNumber) {
@@ -266,11 +342,6 @@ export function Intake({ locale }: { locale: Locale }) {
           <h1 id="intake-complete-title">{copy.submitted}</h1>
           <p>{copy.number}</p>
           <strong className="appeal-number">{submittedNumber}</strong>
-          {offline && (
-            <p className="form-error" role="alert">
-              {copy.offline}
-            </p>
-          )}
           <button
             className="primary-action"
             type="button"
@@ -278,7 +349,9 @@ export function Intake({ locale }: { locale: Locale }) {
               setSubmittedNumber("");
               setStep(0);
               setDraft(initialDraft);
-              setOffline(false);
+              setSubmissionLocked(false);
+              setSubmitError("");
+              attemptRef.current = null;
             }}
           >
             {copy.newAppeal}
@@ -301,6 +374,9 @@ export function Intake({ locale }: { locale: Locale }) {
             {progress}
           </span>
         </div>
+        <p className="form-error" role="status">
+          {syntheticAssistEnabled ? copy.demoNotice : copy.demoOnly}
+        </p>
         <div className="progress-track" aria-hidden="true">
           <span style={{ width: `${((step + 1) / 5) * 100}%` }} />
         </div>
@@ -315,6 +391,7 @@ export function Intake({ locale }: { locale: Locale }) {
               id="description"
               rows={6}
               value={draft.description}
+              disabled={submissionLocked}
               onChange={(event) =>
                 updateDraft("description", event.target.value)
               }
@@ -331,6 +408,7 @@ export function Intake({ locale }: { locale: Locale }) {
             <input
               id="location"
               value={draft.location}
+              disabled={submissionLocked}
               onChange={(event) => updateDraft("location", event.target.value)}
               aria-invalid={Boolean(error)}
               aria-describedby={error ? "location-error" : undefined}
@@ -345,6 +423,7 @@ export function Intake({ locale }: { locale: Locale }) {
                 type="radio"
                 name="contact"
                 checked={draft.contact === "none"}
+                disabled={submissionLocked}
                 onChange={() => updateDraft("contact", "none")}
               />{" "}
               {copy.noContact}
@@ -354,6 +433,7 @@ export function Intake({ locale }: { locale: Locale }) {
                 type="radio"
                 name="contact"
                 checked={draft.contact === "phone"}
+                disabled={submissionLocked}
                 onChange={() => updateDraft("contact", "phone")}
               />{" "}
               {copy.phone}
@@ -453,25 +533,41 @@ export function Intake({ locale }: { locale: Locale }) {
             {error}
           </p>
         )}
-        <p className="draft-status" role="status" aria-live="polite">
-          {saved ? copy.save : ""}
-        </p>
+        {submitError && (
+          <p className="form-error" role="alert">
+            {submitError}
+          </p>
+        )}
         <div className="intake-actions">
           <button
             className="secondary-action"
             type="button"
             onClick={() => setStep((current) => Math.max(0, current - 1))}
-            disabled={step === 0}
+            disabled={step === 0 || submissionLocked || submitting}
           >
             {copy.back}
           </button>
           {step < 4 ? (
-            <button className="primary-action" type="button" onClick={goNext}>
+            <button
+              className="primary-action"
+              type="button"
+              onClick={goNext}
+              disabled={submitting}
+            >
               {copy.next}
             </button>
           ) : (
-            <button className="primary-action" type="button" onClick={submit}>
-              {copy.submit}
+            <button
+              className="primary-action"
+              type="button"
+              onClick={submit}
+              disabled={submitting || !syntheticAssistEnabled}
+            >
+              {submitting
+                ? copy.sending
+                : submitError && submissionLocked
+                  ? copy.retry
+                  : copy.submit}
             </button>
           )}
         </div>
@@ -480,22 +576,9 @@ export function Intake({ locale }: { locale: Locale }) {
   );
 }
 
-function readDraft(): IntakeDraft {
-  if (typeof window === "undefined") return initialDraft;
-  const stored = window.localStorage.getItem(draftKey);
-  if (!stored) return initialDraft;
-  try {
-    return { ...initialDraft, ...JSON.parse(stored) } as IntakeDraft;
-  } catch {
-    window.localStorage.removeItem(draftKey);
-    return initialDraft;
-  }
-}
-
-function hasDraft(): boolean {
-  return (
-    typeof window !== "undefined" &&
-    Boolean(window.localStorage.getItem(draftKey))
+function isUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+    value,
   );
 }
 

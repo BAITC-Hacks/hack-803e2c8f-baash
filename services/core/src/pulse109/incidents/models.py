@@ -1,7 +1,7 @@
 """Contract-shaped incident models."""
 
 from datetime import datetime
-from typing import Literal
+from typing import Annotated, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -68,3 +68,20 @@ class IncidentDecision(BaseModel):
     decision: Literal["confirm", "reject"]
     reason_code: str = Field(min_length=1, max_length=128)
     note: str | None = Field(default=None, max_length=1000)
+
+
+class IncidentLifecycleCommand(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    incident_version: int = Field(ge=1)
+    target_state: Literal["monitoring", "resolved", "closed"]
+    reason_code: str = Field(pattern=r"^[A-Z][A-Z0-9_]{0,63}$")
+    evidence_refs: list[Annotated[str, Field(pattern=r"^[0-9a-f]{64}$")]] = Field(
+        default_factory=list, max_length=20
+    )
+
+    @model_validator(mode="after")
+    def require_resolution_evidence(self) -> "IncidentLifecycleCommand":
+        if self.target_state in {"resolved", "closed"} and not self.evidence_refs:
+            raise ValueError("resolution and closure require evidence_refs")
+        return self

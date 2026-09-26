@@ -3,11 +3,10 @@
 ## Current Milestone
 
 - Milestone: cross-cutting governed decision, handoff and evidence-backed closure slices.
-- Status: active. CI run `36173878045` passed quality and security, applied migration `0019` and
-  passed the new Handoff Guard metrics integration scenarios. Its gateway assessment test reached
-  persisted candidate comparison and exposed a numeric representation mismatch. An exact identity
-  and rank comparison with a bounded `1e-12` score tolerance is the current local fix; the full
-  scope from both supplied texts remains in progress.
+- Status: active. CI run `36174294807` passed quality, PostgreSQL integration and restore, and
+  security after the Decision Gateway and handoff metric corrections. Current work adds a supervised
+  incident lifecycle, signed bundle verification and a synthetic-only browser intake safety fix;
+  the full scope from both supplied texts remains in progress.
 - Branch: `codex/production-platform-20260923`, created without discarding the pre-existing local
   changes. The newer upstream regional-import and ML commits have been merged into the branch.
 - Scope from the two supplied texts: durable manual journey, Handoff Guard, Replay Lab, Outcome
@@ -112,13 +111,26 @@
   recorded rejection from explicit regional assignment cohorts. It excludes synthetic test-only
   appeals, requires an operational source allowlist, reports missing and unmapped evidence and
   preserves zero-denominator rates as unavailable. No operational dashboard route is mounted.
+- Supervisors can advance confirmed incidents through monitoring, resolution and closure with
+  version checks, exact retries, controlled reason codes, audit and outbox events. PostgreSQL
+  verifies that resolution evidence hashes belong to attachments on currently confirmed member
+  appeals in the same region; this does not independently verify the attachment contents.
+- A pure regional release-bundle verifier checks an explicit Ed25519 trust key, region, manifest,
+  validity window and content digest before an atomic activation repository seam. Verified content
+  is recursively immutable. Durable activation, key distribution and artifact application remain
+  to be implemented.
+- Browser intake no longer claims success or invents a request number after a failed response.
+  Retried submissions reuse one idempotency key and exact body. Legacy local drafts are removed
+  from browser storage and restored in memory; normal mode blocks submit until approved private
+  source storage is available. A flagged synthetic mode uses only test data and sends no raw address
+  as an opaque private reference.
 - The merged regional research corpus now contains withheld text markers only. Quarantine artifacts
   contain hashes and counts without source row values. New regional ingest withholds executor prose;
   training and evaluation stop on withheld data, and historical reports block quality claims.
 
 ## Contracts And Migrations Changed
 
-- OpenAPI includes 29 operations and 49 schemas. Create and status-event time-quality rules now
+- OpenAPI includes 30 operations and 50 schemas. Create and status-event time-quality rules now
   agree with the canonical JSON schema; no timestamp is derived from observation time.
 - Added Alembic revisions `0008_m7_manual_path_persistence` through
   `0011_m7_incident_persistence` after the previously accepted `0001`-`0007` chain.
@@ -139,8 +151,9 @@
   IDs and organization IDs; handoff outcomes record the mapping used. Its revision ID was shortened
   to `0018_m8_unit_org_crosswalk` to fit Alembic's version column; CI applied it and passed restore.
 - Added `0019_m8_gateway_assessment` for immutable, recommendation-bound advisory decisions with
-  digest-based idempotency. Its first CI run exposed SQLAlchemy parsing a JSON colon as a bind
-  parameter; the corrected check uses `jsonb_build_object` and awaits the next batched CI.
+  digest-based idempotency. The corrected migration and assessment passed PostgreSQL CI and restore.
+- OpenAPI now includes the supervised incident lifecycle command with controlled evidence hashes.
+  The bundle verifier is an internal seam and does not expose an operational API.
 
 ## Verification
 
@@ -184,6 +197,12 @@
 | Alembic `0019` offline SQL          | passed | Full migration chain compiles after replacing the JSON literal with `jsonb_build_object`. |
 | Handoff metric focused checks       | passed | 4 tests and two local PostgreSQL-only skips; Ruff and strict mypy passed.                 |
 | CI run `36172718369`                | failed | `0019` applied and 18 DB tests passed; gateway fixture UUID and status formatting failed. |
+| CI run `36174294807`                | passed | Quality, PostgreSQL integration and restore, and security all succeeded.                  |
+| Current incident/bundle focused     | passed | 12 local tests passed; PostgreSQL incident evidence check awaits the next batched CI.     |
+| Current local Python suite          | passed | 210 passed; 19 PostgreSQL-only tests skipped without the test database URL.               |
+| Current contract and E2E            | passed | 20 contract and 11 E2E tests passed after the lifecycle OpenAPI update.                   |
+| Current lint and typecheck          | passed | Ruff, Prettier, ESLint, mypy across 112 files and TypeScript passed.                      |
+| Current package and web build       | passed | Python wheel/sdist and Next.js production build completed locally.                        |
 | Final local lint and typecheck      | passed | Ruff, Prettier, ESLint, strict mypy (110 files) and TypeScript checks.                    |
 | Final local tests                   | passed | 197 passed, 19 PostgreSQL-only skips; 19 contract and 11 E2E tests passed.                |
 | Final local build                   | passed | Python sdist/wheel and Next.js production build.                                          |
@@ -277,6 +296,10 @@ absolute `1e-12` tolerance, with focused acceptance and rejection tests. Databas
 - B08/B10 still require the approved OIDC provider, immutable private source storage, legal basis
   and retention class. Operational intake fails closed if these are absent; the current regex is a
   synthetic-fixture aid and is not a production PII redactor.
+- Citizen browser submission is now disabled by default. The optional synthetic mode has no
+  identity, address vault or approved regional intake configuration and must not receive real data.
+  Incident evidence checks prove an attachment hash is linked to a member appeal, not that an
+  operator verified its contents. Signed bundles currently have no durable activation repository.
 - The merged regional corpus previously included address-bearing executor prose and quarantine
   source values. HEAD now withholds both and labels all derived model reports historical and
   unverified. Earlier Git blobs remain reachable; a repository-owner retention and history
@@ -317,11 +340,12 @@ absolute `1e-12` tolerance, with focused acceptance and rejection tests. Databas
 - D-053 binds offline replay reports to canonical snapshots stored through an immutable object seam.
 - D-054 records fail-closed, version-bound Decision Gateway assessments without acting on them.
 - D-055 defines operational handoff metric cohorts, missing rates and synthetic exclusion.
+- D-056 through D-058 record supervised incident transitions, signed-bundle trust and safe browser
+  submission behavior.
 
 ## Exact Next Milestone
 
-Run one batched database CI for the corrected Decision Gateway assessment migration, atomic
-receipt and operational handoff metric SQL.
-Continue governed outcome-memory corpus preparation, incident lifecycle operations and adaptive
-case evidence capture. Keep live adapters, representative model claims, binding SLA and real PII
-processing dependent on B01-B10.
+Finish local checks for this incident, bundle and browser-intake batch, then run one batched CI.
+Continue governed incident merge/split/reopen, durable bundle activation, adaptive case evidence
+capture and operator closure workflows. Keep live adapters, representative model claims, binding
+SLA and real PII processing dependent on B01-B10.

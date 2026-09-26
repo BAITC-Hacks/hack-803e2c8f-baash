@@ -6,7 +6,14 @@ from fastapi import APIRouter, Header, HTTPException, Response, status
 
 from pulse109.security import AuthenticatedActor
 
-from .models import CreateIncident, Incident, IncidentDecision, IncidentMember, MembershipCommand
+from .models import (
+    CreateIncident,
+    Incident,
+    IncidentDecision,
+    IncidentLifecycleCommand,
+    IncidentMember,
+    MembershipCommand,
+)
 from .postgres import PostgresIncidentService
 from .service import IncidentError, IncidentService
 
@@ -86,6 +93,29 @@ def create_incident_router(service: IncidentService | PostgresIncidentService) -
         identity.require_region(region_id)
         try:
             return service.decide_incident(
+                incident_id,
+                command,
+                idempotency_key=idempotency_key,
+                region_id=region_id,
+                actor=identity.actor_id,
+                correlation_id=correlation_id,
+            )
+        except IncidentError as error:
+            raise _http_error(error) from error
+
+    @router.post("/incidents/{incident_id}/lifecycle", response_model=Incident)
+    def transition_lifecycle(
+        incident_id: UUID,
+        command: IncidentLifecycleCommand,
+        identity: AuthenticatedActor,
+        idempotency_key: str = Header(alias="Idempotency-Key", min_length=16, max_length=128),
+        region_id: str = Header(alias="X-Region-Id", pattern=r"^[A-Z0-9_-]{2,32}$"),
+        correlation_id: str = Header(default="local-correlation", alias="X-Correlation-Id"),
+    ) -> Incident:
+        identity.require_any_role("supervisor", "admin")
+        identity.require_region(region_id)
+        try:
+            return service.transition_lifecycle(
                 incident_id,
                 command,
                 idempotency_key=idempotency_key,

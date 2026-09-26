@@ -8,7 +8,14 @@ from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID, uuid4
 
-from .models import CreateIncident, Incident, IncidentDecision, IncidentMember, MembershipCommand
+from .models import (
+    CreateIncident,
+    Incident,
+    IncidentDecision,
+    IncidentLifecycleCommand,
+    IncidentMember,
+    MembershipCommand,
+)
 from .repository import IncidentState, InMemoryIncidentRepository
 
 
@@ -281,5 +288,52 @@ class IncidentService:
                 {"decision": command.decision, "reason_code": command.reason_code},
             )
             response = self._response(state, incident)
+            state.idempotency[key] = (request_hash, response.model_dump(mode="json"))
+            return response
+
+    def transition_lifecycle(
+        self,
+        incident_id: UUID,
+        command: IncidentLifecycleCommand,
+        *,
+        idempotency_key: str,
+        region_id: str,
+        actor: str,
+        correlation_id: str,
+    ) -> Incident:
+        request_hash = _hash(command.model_dump(mode="json"))
+        key = (f"lifecycle:{incident_id}", idempotency_key)
+        transitions = {"confirmed": "monitoring", "monitoring": "resolved", "resolved": "closed"}
+        with self.repository.transaction() as state:
+            incident = self._get(state, incident_id, region_id)
+            prior = state.idempotency.get(key)
+            if prior:
+                if prior[0] != request_hash:
+                    raise IncidentError("idempotency_conflict", "Idempotency key body differs.")
+                return Incident.model_validate(prior[1])
+            if command.incident_version != incident["version"]:
+                raise IncidentError("stale_version", "The incident changed during review.")
+            if transitions.get(incident["state"]) != command.target_state:
+                raise IncidentError(
+                    "invalid_incident_transition", "Incident cannot enter that state."
+                )
+            previous_state = incident["state"]
+            incident["state"] = command.target_state
+            incident["version"] += 1
+            response = self._response(state, incident)
+            self._event(
+                state,
+                "incident.state.changed.v1",
+                incident_id,
+                region_id,
+                actor,
+                correlation_id,
+                {
+                    "previous_state": previous_state,
+                    "new_state": command.target_state,
+                    "reason_code": command.reason_code,
+                    "evidence_refs": command.evidence_refs,
+                },
+            )
             state.idempotency[key] = (request_hash, response.model_dump(mode="json"))
             return response

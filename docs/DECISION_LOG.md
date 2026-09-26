@@ -591,6 +591,39 @@ Record implementation decisions here when the repository, contracts or available
 - **Evidence:** `pulse109.ownership.metrics`, focused tests and PostgreSQL integration smoke.
 - **Revisit when:** a regional unit directory, approved source registry and reporting definitions are available.
 
+### D-056 — Advance incident state only through supervised, evidenced transitions
+
+- **Date:** 2026-09-26
+- **Status:** accepted
+- **Context:** confirmed incident membership existed, but the incident could not progress through active response, resolution and closure with a reviewable state history.
+- **Decision:** require a supervisor or administrator, the current incident version, an idempotency key and a controlled reason code for each forward transition. Resolution and closure require SHA-256 evidence references; PostgreSQL accepts them only when they belong to attachments of currently confirmed member appeals in the same region. Record the transition in incident history, audit and outbox in one transaction. Appeal identities, statuses and SLAs remain independent.
+- **Alternatives:** infer incident closure from regional source status; accept arbitrary notes or unowned attachment references; change incident state without review.
+- **Consequences:** evidence ownership is checked, but attachment content and remediation quality are not independently verified by this command. Merge, split, reopen and supersession still require their own governed operations.
+- **Evidence:** incident lifecycle route, OpenAPI schema, synthetic E2E and PostgreSQL integration scenario.
+- **Revisit when:** approved incident evidence policy and regional remediation workflow are available.
+
+### D-057 — Verify regional release bundles before activation
+
+- **Date:** 2026-09-26
+- **Status:** accepted
+- **Context:** federated policy and catalog distribution needs an integrity and downgrade boundary while central service connectivity may be unavailable.
+- **Decision:** use a bounded canonical JSON manifest signed with an explicitly trusted Ed25519 key. Verify signature, region, schema, validity window and artifact digests before an atomic repository activation that advances both version and sequence. Expose immutable verified content and preserve the last known good bundle on rejection.
+- **Alternatives:** accept unsigned configuration updates; trust a caller-supplied digest; permit a lower sequence to replace the active release.
+- **Consequences:** the pure verifier is implemented and tested; durable activation, artifact retrieval, key rotation, signing authority and regional deployment are still required before this becomes an operational control plane.
+- **Evidence:** `pulse109.control_plane.bundles` and focused tamper, replay, scope, expiry and immutability tests.
+- **Revisit when:** signing keys, regional runtime and approved release artifacts are supplied.
+
+### D-058 — Keep browser intake synthetic until private source storage exists
+
+- **Date:** 2026-09-26
+- **Status:** accepted
+- **Context:** the guided browser form could show a fabricated success number after a network error and supplied a raw address in a field defined as an opaque private reference. No approved immutable source storage, legal basis or retention class exists for real citizen intake.
+- **Decision:** show success only after the API returns a valid request UUID; retry an ambiguous failure with the same idempotency key and body. Remove persistent browser drafts, restoring legacy drafts in memory once. Disable submission by default; an explicit synthetic-assist flag allows only test submissions and never passes raw address text as a private reference. Keep received time missing when the source did not provide it.
+- **Alternatives:** invent an offline acceptance number; treat a raw address as a private reference; submit real data before B08/B10 are approved.
+- **Consequences:** the web journey is not an operational citizen channel until protected source storage and governance are integrated. The synthetic mode can exercise the UI and backend with fictitious data.
+- **Evidence:** `apps/web/app/intake.tsx`, frontend typecheck and lint, API fail-closed requirements.
+- **Revisit when:** B08/B10 provide approved identity, immutable source storage, legal basis and retention rules.
+
 ### D-XXX — Short title
 
 - **Date:** YYYY-MM-DD

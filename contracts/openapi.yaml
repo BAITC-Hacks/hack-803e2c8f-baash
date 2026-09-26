@@ -572,6 +572,31 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Incident'
+  /v1/incidents/{incident_id}/lifecycle:
+    post:
+      tags: [Incidents]
+      summary: Advance a confirmed incident through monitoring, resolution, and closure
+      operationId: transitionIncidentLifecycle
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IncidentId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/RegionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IncidentLifecycleCommand'
+      responses:
+        '200':
+          description: Incident state advanced after supervisor confirmation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
   /v1/alerts:
     get:
       tags: [Analytics]
@@ -1759,6 +1784,37 @@ components:
         decided_at:
           type: string
           format: date-time
+    IncidentLifecycleCommand:
+      type: object
+      additionalProperties: false
+      required: [incident_version, target_state, reason_code]
+      properties:
+        incident_version:
+          type: integer
+          minimum: 1
+        target_state:
+          type: string
+          enum: [monitoring, resolved, closed]
+        reason_code:
+          type: string
+          pattern: '^[A-Z][A-Z0-9_]{0,63}$'
+        evidence_refs:
+          type: array
+          maxItems: 20
+          items:
+            type: string
+            pattern: '^[0-9a-f]{64}$'
+      allOf:
+        - if:
+            properties:
+              target_state:
+                enum: [resolved, closed]
+            required: [target_state]
+          then:
+            required: [evidence_refs]
+            properties:
+              evidence_refs:
+                minItems: 1
     Alert:
       type: object
       required: [alert_id, type, region_id, severity, status, detected_at, evidence]

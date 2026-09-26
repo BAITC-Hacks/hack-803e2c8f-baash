@@ -71,7 +71,7 @@ Proposals, review decisions, approved policy rows, audit records and outbox even
 | `incident.confirmed.v1` | Core | confirmer token, member count, reason code | Analytics, regional adapter |
 | `incident.member.added.v1` | Core | request ID, decision evidence | Timeline, notifications |
 | `incident.member.rejected.v1` | Core | request ID, reason code | Evaluation dataset |
-| `incident.state.changed.v1` | Core or adapter | previous state, new state, reason | Analytics, notifications |
+| `incident.state.changed.v1` | Core | previous state, new state, controlled reason code, member-owned evidence hashes | Analytics, notifications |
 | `alert.detected.v1` | Analytics | alert type, metric ID, baseline, observed value, confidence, affected dimensions | Situation center, notifications |
 | `alert.acknowledged.v1` | Core | actor token, note | Operations, audit |
 | `alert.resolved.v1` | Core | actor token, resolution code, evidence references | Analytics, audit |

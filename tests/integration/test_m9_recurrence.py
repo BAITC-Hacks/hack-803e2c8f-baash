@@ -7,7 +7,13 @@ from uuid import uuid4
 import psycopg
 import pytest
 from pulse109.incidents import PostgresIncidentRepository, PostgresIncidentService
-from pulse109.incidents.models import CreateIncident, IncidentDecision, MembershipCommand
+from pulse109.incidents.models import (
+    CreateIncident,
+    IncidentDecision,
+    IncidentLifecycleCommand,
+    MembershipCommand,
+)
+from pulse109.incidents.service import IncidentError
 from pulse109.manual_path import PostgresManualPathService, PostgresManualRepository
 from pulse109.manual_path.models import (
     CreateRequest,
@@ -90,7 +96,7 @@ def test_verified_closure_supports_region_scoped_recurrence_assessment() -> None
             actor="synthetic-operator",
             correlation_id=source,
         )
-    incident_service.decide_incident(
+    confirmed_incident = incident_service.decide_incident(
         incident.incident_id,
         IncidentDecision(
             incident_version=1,
@@ -102,7 +108,6 @@ def test_verified_closure_supports_region_scoped_recurrence_assessment() -> None
         actor="synthetic-operator",
         correlation_id=source,
     )
-
     url = database_url.replace("postgresql+psycopg://", "postgresql://", 1)
     with psycopg.connect(url) as connection, connection.cursor() as cursor:
         cursor.execute(
@@ -111,6 +116,48 @@ def test_verified_closure_supports_region_scoped_recurrence_assessment() -> None
                VALUES (%s, %s, %s, 'internal')""",
             (prior_one.request_id, "synthetic://repaired-pipe", "c" * 64),
         )
+    monitoring = incident_service.transition_lifecycle(
+        incident.incident_id,
+        IncidentLifecycleCommand(
+            incident_version=confirmed_incident.version,
+            target_state="monitoring",
+            reason_code="SYNTHETIC_ACTIVE_RESPONSE",
+        ),
+        idempotency_key=f"monitor-{source}",
+        region_id="ALA",
+        actor="synthetic-supervisor",
+        correlation_id=source,
+    )
+    with pytest.raises(IncidentError) as missing_evidence:
+        incident_service.transition_lifecycle(
+            incident.incident_id,
+            IncidentLifecycleCommand(
+                incident_version=monitoring.version,
+                target_state="resolved",
+                reason_code="SYNTHETIC_RESOLVED",
+                evidence_refs=["d" * 64],
+            ),
+            idempotency_key=f"resolve-missing-{source}",
+            region_id="ALA",
+            actor="synthetic-supervisor",
+            correlation_id=source,
+        )
+    assert missing_evidence.value.code == "evidence_not_found"
+    closed = incident_service.transition_lifecycle(
+        incident.incident_id,
+        IncidentLifecycleCommand(
+            incident_version=monitoring.version,
+            target_state="resolved",
+            reason_code="SYNTHETIC_RESOLVED",
+            evidence_refs=["c" * 64],
+        ),
+        idempotency_key=f"resolve-{source}",
+        region_id="ALA",
+        actor="synthetic-supervisor",
+        correlation_id=source,
+    )
+    assert closed.state == "resolved"
+
     manual.status(
         prior_one.request_id,
         StatusEventInput(
