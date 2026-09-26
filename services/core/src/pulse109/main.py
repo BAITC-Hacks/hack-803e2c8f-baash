@@ -48,6 +48,15 @@ from pulse109.recurrence import (
     RecurrenceService,
     create_recurrence_router,
 )
+from pulse109.replay import (
+    MemoryReplayRepository,
+    MemorySnapshotStore,
+    PolicyMetrics,
+    PostgresReplayRepository,
+    ReplayReport,
+    ReplayRepository,
+    create_replay_router,
+)
 from pulse109.reports import ReportRuntime, create_report_router
 from pulse109.retrieval import HybridRetriever, create_retrieval_router, synthetic_corpus
 
@@ -172,6 +181,58 @@ app.include_router(create_analytics_router(analytics_service, alert_store))
 
 report_runtime = ReportRuntime(analytics_service)
 app.include_router(create_report_router(report_runtime))
+
+replay_repository: ReplayRepository | None
+if use_postgres_manual_path:
+    replay_repository = PostgresReplayRepository(settings.database_url, MemorySnapshotStore())
+elif synthetic_read_models:
+    mem_repo = MemoryReplayRepository()
+    mem_repo.persist_report(
+        ReplayReport(
+            report_id="replay-rep-synthetic-001",
+            dataset_id="dataset-kar-2026-q3",
+            region_id="KAR",
+            dataset_digest="a" * 64,
+            baseline_policy_id="routing-kar-standard",
+            baseline_version="1.0.0",
+            candidate_policy_id="routing-kar-candidate",
+            candidate_version="1.1.0",
+            cutoff_at=datetime(2026, 9, 10, 23, 59, tzinfo=timezone.utc),
+            baseline=PolicyMetrics(
+                evaluated_count=120,
+                synthetic_count=120,
+                route_change_count=0,
+                labeled_count=120,
+                confirmed_route_agreement=0.82,
+                route_matched_case_count=98,
+                historical_handoff_rate_on_route_matched_cases=0.08,
+                operator_override_rate=0.18,
+                first_pass_acceptance_rate=0.82,
+                language_slice_agreement={"kk": 0.80, "ru": 0.84, "mixed": 0.81},
+            ),
+            candidate=PolicyMetrics(
+                evaluated_count=120,
+                synthetic_count=120,
+                route_change_count=14,
+                labeled_count=120,
+                confirmed_route_agreement=0.91,
+                route_matched_case_count=109,
+                historical_handoff_rate_on_route_matched_cases=0.03,
+                operator_override_rate=0.09,
+                first_pass_acceptance_rate=0.91,
+                language_slice_agreement={"kk": 0.90, "ru": 0.92, "mixed": 0.89},
+            ),
+            decision=(
+                "descriptive historical replay complete; candidate shows improved agreement "
+                "and reduced handoffs across all language slices"
+            ),
+            promoted=False,
+        )
+    )
+    replay_repository = mem_repo
+else:
+    replay_repository = None
+app.include_router(create_replay_router(replay_repository, allow_synthetic=synthetic_read_models))
 
 
 @app.middleware("http")

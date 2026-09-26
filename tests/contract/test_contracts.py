@@ -27,9 +27,9 @@ def test_openapi_31_contract_is_valid_and_stable() -> None:
         if method in {"get", "post", "put", "patch", "delete"}
     ]
     assert document["openapi"] == "3.1.0"
-    assert len(operations) == 30
-    assert len({item["operationId"] for item in operations}) == 30
-    assert len(document["components"]["schemas"]) == 50
+    assert len(operations) == 34
+    assert len({item["operationId"] for item in operations}) == 34
+    assert len(document["components"]["schemas"]) == 56
 
 
 def test_incident_lifecycle_contract_requires_controlled_evidence_refs() -> None:
@@ -46,6 +46,53 @@ def test_incident_lifecycle_contract_requires_controlled_evidence_refs() -> None
     assert list(validator.iter_errors(command | {"evidence_refs": []}))
     assert list(validator.iter_errors(command | {"note": "private citizen text"}))
     assert list(validator.iter_errors(command | {"reason_code": "private free text"}))
+
+
+def test_incident_merge_and_split_contracts() -> None:
+    with (ROOT / "contracts/openapi.yaml").open(encoding="utf-8") as stream:
+        document = yaml.safe_load(stream)
+    merge_validator = Draft202012Validator(
+        document["components"]["schemas"]["IncidentMergeCommand"]
+    )
+    split_validator = Draft202012Validator(
+        document["components"]["schemas"]["IncidentSplitCommand"]
+    )
+
+    merge_command = {
+        "target_incident_id": "00000000-0000-0000-0000-000000000002",
+        "source_version": 1,
+        "target_version": 2,
+        "member_request_ids": [
+            "00000000-0000-0000-0000-000000000010",
+            "00000000-0000-0000-0000-000000000011",
+        ],
+        "reason_code": "MERGE_VERIFIED",
+        "evidence_refs": ["c" * 64],
+    }
+    assert list(merge_validator.iter_errors(merge_command)) == []
+    assert list(merge_validator.iter_errors(merge_command | {"evidence_refs": []}))
+    assert list(merge_validator.iter_errors(merge_command | {"note": "private text"}))
+    assert list(
+        merge_validator.iter_errors(merge_command | {"reason_code": "invalid code with spaces"})
+    )
+
+    split_command = {
+        "source_version": 3,
+        "member_request_ids": [
+            "00000000-0000-0000-0000-000000000020",
+            "00000000-0000-0000-0000-000000000021",
+        ],
+        "reason_code": "SPLIT_CLUSTER",
+        "evidence_refs": ["d" * 64],
+    }
+    assert list(split_validator.iter_errors(split_command)) == []
+    assert list(split_validator.iter_errors(split_command | {"evidence_refs": []}))
+    assert list(split_validator.iter_errors(split_command | {"note": "private text"}))
+    assert list(
+        split_validator.iter_errors(
+            split_command | {"member_request_ids": ["00000000-0000-0000-0000-000000000020"]}
+        )
+    )
 
 
 def test_canonical_request_schema_is_valid() -> None:
@@ -150,3 +197,43 @@ def test_internal_inference_contract_is_versioned_and_requires_human_control() -
 
     response["requires_human_confirmation"] = False
     assert list(validator.iter_errors(response))
+
+
+def test_replay_report_contract_validates_structure() -> None:
+    with (ROOT / "contracts/openapi.yaml").open(encoding="utf-8") as stream:
+        document = yaml.safe_load(stream)
+    summary_validator = Draft202012Validator(
+        document["components"]["schemas"]["ReplayReportSummary"],
+        format_checker=FormatChecker(),
+    )
+    summary = {
+        "report_id": "replay-rep-001",
+        "dataset_id": "dataset-kar-001",
+        "region_id": "KAR",
+        "cutoff_at": "2026-09-10T23:59:00Z",
+        "baseline_policy_id": "routing-kar-std",
+        "baseline_version": "1.0.0",
+        "candidate_policy_id": "routing-kar-cand",
+        "candidate_version": "1.1.0",
+        "created_at": "2026-09-11T12:00:00Z",
+        "decision": "descriptive comparison complete",
+    }
+    assert list(summary_validator.iter_errors(summary)) == []
+
+    metrics_validator = Draft202012Validator(
+        document["components"]["schemas"]["ReplayPolicyMetrics"],
+        format_checker=FormatChecker(),
+    )
+    metrics = {
+        "evaluated_count": 50,
+        "synthetic_count": 0,
+        "route_change_count": 0,
+        "labeled_count": 50,
+        "confirmed_route_agreement": 0.84,
+        "route_matched_case_count": 42,
+        "historical_handoff_rate_on_route_matched_cases": 0.05,
+        "operator_override_rate": 0.16,
+        "first_pass_acceptance_rate": 0.84,
+        "language_slice_agreement": {"kk": 0.82, "ru": 0.86, "mixed": 0.80},
+    }
+    assert list(metrics_validator.iter_errors(metrics)) == []

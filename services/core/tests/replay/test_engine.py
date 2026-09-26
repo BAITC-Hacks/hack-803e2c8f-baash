@@ -160,3 +160,63 @@ def test_rejects_free_text_policy_output() -> None:
             RouteBySignal("v1", "water outage at 555-123-4567"),
             RouteBySignal("v2", "water"),
         )
+
+
+def test_language_slices_and_operator_rates() -> None:
+    case_kk = ReplayCase(
+        case_key="1" * 64,
+        region_id="ALA",
+        decision_at=DECISION_AT,
+        features={
+            "channel": {"value": "web", "observed_at": DECISION_AT},
+            "language": {"value": "kk", "observed_at": DECISION_AT},
+        },
+        label=ReplayLabel(
+            confirmed_route="water",
+            handoff_count=0,
+            label_observed_at=DECISION_AT + timedelta(days=1),
+        ),
+        is_synthetic=False,
+    )
+    case_ru = ReplayCase(
+        case_key="2" * 64,
+        region_id="ALA",
+        decision_at=DECISION_AT,
+        features={
+            "channel": {"value": "web", "observed_at": DECISION_AT},
+            "language": {"value": "ru", "observed_at": DECISION_AT},
+        },
+        label=ReplayLabel(
+            confirmed_route="roads",
+            handoff_count=1,
+            label_observed_at=DECISION_AT + timedelta(days=1),
+        ),
+        is_synthetic=False,
+    )
+    dataset = ReplayDataset(
+        dataset_id="slices-test",
+        region_id="ALA",
+        snapshot_sha256="b" * 64,
+        schema_version="v1",
+        cases=(case_kk, case_ru),
+        allowed_features=frozenset({"channel", "language"}),
+        cutoff_at=datetime(2026, 9, 1, tzinfo=timezone.utc),
+    )
+    dataset = dataset.model_copy(update={"snapshot_sha256": snapshot_sha256(dataset)})
+
+    baseline = RouteBySignal("v1", "water")
+    candidate = RouteBySignal("v2", "roads")
+
+    report = ReplayEngine().compare(dataset, baseline, candidate)
+
+    # Baseline: matched kk ("water"), missed ru ("roads")
+    assert report.baseline.language_slice_agreement["kk"] == 1.0
+    assert report.baseline.language_slice_agreement["ru"] == 0.0
+    assert report.baseline.confirmed_route_agreement == 0.5
+    assert report.baseline.operator_override_rate == 0.5
+
+    # Candidate: missed kk, matched ru
+    assert report.candidate.language_slice_agreement["kk"] == 0.0
+    assert report.candidate.language_slice_agreement["ru"] == 1.0
+    assert report.candidate.confirmed_route_agreement == 0.5
+    assert report.candidate.operator_override_rate == 0.5

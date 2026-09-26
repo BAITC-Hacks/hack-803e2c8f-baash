@@ -20,6 +20,7 @@ tags:
   - name: Reports
   - name: Catalog
   - name: Operations
+  - name: Replay Lab
 paths:
   /v1/intake/plans:
     post:
@@ -600,6 +601,56 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Incident'
+  /v1/incidents/{incident_id}/merge:
+    post:
+      tags: [Incidents]
+      summary: Merge an active reviewed incident into another confirmed incident
+      operationId: mergeIncident
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IncidentId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/RegionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IncidentMergeCommand'
+      responses:
+        '200':
+          description: Incidents merged and membership transferred
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IncidentTopologyResponse'
+  /v1/incidents/{incident_id}/split:
+    post:
+      tags: [Incidents]
+      summary: Split selected confirmed members into a new proposed incident
+      operationId: splitIncident
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IncidentId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/RegionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IncidentSplitCommand'
+      responses:
+        '200':
+          description: Members split into a newly proposed incident
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IncidentTopologyResponse'
   /v1/alerts:
     get:
       tags: [Analytics]
@@ -848,6 +899,63 @@ paths:
           description: Critical path is ready
         '503':
           description: A critical dependency is unavailable
+  /v1/replay/reports:
+    get:
+      tags: [Replay Lab]
+      summary: List historical replay comparison reports
+      operationId: listReplayReports
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/RegionId'
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: List of replay report summaries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReplayReportSummary'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /v1/replay/reports/{report_id}:
+    get:
+      tags: [Replay Lab]
+      summary: Get details of a historical replay comparison report
+      operationId: getReplayReport
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: report_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/RegionId'
+      responses:
+        '200':
+          description: Full replay report details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReplayReport'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
 components:
   securitySchemes:
     bearerAuth:
@@ -1758,7 +1866,7 @@ components:
           format: uuid
         state:
           type: string
-          enum: [proposed, confirmed, rejected, monitoring, resolved, closed]
+          enum: [proposed, confirmed, rejected, monitoring, resolved, closed, superseded]
         region_id:
           type: string
         topic_id:
@@ -1818,6 +1926,95 @@ components:
             properties:
               evidence_refs:
                 minItems: 1
+    IncidentMergeCommand:
+      type: object
+      additionalProperties: false
+      required:
+        - target_incident_id
+        - source_version
+        - target_version
+        - member_request_ids
+        - reason_code
+        - evidence_refs
+      properties:
+        target_incident_id:
+          type: string
+          format: uuid
+        source_version:
+          type: integer
+          minimum: 1
+        target_version:
+          type: integer
+          minimum: 1
+        member_request_ids:
+          type: array
+          minItems: 2
+          maxItems: 500
+          uniqueItems: true
+          items:
+            type: string
+            format: uuid
+        reason_code:
+          type: string
+          pattern: '^[A-Z][A-Z0-9_]{0,63}$'
+        evidence_refs:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items:
+            type: string
+            pattern: '^[0-9a-f]{64}$'
+    IncidentSplitCommand:
+      type: object
+      additionalProperties: false
+      required:
+        - source_version
+        - member_request_ids
+        - reason_code
+        - evidence_refs
+      properties:
+        source_version:
+          type: integer
+          minimum: 1
+        member_request_ids:
+          type: array
+          minItems: 2
+          maxItems: 500
+          uniqueItems: true
+          items:
+            type: string
+            format: uuid
+        reason_code:
+          type: string
+          pattern: '^[A-Z][A-Z0-9_]{0,63}$'
+        evidence_refs:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items:
+            type: string
+            pattern: '^[0-9a-f]{64}$'
+    IncidentTopologyResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - operation
+        - source
+        - target
+        - member_request_ids
+      properties:
+        operation:
+          type: string
+          enum: [merge, split]
+        source:
+          $ref: '#/components/schemas/Incident'
+        target:
+          $ref: '#/components/schemas/Incident'
+        member_request_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
     Alert:
       type: object
       required: [alert_id, type, region_id, severity, status, detected_at, evidence]
@@ -2070,3 +2267,121 @@ components:
                 type: string
               message:
                 type: string
+    ReplayReportSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - report_id
+        - dataset_id
+        - region_id
+        - cutoff_at
+        - baseline_policy_id
+        - baseline_version
+        - candidate_policy_id
+        - candidate_version
+        - created_at
+      properties:
+        report_id:
+          type: string
+        dataset_id:
+          type: string
+        region_id:
+          type: string
+        cutoff_at:
+          type: string
+          format: date-time
+        baseline_policy_id:
+          type: string
+        baseline_version:
+          type: string
+        candidate_policy_id:
+          type: string
+        candidate_version:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        decision:
+          type: [string, 'null']
+    ReplayPolicyMetrics:
+      type: object
+      additionalProperties: false
+      required:
+        - evaluated_count
+        - synthetic_count
+        - route_change_count
+        - labeled_count
+        - route_matched_case_count
+      properties:
+        evaluated_count:
+          type: integer
+          minimum: 0
+        synthetic_count:
+          type: integer
+          minimum: 0
+        route_change_count:
+          type: integer
+          minimum: 0
+        labeled_count:
+          type: integer
+          minimum: 0
+        confirmed_route_agreement:
+          type: [number, 'null']
+        route_matched_case_count:
+          type: integer
+          minimum: 0
+        historical_handoff_rate_on_route_matched_cases:
+          type: [number, 'null']
+        operator_override_rate:
+          type: [number, 'null']
+        first_pass_acceptance_rate:
+          type: [number, 'null']
+        language_slice_agreement:
+          type: object
+          additionalProperties:
+            type: number
+    ReplayReport:
+      type: object
+      additionalProperties: false
+      required:
+        - report_id
+        - dataset_id
+        - region_id
+        - dataset_digest
+        - baseline_policy_id
+        - baseline_version
+        - candidate_policy_id
+        - candidate_version
+        - cutoff_at
+        - baseline
+        - candidate
+        - decision
+        - promoted
+      properties:
+        report_id:
+          type: string
+        dataset_id:
+          type: string
+        region_id:
+          type: string
+        dataset_digest:
+          type: string
+        baseline_policy_id:
+          type: string
+        baseline_version:
+          type: string
+        candidate_policy_id:
+          type: string
+        candidate_version:
+          type: string
+        cutoff_at:
+          type: string
+          format: date-time
+        baseline:
+          $ref: '#/components/schemas/ReplayPolicyMetrics'
+        candidate:
+          $ref: '#/components/schemas/ReplayPolicyMetrics'
+        decision:
+          type: string
+        promoted:
+          type: boolean

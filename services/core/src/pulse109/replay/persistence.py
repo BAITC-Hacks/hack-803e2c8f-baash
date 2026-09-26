@@ -11,6 +11,7 @@ import hashlib
 import json
 from collections.abc import Callable, Mapping
 from contextlib import AbstractContextManager
+from datetime import datetime, timezone
 from typing import Any, Protocol, cast
 
 import psycopg
@@ -23,6 +24,20 @@ class ImmutableSnapshotStore(Protocol):
     """Store bytes once under their SHA-256 key and return ``sha256:<hex>``."""
 
     def put_immutable(self, payload: bytes, *, sha256: str) -> str: ...
+
+
+class MemorySnapshotStore:
+    """In-memory content-addressed store for test and development profiles."""
+
+    def __init__(self) -> None:
+        self.objects: dict[str, bytes] = {}
+
+    def put_immutable(self, payload: bytes, *, sha256: str) -> str:
+        digest = hashlib.sha256(payload).hexdigest()
+        if digest != sha256:
+            raise ValueError("payload SHA-256 does not match specified digest")
+        self.objects.setdefault(sha256, payload)
+        return f"sha256:{sha256}"
 
 
 ConnectionFactory = Callable[..., AbstractContextManager[Any]]
@@ -236,3 +251,137 @@ class PostgresReplayRepository:
                 if actual != expected or prior["metrics"] != metrics:
                     raise ValueError("report id is already bound to different comparison evidence")
                 return True
+
+    def get_report(self, report_id: str, *, region_id: str | None = None) -> ReplayReport | None:
+        with self._connect(self.database_url, row_factory=dict_row) as conn:
+            with conn.cursor() as cur:
+                query = """
+                    SELECT r.report_id, r.dataset_id, d.region_id, d.cutoff_at,
+                           r.baseline_policy_id, r.baseline_version,
+                           r.candidate_policy_id, r.candidate_version,
+                           r.metrics
+                    FROM replay.comparison_run r
+                    JOIN replay.dataset_manifest d ON d.dataset_id = r.dataset_id
+                    WHERE r.report_id = %s
+                """
+                params: list[Any] = [report_id]
+                if region_id is not None:
+                    query += " AND d.region_id = %s"
+                    params.append(region_id)
+                cur.execute(query, tuple(params))
+                row = cur.fetchone()
+                if row is None:
+                    return None
+                metrics = row["metrics"]
+                from .engine import PolicyMetrics
+
+                return ReplayReport(
+                    report_id=row["report_id"].strip(),
+                    dataset_id=row["dataset_id"],
+                    region_id=row["region_id"],
+                    dataset_digest=metrics["dataset_digest"],
+                    baseline_policy_id=row["baseline_policy_id"],
+                    baseline_version=row["baseline_version"],
+                    candidate_policy_id=row["candidate_policy_id"],
+                    candidate_version=row["candidate_version"],
+                    cutoff_at=row["cutoff_at"],
+                    baseline=PolicyMetrics.model_validate(metrics["baseline"]),
+                    candidate=PolicyMetrics.model_validate(metrics["candidate"]),
+                    decision=metrics.get("decision", "descriptive historical replay complete"),
+                    promoted=metrics.get("promoted", False),
+                )
+
+    def list_reports(self, *, region_id: str, limit: int = 50) -> list[dict[str, Any]]:
+        with self._connect(self.database_url, row_factory=dict_row) as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT r.report_id, r.dataset_id, d.region_id, d.cutoff_at,
+                           r.baseline_policy_id, r.baseline_version,
+                           r.candidate_policy_id, r.candidate_version,
+                           r.created_at, r.created_by_token,
+                           r.metrics->>'decision' AS decision
+                    FROM replay.comparison_run r
+                    JOIN replay.dataset_manifest d ON d.dataset_id = r.dataset_id
+                    WHERE d.region_id = %s
+                    ORDER BY r.created_at DESC
+                    LIMIT %s
+                    """,
+                    (region_id, limit),
+                )
+                rows = cur.fetchall()
+                return [
+                    {
+                        "report_id": row["report_id"].strip(),
+                        "dataset_id": row["dataset_id"],
+                        "region_id": row["region_id"],
+                        "cutoff_at": (
+                            row["cutoff_at"].isoformat()
+                            if hasattr(row["cutoff_at"], "isoformat")
+                            else str(row["cutoff_at"])
+                        ),
+                        "baseline_policy_id": row["baseline_policy_id"],
+                        "baseline_version": row["baseline_version"],
+                        "candidate_policy_id": row["candidate_policy_id"],
+                        "candidate_version": row["candidate_version"],
+                        "created_at": (
+                            row["created_at"].isoformat()
+                            if hasattr(row["created_at"], "isoformat")
+                            else str(row["created_at"])
+                        ),
+                        "decision": row["decision"],
+                    }
+                    for row in rows
+                ]
+
+
+class ReplayRepository(Protocol):
+    """Protocol for reading replay reports."""
+
+    def get_report(
+        self, report_id: str, *, region_id: str | None = None
+    ) -> ReplayReport | None: ...
+
+    def list_reports(self, *, region_id: str, limit: int = 50) -> list[dict[str, Any]]: ...
+
+
+class MemoryReplayRepository:
+    """In-memory replay report store for local development and unit tests."""
+
+    def __init__(self, snapshot_store: ImmutableSnapshotStore | None = None) -> None:
+        self.snapshot_store = snapshot_store or MemorySnapshotStore()
+        self._reports: dict[str, ReplayReport] = {}
+        self._metadata: dict[str, dict[str, Any]] = {}
+
+    def persist_report(
+        self,
+        report: ReplayReport,
+        *,
+        created_by: str = "service:test",
+        created_at: datetime | None = None,
+    ) -> bool:
+        created_at = created_at or datetime.now(timezone.utc)
+        self._reports[report.report_id] = report
+        self._metadata[report.report_id] = {
+            "report_id": report.report_id,
+            "dataset_id": report.dataset_id,
+            "region_id": report.region_id,
+            "cutoff_at": report.cutoff_at.isoformat(),
+            "baseline_policy_id": report.baseline_policy_id,
+            "baseline_version": report.baseline_version,
+            "candidate_policy_id": report.candidate_policy_id,
+            "candidate_version": report.candidate_version,
+            "created_at": created_at.isoformat(),
+            "decision": report.decision,
+        }
+        return True
+
+    def get_report(self, report_id: str, *, region_id: str | None = None) -> ReplayReport | None:
+        report = self._reports.get(report_id)
+        if report and (region_id is None or report.region_id == region_id):
+            return report
+        return None
+
+    def list_reports(self, *, region_id: str, limit: int = 50) -> list[dict[str, Any]]:
+        results = [meta for meta in self._metadata.values() if meta["region_id"] == region_id]
+        return results[:limit]

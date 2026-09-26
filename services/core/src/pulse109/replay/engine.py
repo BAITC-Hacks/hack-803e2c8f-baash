@@ -174,6 +174,9 @@ class PolicyMetrics(BaseModel):
     confirmed_route_agreement: float | None
     route_matched_case_count: int
     historical_handoff_rate_on_route_matched_cases: float | None
+    operator_override_rate: float | None = None
+    first_pass_acceptance_rate: float | None = None
+    language_slice_agreement: dict[str, float] = Field(default_factory=dict)
 
 
 class ReplayReport(BaseModel):
@@ -200,6 +203,7 @@ class ReplayReport(BaseModel):
 class _Evaluation:
     route: str
     label: ReplayLabel | None
+    language: str | None = None
 
 
 class ReplayEngine:
@@ -223,11 +227,21 @@ class ReplayEngine:
                 continue
             features = {name: feature.value for name, feature in case.features.items()}
             # Neither policy receives IDs, timestamps, labels, or synthetic provenance.
+            lang_val = features.get("language")
+            lang_str = str(lang_val) if isinstance(lang_val, str) else None
             evaluated["baseline"].append(
-                _Evaluation(_validate_route(baseline.predict(features)), case.label)
+                _Evaluation(
+                    _validate_route(baseline.predict(features)),
+                    case.label,
+                    language=lang_str,
+                )
             )
             evaluated["candidate"].append(
-                _Evaluation(_validate_route(candidate.predict(features)), case.label)
+                _Evaluation(
+                    _validate_route(candidate.predict(features)),
+                    case.label,
+                    language=lang_str,
+                )
             )
 
         changed = sum(
@@ -287,6 +301,23 @@ def _metrics(items: Sequence[_Evaluation], *, changed: int, synthetic_count: int
         handoff_rate = sum(value > 0 for value in known_route_matched_handoffs) / len(
             known_route_matched_handoffs
         )
+    override_rate = (1.0 - agreement) if agreement is not None else None
+    first_pass_rate = (1.0 - handoff_rate) if handoff_rate is not None else None
+
+    language_slices: dict[str, float] = {}
+    for lang in ("kk", "ru", "mixed"):
+        slice_items = [item for item in labeled if item.language == lang and item.label is not None]
+        if slice_items:
+            language_slices[lang] = round(
+                sum(
+                    item.route == item.label.confirmed_route
+                    for item in slice_items
+                    if item.label is not None
+                )
+                / len(slice_items),
+                4,
+            )
+
     return PolicyMetrics(
         evaluated_count=len(items),
         synthetic_count=synthetic_count,
@@ -295,6 +326,9 @@ def _metrics(items: Sequence[_Evaluation], *, changed: int, synthetic_count: int
         route_matched_case_count=len(route_matched),
         confirmed_route_agreement=agreement,
         historical_handoff_rate_on_route_matched_cases=handoff_rate,
+        operator_override_rate=override_rate,
+        first_pass_acceptance_rate=first_pass_rate,
+        language_slice_agreement=language_slices,
     )
 
 

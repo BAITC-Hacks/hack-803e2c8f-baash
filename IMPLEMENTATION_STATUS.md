@@ -133,11 +133,34 @@
 - The merged regional research corpus now contains withheld text markers only. Quarantine artifacts
   contain hashes and counts without source row values. New regional ingest withholds executor prose;
   training and evaluation stop on withheld data, and historical reports block quality claims.
+- Supervised Incident Topology now provides atomic split (`POST /v1/incidents/{incident_id}/split`)
+  and merge (`POST /v1/incidents/{incident_id}/merge`) operations. Merge supersedes the source incident
+  and transfers member appeals to the target; split creates a new target incident for a verified subset
+  while preserving source lineage. Cycle prevention, region scoping, controlled reason codes, and
+  attachment evidence checks are strictly enforced. Supervised reopen (`resolved -> monitoring`,
+  `closed -> monitoring`) is supported with `incident.reopened.v1`.
+- Regional Bundle Control Plane CLI (`pulse109-bundle`) allows verifying, activating, and inspecting
+  cryptographically signed Ed25519 configuration bundles with rollback targets and sequence advancement.
+- Replay Lab now provides an authenticated inspection API (`GET /v1/replay/reports`,
+  `GET /v1/replay/reports/{report_id}`) evaluating route agreement, operator override rate,
+  first-pass acceptance rate, and language slice agreement across Kazakh (KK), Russian (RU),
+  and mixed languages.
+- Operator UI (`apps/web`) adds dedicated interactive panels for Incident Topology (member selection,
+  cluster split, merge, supervised reopen) and Replay Lab (baseline vs candidate comparisons across
+  language slices, override rates, and safety governance notices), wired directly into the workspace.
+- Critical path resilience suite (`tests/resilience/test_critical_path_without_ml.py`) verifies that
+  appeal creation, inspection, manual decision, assignment, status events, and zero-PII audit trail
+  operate without dependency on ML inference or external regional CRMs.
 
 ## Contracts And Migrations Changed
 
-- OpenAPI includes 30 operations and 50 schemas. Create and status-event time-quality rules now
-  agree with the canonical JSON schema; no timestamp is derived from observation time.
+- OpenAPI includes 34 operations and 56 schemas. Endpoints now cover intake, requests, decisions,
+  ownership, incidents (membership, lifecycle, merge, split), replay reports, analytics, reports,
+  catalog, and operational probes.
+- Event catalog (`contracts/event_catalog.md`) documents `incident.merged.v1`, `incident.split.v1`,
+  `incident.membership.transferred.v1`, and `incident.reopened.v1`.
+- Migration `0021_incident_topology.py` introduces `incidents.incident_relation_decision` and supports
+  relational decision history and cycle-safe graph queries.
 - Added Alembic revisions `0008_m7_manual_path_persistence` through
   `0011_m7_incident_persistence` after the previously accepted `0001`-`0007` chain.
 - Added append-only retrieval-run, incident-membership, delivery, mapping-review, metric-result,

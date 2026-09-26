@@ -17,9 +17,9 @@ from .models import (
     Incident,
     IncidentDecision,
     IncidentLifecycleCommand,
+    IncidentMember,
     IncidentMergeCommand,
     IncidentSplitCommand,
-    IncidentMember,
     MembershipCommand,
 )
 from .service import IncidentError, _hash
@@ -474,7 +474,12 @@ class PostgresIncidentService:
     ) -> Incident:
         request_hash = _hash(command.model_dump(mode="json"))
         scope = f"incident-lifecycle:{incident_id}"
-        transitions = {"confirmed": "monitoring", "monitoring": "resolved", "resolved": "closed", "closed": "monitoring"}
+        transitions: dict[str, set[str]] = {
+            "confirmed": {"monitoring"},
+            "monitoring": {"resolved"},
+            "resolved": {"closed", "monitoring"},
+            "closed": {"monitoring"},
+        }
         with self.repository.connection() as connection, connection.cursor() as cursor:
             current = self._incident(cursor, incident_id, region_id, lock=True)
             prior = self._idempotency(cursor, scope, idempotency_key, request_hash)
@@ -482,7 +487,7 @@ class PostgresIncidentService:
                 return Incident.model_validate(prior)
             if command.incident_version != current.version:
                 raise IncidentError("stale_version", "The incident changed during review.")
-            if transitions.get(current.state) != command.target_state:
+            if command.target_state not in transitions.get(current.state, set()):
                 raise IncidentError(
                     "invalid_incident_transition", "Incident cannot enter that state."
                 )
@@ -527,7 +532,12 @@ class PostgresIncidentService:
             self._event(
                 cursor,
                 incident=updated,
-                event_type="incident.reopened.v1" if current.state in {"resolved", "closed"} else "incident.state.changed.v1",
+                event_type=(
+                    "incident.reopened.v1"
+                    if current.state in {"resolved", "closed"}
+                    and command.target_state == "monitoring"
+                    else "incident.state.changed.v1"
+                ),
                 actor=actor,
                 correlation_id=correlation_id,
                 payload={
@@ -549,31 +559,57 @@ class PostgresIncidentService:
 
     @staticmethod
     def _confirmed_members(cursor: Any, incident_id: UUID) -> list[UUID]:
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT request_id FROM (
                 SELECT DISTINCT ON (request_id) request_id, decision
                 FROM incidents.membership_decision WHERE incident_id = %s
                 ORDER BY request_id, decided_at DESC, membership_decision_id DESC
             ) AS current_members WHERE decision = 'confirm' ORDER BY request_id
-        """, (incident_id,))
+        """,
+            (incident_id,),
+        )
         return [row["request_id"] for row in cursor.fetchall()]
 
     @staticmethod
-    def _record_membership(cursor: Any, *, incident_id: UUID, request_id: UUID,
-                           version: int, decision: str, reason_code: str,
-                           evidence_refs: list[str], actor: str, idempotency_key: str,
-                           correlation_id: str, at: datetime) -> None:
-        cursor.execute("""
+    def _record_membership(
+        cursor: Any,
+        *,
+        incident_id: UUID,
+        request_id: UUID,
+        version: int,
+        decision: str,
+        reason_code: str,
+        evidence_refs: list[str],
+        actor: str,
+        idempotency_key: str,
+        correlation_id: str,
+        at: datetime,
+    ) -> None:
+        cursor.execute(
+            """
             INSERT INTO incidents.membership_decision
                 (incident_id, request_id, incident_version, decision, reason_code,
                  evidence_refs, actor_token, idempotency_key, correlation_id, decided_at)
             VALUES (%s,%s,%s,%s,%s,%s::jsonb,%s,%s,%s,%s)
-        """, (incident_id, request_id, version, decision, reason_code,
-              PostgresIncidentService._json(evidence_refs), actor, idempotency_key,
-              correlation_id, at))
+        """,
+            (
+                incident_id,
+                request_id,
+                version,
+                decision,
+                reason_code,
+                PostgresIncidentService._json(evidence_refs),
+                actor,
+                idempotency_key,
+                correlation_id,
+                at,
+            ),
+        )
 
     def _check_no_topology_cycle(self, cursor: Any, source_id: UUID, target_id: UUID) -> None:
-        cursor.execute("""
+        cursor.execute(
+            """
             WITH RECURSIVE edges AS (
                 SELECT source_incident_id, target_incident_id
                 FROM incidents.incident_relation_decision
@@ -583,90 +619,329 @@ class PostgresIncidentService:
                 SELECT edges.target_incident_id FROM edges JOIN reachable
                   ON edges.source_incident_id = reachable.id
             ) SELECT 1 FROM reachable WHERE id = %s LIMIT 1
-        """, (target_id, source_id))
+        """,
+            (target_id, source_id),
+        )
         if cursor.fetchone() is not None:
-            raise IncidentError("topology_cycle", "Incident topology changes cannot create a cycle.", 409)
+            raise IncidentError(
+                "topology_cycle", "Incident topology changes cannot create a cycle.", 409
+            )
 
-    def _save_topology(self, cursor: Any, *, operation: str, source: Incident,
-                       target: Incident, command: Any, idempotency_key: str,
-                       actor: str, correlation_id: str, members: list[UUID]) -> None:
-        cursor.execute("""
+    def _save_topology(
+        self,
+        cursor: Any,
+        *,
+        operation: str,
+        source: Incident,
+        target: Incident,
+        command: Any,
+        idempotency_key: str,
+        actor: str,
+        correlation_id: str,
+        members: list[UUID],
+    ) -> None:
+        cursor.execute(
+            """
             INSERT INTO incidents.incident_relation_decision
                 (operation, source_incident_id, target_incident_id, source_version,
                  target_version, command, reason_code, evidence_refs, member_request_ids,
                  actor_token, idempotency_key, correlation_id, decided_at)
             VALUES (%s,%s,%s,%s,%s,%s::jsonb,%s,%s::jsonb,%s::jsonb,%s,%s,%s,%s)
-        """, (operation, source.incident_id, target.incident_id, source.version,
-              target.version, self._json(command.model_dump(mode="json")), command.reason_code,
-              self._json(command.evidence_refs), self._json([str(item) for item in members]),
-              actor, idempotency_key, correlation_id, _now()))
+        """,
+            (
+                operation,
+                source.incident_id,
+                target.incident_id,
+                source.version,
+                target.version,
+                self._json(command.model_dump(mode="json")),
+                command.reason_code,
+                self._json(command.evidence_refs),
+                self._json([str(item) for item in members]),
+                actor,
+                idempotency_key,
+                correlation_id,
+                _now(),
+            ),
+        )
 
-    def merge(self, source_id: UUID, command: IncidentMergeCommand, *, idempotency_key: str,
-              region_id: str, actor: str, correlation_id: str) -> dict[str, Any]:
-        request_hash = _hash(command.model_dump(mode="json")); scope = f"incident-topology:{source_id}"
+    def merge(
+        self,
+        source_id: UUID,
+        command: IncidentMergeCommand,
+        *,
+        idempotency_key: str,
+        region_id: str,
+        actor: str,
+        correlation_id: str,
+    ) -> dict[str, Any]:
+        request_hash = _hash(command.model_dump(mode="json"))
+        scope = f"incident-topology:{source_id}"
         if source_id == command.target_incident_id:
             raise IncidentError("invalid_topology", "Source and target incidents must differ.", 422)
         with self.repository.connection() as connection, connection.cursor() as cursor:
             # Lock both aggregates in deterministic UUID order to avoid merge deadlocks.
             for locked_id in sorted((source_id, command.target_incident_id), key=str):
-                cursor.execute("SELECT incident_id FROM incidents.incident WHERE incident_id=%s FOR UPDATE", (locked_id,))
-                if cursor.fetchone() is None: raise IncidentError("not_found", "Incident not found.", 404)
+                cursor.execute(
+                    "SELECT incident_id FROM incidents.incident WHERE incident_id=%s FOR UPDATE",
+                    (locked_id,),
+                )
+                if cursor.fetchone() is None:
+                    raise IncidentError("not_found", "Incident not found.", 404)
             prior = self._idempotency(cursor, scope, idempotency_key, request_hash)
-            if prior is not None: return prior
+            if prior is not None:
+                return prior
             source = self._incident(cursor, source_id, region_id, lock=False)
             target = self._incident(cursor, command.target_incident_id, region_id, lock=False)
-            if source.region_id != target.region_id: raise IncidentError("region_scope_denied", "Incident is outside the actor region.",403)
+            if source.region_id != target.region_id:
+                raise IncidentError(
+                    "region_scope_denied", "Incident is outside the actor region.", 403
+                )
             if source.version != command.source_version or target.version != command.target_version:
                 raise IncidentError("stale_version", "An incident changed during review.")
-            if source.state in {"proposed","rejected","superseded"} or target.state in {"proposed","rejected","superseded"}:
-                raise IncidentError("invalid_incident_state", "Only active reviewed incidents can be merged.")
-            actual=self._confirmed_members(cursor,source_id); requested=sorted(command.member_request_ids,key=str)
-            if actual != requested: raise IncidentError("membership_set_changed", "Merge must transfer the exact current confirmed member set.",409)
-            existing=set(self._confirmed_members(cursor,target.incident_id))
-            if existing.intersection(requested): raise IncidentError("member_already_present", "Target incident already contains a source member.",409)
-            self._check_no_topology_cycle(cursor,source_id,target.incident_id)
-            source_new=source.version+1; target_new=target.version+1; at=_now()
-            cursor.execute("UPDATE incidents.incident SET state='superseded',version=%s WHERE incident_id=%s AND version=%s",(source_new,source_id,source.version))
-            cursor.execute("UPDATE incidents.incident SET version=%s WHERE incident_id=%s AND version=%s",(target_new,target.incident_id,target.version))
+            if source.state in {"proposed", "rejected", "superseded"} or target.state in {
+                "proposed",
+                "rejected",
+                "superseded",
+            }:
+                raise IncidentError(
+                    "invalid_incident_state", "Only active reviewed incidents can be merged."
+                )
+            actual = self._confirmed_members(cursor, source_id)
+            requested = sorted(command.member_request_ids, key=str)
+            if actual != requested:
+                raise IncidentError(
+                    "membership_set_changed",
+                    "Merge must transfer the exact current confirmed member set.",
+                    409,
+                )
+            existing = set(self._confirmed_members(cursor, target.incident_id))
+            if existing.intersection(requested):
+                raise IncidentError(
+                    "member_already_present",
+                    "Target incident already contains a source member.",
+                    409,
+                )
+            self._check_no_topology_cycle(cursor, source_id, target.incident_id)
+            source_new = source.version + 1
+            target_new = target.version + 1
+            at = _now()
+            cursor.execute(
+                "UPDATE incidents.incident SET state='superseded', version=%s "
+                "WHERE incident_id=%s AND version=%s",
+                (source_new, source_id, source.version),
+            )
+            cursor.execute(
+                "UPDATE incidents.incident SET version=%s WHERE incident_id=%s AND version=%s",
+                (target_new, target.incident_id, target.version),
+            )
             for index, request_id in enumerate(requested):
-                self._record_membership(cursor,incident_id=source_id,request_id=request_id,version=source_new,decision="remove",reason_code=command.reason_code,evidence_refs=command.evidence_refs,actor=actor,idempotency_key=f"{idempotency_key}:source:{index}",correlation_id=correlation_id,at=at)
-                cursor.execute("INSERT INTO incidents.incident_candidate_member (incident_id,request_id,proposed_at,rationale) VALUES (%s,%s,%s,%s::jsonb) ON CONFLICT DO NOTHING",(target.incident_id,request_id,at,'[]'))
-                self._record_membership(cursor,incident_id=target.incident_id,request_id=request_id,version=target_new,decision="confirm",reason_code=command.reason_code,evidence_refs=command.evidence_refs,actor=actor,idempotency_key=f"{idempotency_key}:target:{index}",correlation_id=correlation_id,at=at)
-            source=self._incident(cursor,source_id,region_id,lock=False); target=self._incident(cursor,target.incident_id,region_id,lock=False)
-            self._save_topology(cursor,operation="merge",source=source,target=target,command=command,idempotency_key=idempotency_key,actor=actor,correlation_id=correlation_id,members=requested)
-            self._event(cursor,incident=source,event_type="incident.merged.v1",actor=actor,correlation_id=correlation_id,payload={"target_incident_id":str(target.incident_id),"member_request_ids":[str(i) for i in requested],"reason_code":command.reason_code,"evidence_refs":command.evidence_refs})
-            self._event(cursor,incident=target,event_type="incident.membership.transferred.v1",actor=actor,correlation_id=correlation_id,payload={"source_incident_id":str(source_id),"member_request_ids":[str(i) for i in requested],"reason_code":command.reason_code,"evidence_refs":command.evidence_refs})
-            response={"operation":"merge","source":source.model_dump(mode="json"),"target":target.model_dump(mode="json"),"member_request_ids":[str(i) for i in requested]}
-            self._save(cursor,scope,idempotency_key,request_hash,response,source_id); return response
+                self._record_membership(
+                    cursor,
+                    incident_id=source_id,
+                    request_id=request_id,
+                    version=source_new,
+                    decision="remove",
+                    reason_code=command.reason_code,
+                    evidence_refs=command.evidence_refs,
+                    actor=actor,
+                    idempotency_key=f"{idempotency_key}:source:{index}",
+                    correlation_id=correlation_id,
+                    at=at,
+                )
+                cursor.execute(
+                    "INSERT INTO incidents.incident_candidate_member "
+                    "(incident_id, request_id, proposed_at, rationale) "
+                    "VALUES (%s, %s, %s, %s::jsonb) ON CONFLICT DO NOTHING",
+                    (target.incident_id, request_id, at, "[]"),
+                )
+                self._record_membership(
+                    cursor,
+                    incident_id=target.incident_id,
+                    request_id=request_id,
+                    version=target_new,
+                    decision="confirm",
+                    reason_code=command.reason_code,
+                    evidence_refs=command.evidence_refs,
+                    actor=actor,
+                    idempotency_key=f"{idempotency_key}:target:{index}",
+                    correlation_id=correlation_id,
+                    at=at,
+                )
+            source = self._incident(cursor, source_id, region_id, lock=False)
+            target = self._incident(cursor, target.incident_id, region_id, lock=False)
+            self._save_topology(
+                cursor,
+                operation="merge",
+                source=source,
+                target=target,
+                command=command,
+                idempotency_key=idempotency_key,
+                actor=actor,
+                correlation_id=correlation_id,
+                members=requested,
+            )
+            self._event(
+                cursor,
+                incident=source,
+                event_type="incident.merged.v1",
+                actor=actor,
+                correlation_id=correlation_id,
+                payload={
+                    "target_incident_id": str(target.incident_id),
+                    "member_request_ids": [str(i) for i in requested],
+                    "reason_code": command.reason_code,
+                    "evidence_refs": command.evidence_refs,
+                },
+            )
+            self._event(
+                cursor,
+                incident=target,
+                event_type="incident.membership.transferred.v1",
+                actor=actor,
+                correlation_id=correlation_id,
+                payload={
+                    "source_incident_id": str(source_id),
+                    "member_request_ids": [str(i) for i in requested],
+                    "reason_code": command.reason_code,
+                    "evidence_refs": command.evidence_refs,
+                },
+            )
+            response = {
+                "operation": "merge",
+                "source": source.model_dump(mode="json"),
+                "target": target.model_dump(mode="json"),
+                "member_request_ids": [str(i) for i in requested],
+            }
+            self._save(cursor, scope, idempotency_key, request_hash, response, source_id)
+            return response
 
-    def split(self, source_id: UUID, command: IncidentSplitCommand, *, idempotency_key: str,
-              region_id: str, actor: str, correlation_id: str) -> dict[str, Any]:
-        request_hash=_hash(command.model_dump(mode="json")); scope=f"incident-topology:{source_id}"
+    def split(
+        self,
+        source_id: UUID,
+        command: IncidentSplitCommand,
+        *,
+        idempotency_key: str,
+        region_id: str,
+        actor: str,
+        correlation_id: str,
+    ) -> dict[str, Any]:
+        request_hash = _hash(command.model_dump(mode="json"))
+        scope = f"incident-topology:{source_id}"
         with self.repository.connection() as connection, connection.cursor() as cursor:
-            source=self._incident(cursor,source_id,region_id,lock=True)
-            prior=self._idempotency(cursor,scope,idempotency_key,request_hash)
-            if prior is not None:return prior
-            if source.version != command.source_version:raise IncidentError("stale_version","Incident changed during review.")
-            if source.state in {"proposed","rejected","superseded"}:raise IncidentError("invalid_incident_state","Only active reviewed incidents can be split.")
-            current=self._confirmed_members(cursor,source_id); selected=sorted(command.member_request_ids,key=str)
-            if not set(selected).issubset(current) or len(current)-len(selected)<2:raise IncidentError("invalid_split_members","Split must select confirmed members and leave at least two in the source.",422)
-            child_id=uuid4(); at=_now(); source_new=source.version+1
-            cursor.execute("UPDATE incidents.incident SET version=%s WHERE incident_id=%s AND version=%s",(source_new,source_id,source.version))
-            cursor.execute("""INSERT INTO incidents.incident
+            source = self._incident(cursor, source_id, region_id, lock=True)
+            prior = self._idempotency(cursor, scope, idempotency_key, request_hash)
+            if prior is not None:
+                return prior
+            if source.version != command.source_version:
+                raise IncidentError("stale_version", "Incident changed during review.")
+            if source.state in {"proposed", "rejected", "superseded"}:
+                raise IncidentError(
+                    "invalid_incident_state", "Only active reviewed incidents can be split."
+                )
+            current = self._confirmed_members(cursor, source_id)
+            selected = sorted(command.member_request_ids, key=str)
+            if not set(selected).issubset(current) or len(current) - len(selected) < 2:
+                raise IncidentError(
+                    "invalid_split_members",
+                    "Split must select confirmed members and leave at least two in the source.",
+                    422,
+                )
+            child_id = uuid4()
+            at = _now()
+            source_new = source.version + 1
+            cursor.execute(
+                "UPDATE incidents.incident SET version=%s WHERE incident_id=%s AND version=%s",
+                (source_new, source_id, source.version),
+            )
+            cursor.execute(
+                """INSERT INTO incidents.incident
                 (incident_id,state,region_id,topic_id,service_id,proposal_source,geo_id,
                  window_started_at,window_ended_at,rationale,version,idempotency_key,
                  correlation_id,created_by_token,created_at)
                 SELECT %s,'proposed',region_id,topic_id,service_id,'operator',geo_id,
                        window_started_at,window_ended_at,rationale,1,%s,%s,%s,%s
-                FROM incidents.incident WHERE incident_id=%s""",(child_id,f"{idempotency_key}:child",correlation_id,actor,at,source_id))
-            child_version=2
+                FROM incidents.incident WHERE incident_id=%s""",
+                (child_id, f"{idempotency_key}:child", correlation_id, actor, at, source_id),
+            )
+            child_version = 2
             for index, request_id in enumerate(selected):
-                self._record_membership(cursor,incident_id=source_id,request_id=request_id,version=source_new,decision="remove",reason_code=command.reason_code,evidence_refs=command.evidence_refs,actor=actor,idempotency_key=f"{idempotency_key}:source:{index}",correlation_id=correlation_id,at=at)
-                cursor.execute("INSERT INTO incidents.incident_candidate_member (incident_id,request_id,proposed_at,rationale) VALUES (%s,%s,%s,%s::jsonb)",(child_id,request_id,at,'[]'))
-                self._record_membership(cursor,incident_id=child_id,request_id=request_id,version=child_version,decision="confirm",reason_code=command.reason_code,evidence_refs=command.evidence_refs,actor=actor,idempotency_key=f"{idempotency_key}:child:{index}",correlation_id=correlation_id,at=at)
-            source=self._incident(cursor,source_id,region_id,lock=False); child=self._incident(cursor,child_id,region_id,lock=False)
-            self._save_topology(cursor,operation="split",source=source,target=child,command=command,idempotency_key=idempotency_key,actor=actor,correlation_id=correlation_id,members=selected)
-            self._event(cursor,incident=source,event_type="incident.split.v1",actor=actor,correlation_id=correlation_id,payload={"child_incident_id":str(child_id),"member_request_ids":[str(i) for i in selected],"reason_code":command.reason_code,"evidence_refs":command.evidence_refs})
-            self._event(cursor,incident=child,event_type="incident.proposed.v1",actor=actor,correlation_id=correlation_id,payload={"parent_incident_id":str(source_id),"member_request_ids":[str(i) for i in selected],"reason_code":command.reason_code,"evidence_refs":command.evidence_refs})
-            response={"operation":"split","source":source.model_dump(mode="json"),"target":child.model_dump(mode="json"),"member_request_ids":[str(i) for i in selected]}
-            self._save(cursor,scope,idempotency_key,request_hash,response,source_id);return response
+                self._record_membership(
+                    cursor,
+                    incident_id=source_id,
+                    request_id=request_id,
+                    version=source_new,
+                    decision="remove",
+                    reason_code=command.reason_code,
+                    evidence_refs=command.evidence_refs,
+                    actor=actor,
+                    idempotency_key=f"{idempotency_key}:source:{index}",
+                    correlation_id=correlation_id,
+                    at=at,
+                )
+                cursor.execute(
+                    "INSERT INTO incidents.incident_candidate_member "
+                    "(incident_id, request_id, proposed_at, rationale) "
+                    "VALUES (%s, %s, %s, %s::jsonb)",
+                    (child_id, request_id, at, "[]"),
+                )
+                self._record_membership(
+                    cursor,
+                    incident_id=child_id,
+                    request_id=request_id,
+                    version=child_version,
+                    decision="confirm",
+                    reason_code=command.reason_code,
+                    evidence_refs=command.evidence_refs,
+                    actor=actor,
+                    idempotency_key=f"{idempotency_key}:child:{index}",
+                    correlation_id=correlation_id,
+                    at=at,
+                )
+            source = self._incident(cursor, source_id, region_id, lock=False)
+            child = self._incident(cursor, child_id, region_id, lock=False)
+            self._save_topology(
+                cursor,
+                operation="split",
+                source=source,
+                target=child,
+                command=command,
+                idempotency_key=idempotency_key,
+                actor=actor,
+                correlation_id=correlation_id,
+                members=selected,
+            )
+            self._event(
+                cursor,
+                incident=source,
+                event_type="incident.split.v1",
+                actor=actor,
+                correlation_id=correlation_id,
+                payload={
+                    "child_incident_id": str(child_id),
+                    "member_request_ids": [str(i) for i in selected],
+                    "reason_code": command.reason_code,
+                    "evidence_refs": command.evidence_refs,
+                },
+            )
+            self._event(
+                cursor,
+                incident=child,
+                event_type="incident.proposed.v1",
+                actor=actor,
+                correlation_id=correlation_id,
+                payload={
+                    "parent_incident_id": str(source_id),
+                    "member_request_ids": [str(i) for i in selected],
+                    "reason_code": command.reason_code,
+                    "evidence_refs": command.evidence_refs,
+                },
+            )
+            response = {
+                "operation": "split",
+                "source": source.model_dump(mode="json"),
+                "target": child.model_dump(mode="json"),
+                "member_request_ids": [str(i) for i in selected],
+            }
+            self._save(cursor, scope, idempotency_key, request_hash, response, source_id)
+            return response

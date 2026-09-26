@@ -45,6 +45,7 @@ dev = [
 
 [project.scripts]
 pulse109-ingest = "pulse109.ingestion.cli:main"
+pulse109-bundle = "pulse109.control_plane.cli:main"
 
 [tool.hatch.build.targets.wheel]
 packages = [

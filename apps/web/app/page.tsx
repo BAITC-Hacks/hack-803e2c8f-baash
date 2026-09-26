@@ -17,6 +17,8 @@ import { AdminPanel } from "./admin-panel";
 import { SituationCenter } from "./situation-center";
 import { OwnershipHandoffPanel } from "./ownership-handoff-panel";
 import { ClosureIntegrityPanel } from "./closure-integrity-panel";
+import { IncidentTopologyPanel } from "./incident-topology-panel";
+import { ReplayLabPanel } from "./replay-lab-panel";
 
 type Recommendation = { id: string; label: string; score: number };
 type Appeal = {
@@ -54,6 +56,8 @@ const copy = {
   ru: {
     intake: "Подать обращение",
     queue: "Очередь оператора",
+    topology: "Топология инцидентов",
+    replay: "Replay Lab",
     situation: "Ситуационный центр",
     admin: "Администрирование",
     profile: "Локальный оператор · синтетические данные",
@@ -85,6 +89,8 @@ const copy = {
   kk: {
     intake: "Өтініш беру",
     queue: "Оператор кезегі",
+    topology: "Оқиғалар топологиясы",
+    replay: "Replay Lab",
     situation: "Жағдай орталығы",
     admin: "Әкімшілендіру",
     profile: "Жергілікті оператор · синтетикалық деректер",
@@ -187,9 +193,9 @@ const taxonomyVersion = "temporary/1.0.0";
 const scoreLabel = (score: number) => `${Math.round(score * 100)}%`;
 
 export default function OperatorWorkspace() {
-  const [view, setView] = useState<"queue" | "situation" | "intake" | "admin">(
-    "queue",
-  );
+  const [view, setView] = useState<
+    "queue" | "situation" | "intake" | "admin" | "topology" | "replay"
+  >("queue");
   const [locale, setLocale] = useState<Locale>("ru");
   const [selectedId, setSelectedId] = useState(appeals[0].id);
   const [latestAssignment, setLatestAssignment] =
@@ -310,6 +316,20 @@ export default function OperatorWorkspace() {
             {text.queue}
           </button>
           <button
+            aria-pressed={view === "topology"}
+            onClick={() => setView("topology")}
+            type="button"
+          >
+            {text.topology}
+          </button>
+          <button
+            aria-pressed={view === "replay"}
+            onClick={() => setView("replay")}
+            type="button"
+          >
+            {text.replay}
+          </button>
+          <button
             aria-pressed={view === "situation"}
             onClick={() => setView("situation")}
             type="button"
@@ -350,6 +370,10 @@ export default function OperatorWorkspace() {
         <SituationCenter />
       ) : view === "admin" ? (
         <AdminPanel locale={locale} />
+      ) : view === "topology" ? (
+        <IncidentTopologyPanel locale={locale} regionId={appeal.region} />
+      ) : view === "replay" ? (
+        <ReplayLabPanel locale={locale} regionId={appeal.region} />
       ) : (
         <div className="workspace">
           <aside aria-label="Primary navigation">

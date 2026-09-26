@@ -635,6 +635,28 @@ Record implementation decisions here when the repository, contracts or available
 - **Evidence:** in-memory E2E and PostgreSQL integration coverage.
 - **Revisit when:** membership becomes an independently versioned aggregate with an explicit cross-aggregate concurrency contract.
 
+### D-060 — Supervised incident topology operations (merge, split, reopen)
+
+- **Date:** 2026-09-26
+- **Status:** accepted
+- **Context:** incidents cluster multiple appeals, but cluster errors require explicit operational intervention to merge related incidents, split segregated clusters, or reopen closed incidents upon recurring appeal spikes without losing historical lineage or appeal autonomy.
+- **Decision:** implement versioned, atomic incident merge and split operations and supervised reopen transitions (`resolved -> monitoring`, `closed -> monitoring`). Merge supersedes the source incident and transfers confirmed member appeals to the target incident. Split creates a new target incident for a verified subset while leaving at least one member in the source. Both require supervisor authentication, region scoping, controlled reason codes, and SHA-256 evidence refs validated against confirmed member attachments.
+- **Alternatives:** autonomous LLM-driven incident merges/splits; mutable destructive updates deleting source incidents; unconstrained cross-region clustering.
+- **Consequences:** all member appeals retain independent identifiers, SLAs, and histories. Cycle prevention is enforced. Idempotent replays are guaranteed.
+- **Evidence:** `contracts/openapi.yaml`, `contracts/event_catalog.md`, `services/core/src/pulse109/incidents/`, `tests/e2e/test_incident_topology.py`, `tests/integration/test_incident_topology_persistence.py`.
+- **Revisit when:** multi-region cross-jurisdiction clustering is approved.
+
+### D-061 — Replay Lab offline inspection API, language slices, and operator UI panels
+
+- **Date:** 2026-09-26
+- **Status:** accepted
+- **Context:** policy and model evaluations must be inspectable and auditable across demographic and linguistic slices (KK, RU, mixed) without executing autonomous deployments or mutating live routing rules.
+- **Decision:** expose authenticated Replay Lab inspection endpoints (`GET /v1/replay/reports`, `GET /v1/replay/reports/{report_id}`) returning comparative metrics across baseline and candidate policies (route agreement, operator override rate, first-pass acceptance rate, historical handoff churn) and language slice agreements. Complement with operator UI panels for Incident Topology and Replay Lab in Next.js web application. Replay is strictly descriptive; policy activation requires cryptographically signed regional bundles via the control plane.
+- **Alternatives:** autonomous auto-deployment on passing score; unsegmented global metrics masking language bias; monolithic analytics database.
+- **Consequences:** full observability into language performance parity; operators and supervisors can review historical evidence before approving regional configuration bundles.
+- **Evidence:** `contracts/openapi.yaml`, `services/core/src/pulse109/replay/`, `apps/web/app/incident-topology-panel.tsx`, `apps/web/app/replay-lab-panel.tsx`, `tests/contract/test_contracts.py`, `services/core/tests/replay/test_router.py`.
+- **Revisit when:** approved production candidate policies and live regional datasets are ingested.
+
 ### D-XXX — Short title
 
 - **Date:** YYYY-MM-DD
@@ -645,3 +667,4 @@ Record implementation decisions here when the repository, contracts or available
 - **Consequences:** performance, security, migration and operations impact
 - **Evidence:** benchmark, test, issue or contract reference
 - **Revisit when:** explicit trigger, if any
+

@@ -13,9 +13,9 @@ from .models import (
     Incident,
     IncidentDecision,
     IncidentLifecycleCommand,
+    IncidentMember,
     IncidentMergeCommand,
     IncidentSplitCommand,
-    IncidentMember,
     MembershipCommand,
 )
 from .repository import IncidentState, InMemoryIncidentRepository
@@ -307,7 +307,12 @@ class IncidentService:
     ) -> Incident:
         request_hash = _hash(command.model_dump(mode="json"))
         key = (f"lifecycle:{incident_id}", idempotency_key)
-        transitions = {"confirmed": "monitoring", "monitoring": "resolved", "resolved": "closed", "closed": "monitoring"}
+        transitions: dict[str, set[str]] = {
+            "confirmed": {"monitoring"},
+            "monitoring": {"resolved"},
+            "resolved": {"closed", "monitoring"},
+            "closed": {"monitoring"},
+        }
         with self.repository.transaction() as state:
             incident = self._get(state, incident_id, region_id)
             prior = state.idempotency.get(key)
@@ -317,7 +322,7 @@ class IncidentService:
                 return Incident.model_validate(prior[1])
             if command.incident_version != incident["version"]:
                 raise IncidentError("stale_version", "The incident changed during review.")
-            if transitions.get(incident["state"]) != command.target_state:
+            if command.target_state not in transitions.get(incident["state"], set()):
                 raise IncidentError(
                     "invalid_incident_transition", "Incident cannot enter that state."
                 )
@@ -327,7 +332,9 @@ class IncidentService:
             response = self._response(state, incident)
             self._event(
                 state,
-                "incident.reopened.v1" if previous_state in {"resolved", "closed"} else "incident.state.changed.v1",
+                "incident.reopened.v1"
+                if previous_state in {"resolved", "closed"} and command.target_state == "monitoring"
+                else "incident.state.changed.v1",
                 incident_id,
                 region_id,
                 actor,
@@ -342,8 +349,16 @@ class IncidentService:
             state.idempotency[key] = (request_hash, response.model_dump(mode="json"))
             return response
 
-    def merge(self, source_id: UUID, command: IncidentMergeCommand, *, idempotency_key: str,
-              region_id: str, actor: str, correlation_id: str) -> dict[str, Any]:
+    def merge(
+        self,
+        source_id: UUID,
+        command: IncidentMergeCommand,
+        *,
+        idempotency_key: str,
+        region_id: str,
+        actor: str,
+        correlation_id: str,
+    ) -> dict[str, Any]:
         request_hash = _hash(command.model_dump(mode="json"))
         key = (f"topology:{source_id}", idempotency_key)
         with self.repository.transaction() as state:
@@ -354,57 +369,220 @@ class IncidentService:
                 if prior[0] != request_hash:
                     raise IncidentError("idempotency_conflict", "Idempotency key body differs.")
                 return prior[1]
-            if source_id == command.target_incident_id or source["region_id"] != target["region_id"]:
-                raise IncidentError("invalid_topology", "Incidents must be distinct and region matched.", 422)
-            if source["version"] != command.source_version or target["version"] != command.target_version:
+            if (
+                source_id == command.target_incident_id
+                or source["region_id"] != target["region_id"]
+            ):
+                raise IncidentError(
+                    "invalid_topology", "Incidents must be distinct and region matched.", 422
+                )
+            if (
+                source["version"] != command.source_version
+                or target["version"] != command.target_version
+            ):
                 raise IncidentError("stale_version", "An incident changed during review.")
-            if source["state"] in {"superseded", "rejected", "proposed"} or target["state"] in {"superseded", "rejected", "proposed"}:
-                raise IncidentError("invalid_incident_state", "Only active reviewed incidents can be merged.")
-            confirmed = sorted(str(req) for (iid, req), rows in state.member_decisions.items()
-                               if iid == source_id and rows[-1]["decision"] == "confirm")
+            if source["state"] in {"superseded", "rejected", "proposed"} or target["state"] in {
+                "superseded",
+                "rejected",
+                "proposed",
+            }:
+                raise IncidentError(
+                    "invalid_incident_state", "Only active reviewed incidents can be merged."
+                )
+            confirmed = sorted(
+                str(req)
+                for (iid, req), rows in state.member_decisions.items()
+                if iid == source_id and rows[-1]["decision"] == "confirm"
+            )
             selected = sorted(str(req) for req in command.member_request_ids)
             if confirmed != selected:
-                raise IncidentError("membership_set_changed", "Merge must transfer the exact current confirmed member set.", 409)
-            target_members = {req for (iid, req), rows in state.member_decisions.items()
-                              if iid == command.target_incident_id and rows[-1]["decision"] == "confirm"}
+                raise IncidentError(
+                    "membership_set_changed",
+                    "Merge must transfer the exact current confirmed member set.",
+                    409,
+                )
+            target_members = {
+                req
+                for (iid, req), rows in state.member_decisions.items()
+                if iid == command.target_incident_id and rows[-1]["decision"] == "confirm"
+            }
             if target_members.intersection(command.member_request_ids):
-                raise IncidentError("member_already_present", "Target incident already contains a source member.", 409)
+                raise IncidentError(
+                    "member_already_present",
+                    "Target incident already contains a source member.",
+                    409,
+                )
             now = _now()
             for req in command.member_request_ids:
-                state.member_decisions.setdefault((source_id, req), []).append({"decision":"remove", "actor_token":actor, "decided_at":now, "incident_version":source["version"]+1, "reason_code":command.reason_code})
+                state.member_decisions.setdefault((source_id, req), []).append(
+                    {
+                        "decision": "remove",
+                        "actor_token": actor,
+                        "decided_at": now,
+                        "incident_version": source["version"] + 1,
+                        "reason_code": command.reason_code,
+                    }
+                )
                 state.proposed_members.setdefault(command.target_incident_id, set()).add(req)
-                state.member_decisions.setdefault((command.target_incident_id, req), []).append({"decision":"confirm", "actor_token":actor, "decided_at":now, "incident_version":target["version"]+1, "reason_code":command.reason_code})
-            source["state"] = "superseded"; source["version"] += 1
+                state.member_decisions.setdefault((command.target_incident_id, req), []).append(
+                    {
+                        "decision": "confirm",
+                        "actor_token": actor,
+                        "decided_at": now,
+                        "incident_version": target["version"] + 1,
+                        "reason_code": command.reason_code,
+                    }
+                )
+            source["state"] = "superseded"
+            source["version"] += 1
             target["version"] += 1
-            state.topology_decisions.append({"operation":"merge", "source_incident_id":str(source_id), "target_incident_id":str(command.target_incident_id), "members":selected, "reason_code":command.reason_code, "evidence_refs":command.evidence_refs, "actor_token":actor})
-            self._event(state,"incident.merged.v1",source_id,region_id,actor,correlation_id,{"target_incident_id":str(command.target_incident_id),"member_request_ids":selected,"reason_code":command.reason_code,"evidence_refs":command.evidence_refs})
-            self._event(state,"incident.membership.transferred.v1",command.target_incident_id,region_id,actor,correlation_id,{"source_incident_id":str(source_id),"member_request_ids":selected,"reason_code":command.reason_code,"evidence_refs":command.evidence_refs})
-            response={"operation":"merge","source":self._response(state,source).model_dump(mode="json"),"target":self._response(state,target).model_dump(mode="json"),"member_request_ids":selected}
-            state.idempotency[key]=(request_hash,response)
+            state.topology_decisions.append(
+                {
+                    "operation": "merge",
+                    "source_incident_id": str(source_id),
+                    "target_incident_id": str(command.target_incident_id),
+                    "members": selected,
+                    "reason_code": command.reason_code,
+                    "evidence_refs": command.evidence_refs,
+                    "actor_token": actor,
+                }
+            )
+            self._event(
+                state,
+                "incident.merged.v1",
+                source_id,
+                region_id,
+                actor,
+                correlation_id,
+                {
+                    "target_incident_id": str(command.target_incident_id),
+                    "member_request_ids": selected,
+                    "reason_code": command.reason_code,
+                    "evidence_refs": command.evidence_refs,
+                },
+            )
+            self._event(
+                state,
+                "incident.membership.transferred.v1",
+                command.target_incident_id,
+                region_id,
+                actor,
+                correlation_id,
+                {
+                    "source_incident_id": str(source_id),
+                    "member_request_ids": selected,
+                    "reason_code": command.reason_code,
+                    "evidence_refs": command.evidence_refs,
+                },
+            )
+            response = {
+                "operation": "merge",
+                "source": self._response(state, source).model_dump(mode="json"),
+                "target": self._response(state, target).model_dump(mode="json"),
+                "member_request_ids": selected,
+            }
+            state.idempotency[key] = (request_hash, response)
             return response
 
-    def split(self, source_id: UUID, command: IncidentSplitCommand, *, idempotency_key: str,
-              region_id: str, actor: str, correlation_id: str) -> dict[str, Any]:
-        request_hash = _hash(command.model_dump(mode="json")); key=(f"topology:{source_id}",idempotency_key)
+    def split(
+        self,
+        source_id: UUID,
+        command: IncidentSplitCommand,
+        *,
+        idempotency_key: str,
+        region_id: str,
+        actor: str,
+        correlation_id: str,
+    ) -> dict[str, Any]:
+        request_hash = _hash(command.model_dump(mode="json"))
+        key = (f"topology:{source_id}", idempotency_key)
         with self.repository.transaction() as state:
-            source=self._get(state,source_id,region_id); prior=state.idempotency.get(key)
+            source = self._get(state, source_id, region_id)
+            prior = state.idempotency.get(key)
             if prior:
-                if prior[0] != request_hash: raise IncidentError("idempotency_conflict","Idempotency key body differs.")
+                if prior[0] != request_hash:
+                    raise IncidentError("idempotency_conflict", "Idempotency key body differs.")
                 return prior[1]
-            if source["version"] != command.source_version: raise IncidentError("stale_version","Incident changed during review.")
-            if source["state"] in {"superseded","rejected","proposed"}: raise IncidentError("invalid_incident_state","Only active reviewed incidents can be split.")
-            confirmed={req for (iid,req),rows in state.member_decisions.items() if iid==source_id and rows[-1]["decision"]=="confirm"}
-            if not set(command.member_request_ids).issubset(confirmed) or len(confirmed)-len(command.member_request_ids)<2:
-                raise IncidentError("invalid_split_members","Split must select confirmed members and leave at least two in the source.",422)
-            child_id=uuid4(); child={**source,"incident_id":child_id,"state":"proposed","version":1}
-            state.incidents[child_id]=child; state.proposed_members[child_id]=set(command.member_request_ids)
-            now=_now()
+            if source["version"] != command.source_version:
+                raise IncidentError("stale_version", "Incident changed during review.")
+            if source["state"] in {"superseded", "rejected", "proposed"}:
+                raise IncidentError(
+                    "invalid_incident_state", "Only active reviewed incidents can be split."
+                )
+            confirmed = {
+                req
+                for (iid, req), rows in state.member_decisions.items()
+                if iid == source_id and rows[-1]["decision"] == "confirm"
+            }
+            if (
+                not set(command.member_request_ids).issubset(confirmed)
+                or len(confirmed) - len(command.member_request_ids) < 2
+            ):
+                raise IncidentError(
+                    "invalid_split_members",
+                    "Split must select confirmed members and leave at least two in the source.",
+                    422,
+                )
+            child_id = uuid4()
+            child = {**source, "incident_id": child_id, "state": "proposed", "version": 1}
+            state.incidents[child_id] = child
+            state.proposed_members[child_id] = set(command.member_request_ids)
+            now = _now()
             for req in command.member_request_ids:
-                state.member_decisions.setdefault((source_id,req),[]).append({"decision":"remove","actor_token":actor,"decided_at":now,"incident_version":source["version"]+1,"reason_code":command.reason_code})
-                state.member_decisions.setdefault((child_id,req),[]).append({"decision":"confirm","actor_token":actor,"decided_at":now,"incident_version":2,"reason_code":command.reason_code})
-            source["version"]+=1
-            state.topology_decisions.append({"operation":"split","source_incident_id":str(source_id),"target_incident_id":str(child_id),"members":[str(req) for req in command.member_request_ids],"reason_code":command.reason_code,"evidence_refs":command.evidence_refs,"actor_token":actor})
-            self._event(state,"incident.split.v1",source_id,region_id,actor,correlation_id,{"child_incident_id":str(child_id),"member_request_ids":[str(req) for req in command.member_request_ids],"reason_code":command.reason_code,"evidence_refs":command.evidence_refs})
-            self._event(state,"incident.proposed.v1",child_id,region_id,actor,correlation_id,{"parent_incident_id":str(source_id),"member_request_ids":[str(req) for req in command.member_request_ids],"reason_code":command.reason_code,"evidence_refs":command.evidence_refs})
-            response={"operation":"split","source":self._response(state,source).model_dump(mode="json"),"target":self._response(state,child).model_dump(mode="json"),"member_request_ids":[str(req) for req in command.member_request_ids]}
-            state.idempotency[key]=(request_hash,response); return response
+                state.member_decisions.setdefault((source_id, req), []).append(
+                    {
+                        "decision": "remove",
+                        "actor_token": actor,
+                        "decided_at": now,
+                        "incident_version": source["version"] + 1,
+                        "reason_code": command.reason_code,
+                    }
+                )
+            source["version"] += 1
+            state.topology_decisions.append(
+                {
+                    "operation": "split",
+                    "source_incident_id": str(source_id),
+                    "target_incident_id": str(child_id),
+                    "members": [str(req) for req in command.member_request_ids],
+                    "reason_code": command.reason_code,
+                    "evidence_refs": command.evidence_refs,
+                    "actor_token": actor,
+                }
+            )
+            self._event(
+                state,
+                "incident.split.v1",
+                source_id,
+                region_id,
+                actor,
+                correlation_id,
+                {
+                    "child_incident_id": str(child_id),
+                    "member_request_ids": [str(req) for req in command.member_request_ids],
+                    "reason_code": command.reason_code,
+                    "evidence_refs": command.evidence_refs,
+                },
+            )
+            self._event(
+                state,
+                "incident.proposed.v1",
+                child_id,
+                region_id,
+                actor,
+                correlation_id,
+                {
+                    "parent_incident_id": str(source_id),
+                    "member_request_ids": [str(req) for req in command.member_request_ids],
+                    "reason_code": command.reason_code,
+                    "evidence_refs": command.evidence_refs,
+                },
+            )
+            response = {
+                "operation": "split",
+                "source": self._response(state, source).model_dump(mode="json"),
+                "target": self._response(state, child).model_dump(mode="json"),
+                "member_request_ids": [str(req) for req in command.member_request_ids],
+            }
+            state.idempotency[key] = (request_hash, response)
+            return response

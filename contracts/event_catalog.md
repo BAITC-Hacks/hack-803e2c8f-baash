@@ -72,12 +72,16 @@ Proposals, review decisions, approved policy rows, audit records and outbox even
 | `incident.member.added.v1` | Core | request ID, decision evidence | Timeline, notifications |
 | `incident.member.rejected.v1` | Core | request ID, reason code | Evaluation dataset |
 | `incident.state.changed.v1` | Core | previous state, new state, controlled reason code, member-owned evidence hashes | Analytics, notifications |
+| `incident.reopened.v1` | Core | previous state, new state, controlled reason code, member-owned evidence hashes | Supervisor workspace, audit |
+| `incident.merged.v1` | Core | target incident ID, member request IDs, reason code, evidence references | Supervisor workspace, audit |
+| `incident.membership.transferred.v1` | Core | source incident ID, member request IDs, reason code, evidence references | Supervisor workspace, audit |
+| `incident.split.v1` | Core | child incident ID, member request IDs, reason code, evidence references | Supervisor workspace, audit |
 | `alert.detected.v1` | Analytics | alert type, metric ID, baseline, observed value, confidence, affected dimensions | Situation center, notifications |
 | `alert.acknowledged.v1` | Core | actor token, note | Operations, audit |
 | `alert.resolved.v1` | Core | actor token, resolution code, evidence references | Analytics, audit |
 
 Every incident event, audit record and outbox row carries the incident aggregate version after
-the operation. Confirm, reject and remove membership decisions each advance that version once;
+the operation. Confirm, reject, remove, merge and split decisions each advance that version once;
 an exact idempotent replay creates no additional decision or event.
 
 ## Integration and data quality events

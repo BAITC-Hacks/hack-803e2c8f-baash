@@ -35,7 +35,9 @@ class CreateIncident(BaseModel):
 
 class Incident(BaseModel):
     incident_id: UUID
-    state: Literal["proposed", "confirmed", "rejected", "monitoring", "resolved", "closed", "superseded"]
+    state: Literal[
+        "proposed", "confirmed", "rejected", "monitoring", "resolved", "closed", "superseded"
+    ]
     region_id: str
     topic_id: str
     service_id: str | None = None
@@ -95,7 +97,9 @@ class IncidentMergeCommand(BaseModel):
     target_version: int = Field(ge=1)
     member_request_ids: list[UUID] = Field(min_length=2, max_length=500)
     reason_code: str = Field(pattern=r"^[A-Z][A-Z0-9_]{0,63}$")
-    evidence_refs: list[Annotated[str, Field(pattern=r"^[0-9a-f]{64}$")]] = Field(min_length=1, max_length=20)
+    evidence_refs: list[Annotated[str, Field(pattern=r"^[0-9a-f]{64}$")]] = Field(
+        min_length=1, max_length=20
+    )
 
     @model_validator(mode="after")
     def unique_members(self) -> "IncidentMergeCommand":
@@ -110,10 +114,21 @@ class IncidentSplitCommand(BaseModel):
     source_version: int = Field(ge=1)
     member_request_ids: list[UUID] = Field(min_length=2, max_length=500)
     reason_code: str = Field(pattern=r"^[A-Z][A-Z0-9_]{0,63}$")
-    evidence_refs: list[Annotated[str, Field(pattern=r"^[0-9a-f]{64}$")]] = Field(min_length=1, max_length=20)
+    evidence_refs: list[Annotated[str, Field(pattern=r"^[0-9a-f]{64}$")]] = Field(
+        min_length=1, max_length=20
+    )
 
     @model_validator(mode="after")
     def unique_members(self) -> "IncidentSplitCommand":
         if len(set(self.member_request_ids)) != len(self.member_request_ids):
             raise ValueError("member_request_ids must be unique")
         return self
+
+
+class IncidentTopologyResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    operation: Literal["merge", "split"]
+    source: Incident
+    target: Incident
+    member_request_ids: list[UUID]

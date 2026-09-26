@@ -12,6 +12,9 @@ from .models import (
     IncidentDecision,
     IncidentLifecycleCommand,
     IncidentMember,
+    IncidentMergeCommand,
+    IncidentSplitCommand,
+    IncidentTopologyResponse,
     MembershipCommand,
 )
 from .postgres import PostgresIncidentService
@@ -122,6 +125,56 @@ def create_incident_router(service: IncidentService | PostgresIncidentService) -
                 region_id=region_id,
                 actor=identity.actor_id,
                 correlation_id=correlation_id,
+            )
+        except IncidentError as error:
+            raise _http_error(error) from error
+
+    @router.post("/incidents/{incident_id}/merge", response_model=IncidentTopologyResponse)
+    def merge(
+        incident_id: UUID,
+        command: IncidentMergeCommand,
+        identity: AuthenticatedActor,
+        idempotency_key: str = Header(alias="Idempotency-Key", min_length=16, max_length=128),
+        region_id: str = Header(alias="X-Region-Id", pattern=r"^[A-Z0-9_-]{2,32}$"),
+        correlation_id: str = Header(default="local-correlation", alias="X-Correlation-Id"),
+    ) -> IncidentTopologyResponse:
+        identity.require_any_role("supervisor", "admin")
+        identity.require_region(region_id)
+        try:
+            return IncidentTopologyResponse.model_validate(
+                service.merge(
+                    incident_id,
+                    command,
+                    idempotency_key=idempotency_key,
+                    region_id=region_id,
+                    actor=identity.actor_id,
+                    correlation_id=correlation_id,
+                )
+            )
+        except IncidentError as error:
+            raise _http_error(error) from error
+
+    @router.post("/incidents/{incident_id}/split", response_model=IncidentTopologyResponse)
+    def split(
+        incident_id: UUID,
+        command: IncidentSplitCommand,
+        identity: AuthenticatedActor,
+        idempotency_key: str = Header(alias="Idempotency-Key", min_length=16, max_length=128),
+        region_id: str = Header(alias="X-Region-Id", pattern=r"^[A-Z0-9_-]{2,32}$"),
+        correlation_id: str = Header(default="local-correlation", alias="X-Correlation-Id"),
+    ) -> IncidentTopologyResponse:
+        identity.require_any_role("supervisor", "admin")
+        identity.require_region(region_id)
+        try:
+            return IncidentTopologyResponse.model_validate(
+                service.split(
+                    incident_id,
+                    command,
+                    idempotency_key=idempotency_key,
+                    region_id=region_id,
+                    actor=identity.actor_id,
+                    correlation_id=correlation_id,
+                )
             )
         except IncidentError as error:
             raise _http_error(error) from error
