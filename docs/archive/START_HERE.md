@@ -1,5 +1,8 @@
 # Start Here
 
+> Historical bootstrap guide. Its milestone instructions are superseded by the
+> [current documentation index](../README.md) and [feature matrix](../FEATURE_STATUS.md).
+
 ## Is the original specification enough
 
 It is strong architecture documentation, but it should not be used as one giant implementation prompt. It describes both the first pilot and the national target state, contains dependencies that only the organizers can resolve and leaves implementation sequencing to the reader.
@@ -31,4 +34,3 @@ This kit converts it into an executable workflow for Codex.
 - Do not claim model quality before raw text, labels and a frozen test set exist.
 - Do not let a mocked regional integration silently become the production integration.
 - Do not store real appeal payloads in Git, prompts, logs or screenshots.
-

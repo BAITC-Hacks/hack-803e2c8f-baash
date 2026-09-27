@@ -180,7 +180,7 @@ alembic head  0022_privacy_region == 0022_privacy_region
 
 ## Что ещё в разработке
 
-Восемь блоков подробно описаны в [PRODUCTION_ROADMAP.md](PRODUCTION_ROADMAP.md):
+Восемь блоков подробно описаны в [PRODUCTION_ROADMAP.md](archive/PRODUCTION_ROADMAP.md):
 завершение incident graph, control plane целиком, Replay UI и release diff,
 полное соединение фронтенда с операционным бэкендом, observability, нагрузочные
 и отказные тесты, security finishing, production deployment profile.
@@ -224,9 +224,9 @@ alembic head  0022_privacy_region == 0022_privacy_region
 - [DECISION_LOG.md](DECISION_LOG.md): зафиксированные решения
 - [../DECISIONS_AND_BLOCKERS.md](../DECISIONS_AND_BLOCKERS.md): внешние блокеры,
   то есть чего нет не по нашей вине
-- [PRODUCTION_ROADMAP.md](PRODUCTION_ROADMAP.md): что осталось до production
+- [PRODUCTION_ROADMAP.md](archive/PRODUCTION_ROADMAP.md): исторический план
 
-[DEMO_FLOW.md](DEMO_FLOW.md) это ранний черновик сценария показа, его заменил
-DEMO_RUNBOOK. [BUSINESS_LOGIC_QUESTIONS.md](BUSINESS_LOGIC_QUESTIONS.md)
+[DEMO_FLOW.md](archive/DEMO_FLOW.md) это ранний черновик сценария показа, его заменил
+DEMO_RUNBOOK. [BUSINESS_LOGIC_QUESTIONS.md](archive/BUSINESS_LOGIC_QUESTIONS.md)
 это первый набор вопросов организаторам, актуальный набор лежит в
 [GOVTECH_BUSINESS_QUESTIONS.md](GOVTECH_BUSINESS_QUESTIONS.md) вместе с PDF.

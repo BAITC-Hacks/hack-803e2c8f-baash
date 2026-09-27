@@ -1,6 +1,15 @@
 .env
 .data/
 .logs/
+.coverage
+*.log
+*.tmp
+*.bak
+*.orig
+*.rej
+*.swp
+.DS_Store
+Thumbs.db
 .venv/
 __pycache__/
 *.py[cod]
@@ -17,6 +26,7 @@ node_modules/
 coverage.xml
 htmlcov/
 data/reports/*.tmp
+output/tmp/
 
 # Regional CSV ingest working directory. The 1.7 GB canonical stream is
 # regenerated on demand and never versioned. Redacted corpus, quarantine rows

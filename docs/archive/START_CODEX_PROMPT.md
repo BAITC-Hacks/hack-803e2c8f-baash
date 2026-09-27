@@ -1,5 +1,8 @@
 # Prompt to Start Implementation
 
+> Historical M0/M1 prompt. Do not use it to restart the current platform.
+> See the [current documentation index](../README.md).
+
 Implement Pulse 109 using the repository instructions and implementation package in this repository.
 
 Start by reading, in order:
@@ -30,4 +33,3 @@ Required outputs for this run:
 Do not train a production model or invent missing organizer data. Use clearly labelled synthetic fixtures only for tests. Keep the manual critical path functional from the beginning.
 
 After M0 and M1 pass their acceptance gates, review the diff for contract drift, leaked data, accidental coupling and missing failure states. Fix material issues before declaring the run complete.
-

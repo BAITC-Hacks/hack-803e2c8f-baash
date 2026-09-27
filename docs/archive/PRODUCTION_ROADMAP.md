@@ -2,8 +2,8 @@
 
 > **Historical planning assessment (26 September 2026).** The percentages and
 > completion claims below are qualitative estimates from that date, not a
-> deployment certification. The current [feature-status matrix](FEATURE_STATUS.md)
-> and [demo runbook](DEMO_RUNBOOK.md) describe verified behavior and blockers.
+> deployment certification. The current [feature-status matrix](../FEATURE_STATUS.md)
+> and [demo runbook](../DEMO_RUNBOOK.md) describe verified behavior and blockers.
 
 Where the platform stands and what closes the remaining engineering work that
 does not depend on documents the state has not given us yet.

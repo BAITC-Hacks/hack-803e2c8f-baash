@@ -7,7 +7,7 @@
 - [Development history / История разработки](DEVELOPMENT_HISTORY.md): RU/EN chronology tied to Git commits.
 - [GovTech business questions / Вопросы](GOVTECH_BUSINESS_QUESTIONS.md): 20 decisions requested from organizers in RU/EN. [PDF](../output/pdf/govtech_business_questions.pdf).
 - [Decision log](DECISION_LOG.md): architecture and product decisions.
-- [Production audit](PRODUCTION_AUDIT.md): earlier review findings; check current code before relying on a historical statement.
+- [Repository cleanup review](review/REPOSITORY_CLEANUP.md): classification, archived material, preserved evidence and verification.
 - [Security notes](security/README.md), [contracts](../contracts/), [status](../IMPLEMENTATION_STATUS.md), [external blockers](../DECISIONS_AND_BLOCKERS.md).
 
-Supplementary historical material: [GovTech project journal](PROJECT_JOURNAL.md), [production roadmap snapshot](PRODUCTION_ROADMAP.md), [earlier business question set](BUSINESS_LOGIC_QUESTIONS.md), and the [superseded demo-flow draft](DEMO_FLOW.md). The demo runbook and feature matrix above are authoritative for the current application.
+Supplementary historical material: [GovTech project journal](PROJECT_JOURNAL.md) and the [archive index](archive/README.md), which includes earlier planning, audit, specifications and generated exports. The demo runbook and feature matrix above are authoritative for the current application.

@@ -3,7 +3,7 @@
 > **Superseded planning draft — not a runnable walkthrough.** This document
 > describes proposed panels, a demo-state selector and regional-data claims that
 > are not present in the current running application. Use the verified
-> [demo runbook](DEMO_RUNBOOK.md) and [feature-status matrix](FEATURE_STATUS.md)
+> [demo runbook](../DEMO_RUNBOOK.md) and [feature-status matrix](../FEATURE_STATUS.md)
 > for Mock Demo Day. Do not present this draft's claims as live behavior.
 
 Format requested by the organisers: no slides. Show the working MVP live, say
