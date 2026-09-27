@@ -31,6 +31,7 @@ class AttentionKind(str, Enum):
     CLOSURE_REVIEW = "closure_review"
     ADAPTER_LAG = "adapter_lag"
     UNOWNED_INCIDENT = "unowned_incident"
+    DATA_QUALITY = "data_quality"
 
 
 class Severity(str, Enum):

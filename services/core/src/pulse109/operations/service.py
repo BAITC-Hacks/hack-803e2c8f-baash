@@ -35,6 +35,9 @@ UNOWNED_CRITICAL_MINUTES = 360.0
 DELIVERY_LAG_ELEVATED_MINUTES = 15.0
 DELIVERY_LAG_CRITICAL_MINUTES = 60.0
 OPEN_APPEAL_STATES = ("new", "triage", "assigned", "accepted", "in_progress", "waiting")
+# Below this share of trustworthy business times, any chart that depends on the
+# hour describes less of the region than a reader would assume.
+TIME_QUALITY_FLOOR = 0.80
 ACTIVE_INCIDENT_STATES = ("proposed", "confirmed", "monitoring")
 
 
@@ -63,6 +66,7 @@ class PostgresOperationsService:
                 *self._unowned_incidents(cursor, region_id, moment),
                 *self._delivery_lag(cursor, region_id, moment),
                 *self._closure_review(cursor, region_id),
+                *self._data_quality(cursor, region_id),
             ]
 
         order = {Severity.CRITICAL: 0, Severity.ELEVATED: 1, Severity.ROUTINE: 2}
@@ -235,6 +239,51 @@ class PostgresOperationsService:
                 count=int(row["total"]),
                 target_kind="integration",
                 detail={"oldest_minutes": round(minutes, 1)},
+            )
+        ]
+
+    def _data_quality(
+        self, cursor: psycopg.Cursor[dict[str, Any]], region_id: str
+    ) -> list[AttentionItem]:
+        """Monitoring the data about the city, not only the city.
+
+        A feed that reports on incidents while the records underneath them decay
+        gives a supervisor confidence they have not earned.
+        """
+        cursor.execute(
+            """
+            SELECT count(*) AS total,
+                   count(*) FILTER (
+                       WHERE received_at_quality IN ('exact', 'source_tz_assumed')
+                   ) AS trusted,
+                   min(created_at) AS oldest
+            FROM appeals.appeal
+            WHERE region_id = %s
+            """,
+            (region_id,),
+        )
+        row = cursor.fetchone() or {}
+        total = int(row.get("total") or 0)
+        if total == 0:
+            return []
+        trusted = int(row.get("trusted") or 0)
+        share = trusted / total
+        if share >= TIME_QUALITY_FLOOR:
+            return []
+        return [
+            AttentionItem(
+                kind=AttentionKind.DATA_QUALITY,
+                severity=Severity.ELEVATED if share >= 0.5 else Severity.CRITICAL,
+                region_id=region_id,
+                detected_at=row["oldest"],
+                summary_code="BUSINESS_TIME_QUALITY_LOW",
+                count=total - trusted,
+                target_kind="appeal",
+                detail={
+                    "trusted_share": round(share, 3),
+                    "floor": TIME_QUALITY_FLOOR,
+                    "drilldown": "quality:timeliness",
+                },
             )
         ]
 

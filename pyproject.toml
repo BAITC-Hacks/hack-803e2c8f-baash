@@ -60,7 +60,7 @@ packages = [
 [tool.pytest.ini_options]
 addopts = "-ra --strict-config --strict-markers --import-mode=importlib"
 testpaths = ["services/core/tests", "services/inference/tests", "services/worker/tests", "adapters/replay/tests", "adapters/open311/tests", "tests"]
-pythonpath = ["services/core/src", "services/inference/src", "services/worker/src", "adapters/replay/src", "adapters/open311/src", "adapters/sdk/src"]
+pythonpath = [".", "services/core/src", "services/inference/src", "services/worker/src", "adapters/replay/src", "adapters/open311/src", "adapters/sdk/src"]
 markers = [
   "integration: requires local PostgreSQL services",
 ]

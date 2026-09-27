@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Intake } from "./intake";
 import { AnalyticsPanel } from "./analytics-panel";
 import { ClosureIntegrityPanel } from "./closure-integrity-panel";
+import { DataLab } from "./data-lab";
 import { IncidentWarRoom } from "./incident-war-room";
 import { IncidentWorkflowPanel } from "./incident-workflow-panel";
 import { OperationsCenter } from "./operations-center";
@@ -62,6 +63,7 @@ type SessionContext = {
 const labels = {
   ru: {
     operations: "Операционный центр",
+    datalab: "Лаборатория данных",
     intake: "Подать обращение",
     queue: "Очередь оператора",
     situation: "Статус платформы",
@@ -84,6 +86,7 @@ const labels = {
   },
   kk: {
     operations: "Операциялық орталық",
+    datalab: "Деректер зертханасы",
     intake: "Өтініш беру",
     queue: "Оператор кезегі",
     situation: "Платформа мәртебесі",
@@ -168,7 +171,7 @@ export default function OperatorWorkspace() {
   }
 
   const [view, setView] = useState<
-    "operations" | "queue" | "intake" | "situation"
+    "operations" | "datalab" | "queue" | "intake" | "situation"
   >("operations");
   const [warRoomIncidentId, setWarRoomIncidentId] = useState<string | null>(
     null,
@@ -442,18 +445,18 @@ export default function OperatorWorkspace() {
       <header className="topbar">
         <strong className="brand">Pulse 109</strong>
         <nav className="view-switch" aria-label="Workspace view">
-          {(["operations", "queue", "intake", "situation"] as const).map(
-            (name) => (
-              <button
-                key={name}
-                type="button"
-                aria-pressed={view === name}
-                onClick={() => setView(name)}
-              >
-                {copy[name]}
-              </button>
-            ),
-          )}
+          {(
+            ["operations", "datalab", "queue", "intake", "situation"] as const
+          ).map((name) => (
+            <button
+              key={name}
+              type="button"
+              aria-pressed={view === name}
+              onClick={() => setView(name)}
+            >
+              {copy[name]}
+            </button>
+          ))}
         </nav>
         <div className="topbar-actions">
           <span className="profile">
@@ -491,6 +494,11 @@ export default function OperatorWorkspace() {
             regionId={region}
             onOpenIncident={(incidentId) => setWarRoomIncidentId(incidentId)}
           />
+        </div>
+      ) : null}
+      {view === "datalab" ? (
+        <div className="workspace real-workspace">
+          <DataLab locale={locale} regionId={region} />
         </div>
       ) : null}
       {view === "intake" ? (

@@ -1,0 +1,261 @@
+{
+  "manifest": {
+    "dataset_id": "synthetic-m1-accepted",
+    "dataset_hash": "f1b73dd22f6ca95724b74931dba7e63707c56e4226f4a37ae9200f9f3ef6734a",
+    "source_path": "data/reports/synthetic-m1-accepted.jsonl",
+    "byte_size": 4095,
+    "row_count": 3,
+    "schema_versions": [
+      "1.0.0"
+    ],
+    "mapping_versions": [
+      "synthetic-source/1.0.0"
+    ],
+    "adapters": [
+      "synthetic-crm"
+    ],
+    "regions": [
+      "ALA",
+      "AST"
+    ],
+    "coverage": {
+      "earliest_received_at": "2026-09-10T10:00:00+05:00",
+      "latest_received_at": "2026-09-10T10:00:00+05:00"
+    },
+    "generated_at": "2026-09-27T12:45:12.887293+00:00",
+    "synthetic": true,
+    "notes": [
+      "Regions in this dataset cover different periods. Comparing raw volume between them is not meaningful without the per-region coverage below."
+    ]
+  },
+  "quality": {
+    "regions": [
+      {
+        "region_id": "ALA",
+        "row_count": 1,
+        "coverage": {
+          "earliest_received_at": "2026-09-10T10:00:00+05:00",
+          "latest_received_at": "2026-09-10T10:00:00+05:00"
+        },
+        "dimensions": [
+          {
+            "name": "completeness",
+            "numerator": 1,
+            "denominator": 1,
+            "ratio": 1.0,
+            "definition": "rows carrying region, channel, language and a received time"
+          },
+          {
+            "name": "timeliness",
+            "numerator": 1,
+            "denominator": 1,
+            "ratio": 1.0,
+            "definition": "rows whose received time is exact or has a stated timezone assumption"
+          },
+          {
+            "name": "uniqueness",
+            "numerator": 1,
+            "denominator": 1,
+            "ratio": 1.0,
+            "definition": "rows whose source identifier appears exactly once"
+          },
+          {
+            "name": "schema_conformity",
+            "numerator": 1,
+            "denominator": 1,
+            "ratio": 1.0,
+            "definition": "rows that declare the canonical schema version they were written against"
+          },
+          {
+            "name": "consistency",
+            "numerator": 1,
+            "denominator": 1,
+            "ratio": 1.0,
+            "definition": "rows the adapter accepted rather than quarantined or passed with warnings"
+          },
+          {
+            "name": "provenance",
+            "numerator": 1,
+            "denominator": 1,
+            "ratio": 1.0,
+            "definition": "rows carrying both a source checksum and the adapter that produced them"
+          }
+        ],
+        "unmapped_statuses": [],
+        "duplicate_source_ids": 0
+      },
+      {
+        "region_id": "AST",
+        "row_count": 2,
+        "coverage": {
+          "earliest_received_at": null,
+          "latest_received_at": null
+        },
+        "dimensions": [
+          {
+            "name": "completeness",
+            "numerator": 0,
+            "denominator": 2,
+            "ratio": 0.0,
+            "definition": "rows carrying region, channel, language and a received time"
+          },
+          {
+            "name": "timeliness",
+            "numerator": 0,
+            "denominator": 2,
+            "ratio": 0.0,
+            "definition": "rows whose received time is exact or has a stated timezone assumption"
+          },
+          {
+            "name": "uniqueness",
+            "numerator": 2,
+            "denominator": 2,
+            "ratio": 1.0,
+            "definition": "rows whose source identifier appears exactly once"
+          },
+          {
+            "name": "schema_conformity",
+            "numerator": 2,
+            "denominator": 2,
+            "ratio": 1.0,
+            "definition": "rows that declare the canonical schema version they were written against"
+          },
+          {
+            "name": "consistency",
+            "numerator": 0,
+            "denominator": 2,
+            "ratio": 0.0,
+            "definition": "rows the adapter accepted rather than quarantined or passed with warnings"
+          },
+          {
+            "name": "provenance",
+            "numerator": 2,
+            "denominator": 2,
+            "ratio": 1.0,
+            "definition": "rows carrying both a source checksum and the adapter that produced them"
+          }
+        ],
+        "unmapped_statuses": [
+          {
+            "status": "RECEIVED_AT_DATE_ONLY",
+            "rows": 1
+          },
+          {
+            "status": "RECEIVED_AT_MISSING",
+            "rows": 1
+          }
+        ],
+        "duplicate_source_ids": 0
+      }
+    ],
+    "weakest": [
+      {
+        "region_id": "AST",
+        "dimension": "completeness",
+        "ratio": 0.0
+      },
+      {
+        "region_id": "AST",
+        "dimension": "timeliness",
+        "ratio": 0.0
+      },
+      {
+        "region_id": "AST",
+        "dimension": "consistency",
+        "ratio": 0.0
+      }
+    ]
+  },
+  "temporal": [
+    {
+      "region_id": "ALA",
+      "trusted_rows": 1,
+      "total_rows": 1,
+      "trusted_share": 1.0,
+      "coverage": {
+        "first_day": "2026-09-10",
+        "last_day": "2026-09-10"
+      },
+      "observed_days": 1,
+      "mean_per_observed_day": 1.0,
+      "weekday_counts": {
+        "Mon": 0,
+        "Tue": 0,
+        "Wed": 0,
+        "Thu": 1,
+        "Fri": 0,
+        "Sat": 0,
+        "Sun": 0
+      },
+      "hour_counts": {
+        "10": 1
+      },
+      "busiest_hours": [
+        {
+          "hour": 10,
+          "rows": 1
+        }
+      ]
+    },
+    {
+      "region_id": "AST",
+      "trusted_rows": 0,
+      "total_rows": 2,
+      "trusted_share": 0.0,
+      "coverage": {
+        "first_day": null,
+        "last_day": null
+      },
+      "observed_days": 0,
+      "mean_per_observed_day": null,
+      "weekday_counts": {
+        "Mon": 0,
+        "Tue": 0,
+        "Wed": 0,
+        "Thu": 0,
+        "Fri": 0,
+        "Sat": 0,
+        "Sun": 0
+      },
+      "hour_counts": {},
+      "busiest_hours": []
+    }
+  ],
+  "distributions": {
+    "channels": {
+      "web": 1,
+      "import": 1,
+      "phone": 1
+    },
+    "languages": {
+      "kk": 1,
+      "mixed": 1,
+      "ru": 1
+    },
+    "topics": {},
+    "services": {},
+    "statuses": {
+      "new": 1
+    },
+    "received_at_quality": {
+      "exact": 1,
+      "date_only": 1,
+      "missing": 1
+    },
+    "language_by_region": {
+      "ALA": {
+        "kk": 1
+      },
+      "AST": {
+        "mixed": 1,
+        "ru": 1
+      }
+    }
+  },
+  "limits": [
+    "This is observational exploration of historical exports. Nothing here establishes cause. A difference between two regions is a difference in what was recorded, which may be a difference in the city, in the process or in the export.",
+    "Regions cover different periods. Raw volume must never be compared between them without reading the coverage column beside it.",
+    "Counts that depend on the hour or the weekday use only records whose business time is trustworthy. The trusted share is stated per region.",
+    "No citizen text exists in these exports (B02), so nothing here describes what people actually wrote."
+  ]
+}

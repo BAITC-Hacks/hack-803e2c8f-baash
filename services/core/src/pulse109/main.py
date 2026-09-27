@@ -28,6 +28,7 @@ from pulse109.control_plane import (
 )
 from pulse109.control_plane.router import BundleVerifierProvider
 from pulse109.database import get_engine
+from pulse109.datalab import PostgresDataLabService, create_datalab_router
 from pulse109.decisions.publication import ConfidencePublicationService
 from pulse109.decisions.publication_router import create_confidence_publication_router
 from pulse109.discovery import (
@@ -258,6 +259,13 @@ else:
 privacy_service = PrivacyService(privacy_repository)
 app.include_router(create_privacy_router(privacy_service))
 app.include_router(create_session_router())
+app.include_router(
+    create_datalab_router(
+        PostgresDataLabService(settings.database_url, synthetic=synthetic_read_models)
+        if use_postgres_manual_path
+        else None
+    )
+)
 app.include_router(
     create_operations_router(
         PostgresOperationsService(settings.database_url, synthetic=synthetic_read_models)

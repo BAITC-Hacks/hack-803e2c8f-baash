@@ -2469,3 +2469,131 @@ textarea:focus-visible {
   font-variant-numeric: tabular-nums;
   color: var(--muted);
 }
+
+/* ------------------------------------------------------------------ */
+/* Data Lab. Every figure here is meant to be opened, so the affordance */
+/* to drill down is part of the figure rather than a separate control.  */
+/* ------------------------------------------------------------------ */
+
+.lab-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 18px;
+}
+
+.lab-card h2 {
+  margin: 0 0 6px;
+  font-size: 1.05rem;
+}
+
+.quality-bars,
+.funnel {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+}
+
+.quality-bars > li,
+.funnel > li {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.quality-bars > li:last-child,
+.funnel > li:last-child {
+  border-bottom: none;
+}
+
+.quality-head,
+.funnel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.quality-bar,
+.funnel-bar {
+  display: block;
+  height: 10px;
+  border-radius: 3px;
+  margin: 6px 0;
+  min-width: 2px;
+}
+
+.quality-bar {
+  background: var(--teal);
+}
+
+.funnel-bar {
+  background: var(--ink);
+  opacity: 0.75;
+}
+
+.link-action {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--teal);
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.link-action:hover {
+  text-decoration: underline;
+}
+
+.lab-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+  font-size: 0.86rem;
+}
+
+.lab-table th,
+.lab-table td {
+  text-align: left;
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.lab-table th {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.lab-table td {
+  font-variant-numeric: tabular-nums;
+}
+
+.drilldown-panel {
+  border-color: var(--teal);
+}
+
+.definitions > div {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.definitions > div:last-child {
+  border-bottom: none;
+}
+
+.definitions dt {
+  font-weight: 620;
+}
+
+.definitions dd {
+  margin: 6px 0 0;
+}
+
+.definitions dd p {
+  margin: 3px 0;
+  font-size: 0.86rem;
+  color: var(--muted);
+}

@@ -6,9 +6,9 @@ who resolves them, checks the result and learns from confirmed outcomes.
 ```
 Citizen signals
       ↓
-Detect      Emerging Issues Radar
+Detect      Emerging Issues Radar + Data Lab anomalies
       ↓
-Understand  Incident War Room
+Understand  Incident War Room + Data Lab
       ↓
 Coordinate  Ownership + Next Best Action
       ↓
