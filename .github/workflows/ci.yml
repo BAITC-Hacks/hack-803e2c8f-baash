@@ -95,15 +95,22 @@ jobs:
           for table in integration.source_record appeals.appeal appeals.appeal_event audit.audit_event integration.outbox; do
             source_count=$("${compose[@]}" exec -T postgres psql -U pulse109 -d pulse109 -Atc "SELECT count(*) FROM $table")
             restored_count=$("${compose[@]}" exec -T postgres psql -U pulse109 -d pulse109_restore -Atc "SELECT count(*) FROM $table")
+            echo "restore drill $table source=$source_count restored=$restored_count"
             test "$source_count" = "$restored_count"
           done
           source_hash=$("${compose[@]}" exec -T postgres psql -U pulse109 -d pulse109 -Atc \
             "SELECT md5(coalesce(string_agg(raw_payload_hash::text, '' ORDER BY id), '')) FROM integration.source_record")
           restored_hash=$("${compose[@]}" exec -T postgres psql -U pulse109 -d pulse109_restore -Atc \
             "SELECT md5(coalesce(string_agg(raw_payload_hash::text, '' ORDER BY id), '')) FROM integration.source_record")
+          echo "restore drill payload hash source=$source_hash restored=$restored_hash"
           test "$source_hash" = "$restored_hash"
-          test "$("${compose[@]}" exec -T postgres psql -U pulse109 -d pulse109_restore -Atc \
-              'SELECT version_num FROM alembic_version')" = "0020_bundle_activation"
+          # The head is derived from the migration files, never pinned here. A
+          # pinned value silently went stale once and cost a full CI round trip.
+          expected_head="$(uv run python scripts/alembic_head.py)"
+          restored_head="$("${compose[@]}" exec -T postgres psql -U pulse109 -d pulse109_restore -Atc \
+            'SELECT version_num FROM alembic_version')"
+          echo "restore drill alembic head expected=$expected_head restored=$restored_head"
+          test "$restored_head" = "$expected_head"
       - name: Capture container logs
         if: always()
         run: docker compose -f infra/compose/docker-compose.yml logs --no-color
