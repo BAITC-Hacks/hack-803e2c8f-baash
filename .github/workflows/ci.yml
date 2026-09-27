@@ -88,6 +88,14 @@ jobs:
         run: uv sync --all-groups --frozen
       - name: Start local topology and wait for health
         run: docker compose -f infra/compose/docker-compose.yml up --build --wait --wait-timeout 300
+
+      - name: Dump container logs on failure
+        if: failure()
+        run: |
+          # Without this, a container that exits non-zero shows only
+          # "dependency failed to start" and the real traceback is lost.
+          docker compose -f infra/compose/docker-compose.yml ps -a
+          docker compose -f infra/compose/docker-compose.yml logs --no-color --tail=200
       - name: Verify service endpoints
         run: |
           curl --fail http://127.0.0.1:8080/v1/health/ready
@@ -101,8 +109,16 @@ jobs:
           test "$(docker compose -f infra/compose/docker-compose.yml exec -T postgres \
             psql -U pulse109 -d pulse109 -Atc \
             "SELECT string_agg(extname, ',' ORDER BY extname) FROM pg_extension WHERE extname IN ('postgis','vector');")" = "postgis,vector"
-            test "$(docker compose -f infra/compose/docker-compose.yml exec -T postgres \
-              psql -U pulse109 -d pulse109 -Atc "SELECT version_num FROM alembic_version;")" = "0022_privacy_region"
+          # Compare against the repository head instead of a frozen revision id.
+          # A hardcoded id goes stale on every new migration: this check asserted
+          # 0020_bundle_activation while the tree had already moved to 0021.
+          # Read from the migration files: alembic needs -c and a database URL,
+          # and without them it prints "FAILED: No 'script_location' key found".
+          expected="$(uv run python scripts/alembic_head.py)"
+          actual="$(docker compose -f infra/compose/docker-compose.yml exec -T postgres \
+            psql -U pulse109 -d pulse109 -Atc "SELECT version_num FROM alembic_version;")"
+          echo "alembic head expected=$expected actual=$actual"
+          test "$actual" = "$expected"
       - name: Verify PostgreSQL-backed import
         env:
           PULSE109_TEST_DATABASE_URL: postgresql://pulse109:pulse109-local@127.0.0.1:5432/pulse109

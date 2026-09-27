@@ -8,3 +8,5 @@
 - [Decision log](DECISION_LOG.md): architecture and product decisions.
 - [Production audit](PRODUCTION_AUDIT.md): earlier review findings; check current code before relying on a historical statement.
 - [Security notes](security/README.md), [contracts](../contracts/), [status](../IMPLEMENTATION_STATUS.md), [external blockers](../DECISIONS_AND_BLOCKERS.md).
+
+Supplementary historical material: [GovTech project journal](PROJECT_JOURNAL.md), [production roadmap snapshot](PRODUCTION_ROADMAP.md), [earlier business question set](BUSINESS_LOGIC_QUESTIONS.md), and the [superseded demo-flow draft](DEMO_FLOW.md). The demo runbook and feature matrix above are authoritative for the current application.

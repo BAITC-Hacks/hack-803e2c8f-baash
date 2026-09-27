@@ -6,6 +6,7 @@ from uuid import uuid4
 
 import psycopg
 import pytest
+from psycopg.rows import dict_row
 from pulse109.incidents.models import (
     CreateIncident,
     IncidentDecision,
@@ -14,6 +15,8 @@ from pulse109.incidents.models import (
     MembershipCommand,
 )
 from pulse109.incidents.postgres import PostgresIncidentService
+from pulse109.manual_path import PostgresManualPathService, PostgresManualRepository
+from pulse109.manual_path.models import CreateRequest
 
 
 class DummyConnectionPool:
@@ -21,7 +24,11 @@ class DummyConnectionPool:
         self._dsn = dsn
 
     def connection(self):
-        return psycopg.connect(self._dsn, autocommit=False)
+        # PostgresIncidentService reads columns by name, and production builds
+        # its connections with dict_row (incidents/postgres.py). Without the
+        # same row factory here the service raises
+        # "tuple indices must be integers or slices, not str".
+        return psycopg.connect(self._dsn, autocommit=False, row_factory=dict_row)
 
 
 @pytest.mark.integration
@@ -36,21 +43,33 @@ def test_postgres_incident_merge_and_split_topology() -> None:
     region_id = "ALA"
     actor = "synthetic-supervisor"
 
-    # Seed 4 appeals directly in appeals.appeal so foreign keys are satisfied
+    # Seed appeals through the manual path service rather than raw SQL. An
+    # appeal requires a whole chain of foreign keys, source_system to
+    # import_run to source_record, and the service is what creates it. The
+    # previous direct INSERT omitted the NOT NULL source_record_id and also
+    # used column and status names that do not exist in the schema.
+    manual = PostgresManualPathService(PostgresManualRepository(database_url))
     appeal_ids: list[str] = []
-    with pool.connection() as conn, conn.cursor() as cur:
-        for _idx in range(4):
-            aid = uuid4()
-            cur.execute(
-                """
-                INSERT INTO appeals.appeal
-                    (request_id, region_id, channel, status, received_at, received_at_quality)
-                VALUES (%s, %s, 'web', 'registered', %s, 'exact')
-                """,
-                (aid, region_id, datetime.now(timezone.utc)),
-            )
-            appeal_ids.append(str(aid))
-        conn.commit()
+    for _idx in range(4):
+        source_id = f"TOPOLOGY-{uuid4()}"
+        appeal, _replayed = manual.create(
+            CreateRequest(
+                source_system="synthetic-topology-integration",
+                source_request_id=source_id,
+                region_id=region_id,
+                received_at=datetime.now(timezone.utc),
+                received_at_quality="exact",
+                channel="web",
+                language="ru",
+                text="Synthetic appeal seeded for incident topology test",
+                consent_or_legal_basis="SYNTHETIC_TEST_ONLY",
+            ),
+            idempotency_key=f"create-{source_id}",
+            region_id=region_id,
+            actor=actor,
+            correlation_id=f"correlation-{source_id}",
+        )
+        appeal_ids.append(str(appeal.request_id))
 
     # Create Incident A with appeals 0 and 1
     inc_a, _ = service.create(
@@ -177,8 +196,8 @@ def test_postgres_incident_merge_and_split_topology() -> None:
         )
         row = cur.fetchone()
         assert row is not None
-        assert row[0] == "merge"
-        assert row[3] == "MERGE_INCIDENT_AREAS"
+        assert row["operation"] == "merge"
+        assert row["reason_code"] == "MERGE_INCIDENT_AREAS"
 
     # Test Split from Incident B (now having 4 members: 0, 1, 2, 3)
     split_key = f"top-split-{uuid4()}"
