@@ -745,6 +745,17 @@ Record implementation decisions here when the repository, contracts or available
 - **Evidence:** `services/core/src/pulse109/incidents`, `apps/web/app/incident-workflow-panel.tsx`, `scripts/verify_demo_flow.py`, demo-profile CI job.
 - **Revisit when:** approved incident evidence and regional workflow rules are available.
 
+### D-070 — Keep PulseDM as a governed research candidate beside the conservative ML stack
+
+- **Date:** 2026-09-27
+- **Status:** accepted for research design and offline evaluation, not model deployment
+- **Context:** the current critical path has a lexical CPU fallback and human Decision Gateway, while candidate routing/retrieval models lack approved KK/RU/mixed labels. A structured non-generative decision model could share representations across advisory questions, but neither its accuracy nor operational benefit is established.
+- **Decision:** retain the conservative supervised routing, hybrid retrieval and pair-classifier track; specify PulseDM as a separate multilingual Choice/Boolean/Score research design; allow Jev or structured LLMs only as optional external benchmarks/teachers after privacy approval. Compare all implemented candidates on identical pinned decision-time cases. Add an offline Choice/Boolean evaluator with leakage, split and probability checks; keep Score evaluation, training and serving unimplemented until justified. No model enters the hot path or gains authority over SLA, ownership, assignment, merge or closure through this decision.
+- **Alternatives:** replace the existing inference service with an untrained PulseDM placeholder; select a public leaderboard winner; send citizen text to an external benchmark by default.
+- **Consequences:** research can proceed without breaking CPU/manual continuity or claiming unavailable model quality. Candidate configurations and weights will be added only with a concrete runner, license check, approved dataset and model card.
+- **Evidence:** `docs/ml/`, `ml/evaluation/candidate_compare.py`, `tests/model/test_candidate_compare.py`, existing synthetic baseline and Replay Lab contracts.
+- **Revisit when:** approved, privacy-reviewed KK/RU/mixed gold data and deployment resources support a measured candidate experiment.
+
 ### D-XXX — Short title
 
 

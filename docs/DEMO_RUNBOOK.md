@@ -33,6 +33,8 @@ The command builds the normal images, applies the full Alembic chain, waits for 
 
 For a clean repeat, run `reset` then `up`. The seeded source IDs, texts, times and evidence hash are fixed; PostgreSQL-generated UUIDs may differ after reset. CI runs `scripts/verify_demo_flow.py` against separate synthetic appeals to prove the same command path without altering these four walkthrough records.
 
+If asked about future ML, distinguish the **running lexical CPU advisory** from [conservative model candidates and PulseDM research](ml/MODEL_STRATEGY.md). No XLM-R, Qwen embedding/reranker, Jev or PulseDM weights run in this demo; every consequential action remains human governed.
+
 ## Failure boundaries
 
 - If PostgreSQL is unavailable, core readiness fails and seeding stops. Do not substitute the in-memory repository for the demo.

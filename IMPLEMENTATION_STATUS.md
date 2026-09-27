@@ -6,6 +6,7 @@
 
 ## Current extension (2026-09-27)
 
+- ML candidate architecture now has a separate [research index](docs/ml/README.md): conservative supervised/retrieval candidates, PulseDM design and optional Jev/LLM reference track. No candidate weights or production quality are claimed. A dependency-light offline evaluator compares Choice/Boolean probability submissions on one pinned pseudonymous test cohort, rejecting extra raw/post-decision fields, split leakage, invalid probabilities and missing predictions. Score-question training/evaluation and real approved KK/RU/mixed labels remain unavailable.
 - The demo seeds four synthetic appeals, including two related water reports, and one idempotent synthetic evidence attachment. The same PostgreSQL-backed APIs now support a visible operator flow through manual decision, assignment, incident proposal and human confirmation, resolution, closure preflight/confirmation, recurrence assessment and a labelled synthetic analytics query.
 - `GET /v1/incidents/{incident_id}` reads region-scoped candidate and confirmed member IDs from persisted state. The operator workspace uses it for readback; unmounted sample-only topology, replay, admin and situation panels with fabricated fallback behavior were removed.
 - CI is configured to run `scripts/verify_demo_flow.py` against separate synthetic appeals after demo startup. This test exercises the normal API and worker rather than modifying the fixed walkthrough records.

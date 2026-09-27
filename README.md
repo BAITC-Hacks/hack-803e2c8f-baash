@@ -27,6 +27,10 @@ For local non-demo development, `make up` (or `.\scripts\tasks.ps1 up` on Window
 
 Architecture, data, human-decision, incident, failure and privacy diagrams are in the [EN/RU architecture notes](docs/architecture/README.md). The full [documentation index](docs/README.md) links the [decision log](docs/DECISION_LOG.md), [development history](docs/DEVELOPMENT_HISTORY.md), and [20 questions for GovTech organizers](docs/GOVTECH_BUSINESS_QUESTIONS.md).
 
+## ML status and research
+
+**Running now:** deterministic lexical CPU recommendations, typed inference/provenance, human Decision Gateway, Replay Lab and synthetic-only evaluation fixtures. The manual operational path remains available without ML. **Conservative candidates:** TF-IDF/LogReg and XLM-R for supervised routing, PostgreSQL FTS plus benchmarked multilingual embeddings/rerankers for similar appeals, and hybrid pair features for duplicate proposals. **Research:** PulseDM is a proposed multilingual non-generative structured decision model; Jev/structured LLMs are optional external benchmarks only. None of these named candidate weights are deployed or validated for Pulse 109. Model choice awaits approved KK/RU/mixed labels and a [shared evaluation protocol](docs/ml/EVALUATION_PROTOCOL.md); see the [ML research index](docs/ml/README.md).
+
 ## Repository map
 
 | Path                                    | Responsibility                                                           |
@@ -38,6 +42,7 @@ Architecture, data, human-decision, incident, failure and privacy diagrams are i
 | `contracts`                             | OpenAPI, canonical schemas, event catalog and ADRs                       |
 | `infra/compose`, `scripts`              | Runtime topology, demo commands, verification and release tooling        |
 | `docs`, `output/pdf`                    | Review documentation and generated organizer questions                   |
+| `docs/ml`, `experiments`                | Candidate ML architecture and offline comparison protocol                |
 
 The [RU/EN history](docs/DEVELOPMENT_HISTORY.md) derives chronology and visible authorship from Git. A commit author does not by itself prove a team role or review responsibility; those are not invented here.
 

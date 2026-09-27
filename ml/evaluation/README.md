@@ -1,5 +1,7 @@
 # Evaluation
 
+The [shared candidate evaluator](candidate_compare.py) compares offline Choice/Boolean submissions on the same pinned test cases. It requires privacy-safe pseudonymous metadata, group-disjoint temporal splits, complete normalized probabilities, and marks all synthetic output `NOT_VALIDATED`. Its [protocol](../../docs/ml/EVALUATION_PROTOCOL.md) and [input contract](../../experiments/README.md) distinguish this from deployed models. PulseDM is currently [design only](../../docs/ml/PULSEDM_DESIGN.md).
+
 Evaluation artifacts must identify the dataset cutoff, split policy, region/language slices, and seed.
 
 M4 retrieval evidence in `synthetic_m4/` is generated from the pinned synthetic M4 manifest. Its
