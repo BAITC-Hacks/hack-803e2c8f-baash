@@ -6,6 +6,7 @@ from uuid import uuid4
 
 import psycopg
 import pytest
+from psycopg.rows import dict_row
 from pulse109.incidents.models import (
     CreateIncident,
     IncidentDecision,
@@ -23,7 +24,11 @@ class DummyConnectionPool:
         self._dsn = dsn
 
     def connection(self):
-        return psycopg.connect(self._dsn, autocommit=False)
+        # PostgresIncidentService reads columns by name, and production builds
+        # its connections with dict_row (incidents/postgres.py). Without the
+        # same row factory here the service raises
+        # "tuple indices must be integers or slices, not str".
+        return psycopg.connect(self._dsn, autocommit=False, row_factory=dict_row)
 
 
 @pytest.mark.integration
