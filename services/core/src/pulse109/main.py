@@ -64,7 +64,11 @@ from pulse109.manual_path import (
 from pulse109.next_action import NextActionAdvisor, create_next_action_router
 from pulse109.observability import configure_observability
 from pulse109.operations import PostgresOperationsService, create_operations_router
-from pulse109.outcome_memory import OutcomeMemory, PostgresOutcomeMemoryReader
+from pulse109.outcome_memory import (
+    OutcomeMemory,
+    PostgresOutcomeMemoryReader,
+    SyntheticOutcomeMemoryReader,
+)
 from pulse109.outcomes import (
     ClosureIntegrityService,
     PostgresClosureRepository,
@@ -208,8 +212,19 @@ if use_postgres_manual_path:
         settings.database_url,
         detail_reader=incident_service,
         ownership=ManualPathOwnershipAdvisor(manual_service, ownership_service),
+        # Production retrieval refuses to yield candidates until an approved
+        # corpus exists, which is correct and leaves the capability invisible.
+        # A profile that already declares its read models synthetic gets the
+        # demo's own verified closures instead, each labelled as synthetic in
+        # its own provenance.
         outcomes=OutcomeMemoryAdvisor(
-            OutcomeMemory(reader=PostgresOutcomeMemoryReader(settings.database_url)),
+            OutcomeMemory(
+                reader=(
+                    SyntheticOutcomeMemoryReader(settings.database_url)
+                    if synthetic_read_models
+                    else PostgresOutcomeMemoryReader(settings.database_url)
+                )
+            ),
             allow_synthetic=synthetic_read_models,
         ),
         next_actions=next_action_advisor,

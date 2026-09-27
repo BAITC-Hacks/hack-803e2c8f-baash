@@ -12,6 +12,10 @@ from uuid import UUID
 
 from pulse109.outcome_memory import OutcomeMemory, OutcomeMemoryQuery
 
+# Under a minute between the decision and the confirmed closure means the two
+# were recorded by the same process, not that a city problem was fixed that fast.
+_MIN_MEANINGFUL_HOURS = 1 / 60
+
 
 class AppealReader(Protocol):
     def detail(self, request_id: UUID, *, region_id: str) -> Any: ...
@@ -92,7 +96,11 @@ class OutcomeMemoryAdvisor:
                     "outcome_ref": provenance.provenance_ref,
                     "action_codes": list(candidate.retrieval_terms)[:20],
                     "resolution_code": candidate.resolution_code,
-                    "resolution_hours": round(hours, 2),
+                    # A seeded corpus decides and closes within the same second,
+                    # so the duration is an artefact of how the demo was built
+                    # rather than a fact about resolving anything. Reporting a
+                    # median of zero hours would be a lie dressed as a metric.
+                    "resolution_hours": round(hours, 2) if hours >= _MIN_MEANINGFUL_HOURS else None,
                     "reopened_within_7d": None,
                     "recurred_within_30d": None,
                     "evidence_count": len(provenance.evidence),

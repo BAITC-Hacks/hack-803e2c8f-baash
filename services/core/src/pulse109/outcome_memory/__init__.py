@@ -13,8 +13,10 @@ from .postgres import (
     PostgresOutcomeMemoryReader,
 )
 from .service import OutcomeMemory, OutcomeMemoryReader
+from .synthetic import SYNTHETIC_LABEL, SyntheticOutcomeMemoryReader
 
 __all__ = [
+    "SYNTHETIC_LABEL",
     "EvidenceProvenance",
     "OutcomeAssemblyInspection",
     "OutcomeCandidate",
@@ -25,4 +27,5 @@ __all__ = [
     "OutcomeMemoryResult",
     "OutcomeProvenance",
     "PostgresOutcomeMemoryReader",
+    "SyntheticOutcomeMemoryReader",
 ]

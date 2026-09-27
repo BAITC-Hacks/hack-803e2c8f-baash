@@ -32,7 +32,28 @@ back door around the privacy boundary.
 
 ## Current state
 
-Wired into the war room and abstaining, because the demo has no verified
-closures yet. The section reports `abstained, NO_COMPARABLE_VERIFIED_OUTCOME`
-rather than an empty list, so an operator can tell an empty corpus from a
-retrieval that never ran.
+Wired into the war room and answering.
+
+Production retrieval still refuses to yield candidates, correctly. It needs an
+approved corpus, a verified evidence timestamp, a controlled retrieval-term
+mapping and a retention approval, none of which exist. Waiting for those would
+leave the capability invisible, and a capability nobody can see is one nobody
+can judge.
+
+The demo profile therefore mounts a separate reader over the closures the demo
+itself produced through the real closure workflow, human-confirmed and
+evidence-backed. They pass the same model validators production retrieval would
+face, and every record carries `data_classification: synthetic` with an explicit
+`DEMO_SYNTHETIC_OUTCOME_CORPUS` label in its own provenance. The reader refuses a
+caller that has not accepted synthetic data.
+
+These records are a demonstration corpus. They must never appear in a production
+model-quality claim.
+
+## One number the demo cannot show
+
+Resolution time. The seeding script records the decision and the confirmed
+closure within the same second, so the duration is an artefact of how the demo
+was built rather than a fact about resolving anything. Any gap under a minute is
+reported as unknown instead of zero, because a median of zero hours would be a
+lie dressed as a metric.
