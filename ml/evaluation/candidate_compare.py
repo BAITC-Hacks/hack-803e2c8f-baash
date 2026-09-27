@@ -327,6 +327,12 @@ def compare(manifest_path: Path, cases_path: Path, submission_paths: list[Path])
                 )
                 for language in sorted(LANGUAGES)
             },
+            "by_region": {
+                region: metrics(
+                    [row for row in test_cases if row["region_id"] == region], predictions
+                )
+                for region in sorted({row["region_id"] for row in test_cases})
+            },
             "by_question": {
                 question: metrics(
                     [row for row in test_cases if row["question_id"] == question], predictions

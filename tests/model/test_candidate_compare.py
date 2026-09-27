@@ -104,6 +104,7 @@ def test_candidate_comparison_uses_one_test_cohort_and_never_promotes(tmp_path: 
     assert report["production_promotion_allowed"] is False
     assert report["test_count"] == 2
     assert report["models"]["linear_baseline"]["overall"]["top1_accuracy"] == 1.0
+    assert report["models"]["linear_baseline"]["by_region"]["ALA"]["count"] == 2
     assert report["models"]["pulsedm_candidate"]["overall"]["ood_auroc"] == 1.0
     assert report["models"]["linear_baseline"]["by_language"]["mixed"] == {
         "count": 0,
