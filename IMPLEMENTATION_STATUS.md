@@ -1,5 +1,15 @@
 # Pulse 109 Implementation Status
 
+## Current review update (2026-09-26)
+
+- `PULSE109_PROFILE=demo` now selects the PostgreSQL manual, incident, audit and outbox path. A dedicated Compose project runs migrations, the normal worker and web app; `scripts/demo_runtime.py` seeds fixed synthetic appeals and resets only demo volumes. This is an implementation status, not a claim of successful local container smoke until the Docker engine verification completes.
+- The operator queue now reads the actual list and detail contract. Manual decision, optional lexical recommendation, assignment and status actions wait for API receipts; timeline and synchronization come from stored detail. Sample-only incident/replay panels are not presented as live operator actions in the main workspace.
+- The review found and corrected unscoped private-reference access (migration `0022_privacy_region` leaves old unknown-region rows inaccessible), cross-region incident merge idempotency replay, inconsistent split child membership versioning, cross-appeal status-event replay, and recommendation reuse on another appeal.
+- The worker rejects synthetic replay delivery in pilot/production. Demo/local attachment bytes are retained in a dedicated volume; operational uploads fail closed until approved immutable storage and malware scanning exist.
+- Remaining real gaps: no approved regional API/adapter, pilot web OIDC session or multi-region UI, approved storage/scanner, complete operational read models, production model-quality evidence or authoritative SLA/taxonomy. The [feature matrix](docs/FEATURE_STATUS.md) is the concise source of truth for these limits.
+
+The milestone notes below document earlier development and CI evidence. They should not be read as a current certification of all listed capabilities.
+
 ## Current Milestone
 
 - Milestone: cross-cutting governed decision, handoff and evidence-backed closure slices.
@@ -445,4 +455,3 @@ absolute `1e-12` tolerance, with focused acceptance and rejection tests. Databas
 Deploy updated containers to CI/staging environment. Run live PostgreSQL integration tests and verify
 end-to-end incident topology, control plane bundle activation, and Situation Center alert triage.
 Keep external CRM live connectivity dependent on B01-B10 sandbox approval.
-

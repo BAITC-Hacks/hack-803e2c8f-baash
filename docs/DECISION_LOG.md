@@ -723,6 +723,17 @@ Record implementation decisions here when the repository, contracts or available
 - **Evidence:** `services/core/src/pulse109/control_plane/bundles.py`, `services/core/src/pulse109/control_plane/cli.py`, `services/core/src/pulse109/outcomes/postgres.py`, `services/core/tests/control_plane/test_bundles.py`, `services/core/tests/control_plane/test_cli.py`, `tests/integration/test_m9_closure_integrity.py`.
 - **Revisit when:** multi-signature threshold approval for rollback releases is mandated.
 
+### D-068 — Isolated demo profile and fail-closed external seams
+
+- **Date:** 2026-09-26
+- **Status:** accepted for local/demo runtime; operational integrations remain blocked
+- **Context:** the existing local UI and worker could report fabricated decisions or replay delivery, while attachment metadata could be saved without the bytes.
+- **Decision:** use one `demo` profile of the normal FastAPI/PostgreSQL/outbox/worker/web topology, with idempotent labelled fixtures and a dedicated Compose project. Reject replay delivery in pilot/production. Store demo attachment bytes in its isolated volume, but reject operational upload until approved immutable storage and real scanning exist. Bind private-reference access to stored region ownership; leave legacy unknown-region rows inaccessible. The operator queue uses API receipts rather than sample-state success.
+- **Alternatives:** a separate fake demonstration app; enabling replay delivery in pilot; treating metadata-only attachments as stored content.
+- **Consequences:** reviewers can reproduce the same critical path while external gaps remain explicit. Existing private references need an approved region backfill before access. Demo volumes are disposable and must contain synthetic data only.
+- **Evidence:** `infra/compose/docker-compose.demo.yml`, `scripts/demo_runtime.py`, migration `0022_privacy_region`, profile/privacy/worker tests, `docs/DEMO_RUNBOOK.md`.
+- **Revisit when:** the first regional adapter, approved object store/scanner and production identity provider are supplied.
+
 ### D-XXX — Short title
 
 
@@ -734,4 +745,3 @@ Record implementation decisions here when the repository, contracts or available
 - **Consequences:** performance, security, migration and operations impact
 - **Evidence:** benchmark, test, issue or contract reference
 - **Revisit when:** explicit trigger, if any
-
