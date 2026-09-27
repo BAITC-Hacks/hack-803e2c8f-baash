@@ -43,15 +43,8 @@ class OutcomeMemoryAdvisor:
     presents the answer at incident level.
     """
 
-    def __init__(
-        self,
-        memory: OutcomeMemory,
-        *,
-        leading_request: UUID | None = None,
-        allow_synthetic: bool = False,
-    ) -> None:
+    def __init__(self, memory: OutcomeMemory, *, allow_synthetic: bool = False) -> None:
         self._memory = memory
-        self._leading_request = leading_request
         self._allow_synthetic = allow_synthetic
 
     @staticmethod
@@ -66,13 +59,18 @@ class OutcomeMemoryAdvisor:
         return tuple(terms) or ("unclassified",)
 
     def comparable(
-        self, *, region_id: str, topic_id: str, service_id: str | None
+        self,
+        *,
+        region_id: str,
+        topic_id: str,
+        service_id: str | None,
+        leading_request_id: UUID | None,
     ) -> list[dict[str, Any]]:
-        if self._leading_request is None or service_id is None:
+        if leading_request_id is None or service_id is None:
             return []
         result = self._memory.retrieve(
             OutcomeMemoryQuery(
-                request_id=self._leading_request,
+                request_id=leading_request_id,
                 region_id=region_id,
                 service_id=service_id,
                 topic_id=topic_id,

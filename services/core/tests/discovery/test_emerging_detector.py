@@ -203,3 +203,36 @@ def test_a_located_report_without_business_time_may_still_join_on_geography() ->
     cluster = report.clusters[0]
     assert untimed.request_id in {member.request_id for member in cluster.members}
     assert cluster.members_without_business_time == 1
+
+
+def test_two_unrelated_unusual_reports_do_not_link_on_novelty() -> None:
+    """Found by looking at a cluster on screen.
+
+    A lighting report a kilometre from a water chain joined it, because both
+    were unusual and novelty was scored as if it measured similarity. Novelty
+    describes one report. Only geography, time and taxonomy can say that two
+    reports belong together.
+    """
+    chain = [
+        feature(minutes=index * 5, longitude=76.8900 + index * 0.0012, latitude=43.2380)
+        for index in range(4)
+    ]
+    distant = DiscoveryFeature(
+        request_id=uuid4(),
+        region_id="ALA",
+        received_at=BASE + timedelta(minutes=8),
+        time_quality="missing",
+        topic_id=None,
+        service_id=None,
+        language="kk",
+        longitude=76.9020,
+        latitude=43.2450,
+        routing_confidence=None,
+        manual_review=True,
+    )
+    report = EmergingIssueDetector().scan(
+        [*chain, distant], region_id="ALA", window_hours=6, now=BASE + timedelta(hours=1)
+    )
+    joined = {member.request_id for cluster in report.clusters for member in cluster.members}
+    assert distant.request_id not in joined
+    assert len(joined) == 4

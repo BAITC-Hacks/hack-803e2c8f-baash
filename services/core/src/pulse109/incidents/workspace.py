@@ -56,7 +56,12 @@ class OutcomeAdvisor(Protocol):
     """Verified, human-closed outcomes comparable to this incident."""
 
     def comparable(
-        self, *, region_id: str, topic_id: str, service_id: str | None
+        self,
+        *,
+        region_id: str,
+        topic_id: str,
+        service_id: str | None,
+        leading_request_id: UUID | None,
     ) -> list[dict[str, Any]]: ...
 
 
@@ -202,7 +207,7 @@ class PostgresIncidentWorkspaceService:
             members=members,
             geo=build_footprint(members),
             ownership=self._assess_ownership(members, region_id),
-            similar_outcomes=self._comparable_outcomes(detail),
+            similar_outcomes=self._comparable_outcomes(detail, members),
             next_actions=NextActionSummary(
                 status=CapabilityStatus.unavailable("NEXT_ACTION_NOT_CONFIGURED")
             ),
@@ -379,17 +384,24 @@ class PostgresIncidentWorkspaceService:
             reason_codes=list(assessment.get("reason_codes") or [])[:20],
         )
 
-    def _comparable_outcomes(self, detail: IncidentDetail) -> SimilarOutcomes:
+    def _comparable_outcomes(
+        self, detail: IncidentDetail, members: Sequence[WorkspaceMember]
+    ) -> SimilarOutcomes:
         if self._outcomes is None:
             return SimilarOutcomes(
                 status=CapabilityStatus.unavailable("OUTCOME_MEMORY_NOT_CONFIGURED"),
                 comparable_count=0,
             )
         try:
+            leading = next(
+                (member for member in members if member.membership == "confirmed"),
+                members[0] if members else None,
+            )
             rows = self._outcomes.comparable(
                 region_id=detail.region_id,
                 topic_id=detail.topic_id,
                 service_id=detail.service_id,
+                leading_request_id=leading.request_id if leading else None,
             )
         except Exception:
             _LOGGER.warning("outcome memory unavailable", exc_info=True)

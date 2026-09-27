@@ -76,6 +76,11 @@ def _pair_affinity(
     A pair with no coordinates is not penalised for it. The geo weight is simply
     removed from the denominator, so an unmeasurable signal never masquerades as
     a measured zero.
+
+    Novelty is not part of this. It says how poorly one report fits the taxonomy,
+    which is a property of that report alone. Scoring it here let two unrelated
+    unusual reports link on the strength of both being unusual, and a lighting
+    report duly joined a water cluster a kilometre away.
     """
     components: list[tuple[float, float, str, ClusterSignal]] = []
 
@@ -123,9 +128,6 @@ def _pair_affinity(
                 ClusterSignal.TAXONOMY,
             )
         )
-
-    novelty = (_novelty(left) + _novelty(right)) / 2
-    components.append((policy.weight_novelty, novelty, "LOW_TAXONOMY_FIT", ClusterSignal.NOVELTY))
 
     total_weight = sum(weight for weight, _, _, _ in components)
     if total_weight <= 0:

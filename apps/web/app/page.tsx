@@ -4,7 +4,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Intake } from "./intake";
 import { AnalyticsPanel } from "./analytics-panel";
 import { ClosureIntegrityPanel } from "./closure-integrity-panel";
+import { IncidentWarRoom } from "./incident-war-room";
 import { IncidentWorkflowPanel } from "./incident-workflow-panel";
+import { OperationsCenter } from "./operations-center";
 import { OwnershipHandoffPanel } from "./ownership-handoff-panel";
 
 type Locale = "ru" | "kk";
@@ -59,6 +61,7 @@ type SessionContext = {
 
 const labels = {
   ru: {
+    operations: "Операционный центр",
     intake: "Подать обращение",
     queue: "Очередь оператора",
     situation: "Статус платформы",
@@ -80,6 +83,7 @@ const labels = {
       "В этом регионе пока нет обращений. Создайте синтетическое обращение через форму или запустите seed.",
   },
   kk: {
+    operations: "Операциялық орталық",
     intake: "Өтініш беру",
     queue: "Оператор кезегі",
     situation: "Платформа мәртебесі",
@@ -163,7 +167,12 @@ export default function OperatorWorkspace() {
     return created;
   }
 
-  const [view, setView] = useState<"queue" | "intake" | "situation">("queue");
+  const [view, setView] = useState<
+    "operations" | "queue" | "intake" | "situation"
+  >("operations");
+  const [warRoomIncidentId, setWarRoomIncidentId] = useState<string | null>(
+    null,
+  );
   const [profile, setProfile] = useState<string | null>(null);
   const [appeals, setAppeals] = useState<Appeal[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -433,16 +442,18 @@ export default function OperatorWorkspace() {
       <header className="topbar">
         <strong className="brand">Pulse 109</strong>
         <nav className="view-switch" aria-label="Workspace view">
-          {(["queue", "intake", "situation"] as const).map((name) => (
-            <button
-              key={name}
-              type="button"
-              aria-pressed={view === name}
-              onClick={() => setView(name)}
-            >
-              {copy[name]}
-            </button>
-          ))}
+          {(["operations", "queue", "intake", "situation"] as const).map(
+            (name) => (
+              <button
+                key={name}
+                type="button"
+                aria-pressed={view === name}
+                onClick={() => setView(name)}
+              >
+                {copy[name]}
+              </button>
+            ),
+          )}
         </nav>
         <div className="topbar-actions">
           <span className="profile">
@@ -465,6 +476,23 @@ export default function OperatorWorkspace() {
         </div>
       </header>
 
+      {view === "operations" ? (
+        <div className="workspace real-workspace">
+          {warRoomIncidentId ? (
+            <IncidentWarRoom
+              locale={locale}
+              regionId={region}
+              incidentId={warRoomIncidentId}
+              onClose={() => setWarRoomIncidentId(null)}
+            />
+          ) : null}
+          <OperationsCenter
+            locale={locale}
+            regionId={region}
+            onOpenIncident={(incidentId) => setWarRoomIncidentId(incidentId)}
+          />
+        </div>
+      ) : null}
       {view === "intake" ? (
         <Intake
           locale={locale}

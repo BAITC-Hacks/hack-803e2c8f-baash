@@ -43,7 +43,10 @@ from pulse109.incidents import (
     create_incident_router,
 )
 from pulse109.incidents.workspace import PostgresIncidentWorkspaceService
-from pulse109.incidents.workspace_advisors import ManualPathOwnershipAdvisor
+from pulse109.incidents.workspace_advisors import (
+    ManualPathOwnershipAdvisor,
+    OutcomeMemoryAdvisor,
+)
 from pulse109.intake import (
     EmptyIntakePolicyRepository,
     IntakeApplicationService,
@@ -60,6 +63,7 @@ from pulse109.manual_path import (
 from pulse109.next_action import NextActionAdvisor, create_next_action_router
 from pulse109.observability import configure_observability
 from pulse109.operations import PostgresOperationsService, create_operations_router
+from pulse109.outcome_memory import OutcomeMemory, PostgresOutcomeMemoryReader
 from pulse109.outcomes import (
     ClosureIntegrityService,
     PostgresClosureRepository,
@@ -196,10 +200,17 @@ else:
 next_action_advisor = NextActionAdvisor()
 incident_workspace_service: PostgresIncidentWorkspaceService | None = None
 if use_postgres_manual_path:
+    # Outcome memory answers for the incident's leading appeal, which is where
+    # its provenance chain starts. With no verified closures yet it abstains,
+    # which the war room shows as such rather than as "not configured".
     incident_workspace_service = PostgresIncidentWorkspaceService(
         settings.database_url,
         detail_reader=incident_service,
         ownership=ManualPathOwnershipAdvisor(manual_service, ownership_service),
+        outcomes=OutcomeMemoryAdvisor(
+            OutcomeMemory(reader=PostgresOutcomeMemoryReader(settings.database_url)),
+            allow_synthetic=synthetic_read_models,
+        ),
         next_actions=next_action_advisor,
         synthetic=synthetic_read_models,
     )

@@ -49,16 +49,19 @@ class DiscoveryPolicy(StrictModel):
     min_cluster_size: int = Field(default=3, ge=2, le=1000)
     min_cohesion: float = Field(default=0.35, ge=0.0, le=1.0)
     min_novelty: float = Field(default=0.30, ge=0.0, le=1.0)
-    weight_geo: float = Field(default=0.35, ge=0.0, le=1.0)
-    weight_time: float = Field(default=0.25, ge=0.0, le=1.0)
-    weight_taxonomy: float = Field(default=0.20, ge=0.0, le=1.0)
-    weight_novelty: float = Field(default=0.20, ge=0.0, le=1.0)
+    # Novelty is deliberately absent from these weights. It describes one report,
+    # not the relationship between two, so letting it link a pair makes any two
+    # unusual reports look related. It gates the cluster instead, through
+    # min_novelty.
+    weight_geo: float = Field(default=0.45, ge=0.0, le=1.0)
+    weight_time: float = Field(default=0.30, ge=0.0, le=1.0)
+    weight_taxonomy: float = Field(default=0.25, ge=0.0, le=1.0)
 
     @model_validator(mode="after")
     def validate_weights(self) -> DiscoveryPolicy:
-        total = self.weight_geo + self.weight_time + self.weight_taxonomy + self.weight_novelty
+        total = self.weight_geo + self.weight_time + self.weight_taxonomy
         if not 0.99 <= total <= 1.01:
-            raise ValueError("cluster score weights must sum to one")
+            raise ValueError("affinity weights must sum to one")
         return self
 
 
