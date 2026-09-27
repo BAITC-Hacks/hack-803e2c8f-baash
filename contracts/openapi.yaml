@@ -89,7 +89,7 @@ paths:
       parameters:
         - name: X-Region-Id
           in: header
-          required: false
+          required: true
           schema:
             type: string
             pattern: '^(ALL|[A-Z0-9_-]{2,32})$'
@@ -98,12 +98,7 @@ paths:
           required: false
           schema:
             type: string
-            enum: [new, triage, assigned, in_progress, resolved, closed, reopened, cancelled]
-        - name: category
-          in: query
-          required: false
-          schema:
-            type: string
+            enum: [new, triage, assigned, accepted, in_progress, waiting, resolved, closed, reopened, cancelled]
         - name: limit
           in: query
           required: false
@@ -111,7 +106,7 @@ paths:
             type: integer
             default: 50
             minimum: 1
-            maximum: 200
+            maximum: 100
         - name: offset
           in: query
           required: false
@@ -125,7 +120,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AppealListResponse'
+                type: array
+                items:
+                  $ref: '#/components/schemas/Appeal'
         '403':
           $ref: '#/components/responses/Forbidden'
     post:
@@ -170,6 +167,7 @@ paths:
     post:
       tags: [Requests]
       summary: Ingest and validate an attachment for an appeal
+      description: Demo/local stores validated bytes; pilot/production return 503 until approved storage and scanning are configured.
       operationId: uploadAttachment
       security:
         - bearerAuth: []
@@ -177,10 +175,10 @@ paths:
         - $ref: '#/components/parameters/RequestId'
         - name: X-Region-Id
           in: header
-          required: false
+          required: true
           schema:
             type: string
-            pattern: '^(ALL|[A-Z0-9_-]{2,32})$'
+            pattern: '^[A-Z0-9_-]{2,32}$'
       requestBody:
         required: true
         content:
@@ -202,6 +200,8 @@ paths:
           $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
     get:
       tags: [Requests]
       summary: List registered attachments for an appeal
@@ -212,17 +212,19 @@ paths:
         - $ref: '#/components/parameters/RequestId'
         - name: X-Region-Id
           in: header
-          required: false
+          required: true
           schema:
             type: string
-            pattern: '^(ALL|[A-Z0-9_-]{2,32})$'
+            pattern: '^[A-Z0-9_-]{2,32}$'
       responses:
         '200':
           description: List of attachments
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AttachmentListResponse'
+                type: array
+                items:
+                  $ref: '#/components/schemas/AttachmentRef'
         '403':
           $ref: '#/components/responses/Forbidden'
         '404':
@@ -1166,10 +1168,10 @@ paths:
             type: string
         - name: X-Region-Id
           in: header
-          required: false
+          required: true
           schema:
             type: string
-            pattern: '^(ALL|[A-Z0-9_-]{2,32})$'
+            pattern: '^[A-Z0-9_-]{2,32}$'
       requestBody:
         required: true
         content:
@@ -1202,10 +1204,10 @@ paths:
             type: string
         - name: X-Region-Id
           in: header
-          required: false
+          required: true
           schema:
             type: string
-            pattern: '^(ALL|[A-Z0-9_-]{2,32})$'
+            pattern: '^[A-Z0-9_-]{2,32}$'
       responses:
         '200':
           description: Audit history of access to this private token
@@ -2751,61 +2753,41 @@ components:
         status:
           type: string
           enum: [activated]
-    AppealListResponse:
-      type: object
-      additionalProperties: false
-      required:
-        - items
-        - total
-        - limit
-        - offset
-      properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/Appeal'
-        total:
-          type: integer
-          minimum: 0
-        limit:
-          type: integer
-          minimum: 1
-        offset:
-          type: integer
-          minimum: 0
     AttachmentUploadInput:
       type: object
       additionalProperties: false
       required:
-        - filename
-        - content_b64
-        - media_type
+        - file_name
+        - content_base64
+        - mime_type
       properties:
-        filename:
+        file_name:
           type: string
           minLength: 1
-          maxLength: 255
-        content_b64:
+          maxLength: 256
+        content_base64:
           type: string
-        media_type:
+          minLength: 1
+          maxLength: 14000000
+        mime_type:
           type: string
-        data_classification:
-          type: string
-          default: public
+          minLength: 3
+          maxLength: 128
     AttachmentRef:
       type: object
       additionalProperties: false
       required:
-        - id
+        - attachment_id
         - appeal_id
         - object_ref
+        - file_name
         - object_hash
-        - media_type
+        - mime_type
         - byte_size
         - data_classification
         - created_at
       properties:
-        id:
+        attachment_id:
           type: string
           format: uuid
         appeal_id:
@@ -2813,10 +2795,12 @@ components:
           format: uuid
         object_ref:
           type: string
+        file_name:
+          type: string
         object_hash:
           type: string
           pattern: '^[0-9a-f]{64}$'
-        media_type:
+        mime_type:
           type: string
         byte_size:
           type: integer
@@ -2826,16 +2810,6 @@ components:
         created_at:
           type: string
           format: date-time
-    AttachmentListResponse:
-      type: object
-      additionalProperties: false
-      required:
-        - items
-      properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/AttachmentRef'
     ResolvePrivateRefInput:
       type: object
       additionalProperties: false
@@ -2855,6 +2829,7 @@ components:
       additionalProperties: false
       required:
         - token
+        - region_id
         - vault_ref
         - classification
         - access_scope
@@ -2863,6 +2838,9 @@ components:
       properties:
         token:
           type: string
+        region_id:
+          type: string
+          pattern: '^[A-Z0-9_-]{2,32}$'
         vault_ref:
           type: string
         classification:

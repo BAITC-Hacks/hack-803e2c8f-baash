@@ -28,6 +28,7 @@ class PrivacyService:
         self,
         *,
         token: str,
+        region_id: str,
         vault_ref: str,
         classification: PrivacyClassification,
         access_scope: list[str],
@@ -37,6 +38,7 @@ class PrivacyService:
     ) -> PrivateRef:
         ref = PrivateRef(
             token=token,
+            region_id=region_id,
             vault_ref=vault_ref,
             classification=classification,
             access_scope=access_scope,
@@ -54,15 +56,13 @@ class PrivacyService:
         actor: AuthenticatedActor,
         action: Literal["view", "reveal", "export"],
         reason_code: str,
-        region_id: str | None = None,
+        region_id: str,
     ) -> PrivateRef:
         ref = self.repository.get(token)
         if ref is None:
             raise PrivacyAccessError("private_ref_not_found", "Private reference not found.", 404)
 
-        # Region check if applicable
-        if region_id is not None:
-            actor.require_region(region_id)
+        self._require_region(ref, actor, region_id)
 
         # Authorization: actor must possess at least one role permitted in access_scope
         if not actor.roles.intersection(ref.access_scope):
@@ -93,10 +93,30 @@ class PrivacyService:
             action=audit_action,
             token=token,
             actor_token=actor.actor_id,
-            region_id=region_id,
+            region_id=ref.region_id,
             reason_code=reason_code,
             observed_at=datetime.now(timezone.utc),
             payload=safe_audit_payload,
         )
         self.repository.record_access_audit(audit)
         return ref
+
+    @staticmethod
+    def _require_region(ref: PrivateRef, actor: AuthenticatedActor, region_id: str) -> None:
+        # Rows created before region ownership was recorded remain inaccessible
+        # until an approved migration assigns their true source region.
+        if ref.region_id is None or ref.region_id != region_id:
+            raise PrivacyAccessError(
+                "privacy_region_denied", "Private reference is outside region scope."
+            )
+        actor.require_region(ref.region_id)
+
+    def list_audits(
+        self, token: str, *, actor: AuthenticatedActor, region_id: str
+    ) -> list[PIIAccessAudit]:
+        actor.require_any_role("auditor", "supervisor", "admin")
+        ref = self.repository.get(token)
+        if ref is None:
+            raise PrivacyAccessError("private_ref_not_found", "Private reference not found.", 404)
+        self._require_region(ref, actor, region_id)
+        return self.repository.list_access_audits(token)

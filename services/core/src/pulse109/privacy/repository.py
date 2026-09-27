@@ -52,18 +52,13 @@ class PostgresPrivateRefRepository:
             cur.execute(
                 """
                 INSERT INTO privacy.private_ref
-                    (token, vault_ref, classification, access_scope, retention_class,
+                    (token, region_id, vault_ref, classification, access_scope, retention_class,
                      created_at, deletion_due_at)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
-                ON CONFLICT (token) DO UPDATE SET
-                    vault_ref = EXCLUDED.vault_ref,
-                    classification = EXCLUDED.classification,
-                    access_scope = EXCLUDED.access_scope,
-                    retention_class = EXCLUDED.retention_class,
-                    deletion_due_at = EXCLUDED.deletion_due_at
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                 """,
                 (
                     ref.token,
+                    ref.region_id,
                     ref.vault_ref,
                     ref.classification,
                     ref.access_scope,
@@ -78,7 +73,7 @@ class PostgresPrivateRefRepository:
         with self._connection() as conn, conn.cursor() as cur:
             cur.execute(
                 """
-                SELECT token, vault_ref, classification, access_scope, retention_class,
+                SELECT token, region_id, vault_ref, classification, access_scope, retention_class,
                        created_at, deletion_due_at
                 FROM privacy.private_ref
                 WHERE token = %s
@@ -90,6 +85,7 @@ class PostgresPrivateRefRepository:
                 return None
             return PrivateRef(
                 token=str(row["token"]),
+                region_id=row["region_id"],
                 vault_ref=str(row["vault_ref"]),
                 classification=row["classification"],
                 access_scope=list(row["access_scope"]),

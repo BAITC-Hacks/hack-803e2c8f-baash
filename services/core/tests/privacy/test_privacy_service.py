@@ -24,6 +24,7 @@ def test_privacy_service_registers_and_resolves_with_audit():
     # Register citizen address token
     service.register_ref(
         token="token-addr-001",
+        region_id="ALA",
         vault_ref="vault://addresses/sha256-abc",
         classification="pii_address",
         access_scope=["operator", "supervisor"],
@@ -62,6 +63,7 @@ def test_privacy_service_reveal_and_export_audit_actions():
 
     service.register_ref(
         token="token-phone-002",
+        region_id="ALA",
         vault_ref="vault://phones/sha256-def",
         classification="pii_phone",
         access_scope=["supervisor"],
@@ -100,6 +102,7 @@ def test_privacy_service_fails_closed_when_unauthorized():
 
     service.register_ref(
         token="token-ident-003",
+        region_id="ALA",
         vault_ref="vault://id/sha256-ghi",
         classification="pii_identifier",
         access_scope=["supervisor", "auditor"],

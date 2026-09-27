@@ -24,6 +24,7 @@ def test_privacy_router_resolves_and_logs_audit() -> None:
 
     service.register_ref(
         token="token-phone-999",
+        region_id="ALA",
         vault_ref="vault://phone/+77011234567",
         classification="pii_phone",
         access_scope=["operator", "supervisor"],
@@ -62,6 +63,7 @@ def test_privacy_router_fails_closed_when_unauthorized() -> None:
 
     service.register_ref(
         token="token-iin-001",
+        region_id="ALA",
         vault_ref="vault://iin/900101300123",
         classification="pii_identifier",
         access_scope=["supervisor"],
@@ -89,6 +91,7 @@ def test_privacy_router_audits_endpoint_requires_supervisor_or_auditor() -> None
 
     service.register_ref(
         token="token-addr-002",
+        region_id="ALA",
         vault_ref="vault://addr/sha256-addr",
         classification="pii_address",
         access_scope=["operator", "supervisor"],
@@ -115,3 +118,33 @@ def test_privacy_router_audits_endpoint_requires_supervisor_or_auditor() -> None
     response = client.get("/v1/privacy/references/token-addr-002/audits", headers=headers_auditor)
     assert response.status_code == 200
     assert isinstance(response.json(), list)
+
+
+def test_private_reference_and_audits_reject_other_region_even_with_valid_role() -> None:
+    client, service, repo = _client()
+    service.register_ref(
+        token="token-akt-001",
+        region_id="AKT",
+        vault_ref="vault://opaque/one",
+        classification="pii_address",
+        access_scope=["supervisor"],
+        retention_class="approved-class",
+    )
+    headers = {
+        "X-Actor-Token": "kar-supervisor",
+        "X-Actor-Roles": "supervisor",
+        "X-Actor-Regions": "KAR",
+        "X-Region-Id": "KAR",
+    }
+    result = client.post(
+        "/v1/privacy/references/token-akt-001/resolve",
+        headers=headers,
+        json={"action": "view", "reason_code": "AUDIT_REVIEW"},
+    )
+    assert result.status_code == 403
+    assert result.json()["detail"]["code"] == "privacy_region_denied"
+    assert (
+        client.get("/v1/privacy/references/token-akt-001/audits", headers=headers).status_code
+        == 403
+    )
+    assert repo.list_access_audits("token-akt-001") == []

@@ -688,15 +688,15 @@ class PostgresIncidentService:
                 )
                 if cursor.fetchone() is None:
                     raise IncidentError("not_found", "Incident not found.", 404)
-            prior = self._idempotency(cursor, scope, idempotency_key, request_hash)
-            if prior is not None:
-                return prior
             source = self._incident(cursor, source_id, region_id, lock=False)
             target = self._incident(cursor, command.target_incident_id, region_id, lock=False)
             if source.region_id != target.region_id:
                 raise IncidentError(
                     "region_scope_denied", "Incident is outside the actor region.", 403
                 )
+            prior = self._idempotency(cursor, scope, idempotency_key, request_hash)
+            if prior is not None:
+                return prior
             if source.version != command.source_version or target.version != command.target_version:
                 raise IncidentError("stale_version", "An incident changed during review.")
             if source.state in {"proposed", "rejected", "superseded"} or target.state in {
@@ -864,7 +864,6 @@ class PostgresIncidentService:
                 FROM incidents.incident WHERE incident_id=%s""",
                 (child_id, f"{idempotency_key}:child", correlation_id, actor, at, source_id),
             )
-            child_version = 2
             for index, request_id in enumerate(selected):
                 self._record_membership(
                     cursor,
@@ -884,19 +883,6 @@ class PostgresIncidentService:
                     "(incident_id, request_id, proposed_at, rationale) "
                     "VALUES (%s, %s, %s, %s::jsonb)",
                     (child_id, request_id, at, "[]"),
-                )
-                self._record_membership(
-                    cursor,
-                    incident_id=child_id,
-                    request_id=request_id,
-                    version=child_version,
-                    decision="confirm",
-                    reason_code=command.reason_code,
-                    evidence_refs=command.evidence_refs,
-                    actor=actor,
-                    idempotency_key=f"{idempotency_key}:child:{index}",
-                    correlation_id=correlation_id,
-                    at=at,
                 )
             source = self._incident(cursor, source_id, region_id, lock=False)
             child = self._incident(cursor, child_id, region_id, lock=False)

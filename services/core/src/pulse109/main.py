@@ -85,14 +85,16 @@ from pulse109.retrieval import HybridRetriever, create_retrieval_router, synthet
 app = FastAPI(
     title="Pulse 109 Core API",
     version=__version__,
-    docs_url="/docs" if get_settings().environment in {"local", "development", "test"} else None,
+    docs_url="/docs"
+    if get_settings().effective_profile in {"local", "development", "test", "demo"}
+    else None,
     redoc_url=None,
 )
 configure_observability(app, get_settings())
 
 # Memory is an explicit local/test fallback. Pilot and production always use PostgreSQL.
 settings = get_settings()
-use_postgres_manual_path = settings.environment in {"pilot", "production"} or (
+use_postgres_manual_path = settings.effective_profile in {"demo", "pilot", "production"} or (
     settings.manual_repository_mode == "postgres"
 )
 manual_repository: InMemoryManualRepository | PostgresManualRepository
@@ -113,7 +115,7 @@ app.include_router(
     create_intake_router(
         IntakeApplicationService(
             intake_repository,
-            allow_synthetic=settings.environment in {"local", "development", "test"},
+            allow_synthetic=settings.effective_profile in {"local", "development", "test", "demo"},
         )
     )
 )
@@ -122,7 +124,7 @@ handoff_service: HandoffOutcomeService | None
 if use_postgres_manual_path:
     ownership_repository = PostgresOwnershipRepository(
         settings.database_url,
-        allow_synthetic=settings.environment in {"local", "development", "test"},
+        allow_synthetic=settings.effective_profile in {"local", "development", "test", "demo"},
     )
     handoff_service = HandoffOutcomeService(ownership_repository)
 else:
@@ -133,7 +135,7 @@ app.include_router(
         manual_service,
         OwnershipService(
             ownership_repository,
-            allow_synthetic=settings.environment in {"local", "development", "test"},
+            allow_synthetic=settings.effective_profile in {"local", "development", "test", "demo"},
         ),
         handoff_service,
     )
@@ -147,7 +149,7 @@ app.include_router(
     create_confidence_publication_router(
         ConfidencePublicationService(
             settings.database_url,
-            allow_synthetic=settings.environment in {"local", "development", "test"},
+            allow_synthetic=settings.effective_profile in {"local", "development", "test", "demo"},
         )
         if use_postgres_manual_path
         else None
@@ -168,7 +170,7 @@ app.include_router(
     )
 )
 
-synthetic_read_models = settings.environment in {"local", "development", "test"}
+synthetic_read_models = settings.effective_profile in {"local", "development", "test", "demo"}
 retrieval_service = HybridRetriever(synthetic_corpus() if synthetic_read_models else [])
 app.include_router(create_retrieval_router(retrieval_service))
 
@@ -283,7 +285,7 @@ def _resolve_control_plane_verifier(s: Settings) -> BundleVerifierProvider | Non
                     trusted_keys[key_id] = loaded
     if trusted_keys:
         return lambda reg: BundleVerifier(trusted_keys, expected_region_id=reg)
-    if s.environment in {"local", "development", "test"}:
+    if s.effective_profile in {"local", "development", "test", "demo"}:
         dev_key = Ed25519PrivateKey.generate().public_key()
         return lambda reg: BundleVerifier(
             {"synthetic-test-key": dev_key, "key-kar": dev_key},
@@ -341,7 +343,11 @@ async def liveness() -> dict[str, str]:
 async def readiness() -> dict[str, Any]:
     settings = get_settings()
     if not settings.readiness_database_required:
-        return {"status": "ready", "checks": {"database": "disabled-by-profile"}}
+        return {
+            "status": "ready",
+            "profile": settings.effective_profile,
+            "checks": {"database": "disabled-by-profile"},
+        }
 
     try:
         async with get_engine().connect() as connection:
@@ -355,4 +361,8 @@ async def readiness() -> dict[str, Any]:
             },
         ) from exc
 
-    return {"status": "ready", "checks": {"database": "ready"}}
+    return {
+        "status": "ready",
+        "profile": settings.effective_profile,
+        "checks": {"database": "ready"},
+    }

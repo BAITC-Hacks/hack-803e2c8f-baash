@@ -36,7 +36,46 @@ jobs:
       - name: Build
         run: make build
       - name: Validate Compose model
-        run: docker compose -f infra/compose/docker-compose.yml config --quiet
+        run: |
+          docker compose -f infra/compose/docker-compose.yml config --quiet
+          docker compose -f infra/compose/docker-compose.yml -f infra/compose/docker-compose.demo.yml config --quiet
+
+  demo-profile-smoke:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.11.28"
+      - name: Bootstrap locked Python dependencies
+        run: uv sync --all-groups --frozen
+      - name: Start and seed the real demo profile
+        run: uv run python scripts/demo_runtime.py up
+      - name: Verify seeded PostgreSQL state and visible profile
+        run: |
+          python - <<'PY'
+          import json
+          import urllib.request
+
+          def get(path):
+              request = urllib.request.Request('http://127.0.0.1:8080' + path, headers={'X-Region-Id': 'ALA'})
+              with urllib.request.urlopen(request, timeout=10) as response:
+                  return json.load(response)
+
+          health = get('/v1/health/ready')
+          assert health['profile'] == 'demo' and health['checks']['database'] == 'ready'
+          appeals = get('/v1/requests?limit=50')
+          sources = {appeal['source_request_id'] for appeal in appeals}
+          assert {'demo-109-water-001', 'demo-109-light-002', 'demo-109-road-003'} <= sources
+          assert all(appeal['source_system'].endswith('-synthetic') for appeal in appeals)
+          PY
+          curl --fail http://127.0.0.1:3000/api/health
+      - name: Capture demo container logs
+        if: always()
+        run: docker compose -f infra/compose/docker-compose.yml -f infra/compose/docker-compose.demo.yml logs --no-color
+      - name: Stop demo topology
+        if: always()
+        run: docker compose -f infra/compose/docker-compose.yml -f infra/compose/docker-compose.demo.yml down --volumes
 
   container-smoke:
     runs-on: ubuntu-24.04
@@ -63,7 +102,7 @@ jobs:
             psql -U pulse109 -d pulse109 -Atc \
             "SELECT string_agg(extname, ',' ORDER BY extname) FROM pg_extension WHERE extname IN ('postgis','vector');")" = "postgis,vector"
             test "$(docker compose -f infra/compose/docker-compose.yml exec -T postgres \
-              psql -U pulse109 -d pulse109 -Atc "SELECT version_num FROM alembic_version;")" = "0020_bundle_activation"
+              psql -U pulse109 -d pulse109 -Atc "SELECT version_num FROM alembic_version;")" = "0022_privacy_region"
       - name: Verify PostgreSQL-backed import
         env:
           PULSE109_TEST_DATABASE_URL: postgresql://pulse109:pulse109-local@127.0.0.1:5432/pulse109
@@ -87,7 +126,7 @@ jobs:
             "SELECT md5(coalesce(string_agg(raw_payload_hash::text, '' ORDER BY id), '')) FROM integration.source_record")
           test "$source_hash" = "$restored_hash"
           test "$("${compose[@]}" exec -T postgres psql -U pulse109 -d pulse109_restore -Atc \
-              'SELECT version_num FROM alembic_version')" = "0020_bundle_activation"
+              'SELECT version_num FROM alembic_version')" = "0022_privacy_region"
       - name: Capture container logs
         if: always()
         run: docker compose -f infra/compose/docker-compose.yml logs --no-color

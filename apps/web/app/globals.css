@@ -124,6 +124,14 @@ a {
   grid-template-columns: 220px minmax(0, 1fr);
 }
 
+.real-workspace {
+  display: block;
+}
+
+.real-workspace .content {
+  margin: 0 auto;
+}
+
 aside {
   padding: 24px 16px;
   background: #edf1ef;
@@ -916,7 +924,8 @@ textarea:focus-visible {
   font-weight: 700;
 }
 
-.manual-fields select {
+.manual-fields select,
+.manual-fields input {
   width: 100%;
   min-height: 38px;
   padding: 7px 9px;

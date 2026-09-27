@@ -1,0 +1,22 @@
+name: pulse109-demo
+
+services:
+  core-api:
+    environment:
+      PULSE109_PROFILE: demo
+      PULSE109_DEMO_ATTACHMENT_DIR: /app/.data/attachments
+      PULSE109_REPLAY_SNAPSHOT_DIR: /app/.data/snapshots
+    volumes:
+      - demo-attachments:/app/.data/attachments
+      - demo-snapshots:/app/.data/snapshots
+  worker:
+    environment:
+      PULSE109_PROFILE: demo
+      PULSE109_WORKER_ADAPTER_MODE: replay
+  web:
+    environment:
+      PULSE109_PROFILE: demo
+
+volumes:
+  demo-attachments:
+  demo-snapshots:

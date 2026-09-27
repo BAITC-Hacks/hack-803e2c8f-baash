@@ -29,7 +29,7 @@ def test_openapi_31_contract_is_valid_and_stable() -> None:
     assert document["openapi"] == "3.1.0"
     assert len(operations) == 42
     assert len({item["operationId"] for item in operations}) == 42
-    assert len(document["components"]["schemas"]) == 67
+    assert len(document["components"]["schemas"]) == 65
 
 
 def test_control_plane_bundle_contract_is_valid() -> None:
@@ -317,19 +317,19 @@ def test_attachment_contract_schemas_are_valid() -> None:
     ref_validator = Draft202012Validator(document["components"]["schemas"]["AttachmentRef"])
 
     valid_upload = {
-        "filename": "photo.jpg",
-        "content_b64": "aGVsbG8=",
-        "media_type": "image/jpeg",
-        "data_classification": "public",
+        "file_name": "photo.jpg",
+        "content_base64": "aGVsbG8=",
+        "mime_type": "image/jpeg",
     }
     assert list(upload_validator.iter_errors(valid_upload)) == []
 
     valid_ref = {
-        "id": "00000000-0000-0000-0000-000000000001",
+        "attachment_id": "00000000-0000-0000-0000-000000000001",
         "appeal_id": "00000000-0000-0000-0000-000000000002",
         "object_ref": "s3://attachments/file.jpg",
+        "file_name": "photo.jpg",
         "object_hash": "a" * 64,
-        "media_type": "image/jpeg",
+        "mime_type": "image/jpeg",
         "byte_size": 1024,
         "data_classification": "public",
         "created_at": "2026-09-26T12:00:00Z",
@@ -354,6 +354,7 @@ def test_privacy_contract_schemas_are_valid() -> None:
 
     valid_ref = {
         "token": "token-123",
+        "region_id": "ALA",
         "vault_ref": "vault://addr/123",
         "classification": "pii_address",
         "access_scope": ["operator", "supervisor"],

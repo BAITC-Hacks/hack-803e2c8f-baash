@@ -263,7 +263,7 @@ class AttachmentUploadInput(BaseModel):
 
     file_name: str = Field(min_length=1, max_length=256)
     mime_type: str = Field(min_length=3, max_length=128)
-    content_base64: str = Field(min_length=1)
+    content_base64: str = Field(min_length=1, max_length=14_000_000)
 
 
 class AttachmentRef(BaseModel):

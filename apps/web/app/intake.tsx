@@ -141,10 +141,14 @@ const initialDraft: IntakeDraft = {
   location: "",
   contact: "none",
 };
-const syntheticAssistEnabled =
-  process.env.NEXT_PUBLIC_PULSE109_SYNTHETIC_ASSIST === "true";
-
-export function Intake({ locale }: { locale: Locale }) {
+export function Intake({
+  locale,
+  demoEnabled,
+}: {
+  locale: Locale;
+  demoEnabled: boolean;
+}) {
+  const syntheticAssistEnabled = demoEnabled;
   const copy = labels[locale];
   const [step, setStep] = useState(0);
   const [draft, setDraft] = useState<IntakeDraft>(initialDraft);
@@ -293,6 +297,7 @@ export function Intake({ locale }: { locale: Locale }) {
           channel: "web",
           language: locale,
           text: `${draft.description}\n${draft.location}`,
+          consent_or_legal_basis: "SYNTHETIC_TEST_ONLY",
         }),
       };
     }

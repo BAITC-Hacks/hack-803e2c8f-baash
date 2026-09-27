@@ -154,7 +154,8 @@ def require_actor(
     if credentials is not None:
         actor = _claims_context(credentials.credentials, settings)
     elif (
-        settings.environment in {"local", "development", "test"} and settings.local_identity_enabled
+        settings.effective_profile in {"local", "development", "test", "demo"}
+        and settings.local_identity_enabled
     ):
         regions = _as_strings(local_regions)
         if not regions and requested_region:

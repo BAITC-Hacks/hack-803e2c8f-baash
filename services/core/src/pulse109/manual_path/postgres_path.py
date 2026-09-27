@@ -10,11 +10,13 @@ from __future__ import annotations
 
 import base64
 import json
+import os
 import re
 from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from hashlib import sha256
+from pathlib import Path
 from typing import Any, cast
 from uuid import NAMESPACE_URL, UUID, uuid4, uuid5
 
@@ -331,12 +333,19 @@ class PostgresManualPathService:
         region_id: str,
         actor: str,
     ) -> AttachmentRef:
+        settings = get_settings()
+        if settings.effective_profile in {"pilot", "production"}:
+            raise ManualPathError(
+                "attachment_storage_unavailable",
+                "Approved immutable storage and malware scanning are not configured.",
+                503,
+            )
         with self.repository.connection() as connection, connection.cursor() as cursor:
             appeal = self._appeal(cursor, request_id, lock=True)
             self._scope(appeal.region_id, region_id)
 
             try:
-                content = base64.b64decode(command.content_base64)
+                content = base64.b64decode(command.content_base64, validate=True)
             except Exception as exc:
                 raise ManualPathError(
                     "invalid_attachment_encoding", "Base64 decoding failed.", 422
@@ -363,7 +372,20 @@ class PostgresManualPathService:
 
             attachment_id = uuid4()
             at = _now()
-            object_ref = f"attachment://{validation.sha256}/{sanitized_name}"
+            storage_dir = Path(settings.demo_attachment_dir)
+            storage_dir.mkdir(parents=True, exist_ok=True)
+            blob = storage_dir / validation.sha256
+            try:
+                with blob.open("xb") as stream:
+                    stream.write(content)
+                    stream.flush()
+                    os.fsync(stream.fileno())
+            except FileExistsError:
+                if sha256(blob.read_bytes()).hexdigest() != validation.sha256:
+                    raise ManualPathError(
+                        "attachment_hash_conflict", "Stored attachment hash mismatch.", 503
+                    ) from None
+            object_ref = f"demo-blob://sha256/{validation.sha256}/{sanitized_name}"
             cursor.execute(
                 """
                 INSERT INTO appeals.attachment_ref
@@ -587,6 +609,15 @@ class PostgresManualPathService:
     ) -> tuple[Appeal, bool]:
         self._scope(command.region_id, region_id)
         settings = get_settings()
+        if settings.effective_profile == "demo" and (
+            not command.source_system.endswith("-synthetic")
+            or command.consent_or_legal_basis != "SYNTHETIC_TEST_ONLY"
+        ):
+            raise ManualPathError(
+                "demo_synthetic_required",
+                "Demo accepts explicitly labelled synthetic appeals only.",
+                422,
+            )
         operational_profile = settings.environment in {"pilot", "production"}
         if operational_profile and not command.source_payload_ref:
             raise ManualPathError(
@@ -1166,9 +1197,10 @@ class PostgresManualPathService:
                     """
                     SELECT recommendation_id, feature_snapshot_id
                     FROM triage.recommendation
-                    WHERE recommendation_id = %s
+                    WHERE recommendation_id = %s AND request_id = %s
+                      AND request_version = %s
                     """,
-                    (command.recommendation_id,),
+                    (command.recommendation_id, request_id, appeal.version),
                 )
                 if cursor.fetchone() is None:
                     raise ManualPathError(
@@ -1293,15 +1325,37 @@ class PostgresManualPathService:
             )
             source = cursor.fetchone()
             source_system_id = source["id"] if source else None
+            if source_system_id is None and get_settings().effective_profile in {
+                "pilot",
+                "production",
+            }:
+                raise ManualPathError(
+                    "unknown_source_system", "Status source is not registered for review.", 422
+                )
             cursor.execute(
                 """
                 SELECT * FROM appeals.appeal_event
                 WHERE source_system_id IS NOT DISTINCT FROM %s AND source_event_id = %s
+                  AND (source_system_id IS NOT NULL OR payload->>'source_system' = %s)
                 """,
-                (source_system_id, command.source_event_id),
+                (source_system_id, command.source_event_id, command.source_system),
             )
             duplicate = cursor.fetchone()
             if duplicate:
+                payload = self._load_json(duplicate["payload"], {})
+                if duplicate["appeal_id"] != request_id or (
+                    payload.get("new_status") != command.status
+                    or payload.get("source_system") != command.source_system
+                    or payload.get("reason_code") != command.reason_code
+                    or payload.get("evidence_refs") != command.evidence_refs
+                    or duplicate["occurred_at"] != command.occurred_at
+                    or duplicate["occurred_at_quality"] != command.occurred_at_quality
+                ):
+                    raise ManualPathError(
+                        "source_event_conflict",
+                        "Source event ID was already used for a different appeal or status.",
+                        409,
+                    )
                 event = TimelineEvent.model_validate(duplicate)
                 self._save_idempotency(
                     cursor,

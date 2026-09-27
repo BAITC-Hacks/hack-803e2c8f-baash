@@ -1,982 +1,570 @@
 "use client";
 
-import {
-  Check,
-  ChevronRight,
-  Clock3,
-  Database,
-  FileCheck2,
-  History,
-  ShieldCheck,
-  WifiOff,
-} from "lucide-react";
-import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
-
+import { useCallback, useEffect, useState } from "react";
 import { Intake } from "./intake";
-import { AdminPanel } from "./admin-panel";
-import { SituationCenter } from "./situation-center";
-import { OwnershipHandoffPanel } from "./ownership-handoff-panel";
 import { ClosureIntegrityPanel } from "./closure-integrity-panel";
-import { IncidentTopologyPanel } from "./incident-topology-panel";
-import { ReplayLabPanel } from "./replay-lab-panel";
-
-type Recommendation = { id: string; label: string; score: number };
-type Appeal = {
-  id: string;
-  region: string;
-  channel: string;
-  time: string;
-  state: string;
-  observed: string;
-  summary: string;
-  confidence: "high" | "medium" | "out_of_domain";
-  ood: number;
-  topics: Recommendation[];
-  services: Recommendation[];
-};
-type LatestAssignment = {
-  assignment_id: string;
-  request_id: string;
-  service_id: string;
-  assignee_unit_id: string | null;
-};
+import { OwnershipHandoffPanel } from "./ownership-handoff-panel";
 
 type Locale = "ru" | "kk";
-type DemoState =
-  | "ready"
-  | "loading"
-  | "low_confidence"
-  | "ml_unavailable"
-  | "stale_catalog"
-  | "sync_retry"
-  | "forbidden_region"
-  | "recovered";
+type Appeal = {
+  request_id: string;
+  source_system: string;
+  source_request_id: string;
+  region_id: string;
+  channel: string;
+  text: string | null;
+  status: string;
+  version: number;
+  created_at: string;
+  received_at_quality: string;
+};
+type Decision = {
+  topic_id: string;
+  service_id: string;
+  priority: string;
+  action: string;
+};
+type Detail = Appeal & {
+  timeline: { event_id: string; event_type: string; observed_at: string }[];
+  current_decision: Decision | null;
+  synchronization: { status: string; external_id: string | null } | null;
+};
+type Recommendation = {
+  recommendation_id: string;
+  model_version: string;
+  confidence_band: string;
+  top_topics: { id: string; score: number }[];
+  top_services: { id: string; score: number }[];
+  priority: string;
+};
 
-const copy = {
+const REGION = "ALA";
+const labels = {
   ru: {
     intake: "Подать обращение",
     queue: "Очередь оператора",
-    topology: "Топология инцидентов",
-    replay: "Replay Lab",
-    situation: "Ситуационный центр",
-    admin: "Администрирование",
-    profile: "Локальный оператор · синтетические данные",
-    appeals: "Обращения на проверку",
-    synthetic: "синтетических",
-    selected: "Выбранное обращение",
-    humanDecision: "Решение человека",
-    chooseAction: "Выберите действие",
-    confirm: "Подтвердить рекомендацию",
+    situation: "Статус платформы",
+    statusImplemented:
+      "Очередь, решения, аудит, outbox и рабочий процесс используют действующие сервисы приложения и PostgreSQL. Обращения и replay-доставка в демо синтетические.",
+    statusBlocked:
+      "Подключение региональной CRM, утверждённая идентификация, правила классификации и SLA, защищённое хранилище вложений и оценка модели на реальных данных пока недоступны.",
+    statusCoverage:
+      "API инцидентов, Replay Lab и подписанной конфигурации реализованы шире, чем их операторский интерфейс. Подробности — в матрице функций репозитория.",
+    loading: "Загрузка обращений…",
+    refresh: "Обновить",
+    classify: "Получить рекомендацию",
     manual: "Сохранить ручное решение",
-    correctionReason: "Причина исправления",
-    optionalNote: "Необязательная заметка",
-    noAssignment: "Назначение не отправляется без подтверждения человека.",
-    evidence: "Доказательства",
-    similar: "Похожие решённые обращения",
-    duplicates: "Кандидаты в дубликаты",
-    workflow: "Состояния демо",
-    retry: "Повторить синхронизацию",
-    ready: "Готово",
-    loading: "Загрузка карточки…",
-    low_confidence: "Низкая уверенность: требуется проверка",
-    ml_unavailable: "ML недоступен: ручной режим активен",
-    stale_catalog: "Справочник устарел: ручной выбор обязателен",
-    sync_retry: "Внешняя синхронизация ожидает повтора",
-    forbidden_region: "Нет доступа к региону",
-    recovered: "Сессия восстановлена",
-    auditRecorded: "Аудит записан",
+    accept: "Подтвердить рекомендацию",
+    assign: "Поставить назначение в очередь",
+    status: "Записать статус",
+    unavailable: "Рекомендация недоступна; ручной путь остаётся доступным.",
+    empty:
+      "В этом регионе пока нет обращений. Создайте синтетическое обращение через форму или запустите seed.",
   },
   kk: {
     intake: "Өтініш беру",
     queue: "Оператор кезегі",
-    topology: "Оқиғалар топологиясы",
-    replay: "Replay Lab",
-    situation: "Жағдай орталығы",
-    admin: "Әкімшілендіру",
-    profile: "Жергілікті оператор · синтетикалық деректер",
-    appeals: "Тексеруді қажет ететін өтініштер",
-    synthetic: "синтетикалық",
-    selected: "Таңдалған өтініш",
-    humanDecision: "Адам шешімі",
-    chooseAction: "Әрекетті таңдаңыз",
-    confirm: "Ұсынысты растау",
+    situation: "Платформа мәртебесі",
+    statusImplemented:
+      "Кезек, шешімдер, аудит, outbox және жұмыс процесі қолданбаның нақты сервистері мен PostgreSQL-ді пайдаланады. Демо өтініштері мен replay жеткізуі синтетикалық.",
+    statusBlocked:
+      "Өңірлік CRM байланысы, бекітілген сәйкестендіру, жіктеу және SLA ережелері, тіркемелердің қорғалған қоймасы мен нақты деректердегі модель бағасы әзірге қолжетімсіз.",
+    statusCoverage:
+      "Оқиғалар, Replay Lab және қолтаңбалы конфигурация API-ларының қамтуы оператор интерфейсінен кеңірек. Толық ақпарат репозиторийдегі функциялар матрицасында берілген.",
+    loading: "Өтініштер жүктелуде…",
+    refresh: "Жаңарту",
+    classify: "Ұсыныс алу",
     manual: "Қолмен шешімді сақтау",
-    correctionReason: "Түзету себебі",
-    optionalNote: "Міндетті емес ескертпе",
-    noAssignment: "Адам растамайынша тағайындау жіберілмейді.",
-    evidence: "Дәлелдер",
-    similar: "Ұқсас шешілген өтініштер",
-    duplicates: "Дубликат үміткерлері",
-    workflow: "Демо күйлері",
-    retry: "Синхрондауды қайталау",
-    ready: "Дайын",
-    loading: "Карточка жүктелуде…",
-    low_confidence: "Сенім төмен: тексеру қажет",
-    ml_unavailable: "ML қолжетімсіз: қолмен режим іске қосылды",
-    stale_catalog: "Каталог ескірген: қолмен таңдау қажет",
-    sync_retry: "Сыртқы синхрондау қайталауды күтуде",
-    forbidden_region: "Аймаққа кіруге рұқсат жоқ",
-    recovered: "Сессия қалпына келтірілді",
-    auditRecorded: "Аудит жазылды",
+    accept: "Ұсынысты растау",
+    assign: "Тағайындауды кезекке қою",
+    status: "Мәртебені жазу",
+    unavailable: "Ұсыныс қолжетімсіз; қолмен жұмыс істеуге болады.",
+    empty:
+      "Бұл аймақта өтініш жоқ. Синтетикалық өтініш жасаңыз немесе seed іске қосыңыз.",
   },
 } as const;
 
-const appeals: Appeal[] = [
-  {
-    id: "SYN-109-014",
-    region: "AST",
-    channel: "phone",
-    time: "exact",
-    state: "new",
-    observed: "11 Sep 2026, 09:42",
-    summary: "Street lighting is unavailable near the school entrance.",
-    confidence: "high",
-    ood: 0.08,
-    topics: [
-      { id: "lighting", label: "Street lighting", score: 0.94 },
-      { id: "roads", label: "Road maintenance", score: 0.48 },
-      { id: "utilities", label: "Utilities", score: 0.31 },
-    ],
-    services: [
-      { id: "city-services", label: "City services", score: 0.91 },
-      { id: "roads-service", label: "Roads department", score: 0.44 },
-      { id: "district", label: "District office", score: 0.29 },
-    ],
-  },
-  {
-    id: "SYN-109-013",
-    region: "ALA",
-    channel: "web",
-    time: "date only",
-    state: "triage",
-    observed: "11 Sep 2026, 08:17",
-    summary: "A pothole is affecting access to a residential courtyard.",
-    confidence: "medium",
-    ood: 0.34,
-    topics: [
-      { id: "roads", label: "Road maintenance", score: 0.74 },
-      { id: "lighting", label: "Street lighting", score: 0.38 },
-      { id: "utilities", label: "Utilities", score: 0.22 },
-    ],
-    services: [
-      { id: "roads-service", label: "Roads department", score: 0.72 },
-      { id: "city-services", label: "City services", score: 0.51 },
-      { id: "district", label: "District office", score: 0.35 },
-    ],
-  },
-  {
-    id: "SYN-109-012",
-    region: "ALA",
-    channel: "import",
-    time: "missing",
-    state: "new",
-    observed: "11 Sep 2026, 07:03",
-    summary:
-      "The request needs a manual review before a service can be selected.",
-    confidence: "out_of_domain",
-    ood: 0.95,
-    topics: [
-      { id: "manual", label: "Manual catalog review", score: 0.4 },
-      { id: "district", label: "District services", score: 0.3 },
-      { id: "other", label: "Other", score: 0.2 },
-    ],
-    services: [
-      { id: "district", label: "District office", score: 0.4 },
-      { id: "city-services", label: "City services", score: 0.3 },
-      { id: "manual", label: "Manual assignment", score: 0.2 },
-    ],
-  },
-];
+async function api<T>(path: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(`/api/core${path}`, {
+    ...init,
+    headers: { "X-Region-Id": REGION, ...init?.headers },
+    cache: "no-store",
+  });
+  if (!response.ok) {
+    let code = `HTTP ${response.status}`;
+    try {
+      const body = await response.json();
+      code = body.detail?.code ?? body.detail?.message ?? code;
+    } catch {
+      /* The HTTP status remains visible. */
+    }
+    throw new Error(code);
+  }
+  return (await response.json()) as T;
+}
 
-const modelVersion = "lexical-baseline-1.0.0";
-const taxonomyVersion = "temporary/1.0.0";
-const scoreLabel = (score: number) => `${Math.round(score * 100)}%`;
+function commandHeaders(): Record<string, string> {
+  return {
+    "Content-Type": "application/json",
+    "Idempotency-Key": crypto.randomUUID(),
+  };
+}
 
 export default function OperatorWorkspace() {
-  const [view, setView] = useState<
-    "queue" | "situation" | "intake" | "admin" | "topology" | "replay"
-  >("queue");
   const [locale, setLocale] = useState<Locale>("ru");
-  const [appealsList, setAppealsList] = useState<Appeal[]>(appeals);
-  const [isLive, setIsLive] = useState(false);
-  const [selectedId, setSelectedId] = useState(appeals[0].id);
-  const [latestAssignment, setLatestAssignment] =
-    useState<LatestAssignment | null>(null);
-  const [decision, setDecision] = useState<"pending" | "confirmed" | "manual">(
-    "pending",
+  const [view, setView] = useState<"queue" | "intake" | "situation">("queue");
+  const [profile, setProfile] = useState<string | null>(null);
+  const [appeals, setAppeals] = useState<Appeal[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [detail, setDetail] = useState<Detail | null>(null);
+  const [recommendation, setRecommendation] = useState<Recommendation | null>(
+    null,
   );
-  const [demoState, setDemoState] = useState<DemoState>("ready");
-  const [decisionAction, setDecisionAction] = useState<
-    "confirm" | "manual" | null
-  >(null);
-  const [correctionReason, setCorrectionReason] = useState("");
-  const [operatorNote, setOperatorNote] = useState("");
-  const dialogRef = useRef<HTMLDialogElement>(null);
-  const decisionTriggerRef = useRef<HTMLButtonElement>(null);
-  const [manualTopic, setManualTopic] = useState("Street lighting");
-  const [manualService, setManualService] = useState("City services");
-  const [priority, setPriority] = useState("Routine");
-  const appeal = useMemo(
-    () => appealsList.find((item) => item.id === selectedId) ?? appealsList[0],
-    [appealsList, selectedId],
-  );
-  const hasDecision = decision !== "pending";
-  const decisionLabel =
-    decision === "confirmed"
-      ? locale === "ru"
-        ? "Рекомендация подтверждена"
-        : "Ұсыныс расталды"
-      : locale === "ru"
-        ? "Ручное решение записано"
-        : "Қолмен шешім жазылды";
-  const text = copy[locale];
+  const [topic, setTopic] = useState("topic:manual-review");
+  const [service, setService] = useState("service:manual-review");
+  const [priority, setPriority] = useState("routine");
+  const [nextStatus, setNextStatus] = useState("triage");
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const copy = labels[locale];
 
-  useEffect(() => {
-    document.documentElement.lang = locale === "ru" ? "ru" : "kk";
-  }, [locale]);
+  const refreshQueue = useCallback(async () => {
+    try {
+      const rows = await api<Appeal[]>("/requests?limit=50");
+      setAppeals(rows);
+      if (rows.length === 0) setDetail(null);
+      setSelectedId((previous) =>
+        previous && rows.some((row) => row.request_id === previous)
+          ? previous
+          : (rows[0]?.request_id ?? null),
+      );
+      setError(null);
+    } catch (failure) {
+      setError(
+        failure instanceof Error ? failure.message : "queue_unavailable",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/api/core/requests?limit=50", {
-      headers: { "X-Region-Id": "ALL" },
-      cache: "no-store",
-    })
-      .then(async (res) => {
-        if (!res.ok) return null;
-        return res.json();
-      })
-      .then((data) => {
-        if (
-          cancelled ||
-          !data ||
-          !Array.isArray(data.items) ||
-          data.items.length === 0
-        ) {
-          return;
-        }
-        const live: Appeal[] = data.items.map(
-          (item: Record<string, unknown>) => ({
-            id: String(item.request_id || item.id),
-            region: String(item.region_id || "ALA"),
-            channel: String(item.channel || "web"),
-            time: String(item.received_at_quality || "exact"),
-            state: String(item.status || "new"),
-            observed: item.created_at
-              ? new Date(String(item.created_at)).toLocaleString("en-GB", {
-                  day: "2-digit",
-                  month: "short",
-                  year: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })
-              : "Recently",
-            summary: String(
-              item.text || item.summary || "Citizen appeal description.",
-            ),
-            confidence: "high" as const,
-            ood: 0.05,
-            topics: [
-              {
-                id: String(item.category || "roads"),
-                label: String(item.category || "Road maintenance"),
-                score: 0.88,
-              },
-              { id: "utilities", label: "Utilities", score: 0.42 },
-            ],
-            services: [
-              { id: "roads-service", label: "Roads department", score: 0.85 },
-              { id: "district", label: "District office", score: 0.35 },
-            ],
-          }),
-        );
-        setAppealsList(live);
-        setIsLive(true);
-        setSelectedId(live[0].id);
-      })
-      .catch(() => {
-        // Core offline; keep synthetic fallback
-      });
-    return () => {
-      cancelled = true;
-    };
+  const refreshDetail = useCallback(async (id: string) => {
+    try {
+      const row = await api<Detail>(`/requests/${encodeURIComponent(id)}`);
+      setDetail(row);
+      setTopic(row.current_decision?.topic_id ?? "topic:manual-review");
+      setService(row.current_decision?.service_id ?? "service:manual-review");
+      setPriority(row.current_decision?.priority ?? "routine");
+      setError(null);
+    } catch (failure) {
+      setDetail(null);
+      setError(
+        failure instanceof Error ? failure.message : "appeal_unavailable",
+      );
+    }
   }, []);
 
   useEffect(() => {
-    if (
-      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-        selectedId,
-      )
-    )
-      return;
-    let cancelled = false;
-    fetch(
-      `/api/core/requests/${encodeURIComponent(selectedId)}/assignments/latest`,
-      {
-        headers: { "X-Region-Id": appeal.region },
-        cache: "no-store",
-      },
-    )
-      .then(async (response) => {
-        if (!response.ok) throw new Error("assignment_unavailable");
-        return (await response.json()) as LatestAssignment;
-      })
-      .then((assignment) => {
-        if (!cancelled) setLatestAssignment(assignment);
-      })
-      .catch(() => {
-        if (!cancelled) setLatestAssignment(null);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [appeal.region, selectedId]);
+    api<{ profile: string }>("/health/ready")
+      .then((health) => setProfile(health.profile))
+      .catch(() => setProfile("unavailable"));
+    void Promise.resolve().then(refreshQueue);
+  }, [refreshQueue]);
 
   useEffect(() => {
-    if (decisionAction && dialogRef.current && !dialogRef.current.open) {
-      dialogRef.current.showModal();
+    if (selectedId)
+      void Promise.resolve().then(() => refreshDetail(selectedId));
+  }, [selectedId, refreshDetail]);
+
+  async function run(action: () => Promise<void>, refresh = true) {
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      await action();
+      if (refresh) {
+        if (selectedId) await refreshDetail(selectedId);
+        await refreshQueue();
+      }
+    } catch (failure) {
+      setError(
+        failure instanceof Error ? failure.message : "command_unconfirmed",
+      );
+    } finally {
+      setBusy(false);
     }
-  }, [decisionAction]);
-
-  function closeDecisionDialog() {
-    dialogRef.current?.close();
-    setDecisionAction(null);
-    decisionTriggerRef.current?.focus();
   }
 
-  function openDecisionDialog(
-    action: "confirm" | "manual",
-    event: MouseEvent<HTMLButtonElement>,
-  ) {
-    decisionTriggerRef.current = event.currentTarget;
-    setDecisionAction(action);
+  function classify() {
+    if (!detail) return;
+    void run(async () => {
+      const result = await api<Recommendation>(
+        `/requests/${detail.request_id}/classifications`,
+        {
+          method: "POST",
+          headers: commandHeaders(),
+          body: JSON.stringify({ request_version: detail.version }),
+        },
+      );
+      setRecommendation(result);
+      setTopic(result.top_topics[0].id);
+      setService(result.top_services[0].id);
+      setPriority(result.priority);
+      setNotice(`${result.model_version} · ${result.confidence_band}`);
+    }, false);
   }
 
-  function saveDecision() {
-    if (decisionAction === "manual" && !correctionReason) return;
-    setDecision(decisionAction === "confirm" ? "confirmed" : "manual");
-    closeDecisionDialog();
+  function decide(accept: boolean) {
+    if (!detail) return;
+    void run(async () => {
+      const result = await api<{ decision_id: string }>(
+        `/requests/${detail.request_id}/decisions`,
+        {
+          method: "POST",
+          headers: commandHeaders(),
+          body: JSON.stringify({
+            request_version: detail.version,
+            recommendation_id: accept
+              ? recommendation?.recommendation_id
+              : null,
+            topic_id: topic,
+            service_id: service,
+            priority,
+            action: accept ? "accepted" : "manual",
+          }),
+        },
+      );
+      setNotice(`Decision recorded: ${result.decision_id}`);
+      setRecommendation(null);
+    });
   }
 
-  function selectAppeal(id: string) {
-    setSelectedId(id);
-    setDecision("pending");
-    setCorrectionReason("");
-    setOperatorNote("");
+  function assign() {
+    if (!detail?.current_decision) return;
+    void run(async () => {
+      const receipt = await api<{ status: string }>(
+        `/requests/${detail.request_id}/assignments`,
+        {
+          method: "POST",
+          headers: commandHeaders(),
+          body: JSON.stringify({
+            request_version: detail.version,
+            service_id: detail.current_decision?.service_id,
+            reason_code: "operator_confirmed",
+          }),
+        },
+      );
+      setNotice(`Outbox: ${receipt.status}`);
+    });
+  }
+
+  function recordStatus() {
+    if (!detail) return;
+    void run(async () => {
+      const event = await api<{ event_id: string }>(
+        `/requests/${detail.request_id}/status-events`,
+        {
+          method: "POST",
+          headers: commandHeaders(),
+          body: JSON.stringify({
+            source_event_id: crypto.randomUUID(),
+            source_system: detail.source_system,
+            status: nextStatus,
+            occurred_at: null,
+            occurred_at_quality: "missing",
+            reason_code: "OPERATOR_REVIEW",
+          }),
+        },
+      );
+      setNotice(`Status event recorded: ${event.event_id}`);
+    });
   }
 
   return (
     <main>
       <header className="topbar">
-        <div className="brand">Pulse 109</div>
-        <div className="view-switch" aria-label="Workspace view" role="group">
-          <button
-            aria-pressed={view === "intake"}
-            onClick={() => setView("intake")}
-            type="button"
-          >
-            {text.intake}
-          </button>
-          <button
-            aria-pressed={view === "queue"}
-            onClick={() => setView("queue")}
-            type="button"
-          >
-            {text.queue}
-          </button>
-          <button
-            aria-pressed={view === "topology"}
-            onClick={() => setView("topology")}
-            type="button"
-          >
-            {text.topology}
-          </button>
-          <button
-            aria-pressed={view === "replay"}
-            onClick={() => setView("replay")}
-            type="button"
-          >
-            {text.replay}
-          </button>
-          <button
-            aria-pressed={view === "situation"}
-            onClick={() => setView("situation")}
-            type="button"
-          >
-            {text.situation}
-          </button>
-          <button
-            aria-pressed={view === "admin"}
-            onClick={() => setView("admin")}
-            type="button"
-          >
-            {text.admin}
-          </button>
-        </div>
+        <strong className="brand">Pulse 109</strong>
+        <nav className="view-switch" aria-label="Workspace view">
+          {(["queue", "intake", "situation"] as const).map((name) => (
+            <button
+              key={name}
+              type="button"
+              aria-pressed={view === name}
+              onClick={() => setView(name)}
+            >
+              {copy[name]}
+            </button>
+          ))}
+        </nav>
         <div className="topbar-actions">
-          <div className="locale-switch" aria-label="Language" role="group">
-            <button
-              aria-pressed={locale === "ru"}
-              onClick={() => setLocale("ru")}
-              type="button"
-            >
-              RU
-            </button>
-            <button
-              aria-pressed={locale === "kk"}
-              onClick={() => setLocale("kk")}
-              type="button"
-            >
-              KZ
-            </button>
+          <span className="profile">
+            {profile === "demo"
+              ? "DEMO · SYNTHETIC"
+              : `Profile: ${profile ?? "loading"}`}
+          </span>
+          <div className="locale-switch" aria-label="Language">
+            {(["ru", "kk"] as const).map((name) => (
+              <button
+                key={name}
+                type="button"
+                aria-pressed={locale === name}
+                onClick={() => setLocale(name)}
+              >
+                {name.toUpperCase()}
+              </button>
+            ))}
           </div>
-          <div className="profile">{text.profile}</div>
         </div>
       </header>
-      {view === "intake" ? (
-        <Intake locale={locale} />
-      ) : view === "situation" ? (
-        <SituationCenter />
-      ) : view === "admin" ? (
-        <AdminPanel locale={locale} />
-      ) : view === "topology" ? (
-        <IncidentTopologyPanel locale={locale} regionId={appeal.region} />
-      ) : view === "replay" ? (
-        <ReplayLabPanel locale={locale} regionId={appeal.region} />
-      ) : (
-        <div className="workspace">
-          <aside aria-label="Primary navigation">
-            <nav>
-              <a className="active" href="#queue">
-                Queue
-              </a>
-              <a href="#quality">Data quality</a>
-              <a href="#systems">Systems</a>
-            </nav>
-            <div className="fallback">
-              <WifiOff aria-hidden="true" size={18} />
-              <div>
-                <strong>Manual mode</strong>
-                <span>ML is optional</span>
-              </div>
-            </div>
-          </aside>
 
+      {view === "intake" ? (
+        <Intake locale={locale} demoEnabled={profile === "demo"} />
+      ) : null}
+      {view === "situation" ? (
+        <section
+          className="workspace real-workspace"
+          aria-labelledby="platform-status"
+        >
+          <div className="content">
+            <p className="eyebrow">
+              {profile === "demo" ? "DEMO · SYNTHETIC" : `Profile: ${profile}`}
+            </p>
+            <h1 id="platform-status">{copy.situation}</h1>
+            <p>{copy.statusImplemented}</p>
+            <p>{copy.statusBlocked}</p>
+            <p>{copy.statusCoverage}</p>
+          </div>
+        </section>
+      ) : null}
+      {view === "queue" ? (
+        <div className="workspace real-workspace">
           <section className="content" id="queue">
             <div className="section-heading">
               <div>
-                <p className="eyebrow">{text.queue}</p>
-                <h1>{text.appeals}</h1>
+                <p className="eyebrow">
+                  {REGION} · {profile}
+                </p>
+                <h1>{copy.queue}</h1>
               </div>
-              <span className="count">
-                {isLive
-                  ? `${appealsList.length} ${locale === "ru" ? "обращений" : "өтініш"}`
-                  : `3 ${text.synthetic}`}
-              </span>
+              <button
+                className="secondary-action"
+                type="button"
+                onClick={() => void refreshQueue()}
+              >
+                {copy.refresh}
+              </button>
             </div>
-            <section
-              className="workflow-state"
-              aria-labelledby="workflow-state-title"
-            >
-              <div>
-                <p className="eyebrow">{text.workflow}</p>
-                <h2 id="workflow-state-title">{text[demoState]}</h2>
-              </div>
-              <label>
-                <span className="sr-only">{text.workflow}</span>
-                <select
-                  value={demoState}
-                  onChange={(event) =>
-                    setDemoState(event.target.value as DemoState)
-                  }
-                >
-                  <option value="ready">{text.ready}</option>
-                  <option value="loading">{text.loading}</option>
-                  <option value="low_confidence">{text.low_confidence}</option>
-                  <option value="ml_unavailable">{text.ml_unavailable}</option>
-                  <option value="stale_catalog">{text.stale_catalog}</option>
-                  <option value="sync_retry">{text.sync_retry}</option>
-                  <option value="forbidden_region">
-                    {text.forbidden_region}
-                  </option>
-                  <option value="recovered">{text.recovered}</option>
-                </select>
-              </label>
-            </section>
-            <div
-              className="queue"
-              role="table"
-              aria-label={isLive ? "Live appeal queue" : "Synthetic appeal queue"}
-            >
-              <div className="queue-head" role="row">
-                <span role="columnheader">Appeal</span>
-                <span role="columnheader">Region</span>
-                <span role="columnheader">Channel</span>
-                <span role="columnheader">Time quality</span>
-                <span role="columnheader">State</span>
-                <span aria-hidden="true" />
-              </div>
-              {appealsList.map((item) => (
+            {error ? (
+              <p role="alert" className="attention">
+                {error}
+              </p>
+            ) : null}
+            {notice ? <p role="status">{notice}</p> : null}
+            {loading ? <p role="status">{copy.loading}</p> : null}
+            {!loading && !error && appeals.length === 0 ? (
+              <p role="status">{copy.empty}</p>
+            ) : null}
+            <div className="queue" aria-label="Appeals from PostgreSQL">
+              {appeals.map((appeal) => (
                 <button
-                  className={`queue-row ${item.id === selectedId ? "selected" : ""}`}
-                  key={item.id}
-                  onClick={() => selectAppeal(item.id)}
-                  role="row"
+                  className={`queue-row ${selectedId === appeal.request_id ? "selected" : ""}`}
+                  key={appeal.request_id}
                   type="button"
+                  onClick={() => {
+                    setSelectedId(appeal.request_id);
+                    setRecommendation(null);
+                    setDetail(null);
+                  }}
                 >
-                  <strong role="cell">{item.id}</strong>
-                  <span role="cell">{item.region}</span>
-                  <span role="cell">{item.channel}</span>
-                  <span
-                    role="cell"
-                    className={
-                      item.time === "missing" ? "attention" : undefined
-                    }
-                  >
-                    {item.time}
-                  </span>
-                  <span role="cell">{item.state}</span>
-                  <ChevronRight aria-hidden="true" size={17} />
+                  <strong>{appeal.source_request_id}</strong>
+                  <span>{appeal.region_id}</span>
+                  <span>{appeal.channel}</span>
+                  <span>{appeal.received_at_quality}</span>
+                  <span>{appeal.status}</span>
                 </button>
               ))}
             </div>
-
-            {demoState === "forbidden_region" ? (
-              <section
-                className="security-state"
-                role="alert"
-                aria-labelledby="forbidden-title"
-              >
-                <ShieldCheck aria-hidden="true" size={24} />
-                <h2 id="forbidden-title">{text.forbidden_region}</h2>
-                <p>
-                  This appeal is outside the signed-in operator&apos;s region
-                  scope.
-                </p>
-              </section>
-            ) : (
-              <section
-                className="appeal-card"
-                aria-labelledby="appeal-title"
-                aria-busy={demoState === "loading"}
-              >
+            {detail ? (
+              <section className="appeal-card" aria-labelledby="appeal-title">
                 <div className="appeal-header">
                   <div>
-                    <p className="eyebrow">Selected appeal</p>
-                    <h2 id="appeal-title">{appeal.id}</h2>
-                    <p className="appeal-summary">{appeal.summary}</p>
+                    <p className="eyebrow">
+                      {detail.source_system} · v{detail.version}
+                    </p>
+                    <h2 id="appeal-title">{detail.request_id}</h2>
+                    <p className="appeal-summary">
+                      {detail.text ?? "No operational text recorded"}
+                    </p>
                   </div>
-                  <div className="appeal-status">
-                    <span className="status-chip">{appeal.state}</span>
-                    <span className="sync-chip">
-                      <WifiOff aria-hidden="true" size={14} /> Sync pending
-                    </span>
-                  </div>
+                  <span className="status-chip">{detail.status}</span>
                 </div>
                 <div className="meta-grid">
                   <div>
                     <span>Region</span>
-                    <strong>{appeal.region}</strong>
+                    <strong>{detail.region_id}</strong>
                   </div>
                   <div>
-                    <span>Channel</span>
-                    <strong>{appeal.channel}</strong>
+                    <span>Business time quality</span>
+                    <strong>{detail.received_at_quality}</strong>
                   </div>
                   <div>
-                    <span>Observed</span>
-                    <strong>{appeal.observed}</strong>
+                    <span>Created</span>
+                    <strong>{detail.created_at}</strong>
                   </div>
                   <div>
-                    <span>Business time</span>
-                    <strong
-                      className={
-                        appeal.time === "missing" ? "attention" : undefined
-                      }
-                    >
-                      {appeal.time}
+                    <span>Sync</span>
+                    <strong>
+                      {detail.synchronization?.status ?? "not required"}
                     </strong>
                   </div>
                 </div>
-                <div className="advisory-heading">
-                  <div>
-                    <p className="eyebrow">Advisory routing</p>
-                    <h3>AI proposes; operator confirms</h3>
-                  </div>
-                  <span
-                    className={`confidence confidence-${appeal.confidence}`}
-                  >
-                    {appeal.confidence === "out_of_domain"
-                      ? "Out of domain"
-                      : `${appeal.confidence} confidence`}
-                  </span>
-                </div>
-                <div className="recommendation-grid">
-                  <RecommendationList title="Topics" items={appeal.topics} />
-                  <RecommendationList
-                    title="Services"
-                    items={appeal.services}
-                  />
-                  <div className="model-panel">
-                    <span className="panel-label">Model signal</span>
-                    <div className="signal-row">
-                      <span>Confidence</span>
-                      <strong>
-                        {scoreLabel(
-                          appeal.confidence === "out_of_domain"
-                            ? 0.2
-                            : appeal.topics[0].score,
-                        )}
-                      </strong>
-                    </div>
-                    <div className="signal-row">
-                      <span>OOD score</span>
-                      <strong>{scoreLabel(appeal.ood)}</strong>
-                    </div>
-                    <div className="signal-row">
-                      <span>Model</span>
-                      <strong>{modelVersion}</strong>
-                    </div>
-                    <div className="signal-row">
-                      <span>Taxonomy</span>
-                      <strong>{taxonomyVersion}</strong>
-                    </div>
-                  </div>
-                </div>
-
                 <div className="decision-area">
-                  <div className="decision-title">
-                    <div>
-                      <p className="eyebrow">{text.humanDecision}</p>
-                      <h3>{hasDecision ? decisionLabel : text.chooseAction}</h3>
-                    </div>
-                    {hasDecision && (
-                      <span className="recorded">
-                        <Check aria-hidden="true" size={15} /> Recorded locally
-                      </span>
-                    )}
-                  </div>
-                  <div className="decision-controls">
-                    <button
-                      className="primary-action"
-                      disabled={hasDecision}
-                      onClick={(event) => openDecisionDialog("confirm", event)}
-                      type="button"
-                    >
-                      <Check aria-hidden="true" size={16} /> {text.confirm}
-                    </button>
-                    <button
-                      className="secondary-action"
-                      disabled={hasDecision}
-                      onClick={(event) => openDecisionDialog("manual", event)}
-                      type="button"
-                    >
-                      <FileCheck2 aria-hidden="true" size={16} /> {text.manual}
-                    </button>
-                  </div>
+                  <h3>Human governed routing</h3>
+                  <button
+                    className="secondary-action"
+                    type="button"
+                    disabled={busy}
+                    onClick={classify}
+                  >
+                    {copy.classify}
+                  </button>
+                  {recommendation ? (
+                    <p role="status">
+                      Local {recommendation.model_version} ·{" "}
+                      {recommendation.confidence_band} · topic{" "}
+                      {recommendation.top_topics[0].id} (
+                      {Math.round(recommendation.top_topics[0].score * 100)}%) ·
+                      service {recommendation.top_services[0].id} · human
+                      confirmation required
+                    </p>
+                  ) : (
+                    <p>{copy.unavailable}</p>
+                  )}
                   <div className="manual-fields">
                     <label>
-                      Topic
-                      <select
-                        disabled={hasDecision}
-                        onChange={(event) => setManualTopic(event.target.value)}
-                        value={manualTopic}
-                      >
-                        <option>Street lighting</option>
-                        <option>Road maintenance</option>
-                        <option>Utilities</option>
-                        <option>Manual catalog review</option>
-                      </select>
+                      Topic ID
+                      <input
+                        value={topic}
+                        onChange={(event) => setTopic(event.target.value)}
+                      />
                     </label>
                     <label>
-                      Service
-                      <select
-                        disabled={hasDecision}
-                        onChange={(event) =>
-                          setManualService(event.target.value)
-                        }
-                        value={manualService}
-                      >
-                        <option>City services</option>
-                        <option>Roads department</option>
-                        <option>District office</option>
-                        <option>Manual assignment</option>
-                      </select>
+                      Service ID
+                      <input
+                        value={service}
+                        onChange={(event) => setService(event.target.value)}
+                      />
                     </label>
                     <label>
                       Priority
                       <select
-                        disabled={hasDecision}
-                        onChange={(event) => setPriority(event.target.value)}
                         value={priority}
+                        onChange={(event) => setPriority(event.target.value)}
                       >
-                        <option>Routine</option>
-                        <option>Elevated</option>
-                        <option>Urgent</option>
-                        <option>Emergency handoff</option>
+                        <option value="routine">routine</option>
+                        <option value="elevated">elevated</option>
+                        <option value="urgent">urgent</option>
+                        <option value="emergency_handoff">
+                          emergency handoff
+                        </option>
                       </select>
                     </label>
                   </div>
-                  <p className="decision-note">
-                    {hasDecision
-                      ? `${manualTopic} · ${manualService} · ${priority}`
-                      : text.noAssignment}
-                  </p>
+                  <div className="decision-controls">
+                    <button
+                      className="primary-action"
+                      type="button"
+                      disabled={busy || !topic || !service}
+                      onClick={() => decide(false)}
+                    >
+                      {copy.manual}
+                    </button>
+                    <button
+                      className="secondary-action"
+                      type="button"
+                      disabled={busy || !recommendation}
+                      onClick={() => decide(true)}
+                    >
+                      {copy.accept}
+                    </button>
+                  </div>
+                  {detail.current_decision ? (
+                    <p role="status">
+                      Recorded: {detail.current_decision.action} ·{" "}
+                      {detail.current_decision.service_id}
+                    </p>
+                  ) : null}
                 </div>
-
-                <div className="evidence-grid">
-                  <EvidencePanel
-                    title={text.similar}
-                    items={[
-                      "Resolved street lighting · 410 m",
-                      "School entrance lighting · 1.2 km",
-                    ]}
-                  />
-                  <EvidencePanel
-                    title={text.duplicates}
-                    items={[
-                      "Text overlap 0.52 · distance 0.23 · time 0.14",
-                      "Service match · human confirmation required",
-                    ]}
-                  />
+                <div className="decision-area">
+                  <h3>Assignment and status</h3>
+                  <button
+                    className="primary-action"
+                    type="button"
+                    disabled={busy || !detail.current_decision}
+                    onClick={assign}
+                  >
+                    {copy.assign}
+                  </button>
+                  <label>
+                    Next status
+                    <select
+                      value={nextStatus}
+                      onChange={(event) => setNextStatus(event.target.value)}
+                    >
+                      <option value="triage">triage</option>
+                      <option value="accepted">accepted</option>
+                      <option value="in_progress">in progress</option>
+                      <option value="waiting">waiting</option>
+                      <option value="resolved">resolved</option>
+                    </select>
+                  </label>
+                  <button
+                    className="secondary-action"
+                    type="button"
+                    disabled={busy}
+                    onClick={recordStatus}
+                  >
+                    {copy.status}
+                  </button>
                 </div>
-
                 <div className="activity-grid">
                   <div>
-                    <div className="activity-heading">
-                      <History aria-hidden="true" size={17} />
-                      <h3>Timeline</h3>
-                    </div>
+                    <h3>Durable timeline</h3>
                     <ol className="timeline">
-                      <li>
-                        <span className="timeline-dot" />
-                        <div>
-                          <strong>Appeal received</strong>
-                          <span>{appeal.observed} · source channel</span>
-                        </div>
-                      </li>
-                      <li>
-                        <span className="timeline-dot" />
-                        <div>
-                          <strong>Advisory produced</strong>
-                          <span>
-                            {modelVersion} · human confirmation required
-                          </span>
-                        </div>
-                      </li>
-                      {hasDecision && (
-                        <li>
-                          <span className="timeline-dot complete" />
-                          <div>
-                            <strong>{decisionLabel}</strong>
-                            <span>Local operator · just now</span>
-                          </div>
+                      {detail.timeline.map((event) => (
+                        <li key={event.event_id}>
+                          {event.event_type} · {event.observed_at}
                         </li>
-                      )}
+                      ))}
                     </ol>
                   </div>
                   <div>
-                    <div className="activity-heading">
-                      <ShieldCheck aria-hidden="true" size={17} />
-                      <h3>Audit and sync</h3>
-                    </div>
-                    <div className="audit-list">
-                      <div>
-                        <span>Audit event</span>
-                        <strong>
-                          {hasDecision ? "Recorded" : "Awaiting decision"}
-                        </strong>
-                      </div>
-                      <div>
-                        <span>External sync</span>
-                        <strong className="attention">Pending</strong>
-                      </div>
-                      <div>
-                        <span>Raw reference</span>
-                        <strong>Opaque only</strong>
-                      </div>
-                    </div>
+                    <h3>External delivery</h3>
+                    <p>{detail.synchronization?.status ?? "not required"}</p>
+                    <p>
+                      {detail.synchronization?.external_id ?? "No external ID"}
+                    </p>
                   </div>
                 </div>
                 <OwnershipHandoffPanel
-                  key={selectedId}
+                  key={detail.request_id}
                   locale={locale}
-                  regionId={appeal.region}
-                  initialRequestId={appeal.id}
-                  assignmentId={
-                    latestAssignment?.request_id === selectedId
-                      ? latestAssignment.assignment_id
-                      : undefined
-                  }
-                  assignmentServiceId={
-                    latestAssignment?.request_id === selectedId
-                      ? latestAssignment.service_id
-                      : undefined
-                  }
-                  assignmentUnitId={
-                    latestAssignment?.request_id === selectedId
-                      ? latestAssignment.assignee_unit_id
-                      : undefined
-                  }
+                  regionId={detail.region_id}
+                  initialRequestId={detail.request_id}
                 />
                 <ClosureIntegrityPanel
-                  key={`closure-${selectedId}`}
+                  key={`closure-${detail.request_id}`}
                   locale={locale}
-                  regionId={appeal.region}
-                  initialRequestId={appeal.id}
+                  regionId={detail.region_id}
+                  initialRequestId={detail.request_id}
                 />
               </section>
-            )}
-
-            <section
-              className="status-band"
-              id="quality"
-              aria-labelledby="foundation-status"
-            >
-              <div className="section-heading compact">
-                <div>
-                  <p className="eyebrow">Foundation status</p>
-                  <h2 id="foundation-status">Local critical path</h2>
-                </div>
-              </div>
-              <div className="status-grid">
-                <div>
-                  <Database aria-hidden="true" size={20} />
-                  <strong>Canonical data</strong>
-                  <span>Version 1.0.0</span>
-                </div>
-                <div>
-                  <ShieldCheck aria-hidden="true" size={20} />
-                  <strong>PII boundary</strong>
-                  <span>Opaque references only</span>
-                </div>
-                <div>
-                  <Clock3 aria-hidden="true" size={20} />
-                  <strong>Business time</strong>
-                  <span>Quality is explicit</span>
-                </div>
-              </div>
-            </section>
+            ) : null}
           </section>
         </div>
-      )}
-      <p className="sr-only" role="status" aria-live="polite">
-        {hasDecision
-          ? `${text.auditRecorded}: ${decisionLabel}`
-          : text[demoState]}
-      </p>
-      <dialog
-        ref={dialogRef}
-        className="decision-dialog"
-        onCancel={closeDecisionDialog}
-      >
-        <form
-          method="dialog"
-          onSubmit={(event) => {
-            event.preventDefault();
-            saveDecision();
-          }}
-        >
-          <p className="eyebrow">{text.humanDecision}</p>
-          <h2>{decisionAction === "confirm" ? text.confirm : text.manual}</h2>
-          {decisionAction === "manual" ? (
-            <>
-              <label htmlFor="correction-reason">
-                {text.correctionReason} <span aria-hidden="true">*</span>
-              </label>
-              <select
-                id="correction-reason"
-                required
-                aria-describedby="correction-reason-help"
-                value={correctionReason}
-                onChange={(event) => setCorrectionReason(event.target.value)}
-              >
-                <option value="">
-                  {locale === "ru" ? "Выберите причину" : "Себепті таңдаңыз"}
-                </option>
-                <option value="wrong_topic">
-                  {locale === "ru" ? "Неверная категория" : "Қате санат"}
-                </option>
-                <option value="wrong_service">
-                  {locale === "ru" ? "Неверная организация" : "Қате ұйым"}
-                </option>
-                <option value="missing_context">
-                  {locale === "ru"
-                    ? "Недостаточно контекста"
-                    : "Контекст жеткіліксіз"}
-                </option>
-              </select>
-              <span id="correction-reason-help" className="field-help">
-                {locale === "ru"
-                  ? "Причина попадёт в аудит."
-                  : "Себеп аудитке жазылады."}
-              </span>
-              <label htmlFor="operator-note">{text.optionalNote}</label>
-              <textarea
-                id="operator-note"
-                value={operatorNote}
-                onChange={(event) => setOperatorNote(event.target.value)}
-                maxLength={2000}
-              />
-            </>
-          ) : (
-            <p>{text.noAssignment}</p>
-          )}
-          <div className="dialog-actions">
-            <button
-              className="secondary-action"
-              type="button"
-              autoFocus
-              onClick={closeDecisionDialog}
-            >
-              {locale === "ru" ? "Отмена" : "Бас тарту"}
-            </button>
-            <button
-              className="primary-action"
-              type="submit"
-              disabled={decisionAction === "manual" && !correctionReason}
-            >
-              {locale === "ru" ? "Подтвердить" : "Растау"}
-            </button>
-          </div>
-        </form>
-      </dialog>
+      ) : null}
     </main>
-  );
-}
-
-function RecommendationList({
-  title,
-  items,
-}: {
-  title: string;
-  items: Recommendation[];
-}) {
-  return (
-    <div className="recommendation-panel">
-      <span className="panel-label">{title}</span>
-      <ol>
-        {items.map((item) => (
-          <li key={item.id}>
-            <span>
-              <b>{item.label}</b>
-              <small>{item.id}</small>
-            </span>
-            <strong>{scoreLabel(item.score)}</strong>
-          </li>
-        ))}
-      </ol>
-    </div>
-  );
-}
-
-function EvidencePanel({ title, items }: { title: string; items: string[] }) {
-  return (
-    <section className="evidence-panel" aria-labelledby={`evidence-${title}`}>
-      <h3 id={`evidence-${title}`}>{title}</h3>
-      <ul>
-        {items.map((item) => (
-          <li key={item}>{item}</li>
-        ))}
-      </ul>
-    </section>
   );
 }

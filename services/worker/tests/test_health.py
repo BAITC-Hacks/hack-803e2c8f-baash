@@ -50,6 +50,7 @@ async def test_poll_loop_recovers_from_database_failures_with_bounded_backoff(mo
 @pytest.mark.asyncio
 async def test_readiness_is_unhealthy_when_supervised_loop_exits(monkeypatch):
     monkeypatch.setattr(main, "_enabled", True)
+    monkeypatch.setattr(main, "_adapter_mode", "replay")
     monkeypatch.setattr(main, "_database_url", "postgresql://invalid")
     monkeypatch.setattr(main, "_poll_once", lambda: (_ for _ in ()).throw(RuntimeError()))
 

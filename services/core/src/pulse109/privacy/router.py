@@ -24,6 +24,7 @@ class PrivateRefResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     token: str
+    region_id: str
     vault_ref: str
     classification: str
     access_scope: list[str]
@@ -57,10 +58,9 @@ def create_privacy_router(service: PrivacyService) -> APIRouter:
         token: str,
         command: ResolvePrivateRefInput,
         identity: AuthenticatedActor,
-        region_id: str | None = Header(
-            None,
+        region_id: str = Header(
             alias="X-Region-Id",
-            pattern=r"^(ALL|[A-Z0-9_-]{2,32})$",
+            pattern=r"^[A-Z0-9_-]{2,32}$",
         ),
     ) -> PrivateRefResponse:
         try:
@@ -69,7 +69,7 @@ def create_privacy_router(service: PrivacyService) -> APIRouter:
                 actor=identity,
                 action=command.action,
                 reason_code=command.reason_code,
-                region_id=region_id if region_id != "ALL" else None,
+                region_id=region_id,
             )
         except PrivacyAccessError as exc:
             raise HTTPException(
@@ -79,6 +79,7 @@ def create_privacy_router(service: PrivacyService) -> APIRouter:
 
         return PrivateRefResponse(
             token=ref.token,
+            region_id=ref.region_id or region_id,
             vault_ref=ref.vault_ref,
             classification=ref.classification,
             access_scope=ref.access_scope,
@@ -95,16 +96,18 @@ def create_privacy_router(service: PrivacyService) -> APIRouter:
     def list_audits(
         token: str,
         identity: AuthenticatedActor,
-        region_id: str | None = Header(
-            None,
+        region_id: str = Header(
             alias="X-Region-Id",
-            pattern=r"^(ALL|[A-Z0-9_-]{2,32})$",
+            pattern=r"^[A-Z0-9_-]{2,32}$",
         ),
     ) -> list[PIIAccessAuditResponse]:
-        identity.require_any_role("auditor", "supervisor", "admin")
-        if region_id and region_id != "ALL":
-            identity.require_region(region_id)
-        audits = service.repository.list_access_audits(token)
+        try:
+            audits = service.list_audits(token, actor=identity, region_id=region_id)
+        except PrivacyAccessError as exc:
+            raise HTTPException(
+                status_code=exc.status_code,
+                detail={"code": exc.code, "message": exc.message},
+            ) from exc
         return [
             PIIAccessAuditResponse(
                 audit_event_id=item.audit_event_id,

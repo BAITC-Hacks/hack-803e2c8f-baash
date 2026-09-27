@@ -15,8 +15,21 @@ from pulse109_replay.store import ReplayStore
 
 from .postgres_delivery import PostgresOutboxRepository, PostgresOutboxWorker
 
+
+def _validate_adapter_mode(settings: Settings, mode: str, enabled: bool) -> None:
+    if mode not in {"unavailable", "replay"}:
+        raise RuntimeError("Unknown worker adapter mode")
+    if mode == "replay" and settings.effective_profile in {"pilot", "production"}:
+        raise RuntimeError("Replay delivery is forbidden in pilot and production")
+    if enabled and mode == "unavailable" and settings.effective_profile == "demo":
+        raise RuntimeError("Demo worker requires an explicit replay adapter mode")
+
+
+_settings = Settings(service_name="worker")
 _database_url = os.getenv("PULSE109_DATABASE_URL")
 _enabled = os.getenv("PULSE109_WORKER_ENABLED", "false").lower() == "true"
+_adapter_mode = os.getenv("PULSE109_WORKER_ADAPTER_MODE", "unavailable").lower()
+_validate_adapter_mode(_settings, _adapter_mode, _enabled)
 _stop = asyncio.Event()
 _adapter = ReplayStore()
 _worker_task: asyncio.Task[None] | None = None
@@ -25,7 +38,7 @@ _MAX_DATABASE_BACKOFF_SECONDS = 30.0
 
 
 def _poll_once() -> int:
-    if not _database_url:
+    if not _database_url or _adapter_mode == "unavailable":
         return 0
     worker = PostgresOutboxWorker(PostgresOutboxRepository(_database_url))
     return worker.run_once(_adapter, worker_id="offline-replay-worker", limit=25)
@@ -55,7 +68,11 @@ async def _poll_loop() -> None:
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     global _worker_task
     _stop.clear()
-    _worker_task = asyncio.create_task(_poll_loop()) if _enabled and _database_url else None
+    _worker_task = (
+        asyncio.create_task(_poll_loop())
+        if _enabled and _database_url and _adapter_mode == "replay"
+        else None
+    )
     yield
     _stop.set()
     if _worker_task is not None:
@@ -79,7 +96,11 @@ async def liveness() -> dict[str, str]:
 @app.get("/v1/health/ready")
 async def readiness() -> dict[str, str]:
     if not _enabled:
+        if _settings.effective_profile in {"pilot", "production"}:
+            raise HTTPException(status_code=503, detail="worker delivery is disabled")
         return {"status": "ready", "mode": "disabled-local"}
+    if _adapter_mode == "unavailable":
+        raise HTTPException(status_code=503, detail="approved regional adapter is unavailable")
     if not _database_url:
         raise HTTPException(status_code=503, detail="worker database is not configured")
     if _worker_task is None or _worker_task.done():

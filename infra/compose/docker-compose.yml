@@ -105,6 +105,7 @@ services:
     environment:
       PULSE109_DATABASE_URL: postgresql+psycopg://pulse109:pulse109-local@postgres:5432/pulse109
       PULSE109_WORKER_ENABLED: "true"
+      PULSE109_WORKER_ADAPTER_MODE: replay
     ports:
       - "8081:8081"
     healthcheck:

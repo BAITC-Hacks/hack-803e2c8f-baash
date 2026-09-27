@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -14,6 +16,7 @@ class Settings(BaseSettings):
     )
 
     environment: Literal["local", "development", "test", "pilot", "production"] = "local"
+    profile: Literal["local", "demo", "pilot", "production"] | None = None
     database_url: str = "postgresql+psycopg://pulse109:pulse109-local@localhost:5432/pulse109"
     readiness_database_required: bool = True
     log_level: str = "INFO"
@@ -32,7 +35,25 @@ class Settings(BaseSettings):
     approved_legal_basis: str | None = None
     approved_retention_class: str | None = None
     replay_snapshot_dir: str = ".data/snapshots"
+    demo_attachment_dir: str = ".data/attachments"
     control_plane_trusted_keys: list[str] = Field(default_factory=list)
+
+    @property
+    def effective_profile(self) -> str:
+        return self.profile or self.environment
+
+    @model_validator(mode="after")
+    def validate_profile_boundary(self) -> Settings:
+        if self.environment in {"pilot", "production"} and self.profile not in {
+            None,
+            self.environment,
+        }:
+            raise ValueError("An operational environment cannot activate a demo or local profile")
+        if self.profile in {"pilot", "production"} and self.environment != self.profile:
+            raise ValueError("An operational profile requires the matching environment")
+        if self.effective_profile == "demo" and not self.readiness_database_required:
+            raise ValueError("The demo profile requires PostgreSQL readiness")
+        return self
 
 
 @lru_cache

@@ -25,6 +25,7 @@ class StrictModel(BaseModel):
 
 class PrivateRef(StrictModel):
     token: Annotated[str, Field(min_length=1, max_length=256)]
+    region_id: str | None = None
     vault_ref: Annotated[str, Field(min_length=1)]
     classification: PrivacyClassification
     access_scope: list[str] = Field(min_length=1)

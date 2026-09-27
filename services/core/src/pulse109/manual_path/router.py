@@ -115,7 +115,7 @@ def create_manual_router(
         identity: AuthenticatedActor,
         region_id: str = Header(alias="X-Region-Id", pattern=r"^[A-Z0-9_-]{2,32}$"),
     ) -> AttachmentRef:
-        identity.require_any_role("citizen", "intake", "operator", "supervisor", "admin")
+        identity.require_any_role("intake", "operator", "supervisor", "admin")
         identity.require_region(region_id)
         try:
             return service.upload_attachment(
@@ -137,9 +137,7 @@ def create_manual_router(
         identity: AuthenticatedActor,
         region_id: str = Header(alias="X-Region-Id", pattern=r"^[A-Z0-9_-]{2,32}$"),
     ) -> list[AttachmentRef]:
-        identity.require_any_role(
-            "citizen", "intake", "operator", "supervisor", "analyst", "auditor", "admin"
-        )
+        identity.require_any_role("intake", "operator", "supervisor", "analyst", "auditor", "admin")
         identity.require_region(region_id)
         try:
             return service.list_attachments(request_id, region_id=region_id)
