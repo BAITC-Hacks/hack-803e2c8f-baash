@@ -282,6 +282,26 @@ def test_manual_decision_and_outbox_commit_as_one_durable_path() -> None:
         )
         assert [row[0] for row in cursor.fetchall()] == ["1", "2", "3", "4", "5", "6"]
 
+    # The worker stores transport states; the public appeal card uses stable
+    # synchronization states after delivery and terminal failure.
+    with psycopg.connect(database_url) as connection, connection.cursor() as cursor:
+        cursor.execute(
+            "UPDATE integration.outbox SET status = 'published' "
+            "WHERE subject_id = %s AND event_type = 'appeal.assigned.v1'",
+            (str(appeal.request_id),),
+        )
+    assert service.detail(appeal.request_id, region_id="ALA").synchronization.status == "delivered"
+    with psycopg.connect(database_url) as connection, connection.cursor() as cursor:
+        cursor.execute(
+            "UPDATE integration.outbox SET status = 'dead_letter' "
+            "WHERE subject_id = %s AND event_type = 'appeal.assigned.v1'",
+            (str(appeal.request_id),),
+        )
+    assert (
+        service.detail(appeal.request_id, region_id="ALA").synchronization.status
+        == "failed_permanent"
+    )
+
 
 @pytest.mark.integration
 def test_create_idempotency_is_region_scoped_and_serializes_concurrent_requests() -> None:
