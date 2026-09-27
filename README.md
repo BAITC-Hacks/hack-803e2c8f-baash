@@ -30,4 +30,6 @@ Architecture diagrams and transaction flow are in [EN/RU architecture notes](doc
 
 ## Verify
 
+**CI status note.** If you are reading this on the BAITC-Hacks mirror, its Actions checks show red. The jobs never start there: GitHub reports `The job was not started because your account is locked due to a billing issue`, which is an organization billing lock, not a failure of this code. The same four jobs pass on the development repository, for example [this run](https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/36299408363) on commit `7e7ad77`, the same commit the mirror rejected. Reviewers can also reproduce the gate locally with the commands below.
+
 The root `Makefile` and Windows `scripts/tasks.ps1` runner expose `bootstrap`, `lint`, `typecheck`, `test`, `contract-test`, `e2e`, `build`, `up` and `down`. Run `make test` plus `make contract-test` and `make e2e` after changes, or the equivalent PowerShell tasks. PostgreSQL integration tests require `PULSE109_TEST_DATABASE_URL`; without a running database pytest reports those cases as skipped. CI also builds containers, checks health, applies migrations and runs a disposable restore drill. A successful build or unit test alone is not production certification.
