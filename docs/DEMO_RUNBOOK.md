@@ -38,6 +38,37 @@ For a clean repeat, run `reset` then `up`. The seeded source IDs, texts, times a
 
 If asked about future ML, distinguish the **running lexical CPU advisory** from [conservative model candidates and PulseDM research](ml/MODEL_STRATEGY.md). No XLM-R, Qwen embedding/reranker, Jev or PulseDM weights run in this demo; every consequential action remains human governed.
 
+## The emerging water problem (about 4 minutes)
+
+This is the walkthrough that shows what the platform is for. The seed creates
+six synthetic reports of one developing water problem along a single street,
+arriving over about forty minutes before the moment of seeding.
+
+1. Open `http://localhost:3000`. The **Operations center** opens first. The
+   counters are records, not estimates.
+2. Press **Поиск возникающих проблем**. The radar scans a six-hour window. It
+   states its own result: `available` with the number of reports scanned, and
+   the note that the semantic signal is not in use because no citizen text
+   exists.
+3. An `EMERGING_PATTERN` row appears. Open it. The inspector shows the six
+   reports on a map, their spread in metres, how the arrivals built up in
+   five-minute buckets, which signals linked them and which languages they came
+   in. Say plainly: the radar reports that a group of similar reports appeared.
+   It does not claim a cause.
+4. Press **Создать инцидент из кластера**. The incident is created through the
+   normal incident endpoint and the cluster records that a human promoted it.
+5. The **war room** opens. Every section states whether it ran. Ownership
+   abstains until a member is confirmed, outcome memory abstains for want of
+   verified closures, the footprint is available with a real spread.
+6. Read one suggestion aloud from **Что можно сделать дальше** together with its
+   reason codes. Point out `advisory_only`: the system proposes, the operator
+   decides.
+7. Switch to the **operator queue** and finish the case through decision,
+   assignment, status and closure as in the walkthrough above.
+
+If asked what happens without ML, stop the inference container. The manual path
+keeps working, which is the invariant the whole design is built on.
+
 ## Failure boundaries
 
 - If PostgreSQL is unavailable, core readiness fails and seeding stops. Do not substitute the in-memory repository for the demo.

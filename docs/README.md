@@ -1,5 +1,6 @@
 # Documentation index / Индекс документации
 
+- [Capabilities / Возможности](features/README.md): what the product does, end to end, and the three states every algorithmic capability reports.
 - [Architecture / Архитектура](architecture/README.md): RU/EN Mermaid runtime, data, AI/human, incident, failure and privacy diagrams.
 - [Demo runbook](DEMO_RUNBOOK.md): exact startup, reset and Mock Demo Day click path.
 - [Feature status / Статус функций](FEATURE_STATUS.md): implemented, synthetic and externally blocked behavior.
