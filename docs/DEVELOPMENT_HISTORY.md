@@ -12,3 +12,9 @@ This is a concise account of tracked commits on `codex/production-platform-20260
 | 2026-09-27, `26b9243` | Region-bound privacy references, stricter manual-path checks, explicit worker adapter profile and PostgreSQL-backed demo startup. The operator queue now reads API data and surfaces durable receipts. | Привязка персональных ссылок к региону, усиленные проверки ручного маршрута, явный профиль адаптера рабочего процесса и запуск демо на PostgreSQL. Очередь оператора читает API и показывает сохранённые результаты. |
 
 The maintained decision record is [`DECISION_LOG.md`](DECISION_LOG.md). Git history is authoritative for chronology; documentation describes current behavior only after verification.
+
+## Authorship evidence / Сведения об авторах
+
+`git shortlog -sne codex/production-platform-20260923` records commits under **Baktiyar Ablaikhan**, **Arseniiiii-ai** and **Arsen Baktygaliyev**; the latter two names share one GitHub noreply account identifier. This is commit authorship, not proof of specific team roles, approvals, or review responsibility. Inspect `git log --format='%h %an <%ae> %s'` for a particular change.
+
+`git shortlog -sne codex/production-platform-20260923` показывает коммиты под именами **Baktiyar Ablaikhan**, **Arseniiiii-ai** и **Arsen Baktygaliyev**; последние два имени используют один идентификатор GitHub noreply. Это сведения об авторстве коммитов, а не подтверждение ролей в команде, согласований или ответственности за ревью. Для отдельного изменения используйте `git log --format='%h %an <%ae> %s'`.

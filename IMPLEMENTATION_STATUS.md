@@ -1,5 +1,16 @@
 # Pulse 109 Implementation Status
 
+> Current review source: [feature-status matrix](docs/FEATURE_STATUS.md) and
+> [demo runbook](docs/DEMO_RUNBOOK.md). The milestone and verification snapshots
+> below are historical; they do not certify the current checkout.
+
+## Current extension (2026-09-27)
+
+- The demo seeds four synthetic appeals, including two related water reports, and one idempotent synthetic evidence attachment. The same PostgreSQL-backed APIs now support a visible operator flow through manual decision, assignment, incident proposal and human confirmation, resolution, closure preflight/confirmation, recurrence assessment and a labelled synthetic analytics query.
+- `GET /v1/incidents/{incident_id}` reads region-scoped candidate and confirmed member IDs from persisted state. The operator workspace uses it for readback; unmounted sample-only topology, replay, admin and situation panels with fabricated fallback behavior were removed.
+- CI is configured to run `scripts/verify_demo_flow.py` against separate synthetic appeals after demo startup. This test exercises the normal API and worker rather than modifying the fixed walkthrough records.
+- Operational limits remain: no approved live regional adapter, production web identity, authoritative catalog/SLA, approved private vault and attachment storage/scanner, production read model or validated model-quality dataset.
+
 ## Current review update (2026-09-26)
 
 - `PULSE109_PROFILE=demo` now selects the PostgreSQL manual, incident, audit and outbox path. A dedicated Compose project runs migrations, the normal worker and web app; `scripts/demo_runtime.py` seeds fixed synthetic appeals and resets only demo volumes. This is an implementation status, not a claim of successful local container smoke until the Docker engine verification completes.

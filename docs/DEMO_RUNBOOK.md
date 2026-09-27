@@ -7,31 +7,31 @@ This is the real Pulse 109 application in a dedicated `PULSE109_PROFILE=demo` ru
 Requirements: Docker Desktop with a working Linux engine, Python 3.10-3.13 and locked Python dependencies (`uv sync --all-groups --frozen`). Ports 3000, 5432 and 8080-8084 must be free. From the repository root:
 
 ```powershell
-$env:PYTHONUTF8 = '1'
-uv run python scripts/demo_runtime.py up
+.\demo.ps1 up
 ```
 
-The command builds the normal images, applies the full Alembic chain, waits for healthy services and creates three fixed appeals. It refuses to seed if the core does not report the ready `demo` profile and PostgreSQL. Re-running `seed` is idempotent; it returns the same appeal IDs and does not overwrite operator decisions.
+The command builds the normal images, applies the full Alembic chain, waits for healthy services and creates four fixed appeals. It refuses to seed if the core does not report the ready `demo` profile and PostgreSQL. Re-running `seed` is idempotent; it returns the same appeal IDs, keeps operator decisions and does not duplicate the synthetic evidence attachment. Without PowerShell, use `uv run python scripts/demo_runtime.py up` (and substitute the other action names below).
 
 ```powershell
-uv run python scripts/demo_runtime.py status
-uv run python scripts/demo_runtime.py seed
-uv run python scripts/demo_runtime.py down
-uv run python scripts/demo_runtime.py reset
+.\demo.ps1 status
+.\demo.ps1 seed
+.\demo.ps1 down
+.\demo.ps1 reset
 ```
 
 `down` keeps the dedicated demo volumes. `reset` deletes **only** the `pulse109-demo` Compose project's volumes, including demo PostgreSQL rows and local synthetic blobs. It does not touch the default `pulse109` Compose project. Start again with `up` for the same initial state. Check readiness at `http://localhost:8080/v1/health/ready` and the web app at `http://localhost:3000`.
 
-## One deterministic walkthrough (about 5 minutes)
+## One deterministic walkthrough (5–8 minutes)
 
-1. Open `http://localhost:3000`. Check the `DEMO · SYNTHETIC` badge and queue rows `demo-109-water-001`, `demo-109-light-002`, `demo-109-road-003` in region `ALA`. All were accepted by the normal `POST /v1/requests` path; the missing business time of the lighting appeal is intentionally preserved.
-2. Select `demo-109-water-001`. Show its durable UUID, source reference, version and timeline. Click **Get recommendation**. The CPU lexical result is an advisory with actual model version and confidence. If inference is unavailable, continue with a manual decision.
-3. Enter `topic:water`, `service:water`, and `urgent`, then click **Save manual decision**. Show the server's decision ID, updated version and timeline. Refresh the page; the decision survives because it is stored in PostgreSQL.
-4. Click **Queue assignment**. The response is a queued outbox receipt. Refresh and inspect synchronization. In this profile the worker delivers to the deterministic replay adapter, so an eventual external ID is synthetic. It is not evidence of a live regional connection.
-5. Choose `in_progress` and click **Record status**. Show the new status and append-only timeline event. Open the **Citizen intake** tab only with fictional text; it uses the same API and explicitly marks its source `pulse109-web-synthetic`.
-6. Open **Platform status** to show what the application actually implements and which external dependencies are unavailable. Describe incident topology, signed regional bundles, Replay Lab and closure as implemented API modules with their current limits in the [feature matrix](FEATURE_STATUS.md). The old hardcoded situation-center alerts are not part of the live walkthrough.
+1. Open `http://localhost:3000`. Point to `DEMO · SYNTHETIC` and the four `ALA` queue rows. The two `water` rows are fictional reports of one problem. Say: “These records entered through the normal API and PostgreSQL; no live regional CRM is connected.” The lighting appeal deliberately retains missing business time.
+2. Select `demo-109-water-001`. Show its UUID, source ID, version and timeline. Click **Get recommendation**; explain that it is advisory with a real fallback version. Enter `topic:water`, `service:water`, `urgent` and click **Save manual decision**. Refresh to demonstrate persistence. The **Ownership/Handoff** panel can show an assessment, but any missing approved catalog remains explicit.
+3. Click **Queue assignment**. Show the queued receipt, then **Refresh** until synchronization shows the worker's replay result. Say: “The outbox and worker are real; this external ID is synthetic.”
+4. In **Incident: human decision**, choose `demo-109-water-004`. Click **Propose incident**, confirm both members separately, then **Confirm incident (supervisor)**. Show the stored incident ID, version and two confirmed members. Paste its ID into the load field and reload it to demonstrate durable topology. Both appeals keep independent IDs.
+5. Record `in_progress`, then `resolved`, refreshing the selected appeal after each step. Show timeline events and the seeded `synthetic-repair-evidence.txt` SHA-256 reference. This text file contains no citizen information.
+6. In **Closure evidence**, enter the current appeal version, `REPAIR_VERIFIED`, the displayed `sha256:...` reference and evidence type `repair_note`. Run preflight, check the human-confirmation box, enter reason `OPERATOR_CONFIRMED`, then confirm. Show the closed state and audit receipt. Refresh the appeal and request **Recurrence assessment**; its result is advisory, not an automatic reopen.
+7. Open **Platform status** and click **Load ALA API slice**. The result is explicitly a synthetic analytics read model, with quality, cutoff and provenance. Explain that production identity, source API, taxonomy/SLA, vault/retention and real model-quality evidence remain blocked; the [feature matrix](FEATURE_STATUS.md) lists the exact limits. The **Citizen intake** tab accepts only fictional text in this profile.
 
-For a clean repeat, run `reset` then `up`. The seeded source IDs, texts and times are fixed; PostgreSQL-generated appeal UUIDs may differ after reset.
+For a clean repeat, run `reset` then `up`. The seeded source IDs, texts, times and evidence hash are fixed; PostgreSQL-generated UUIDs may differ after reset. CI runs `scripts/verify_demo_flow.py` against separate synthetic appeals to prove the same command path without altering these four walkthrough records.
 
 ## Failure boundaries
 

@@ -734,6 +734,17 @@ Record implementation decisions here when the repository, contracts or available
 - **Evidence:** `infra/compose/docker-compose.demo.yml`, `scripts/demo_runtime.py`, migration `0022_privacy_region`, profile/privacy/worker tests, `docs/DEMO_RUNBOOK.md`.
 - **Revisit when:** the first regional adapter, approved object store/scanner and production identity provider are supplied.
 
+### D-069 — Incident readback and demonstrable end-to-end path
+
+- **Date:** 2026-09-27
+- **Status:** accepted for demo and local review
+- **Context:** the incident backend could mutate durable state but had no region-scoped read endpoint; an unused web panel fabricated success when topology commands failed. The demo only showed a partial appeal-to-status journey.
+- **Decision:** add a scoped incident detail contract with candidate and confirmed member IDs; expose a small operator panel that calls the actual create, membership and supervisor-confirm APIs. Seed a second related synthetic appeal and clean evidence, then verify decision, assignment, worker delivery, incident, resolution, closure, recurrence and analytics through the demo API in CI. Remove unmounted sample-only panels that fabricated operational results.
+- **Alternatives:** keep a static incident illustration; pre-seed a confirmed incident; return sample incident data when the API fails.
+- **Consequences:** a reviewer can reload and inspect persisted membership, and API failures stay visible. The panel does not yet cover topology merge/split. PostgreSQL topology and resolution commands require clean evidence from current incident members; approved evidence policy remains external.
+- **Evidence:** `services/core/src/pulse109/incidents`, `apps/web/app/incident-workflow-panel.tsx`, `scripts/verify_demo_flow.py`, demo-profile CI job.
+- **Revisit when:** approved incident evidence and regional workflow rules are available.
+
 ### D-XXX — Short title
 
 

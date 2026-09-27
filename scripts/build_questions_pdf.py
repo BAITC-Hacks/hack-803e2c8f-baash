@@ -12,7 +12,7 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.platypus import BaseDocTemplate, Frame, PageTemplate, Paragraph, Spacer
+from reportlab.platypus import BaseDocTemplate, Frame, PageBreak, PageTemplate, Paragraph, Spacer
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "docs" / "GOVTECH_BUSINESS_QUESTIONS.md"
@@ -86,6 +86,8 @@ def main() -> None:
             story.append(Paragraph(html.escape(line[2:]), title))
             continue
         if line.startswith("## "):
+            if line == "## EN":
+                story.append(PageBreak())
             story.append(Spacer(1, 7))
             story.append(Paragraph(html.escape(line[3:]), heading))
             continue

@@ -10,11 +10,10 @@ Requires Docker Desktop/Compose with a working Linux engine, Python 3.10-3.13, `
 
 ```powershell
 uv sync --all-groups --frozen
-$env:PYTHONUTF8 = '1'
-uv run python scripts/demo_runtime.py up
+.\demo.ps1 up
 ```
 
-Open **http://localhost:3000**. The command applies migrations and idempotently seeds three deterministic synthetic appeals in the dedicated `pulse109-demo` Compose project. `uv run python scripts/demo_runtime.py reset` removes only that project's volumes; rerun `up` for a clean walkthrough. The exact [Mock Demo Day path](docs/DEMO_RUNBOOK.md) starts at the operator queue and shows a stored decision, outbox assignment, status event and timeline. The demo badge and replay receipts are synthetic labels, not live integration claims.
+Open **http://localhost:3000**. The command applies migrations and idempotently seeds four deterministic synthetic appeals plus a synthetic closure-evidence attachment in the dedicated `pulse109-demo` Compose project. `.\demo.ps1 reset` removes only that project's volumes; rerun `up` for a clean walkthrough. The exact [5–8 minute Mock Demo Day path](docs/DEMO_RUNBOOK.md) follows decision, outbox assignment, human-confirmed incident, evidence-backed closure, recurrence and labelled synthetic analytics. The demo badge and replay receipts are synthetic labels, not live integration claims. On Linux/macOS, use `uv run python scripts/demo_runtime.py up` and the same `reset`/`down` actions.
 
 For local non-demo development, `make up` (or `.\scripts\tasks.ps1 up` on Windows) starts the default Compose topology with PostgreSQL. `make down` retains its data volume. A pilot/production deployment must supply an approved OIDC provider, regional adapter, policies, secure source storage and retention decisions; replay delivery is rejected in those profiles.
 
@@ -24,10 +23,24 @@ For local non-demo development, `make up` (or `.\scripts\tasks.ps1 up` on Window
 - Optional inference returns an advisory with provenance. Manual creation, decision, assignment and status paths do not require ML. Synthetic/offline metrics are never presented as production quality.
 - Regional access is checked against authenticated claims and stored object regions. The local/demo identity is only for isolated synthetic work. Operational intake fails closed without approved source reference, legal basis and retention class.
 - Demo/local attachment bytes are stored in an isolated volume after deterministic validation. Pilot/production upload returns an explicit unavailable response until approved immutable object storage and malware scanning are implemented.
-- The web queue is backed by the API in region `ALA`. Production web OIDC session and multi-region selection remain work to complete. Replay Lab, incident topology and several advanced APIs have stronger backend coverage than operator UI coverage; see the matrix.
+- The web queue is backed by the API in region `ALA`. It exposes human-confirmed incident creation and a region-scoped readback, closure and a synthetic analytics API slice. Production web OIDC session, multi-region selection, topology merge/split controls and an operational situation center remain work to complete; see the matrix.
 
-Architecture diagrams and transaction flow are in [EN/RU architecture notes](docs/architecture/README.md). The full [documentation index](docs/README.md) links the [decision log](docs/DECISION_LOG.md), [development history](docs/DEVELOPMENT_HISTORY.md), and [questions for GovTech organizers](docs/GOVTECH_BUSINESS_QUESTIONS.md).
+Architecture, data, human-decision, incident, failure and privacy diagrams are in the [EN/RU architecture notes](docs/architecture/README.md). The full [documentation index](docs/README.md) links the [decision log](docs/DECISION_LOG.md), [development history](docs/DEVELOPMENT_HISTORY.md), and [20 questions for GovTech organizers](docs/GOVTECH_BUSINESS_QUESTIONS.md).
+
+## Repository map
+
+| Path | Responsibility |
+| --- | --- |
+| `services/core` | FastAPI business modules, PostgreSQL repositories and Alembic migrations |
+| `services/worker`, `services/inference` | Outbox delivery and optional inference processes |
+| `adapters` | Replay/Open311 implementations and adapter SDK |
+| `apps/web` | Next.js citizen intake and operator workspace |
+| `contracts` | OpenAPI, canonical schemas, event catalog and ADRs |
+| `infra/compose`, `scripts` | Runtime topology, demo commands, verification and release tooling |
+| `docs`, `output/pdf` | Review documentation and generated organizer questions |
+
+The [RU/EN history](docs/DEVELOPMENT_HISTORY.md) derives chronology and visible authorship from Git. A commit author does not by itself prove a team role or review responsibility; those are not invented here.
 
 ## Verify
 
-The root `Makefile` and Windows `scripts/tasks.ps1` runner expose `bootstrap`, `lint`, `typecheck`, `test`, `contract-test`, `e2e`, `build`, `up` and `down`. Run `make test` plus `make contract-test` and `make e2e` after changes, or the equivalent PowerShell tasks. PostgreSQL integration tests require `PULSE109_TEST_DATABASE_URL`; without a running database pytest reports those cases as skipped. CI also builds containers, checks health, applies migrations and runs a disposable restore drill. A successful build or unit test alone is not production certification.
+The root `Makefile` and Windows `scripts/tasks.ps1` runner expose `bootstrap`, `lint`, `typecheck`, `test`, `contract-test`, `e2e`, `build`, `up` and `down`. Run `make test` plus `make contract-test` and `make e2e` after changes, or the equivalent PowerShell tasks. PostgreSQL integration tests require `PULSE109_TEST_DATABASE_URL`; without a running database pytest reports those cases as skipped. CI builds both the local and demo topologies, executes the synthetic end-to-end API path, checks migrations and runs a disposable restore drill. A successful build or unit test alone is not production certification.

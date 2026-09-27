@@ -16,6 +16,14 @@ The questions below identify decisions that cannot be inferred from sample data 
 10. **Качество и запуск.** Какие реальные размеченные данные и критерии допуска нужны для оценки рекомендаций, ложных дубликатов и рисков? Кто принимает решение о включении модели?
 11. **Доступность.** Каковы целевые RPO/RTO, процедура восстановления после сбоя региональной системы, допустимая очередь ожидания и условия перехода в ручной режим?
 12. **Mock Demo Day.** Подтвердите, что синтетические обращения, replay-адаптер и отсутствие презентации будут явно обозначены. Какие действия и ответы организаторы хотят увидеть в работающем интерфейсе?
+13. **Исходные записи.** Какой идентификатор и неизменяемый источник должны сопровождать каждое обращение? Как исправлять ошибку в региональном источнике, не переписывая историю?
+14. **Границы юрисдикции.** Кто утверждает карту территорий и полномочий между районом, городом и областью? Что делать, если адрес неполный или граница спорная?
+15. **Подтверждение доставки.** Какой ответ региональной системы означает принятие, временный сбой или окончательный отказ? В течение какого времени допустимы повторы и кто разбирает dead letter?
+16. **Закрытие и доказательства.** Какие типы фото, актов или ответов допустимы для закрытия, кто проверяет их принадлежность обращению, и может ли один материал подтверждать несколько обращений?
+17. **Повторное открытие.** Кто и в какой срок может оспорить закрытие или открыть обращение снова? Когда повтор становится новым обращением, связанным с прежним инцидентом?
+18. **Уведомления гражданину.** Какой канал и шаблон ответа разрешены, как фиксируются отправка и недоставка, и какая информация об инциденте может быть показана заявителю?
+19. **Наблюдаемость и аудит.** Какие события, ошибки и сроки должны быть доступны региональному оператору и аудитору? Какие поля категорически нельзя писать в логи и метрики?
+20. **Запуск и ответственность.** Кто утверждает пилот, подписывает региональную конфигурацию, останавливает интеграцию при инциденте и принимает решение о восстановлении обслуживания?
 
 ## EN
 
@@ -31,3 +39,11 @@ The questions below identify decisions that cannot be inferred from sample data 
 10. **Quality and release.** Which real labeled data and acceptance criteria govern recommendations, false duplicate proposals and safety? Who authorizes model activation?
 11. **Resilience.** What RPO/RTO, regional outage recovery procedure, queue wait and manual-mode triggers are required?
 12. **Mock Demo Day.** Please confirm that synthetic appeals, replay delivery and the no-presentation format should be visibly labelled. Which live UI actions and responses should organizers inspect?
+13. **Source records.** Which immutable source identifier and record must accompany each appeal? How are source corrections represented without rewriting history?
+14. **Jurisdiction.** Who approves territorial and authority boundaries between district, city and region? What happens when an address is incomplete or disputed?
+15. **Delivery confirmation.** Which regional response means accepted, transient failure or final rejection? How long may retries continue, and who handles dead letters?
+16. **Closure evidence.** Which photos, reports or replies can support closure, who verifies that evidence belongs to the appeal, and may one item support multiple appeals?
+17. **Reopening.** Who may challenge a closure or reopen an appeal, and within what period? When does a recurrence become a new appeal linked to an earlier incident?
+18. **Citizen notifications.** Which channels and response templates are approved, how are delivery and failure recorded, and what incident information may a citizen see?
+19. **Observability and audit.** Which events, errors and deadlines must regional operators and auditors see? Which fields must never enter logs or metrics?
+20. **Release accountability.** Who approves the pilot, signs regional configuration, halts integration during an incident and authorizes restoration of service?
