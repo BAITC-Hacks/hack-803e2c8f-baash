@@ -17,7 +17,7 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 from hashlib import sha256
 from pathlib import Path
-from typing import Any, Literal, cast
+from typing import Any, cast
 from uuid import NAMESPACE_URL, UUID, uuid4, uuid5
 
 import psycopg
@@ -52,7 +52,7 @@ from .models import (
     SyncState,
     TimelineEvent,
 )
-from .service import ManualPathError, _hash
+from .service import ManualPathError, _hash, sync_status_from_outbox
 
 
 def _psycopg_url(database_url: str) -> str:
@@ -61,25 +61,6 @@ def _psycopg_url(database_url: str) -> str:
 
 def _now() -> datetime:
     return datetime.now(timezone.utc)
-
-
-PublicSyncStatus = Literal["queued", "delivered", "retrying", "failed_permanent"]
-_OUTBOX_SYNC_STATUS: dict[str, PublicSyncStatus] = {
-    "pending": "queued",
-    "processing": "queued",
-    "published": "delivered",
-    "retrying": "retrying",
-    "dead_letter": "failed_permanent",
-}
-
-
-def _public_sync_status(outbox_status: str) -> PublicSyncStatus:
-    try:
-        return _OUTBOX_SYNC_STATUS[outbox_status]
-    except KeyError as error:
-        raise ManualPathError(
-            "unknown_outbox_status", "Outbox synchronization state needs review.", 503
-        ) from error
 
 
 def _redact_text(value: str | None) -> str:
@@ -1000,7 +981,7 @@ class PostgresManualPathService:
             sync = None
             if sync_row:
                 sync = SyncState(
-                    status=_public_sync_status(sync_row["status"]),
+                    status=sync_status_from_outbox(sync_row["status"]),
                     source_system=None,
                     last_attempt_at=sync_row["attempted_at"],
                     external_id=sync_row["external_id"],

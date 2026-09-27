@@ -30,6 +30,7 @@ from .models import (
     ClassificationRecommendation,
     CreateRequest,
     DecisionReceipt,
+    DeliverySyncStatus,
     LatestAssignment,
     OperatorDecision,
     RankedLabel,
@@ -46,6 +47,35 @@ class ManualPathError(Exception):
     def __init__(self, code: str, message: str, status_code: int = 409) -> None:
         super().__init__(message)
         self.code, self.message, self.status_code = code, message, status_code
+
+
+# integration.outbox keeps the worker's transport vocabulary, constrained by the
+# CHECK in migration 0002. DeliverySyncStatus is what an operator sees on the
+# appeal card. The projection between them has to be total: a partial one passed
+# unmapped values straight to pydantic, so reading an appeal returned 500 as soon
+# as the worker published its outbox entry.
+OUTBOX_SYNC_STATUS: dict[str, DeliverySyncStatus] = {
+    "pending": "queued",
+    "processing": "queued",
+    "published": "delivered",
+    "retrying": "retrying",
+    "dead_letter": "failed_permanent",
+}
+
+
+def sync_status_from_outbox(outbox_status: str) -> DeliverySyncStatus:
+    """Project a stored outbox status onto the operator-facing vocabulary.
+
+    Fails closed. An unmapped status means a storage state shipped without a
+    matching entry here, and guessing which one it resembles would misreport
+    delivery to the operator.
+    """
+    try:
+        return OUTBOX_SYNC_STATUS[outbox_status]
+    except KeyError as error:
+        raise ManualPathError(
+            "unknown_outbox_status", "Outbox synchronization state needs review.", 503
+        ) from error
 
 
 def _now() -> datetime:
@@ -261,7 +291,7 @@ class ManualPathService:
         sync_receipt = None
         if sync:
             sync_receipt = SyncState(
-                status="queued" if sync["status"] == "pending" else sync["status"],
+                status=sync_status_from_outbox(str(sync["status"])),
             )
         return AppealDetail(
             **appeal.model_dump(),

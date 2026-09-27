@@ -2,6 +2,10 @@ name: pulse109
 
 services:
   postgres:
+    # postgis/postgis publishes amd64 only, so an arm64 host (Apple Silicon)
+    # cannot build this image natively. Pinning the platform makes the service
+    # run under emulation there and changes nothing on amd64 CI runners.
+    platform: linux/amd64
     build:
       context: ../..
       dockerfile: infra/compose/postgres.Dockerfile

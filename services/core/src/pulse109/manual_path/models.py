@@ -14,6 +14,9 @@ Channel = Literal[
 Language = Literal["kk", "ru", "mixed", "unknown"]
 Priority = Literal["routine", "elevated", "urgent", "emergency_handoff"]
 DecisionAction = Literal["accepted", "corrected", "manual"]
+SyncStatus = Literal["not_required", "queued", "delivered", "retrying", "failed_permanent"]
+# An outbox row always represents delivery work, so it never projects to not_required.
+DeliverySyncStatus = Literal["queued", "delivered", "retrying", "failed_permanent"]
 Status = Literal[
     "new",
     "triage",
@@ -231,7 +234,7 @@ class TimelineEvent(BaseModel):
 
 
 class SyncState(BaseModel):
-    status: Literal["not_required", "queued", "delivered", "retrying", "failed_permanent"]
+    status: SyncStatus
     source_system: str | None = None
     last_attempt_at: datetime | None = None
     external_id: str | None = None

@@ -4,7 +4,7 @@ This is the real Pulse 109 application in a dedicated `PULSE109_PROFILE=demo` ru
 
 ## Start and reset
 
-Requirements: Docker Desktop with a working Linux engine, Python 3.10-3.13 and locked Python dependencies (`uv sync --all-groups --frozen`). Ports 3000, 5432 and 8080-8084 must be free. From the repository root:
+Requirements: Docker Desktop with a working Linux engine, Python 3.10-3.13 and locked Python dependencies (`uv sync --all-groups --frozen`). Ports 3000, 5432 and 8080-8084 must be free. On Apple Silicon the PostgreSQL image runs under emulation, because `postgis/postgis` publishes amd64 only; the Compose file pins that one service to `linux/amd64` and the rest build natively. From the repository root:
 
 ```powershell
 .\demo.ps1 up
