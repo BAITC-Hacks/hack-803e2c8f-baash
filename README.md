@@ -152,7 +152,13 @@ uv run python scripts/demo_runtime.py verify   # the demo, end to end
 ```
 
 PostgreSQL integration tests need `PULSE109_TEST_DATABASE_URL`. Without it
-pytest reports them as skipped, which is not the same as passing. CI runs four
+pytest reports them as skipped, which is not the same as passing.
+
+Point that variable at a database of its own. Several integration tests insert
+catalog and jurisdiction rows and do not clean them up, so a second run against
+the same database sees overlapping records and fails, correctly. CI is green
+because every run starts on a fresh database. Running them against the demo
+database will also fail for the same reason. CI runs four
 jobs: quality, a containerised smoke with a restore drill, a demo profile smoke
 and a supply chain audit.
 
