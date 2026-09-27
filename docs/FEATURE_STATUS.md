@@ -1,20 +1,83 @@
-# Feature status / Статус функций
+# Feature status
 
-This matrix separates verified implementation from demo substitutes and unavailable external facts. “Implemented” means code and tests exist; it does not certify production deployment.
+What is implemented, what is a demo substitute and what is waiting on somebody
+outside this repository. Read this before believing anything else.
 
-| Capability / Функция | Actual local/demo behavior | Pilot/production boundary | Evidence |
-| --- | --- | --- | --- |
-| Appeal intake and manual decisions | PostgreSQL transaction, idempotency, timeline, audit and outbox; synthetic source marker required in demo | Approved source reference, legal basis and retention required; OIDC identity still needs configuration | `pulse109.manual_path`, migration chain, manual path tests |
-| Optional recommendation | Deterministic CPU lexical fallback; actual version and confidence shown; human action required | Real model quality and approved taxonomy not established | `pulse109.decisions`, synthetic ML tests |
-| ML candidate comparison | Offline Choice/Boolean evaluator checks pinned dataset, time/group splits, exact test cohort, probability validity and RU/KK/mixed metrics; no candidate weights deployed | XLM-R, Qwen/BGE/E5, PulseDM and Jev are `NOT_VALIDATED`; approved labels, privacy review and measured latency are absent | `ml/evaluation/candidate_compare.py`, `docs/ml` |
-| Assignments and status | Durable command and queued outbox; worker uses deterministic replay only in demo | No approved live adapter; replay worker startup forbidden | `pulse109_worker`, adapter SDK, worker tests |
-| Incident membership/lifecycle/topology | Region-bound, versioned decisions and reversible member history in PostgreSQL; operator UI proposes and confirms members/incident and reads persisted state; PostgreSQL merge/split and resolution require clean evidence from current members | Merge/split operator controls and approved evidence policy still need work; no automatic merge | `pulse109.incidents`, incident E2E and integration tests |
-| Handoff Guard / Decision Gateway | Advisory assessment and version-bound durable receipts; operator handoff panel | Approved unit directory and policy publication missing | `pulse109.ownership`, `pulse109.decisions.gateway` |
-| Replay Lab and Outcome Memory | Durable report/snapshot interfaces and inspection API; synthetic/offline evidence | Operational snapshot/evaluation pipeline and labels unavailable | `pulse109.replay`, `pulse109.outcome_memory` |
-| Signed regional configuration | Ed25519 verification, monotonic activation and rollback bundle tooling | Approved key distribution and signed release operations unavailable | `pulse109.control_plane`, migration `0020` |
-| Privacy reference access | Stored region and role checked; access audited; legacy unowned rows inaccessible | Vault, lawful basis, retention and production identity need approval | `pulse109.privacy`, migration `0022` |
-| Attachments and closure evidence | Demo/local retains validated synthetic bytes in a volume; closure checks metadata and quarantine state | Operational upload disabled until immutable storage and real scanning exist; legacy metadata may require reconciliation | `pulse109.security.attachments`, closure tests |
-| Analytics, alerts, retrieval and reports | Synthetic corpus/read model; operator status tab reads a labelled API slice; some alert state persists, report jobs are process-local | Operational read model unavailable; routes return explicit 503 | `pulse109.analytics`, `pulse109.reports`, `pulse109.retrieval` |
-| Operator web | API-backed ALA queue, manual decision, assignment, incident proposal/confirmation, status, closure, recurrence and timeline; synthetic intake and labelled analytics | OIDC web session, multi-region selector, merge/split controls and operational situation center are not implemented | `apps/web/app/page.tsx`, incident/closure panels |
+`Implemented` means code and tests exist in this checkout. It does not certify a
+production deployment. `Demo` describes what a reviewer sees in the
+`PULSE109_PROFILE=demo` environment, where the municipal data is synthetic and
+the application, PostgreSQL, outbox, worker and audit are real.
 
-All synthetic data and adapter receipts are for mechanics and walkthroughs, never production model-quality metrics. Unknown statuses, taxonomy mappings, business time and external state must remain explicit review/unavailable states.
+Legend: ✅ implemented · 🟡 partial · 🔬 research · 🚫 blocked externally · `none` not started
+
+## Flagship capabilities
+
+| Capability                                           | Backend                                                 | UI                                     | Demo                                     | Production                         | External dependency                            |
+| ---------------------------------------------------- | ------------------------------------------------------- | -------------------------------------- | ---------------------------------------- | ---------------------------------- | ---------------------------------------------- |
+| [Emerging Issues Radar](features/EMERGING_ISSUES.md) | ✅ geo, time, taxonomy                                  | ✅ scan and cluster inspector          | ✅ deterministic scenario                | 🟡 thresholds need real volume     | 🚫 semantic signal needs raw appeal text (B02) |
+| [Incident War Room](features/INCIDENT_WAR_ROOM.md)   | ✅ one-read workspace                                   | ✅ full screen                         | ✅ populated                             | 🟡                                 | `none`                                         |
+| [Next Best Action](features/NEXT_BEST_ACTION.md)     | ✅ rule engine and decision preview                     | ✅ inside the war room                 | ✅                                       | 🟡 a baseline for a learned scorer | 🚫 labelled corpus of operator moves           |
+| [Outcome Memory](features/OUTCOME_MEMORY.md)         | ✅ governed retrieval                                   | ✅ war room card                       | 🟡 corpus builds from demo closures only | 🟡                                 | 🚫 verified historical outcomes                |
+| [Operations Center](features/OPERATIONS_CENTER.md)   | ✅ attention feed                                       | ✅ city pulse and feed                 | ✅                                       | 🟡 thresholds need calibration     | `none`                                         |
+| [Replay Lab](features/REPLAY_LAB.md)                 | ✅ snapshots, persistence, CI reconciliation            | `none`, decision diff screen not built | 🟡 backend only                          | 🟡                                 | 🚫 approved historical decisions               |
+| [Data Lab](features/DATA_LAB.md)                     | ✅ quality, funnel, flow, timings, handoffs, drill-down | ✅ full screen                         | ✅                                       | 🟡                                 | `none`                                         |
+
+## Platform
+
+| Capability                         | State  | Demo behaviour                                                                                       | Production boundary                                                                   | Evidence                                           |
+| ---------------------------------- | ------ | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| Appeal intake and manual decisions | ✅     | PostgreSQL transaction, idempotency, timeline, audit, outbox                                         | Approved source reference, legal basis and retention required                         | `pulse109.manual_path`                             |
+| Adaptive intake                    | ✅     | Synthetic approved policies for four services, conditional questions, evidence requirements          | 🚫 approved taxonomy and question policy (B06)                                        | `pulse109.intake`, `scripts/demo_catalog.sql`      |
+| Recommendation                     | ✅     | Deterministic CPU lexical fallback, real version and confidence shown, human action required         | 🚫 approved taxonomy and measured model quality                                       | `pulse109.decisions`                               |
+| Assignments and status             | ✅     | Durable command, queued outbox, deterministic replay delivery                                        | 🚫 approved live regional adapter (B07)                                               | `pulse109_worker`, adapter SDK                     |
+| Incident membership and lifecycle  | ✅     | Region-bound versioned decisions, reversible member history, list and workspace                      | Merge and split exist in the API, operator controls do not                            | `pulse109.incidents`                               |
+| Incident merge and split           | 🟡     | API implemented with locking, cycle detection and evidence checks                                    | Operator controls not built                                                           | `pulse109.incidents.postgres`                      |
+| Handoff Guard and Decision Gateway | ✅     | Advisory assessment, version-bound durable receipts                                                  | 🚫 approved unit directory                                                            | `pulse109.ownership`, `pulse109.decisions.gateway` |
+| Signed regional configuration      | ✅     | Ed25519 verification, monotonic activation, rollback tooling                                         | 🚫 approved key distribution and release process                                      | `pulse109.control_plane`                           |
+| Privacy reference access           | ✅     | Region and role checked, access audited, legacy unowned rows inaccessible                            | 🚫 vault, lawful basis and retention (B10)                                            | `pulse109.privacy`                                 |
+| Identity                           | 🟡     | Local development actor, clearly labelled `authentication_source: development`                       | 🚫 real identity provider and browser session (B08)                                   | `pulse109.security.identity`                       |
+| Attachments and closure evidence   | 🟡     | Validated synthetic bytes in a local volume, closure checks metadata and quarantine                  | Object storage not integrated. The scanner is a mock and must not be called antivirus | `pulse109.security.attachments`                    |
+| Object storage                     | `none` | Filesystem only                                                                                      | S3 or compatible not integrated                                                       | `none`                                             |
+| Offline exploration                | ✅     | `make eda` over the committed synthetic fixture                                                      | Point `INPUT` at an approved dataset outside the repository                           | `analytics/offline`                                |
+| Operator web                       | ✅     | Sidebar shell, region from session context, operations, appeals, incidents, data lab, intake, status | 🚫 production OIDC session (B08)                                                      | `apps/web/app`                                     |
+| Live deployment                    | `none` | Local Docker Compose only                                                                            | VPS, domain and TLS not deployed                                                      | `none`                                             |
+
+## ML and research
+
+| Track                                   | State | Note                                                                          |
+| --------------------------------------- | ----- | ----------------------------------------------------------------------------- |
+| Candidate comparison harness            | ✅    | Pinned dataset, time and group splits, exact test cohort, RU/KK/mixed metrics |
+| XLM-R, Qwen, BGE, E5 routing candidates | 🔬    | `NOT_VALIDATED`. No approved labels, no privacy review, no measured latency   |
+| PulseDM                                 | 🔬    | Design only                                                                   |
+| Retrieval fine-tuning                   | 🔬    | Measured against a lexical baseline on executor text, not citizen text        |
+
+## External blockers
+
+These belong to the customer and the organizers. Writing a plausible value for
+any of them would turn an honest gap into a false claim.
+
+`B01` remaining regions and an authoritative service manifest ·
+`B02` raw pre-decision appeal text ·
+`B03` field lifecycle and leakage semantics ·
+`B04` duplicate labels ·
+`B05` reassignment and correction history ·
+`B06` official taxonomy and SLA ·
+`B07` real regional API, sandbox and credentials ·
+`B08` identity provider, network and hosting ·
+`B09` GPU hardware ·
+`B10` privacy, legal basis and retention.
+
+Details in [DECISIONS_AND_BLOCKERS.md](../DECISIONS_AND_BLOCKERS.md).
+
+## What the demo does not claim
+
+- The municipal records are synthetic. The application logic, PostgreSQL
+  workflows, outbox, worker and audit trail are real.
+- External delivery goes to a deterministic replay adapter, not a live
+  municipal CRM.
+- The malware scanner is a mock. It must never be presented as production
+  antivirus.
+- No model quality number here is validated. The routing recommendation in the
+  demo is a lexical baseline, and it says so on screen.
+- The radar reports that a group of similar reports appeared. It never names a
+  cause.

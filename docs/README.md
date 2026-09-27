@@ -1,14 +1,44 @@
-# Documentation index / Индекс документации
+# Documentation index
 
-- [Capabilities / Возможности](features/README.md): what the product does, end to end, and the three states every algorithmic capability reports.
-- [Architecture / Архитектура](architecture/README.md): RU/EN Mermaid runtime, data, AI/human, incident, failure and privacy diagrams.
-- [Demo runbook](DEMO_RUNBOOK.md): exact startup, reset and Mock Demo Day click path.
-- [Feature status / Статус функций](FEATURE_STATUS.md): implemented, synthetic and externally blocked behavior.
-- [ML research / Исследования моделей](ml/README.md): conservative candidates, PulseDM design, shared evaluation, data and governance boundaries.
-- [Development history / История разработки](DEVELOPMENT_HISTORY.md): RU/EN chronology tied to Git commits.
-- [GovTech business questions / Вопросы](GOVTECH_BUSINESS_QUESTIONS.md): 20 decisions requested from organizers in RU/EN. [PDF](../output/pdf/govtech_business_questions.pdf).
-- [Decision log](DECISION_LOG.md): architecture and product decisions.
-- [Repository cleanup review](review/REPOSITORY_CLEANUP.md): classification, archived material, preserved evidence and verification.
-- [Security notes](security/README.md), [contracts](../contracts/), [status](../IMPLEMENTATION_STATUS.md), [external blockers](../DECISIONS_AND_BLOCKERS.md).
+Read in this order to understand the repository in roughly thirty minutes.
 
-Supplementary historical material: [GovTech project journal](PROJECT_JOURNAL.md) and the [archive index](archive/README.md), which includes earlier planning, audit, specifications and generated exports. The demo runbook and feature matrix above are authoritative for the current application.
+| #   | Document                                          | Purpose                                                                                     | Status     |
+| --- | ------------------------------------------------- | ------------------------------------------------------------------------------------------- | ---------- |
+| 01  | [Product capabilities](features/README.md)        | What the product does end to end, and the three states every algorithmic capability reports | Current    |
+| 02  | [Demo runbook](DEMO_RUNBOOK.md)                   | Startup, reset, verify, and the exact click path for a walkthrough                          | Current    |
+| 03  | [Architecture](architecture/README.md)            | Runtime, data, human decision, incident, failure and privacy diagrams in RU and EN          | Current    |
+| 04  | [Feature status](FEATURE_STATUS.md)               | What is implemented, partial, research or blocked. The authority on current state           | Current    |
+| 05  | [Data Lab](features/DATA_LAB.md)                  | Offline exploration, data quality, live analytics and drill-down                            | Current    |
+| 06  | [ML research](ml/README.md)                       | Candidates, PulseDM design, shared evaluation protocol, governance boundaries               | Current    |
+| 07  | [Security notes](security/README.md)              | Attachment validation, privacy boundary, access checks                                      | Current    |
+| 08  | [Decision log](DECISION_LOG.md)                   | Architecture and product decisions with their rationale                                     | Current    |
+| 09  | [External blockers](../DECISIONS_AND_BLOCKERS.md) | The ten things owned by the customer and the organizers                                     | Current    |
+| 10  | [Development history](DEVELOPMENT_HISTORY.md)     | Chronology derived from Git                                                                 | Historical |
+
+## Capability pages
+
+One page per flagship capability, each stating what it refuses to do as plainly
+as what it does.
+
+[Emerging Issues Radar](features/EMERGING_ISSUES.md) ·
+[Incident War Room](features/INCIDENT_WAR_ROOM.md) ·
+[Next Best Action](features/NEXT_BEST_ACTION.md) ·
+[Outcome Memory](features/OUTCOME_MEMORY.md) ·
+[Operations Center](features/OPERATIONS_CENTER.md) ·
+[Replay Lab](features/REPLAY_LAB.md) ·
+[Data Lab](features/DATA_LAB.md)
+
+## Also here
+
+[Questions for the organizers](GOVTECH_BUSINESS_QUESTIONS.md) and its
+[PDF](../output/pdf/govtech_business_questions.pdf) ·
+[Contracts](../contracts/) ·
+[Repository cleanup review](review/REPOSITORY_CLEANUP.md)
+
+## Historical
+
+[Project journal](PROJECT_JOURNAL.md) and the [archive](archive/README.md) hold
+earlier planning, audits, specifications and generated exports. They record how
+the repository reached its current state and are not an authority on what it is
+now. [IMPLEMENTATION_STATUS.md](../IMPLEMENTATION_STATUS.md) is in the same
+category: a milestone record, superseded by the feature matrix above.
