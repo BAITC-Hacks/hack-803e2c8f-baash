@@ -45,7 +45,18 @@ type AttachmentRef = {
   object_hash: string;
 };
 
-const REGION = "ALA";
+// The region is configuration, not a constant of the product. An operator's
+// allowed regions come from the session endpoint whenever an identity provider
+// supplies them. The demo profile has no identity provider (blocker B08) and its
+// local fallback mirrors whatever region it was asked about, so this default
+// stands in until a real one is connected.
+const DEFAULT_REGION = process.env.NEXT_PUBLIC_PULSE109_REGION ?? "ALA";
+
+type SessionContext = {
+  regions: string[];
+  authentication_source: string;
+};
+
 const labels = {
   ru: {
     intake: "Подать обращение",
@@ -103,10 +114,14 @@ class ApiError extends Error {
   }
 }
 
-async function api<T>(path: string, init?: RequestInit): Promise<T> {
+async function api<T>(
+  path: string,
+  regionId: string,
+  init?: RequestInit,
+): Promise<T> {
   const response = await fetch(`/api/core${path}`, {
     ...init,
-    headers: { "X-Region-Id": REGION, ...init?.headers },
+    headers: { "X-Region-Id": regionId, ...init?.headers },
     cache: "no-store",
   });
   if (!response.ok) {
@@ -131,6 +146,8 @@ function commandHeaders(idempotencyKey: string): Record<string, string> {
 
 export default function OperatorWorkspace() {
   const [locale, setLocale] = useState<Locale>("ru");
+  const [regions, setRegions] = useState<string[]>([DEFAULT_REGION]);
+  const [region, setRegion] = useState(DEFAULT_REGION);
   // An idempotency key has to survive a retry of the same command. If the server
   // committed the write and only the response was lost, a freshly generated key
   // would reach the server as a second, different command. Keys are therefore
@@ -168,7 +185,7 @@ export default function OperatorWorkspace() {
 
   const refreshQueue = useCallback(async () => {
     try {
-      const rows = await api<Appeal[]>("/requests?limit=50");
+      const rows = await api<Appeal[]>("/requests?limit=50", region);
       setAppeals(rows);
       if (rows.length === 0) setDetail(null);
       setSelectedId((previous) =>
@@ -184,46 +201,86 @@ export default function OperatorWorkspace() {
     } finally {
       setLoading(false);
     }
-  }, []);
+    // Changing the region asks a different question of the API, so both readers
+    // depend on it and refetch when the operator switches.
+  }, [region]);
 
-  const refreshDetail = useCallback(async (id: string) => {
-    try {
-      const row = await api<Detail>(`/requests/${encodeURIComponent(id)}`);
-      setDetail(row);
-      setTopic(row.current_decision?.topic_id ?? "topic:manual-review");
-      setService(row.current_decision?.service_id ?? "service:manual-review");
-      setPriority(row.current_decision?.priority ?? "routine");
+  const refreshDetail = useCallback(
+    async (id: string) => {
       try {
-        setAttachments(
-          await api<AttachmentRef[]>(
-            `/requests/${encodeURIComponent(id)}/attachments`,
-          ),
+        const row = await api<Detail>(
+          `/requests/${encodeURIComponent(id)}`,
+          region,
         );
-        setAttachmentError(null);
+        setDetail(row);
+        setTopic(row.current_decision?.topic_id ?? "topic:manual-review");
+        setService(row.current_decision?.service_id ?? "service:manual-review");
+        setPriority(row.current_decision?.priority ?? "routine");
+        try {
+          setAttachments(
+            await api<AttachmentRef[]>(
+              `/requests/${encodeURIComponent(id)}/attachments`,
+              region,
+            ),
+          );
+          setAttachmentError(null);
+        } catch (failure) {
+          setAttachments([]);
+          setAttachmentError(
+            failure instanceof Error
+              ? failure.message
+              : "attachments_unavailable",
+          );
+        }
+        setError(null);
       } catch (failure) {
+        setDetail(null);
         setAttachments([]);
-        setAttachmentError(
-          failure instanceof Error
-            ? failure.message
-            : "attachments_unavailable",
+        setError(
+          failure instanceof Error ? failure.message : "appeal_unavailable",
         );
       }
-      setError(null);
-    } catch (failure) {
-      setDetail(null);
-      setAttachments([]);
-      setError(
-        failure instanceof Error ? failure.message : "appeal_unavailable",
-      );
-    }
+    },
+    [region],
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetch("/api/core/session/context", {
+      headers: { "X-Region-Id": DEFAULT_REGION },
+      cache: "no-store",
+    })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((body: SessionContext | null) => {
+        // The development fallback mirrors the region it was asked about, so
+        // it says nothing about what an operator may actually see. Only a
+        // verified identity narrows the selector.
+        if (
+          cancelled ||
+          !body ||
+          body.authentication_source === "development"
+        ) {
+          return;
+        }
+        const allowed = body.regions.filter((item) => item !== "ALL");
+        if (allowed.length === 0) return;
+        setRegions(allowed);
+        setRegion((current) =>
+          allowed.includes(current) ? current : allowed[0],
+        );
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
-    api<{ profile: string }>("/health/ready")
+    api<{ profile: string }>("/health/ready", region)
       .then((health) => setProfile(health.profile))
       .catch(() => setProfile("unavailable"));
     void Promise.resolve().then(refreshQueue);
-  }, [refreshQueue]);
+  }, [refreshQueue, region]);
 
   useEffect(() => {
     if (selectedId)
@@ -266,6 +323,7 @@ export default function OperatorWorkspace() {
       async () => {
         const result = await api<Recommendation>(
           `/requests/${detail.request_id}/classifications`,
+          region,
           {
             method: "POST",
             headers: commandHeaders(commandKey(operation)),
@@ -290,6 +348,7 @@ export default function OperatorWorkspace() {
       async () => {
         const result = await api<{ decision_id: string }>(
           `/requests/${detail.request_id}/decisions`,
+          region,
           {
             method: "POST",
             headers: commandHeaders(commandKey(operation)),
@@ -320,6 +379,7 @@ export default function OperatorWorkspace() {
       async () => {
         const receipt = await api<{ status: string }>(
           `/requests/${detail.request_id}/assignments`,
+          region,
           {
             method: "POST",
             headers: commandHeaders(commandKey(operation)),
@@ -347,6 +407,7 @@ export default function OperatorWorkspace() {
         const key = commandKey(operation);
         const event = await api<{ event_id: string }>(
           `/requests/${detail.request_id}/status-events`,
+          region,
           {
             method: "POST",
             headers: commandHeaders(key),
@@ -405,7 +466,11 @@ export default function OperatorWorkspace() {
       </header>
 
       {view === "intake" ? (
-        <Intake locale={locale} demoEnabled={profile === "demo"} />
+        <Intake
+          locale={locale}
+          regionId={region}
+          demoEnabled={profile === "demo"}
+        />
       ) : null}
       {view === "situation" ? (
         <section
@@ -420,7 +485,7 @@ export default function OperatorWorkspace() {
             <p>{copy.statusImplemented}</p>
             <p>{copy.statusBlocked}</p>
             <p>{copy.statusCoverage}</p>
-            <AnalyticsPanel locale={locale} />
+            <AnalyticsPanel locale={locale} regionId={region} />
           </div>
         </section>
       ) : null}
@@ -430,7 +495,22 @@ export default function OperatorWorkspace() {
             <div className="section-heading">
               <div>
                 <p className="eyebrow">
-                  {REGION} · {profile}
+                  {regions.length > 1 ? (
+                    <select
+                      aria-label="Region"
+                      value={region}
+                      onChange={(event) => setRegion(event.target.value)}
+                    >
+                      {regions.map((item) => (
+                        <option key={item} value={item}>
+                          {item}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    region
+                  )}{" "}
+                  · {profile}
                 </p>
                 <h1>{copy.queue}</h1>
               </div>

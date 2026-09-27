@@ -10,6 +10,7 @@ from .attachments import (
     validate_attachment,
 )
 from .identity import ActorContext, AuthenticatedActor, require_actor
+from .session_router import SessionContextResponse, create_session_router
 
 __all__ = [
     "DEFAULT_ALLOWED_MIMES",
@@ -19,7 +20,9 @@ __all__ = [
     "MalwareScanResult",
     "MalwareScanner",
     "MockMalwareScanner",
+    "SessionContextResponse",
     "check_pdf_active_content",
+    "create_session_router",
     "inspect_mime_type",
     "require_actor",
     "sanitize_filename",

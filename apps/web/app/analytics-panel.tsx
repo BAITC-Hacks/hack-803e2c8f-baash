@@ -14,7 +14,13 @@ type Result = {
   rows: unknown[][];
 };
 
-export function AnalyticsPanel({ locale }: { locale: Locale }) {
+export function AnalyticsPanel({
+  locale,
+  regionId,
+}: {
+  locale: Locale;
+  regionId: string;
+}) {
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -25,11 +31,14 @@ export function AnalyticsPanel({ locale }: { locale: Locale }) {
     try {
       const response = await fetch("/api/core/analytics/query", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "X-Region-Id": "ALA" },
+        headers: {
+          "Content-Type": "application/json",
+          "X-Region-Id": regionId,
+        },
         body: JSON.stringify({
           metric_id: "appeals_volume",
           dimensions: ["region_id"],
-          filters: { region_id: ["ALA"] },
+          filters: { region_id: [regionId] },
           time_range: {
             from: "2026-09-01T00:00:00Z",
             to: "2026-10-01T00:00:00Z",

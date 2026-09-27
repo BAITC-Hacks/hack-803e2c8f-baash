@@ -143,9 +143,11 @@ const initialDraft: IntakeDraft = {
 };
 export function Intake({
   locale,
+  regionId,
   demoEnabled,
 }: {
   locale: Locale;
+  regionId: string;
   demoEnabled: boolean;
 }) {
   const syntheticAssistEnabled = demoEnabled;
@@ -221,7 +223,7 @@ export function Intake({
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              "X-Region-Id": "ALA",
+              "X-Region-Id": regionId,
             },
             body: JSON.stringify({
               service_id: `service:${category}`,
@@ -249,10 +251,10 @@ export function Intake({
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              "X-Region-Id": "ALA",
+              "X-Region-Id": regionId,
             },
             body: JSON.stringify({
-              region_id: "ALA",
+              region_id: regionId,
               service_id: `service:${category}`,
               topic_id: `topic:${category}`,
               text: draft.description,
@@ -291,7 +293,7 @@ export function Intake({
         body: JSON.stringify({
           source_system: "pulse109-web-synthetic",
           source_request_id: sourceRequestId,
-          region_id: "ALA",
+          region_id: regionId,
           received_at: null,
           received_at_quality: "missing",
           channel: "web",
@@ -309,7 +311,7 @@ export function Intake({
         headers: {
           "Content-Type": "application/json",
           "Idempotency-Key": attempt.idempotencyKey,
-          "X-Region-Id": "ALA",
+          "X-Region-Id": regionId,
         },
         body: attempt.body,
       });

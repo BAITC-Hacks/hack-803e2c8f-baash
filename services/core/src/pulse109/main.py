@@ -82,6 +82,7 @@ from pulse109.replay import (
 )
 from pulse109.reports import ReportRuntime, create_report_router
 from pulse109.retrieval import HybridRetriever, create_retrieval_router, synthetic_corpus
+from pulse109.security import create_session_router
 
 app = FastAPI(
     title="Pulse 109 Core API",
@@ -228,6 +229,7 @@ else:
     privacy_repository = InMemoryPrivateRefRepository()
 privacy_service = PrivacyService(privacy_repository)
 app.include_router(create_privacy_router(privacy_service))
+app.include_router(create_session_router())
 
 replay_repository: ReplayRepository | None
 if use_postgres_manual_path:
