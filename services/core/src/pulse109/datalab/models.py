@@ -145,6 +145,27 @@ class Drilldown(StrictModel):
     appeals: list[DrilldownAppeal] = Field(default_factory=list, max_length=200)
 
 
+class TimeBucket(StrictModel):
+    """One interval of arrivals, with the topics inside it."""
+
+    start: datetime
+    count: int = Field(ge=0)
+    by_topic: dict[str, int] = Field(default_factory=dict)
+
+
+class ArrivalSeries(StrictModel):
+    """Appeals over time, restricted to records with a trustworthy business time."""
+
+    status: CapabilityStatus
+    provenance: Provenance
+    bucket_minutes: int = Field(ge=1)
+    window_hours: int = Field(ge=1)
+    buckets: list[TimeBucket] = Field(default_factory=list, max_length=400)
+    peak: TimeBucket | None = None
+    baseline_per_bucket: float | None = Field(default=None, ge=0.0)
+    excluded_untrusted_time: int = Field(default=0, ge=0)
+
+
 class MetricDefinition(StrictModel):
     """What a metric counts, and just as importantly what it leaves out."""
 

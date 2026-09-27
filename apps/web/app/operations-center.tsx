@@ -9,6 +9,7 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
+import { ArrivalChart, type Bucket } from "./arrival-chart";
 import { ReportMap, type ReportPoint } from "./report-map";
 
 type Locale = "ru" | "kk";
@@ -44,6 +45,14 @@ type Feed = {
   };
   items: AttentionItem[];
   synthetic: boolean;
+};
+
+type Arrivals = {
+  status: CapabilityStatus;
+  buckets: Bucket[];
+  peak: Bucket | null;
+  baseline_per_bucket: number | null;
+  excluded_untrusted_time: number;
 };
 
 type ClusterMember = {
@@ -91,6 +100,12 @@ const copy = {
     unowned: "Без ответственного",
     queued: "В очереди на доставку",
     failed: "Доставка не удалась",
+    activity: "Обращения за сутки",
+    activityNote:
+      "Считаются только обращения с достоверным временем поступления. Наведите на точку, чтобы увидеть разбивку по темам.",
+    excluded: "Не попали в график, время не достоверно",
+    noSeries: "Недостаточно данных за это окно",
+    peakLabel: "Пик",
     cluster: "Кластер",
     members: "Обращения",
     window: "Окно",
@@ -124,6 +139,11 @@ const copy = {
     unowned: "Жауаптысыз",
     queued: "Жеткізу кезегінде",
     failed: "Жеткізілмеді",
+    activity: "Өтініштер тәулік ішінде",
+    activityNote: "Тек сенімді түсу уақыты бар өтініштер есептеледі.",
+    excluded: "Графикке кірмеді, уақыты сенімсіз",
+    noSeries: "Бұл терезе үшін дерек жеткіліксіз",
+    peakLabel: "Шың",
     cluster: "Кластер",
     members: "Өтініштер",
     window: "Терезе",
@@ -155,6 +175,7 @@ export function OperationsCenter({
 }) {
   const t = copy[locale];
   const [feed, setFeed] = useState<Feed | null>(null);
+  const [arrivals, setArrivals] = useState<Arrivals | null>(null);
   const [cluster, setCluster] = useState<ClusterDetail | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -183,7 +204,14 @@ export function OperationsCenter({
 
   const loadFeed = useCallback(async () => {
     try {
-      setFeed(await request<Feed>("/operations/attention-feed"));
+      const [feedResult, seriesResult] = await Promise.all([
+        request<Feed>("/operations/attention-feed"),
+        request<Arrivals>(
+          "/datalab/arrivals?window_hours=24&bucket_minutes=60",
+        ),
+      ]);
+      setFeed(feedResult);
+      setArrivals(seriesResult);
       setError(null);
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : "feed_unavailable");
@@ -355,6 +383,32 @@ export function OperationsCenter({
             <dd>{feed.pulse.failed_deliveries}</dd>
           </div>
         </dl>
+      ) : null}
+
+      {arrivals ? (
+        <article className="lab-card">
+          <h2>{t.activity}</h2>
+          <p className="war-room-note">{t.activityNote}</p>
+          <ArrivalChart
+            buckets={arrivals.buckets}
+            baseline={arrivals.baseline_per_bucket}
+            peakStart={arrivals.peak?.start ?? null}
+            excluded={arrivals.excluded_untrusted_time}
+            excludedLabel={t.excluded}
+            emptyLabel={t.noSeries}
+          />
+          {arrivals.peak ? (
+            <p className="codes">
+              {t.peakLabel}: {arrivals.peak.start.slice(11, 16)} ·{" "}
+              {arrivals.peak.count} ·{" "}
+              {Object.entries(arrivals.peak.by_topic)
+                .sort((left, right) => right[1] - left[1])
+                .slice(0, 3)
+                .map(([topic, count]) => `${topic} ${count}`)
+                .join(" · ")}
+            </p>
+          ) : null}
+        </article>
       ) : null}
 
       {feed && feed.items.length === 0 ? (

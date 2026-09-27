@@ -2801,3 +2801,48 @@ textarea:focus-visible {
     display: none;
   }
 }
+
+/* Arrival chart. Drawn from the buckets the API returns, no charting library. */
+
+.arrival-chart {
+  margin: 14px 0 6px;
+}
+
+.arrival-chart svg {
+  width: 100%;
+  height: auto;
+}
+
+.arrival-area {
+  fill: rgba(28, 95, 180, 0.09);
+}
+
+.arrival-line {
+  fill: none;
+  stroke: var(--civic);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.arrival-baseline {
+  stroke: var(--muted);
+  stroke-width: 1;
+  stroke-dasharray: 4 5;
+}
+
+.arrival-point {
+  fill: var(--civic);
+}
+
+/* The peak is the thing a supervisor is looking for, so it is the one point
+   allowed to stand out. */
+.arrival-peak {
+  fill: var(--accent);
+  stroke: var(--surface);
+  stroke-width: 2;
+}
+
+.arrival-axis {
+  fill: var(--muted);
+  font-size: 11px;
+}

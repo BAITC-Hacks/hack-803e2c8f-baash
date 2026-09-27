@@ -23,6 +23,7 @@ from psycopg.rows import dict_row
 from pulse109.capability import CapabilityStatus
 
 from .models import (
+    ArrivalSeries,
     Drilldown,
     DrilldownAppeal,
     FunnelStage,
@@ -34,6 +35,7 @@ from .models import (
     Provenance,
     QualityDimension,
     StatusFlow,
+    TimeBucket,
     TimingBreakdown,
     TransitionCell,
 )
@@ -164,6 +166,96 @@ class PostgresDataLabService:
             status=CapabilityStatus.available(),
             provenance=self._provenance(region_id, total),
             dimensions=dimensions,
+        )
+
+    # ------------------------------------------------------------------
+    # arrivals over time
+    # ------------------------------------------------------------------
+
+    def arrivals(
+        self, *, region_id: str, window_hours: int = 24, bucket_minutes: int = 60
+    ) -> ArrivalSeries:
+        """Arrivals per interval, and what fell outside the count.
+
+        Only records with a trustworthy business time are placed in a bucket. A
+        date-only record put in an hour bucket sits in a moment nobody observed,
+        which is how a plausible chart becomes a false one. The number excluded
+        is reported rather than quietly dropped.
+        """
+        with self._connection() as connection, connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT date_trunc('hour', a.received_at)
+                         + make_interval(mins => (
+                             (extract(minute FROM a.received_at)::int / %s) * %s
+                           )) AS bucket,
+                       COALESCE(d.topic_id, 'unclassified') AS topic_id,
+                       count(*) AS total
+                FROM appeals.appeal a
+                LEFT JOIN LATERAL (
+                    SELECT topic_id FROM triage.operator_decision
+                     WHERE request_id = a.request_id ORDER BY decided_at DESC LIMIT 1
+                ) d ON true
+                WHERE a.region_id = %s
+                  AND a.received_at IS NOT NULL
+                  AND a.received_at_quality = ANY(%s)
+                  AND a.received_at >= now() - make_interval(hours => %s)
+                GROUP BY 1, 2
+                ORDER BY 1
+                """,
+                (
+                    bucket_minutes,
+                    bucket_minutes,
+                    region_id,
+                    list(TRUSTED_TIME_QUALITY),
+                    window_hours,
+                ),
+            )
+            rows = cursor.fetchall()
+            cursor.execute(
+                """
+                SELECT count(*) AS excluded
+                FROM appeals.appeal
+                WHERE region_id = %s
+                  AND (received_at IS NULL OR received_at_quality <> ALL(%s))
+                """,
+                (region_id, list(TRUSTED_TIME_QUALITY)),
+            )
+            excluded = int((cursor.fetchone() or {}).get("excluded") or 0)
+
+        if not rows:
+            return ArrivalSeries(
+                status=CapabilityStatus.abstained("NO_TRUSTWORTHY_ARRIVALS_IN_WINDOW"),
+                provenance=self._provenance(region_id, 0, excluded=excluded),
+                bucket_minutes=bucket_minutes,
+                window_hours=window_hours,
+                excluded_untrusted_time=excluded,
+            )
+
+        grouped: dict[Any, dict[str, int]] = {}
+        for row in rows:
+            grouped.setdefault(row["bucket"], {})[str(row["topic_id"])] = int(row["total"])
+
+        buckets = [
+            TimeBucket(start=start, count=sum(topics.values()), by_topic=topics)
+            for start, topics in sorted(grouped.items())
+        ]
+        total = sum(bucket.count for bucket in buckets)
+        peak = max(buckets, key=lambda bucket: bucket.count)
+        return ArrivalSeries(
+            status=CapabilityStatus.available(),
+            provenance=self._provenance(
+                region_id,
+                total,
+                excluded=excluded,
+                reason="business time missing or not trustworthy",
+            ),
+            bucket_minutes=bucket_minutes,
+            window_hours=window_hours,
+            buckets=buckets[:400],
+            peak=peak,
+            baseline_per_bucket=round(total / len(buckets), 2),
+            excluded_untrusted_time=excluded,
         )
 
     # ------------------------------------------------------------------

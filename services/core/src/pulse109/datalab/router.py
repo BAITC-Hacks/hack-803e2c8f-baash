@@ -9,6 +9,7 @@ from fastapi import APIRouter, Header, HTTPException, Query, status
 from pulse109.security import AuthenticatedActor
 
 from .models import (
+    ArrivalSeries,
     Drilldown,
     HandoffAnalytics,
     LiveDataQuality,
@@ -84,6 +85,18 @@ def create_datalab_router(service: PostgresDataLabService | None) -> APIRouter:
     ) -> LiveDataQuality:
         _authorize(identity, region_id)
         return _require(service).quality(region_id=region_id)
+
+    @router.get("/datalab/arrivals", response_model=ArrivalSeries, operation_id="getArrivals")
+    def arrivals(
+        identity: AuthenticatedActor,
+        region_id: str = Header(alias="X-Region-Id", pattern=r"^[A-Z0-9_-]{2,32}$"),
+        window_hours: Annotated[int, Query(ge=1, le=720)] = 24,
+        bucket_minutes: Annotated[int, Query(ge=5, le=1440)] = 60,
+    ) -> ArrivalSeries:
+        _authorize(identity, region_id)
+        return _require(service).arrivals(
+            region_id=region_id, window_hours=window_hours, bucket_minutes=bucket_minutes
+        )
 
     @router.get("/datalab/process", response_model=ProcessFunnel, operation_id="getProcessFunnel")
     def funnel(
