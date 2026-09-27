@@ -1,8 +1,9 @@
 """PostgreSQL integration test for incident topology persistence."""
 
+import base64
 import os
 from datetime import datetime, timezone
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import psycopg
 import pytest
@@ -15,8 +16,9 @@ from pulse109.incidents.models import (
     MembershipCommand,
 )
 from pulse109.incidents.postgres import PostgresIncidentService
+from pulse109.incidents.service import IncidentError
 from pulse109.manual_path import PostgresManualPathService, PostgresManualRepository
-from pulse109.manual_path.models import CreateRequest
+from pulse109.manual_path.models import AttachmentUploadInput, CreateRequest
 
 
 class DummyConnectionPool:
@@ -71,6 +73,19 @@ def test_postgres_incident_merge_and_split_topology() -> None:
         )
         appeal_ids.append(str(appeal.request_id))
 
+    evidence = manual.upload_attachment(
+        UUID(appeal_ids[0]),
+        AttachmentUploadInput(
+            file_name="synthetic-topology-evidence.txt",
+            mime_type="text/plain",
+            content_base64=base64.b64encode(
+                b"Synthetic topology evidence; no citizen data.\n"
+            ).decode(),
+        ),
+        region_id=region_id,
+        actor=actor,
+    )
+
     # Create Incident A with appeals 0 and 1
     inc_a, _ = service.create(
         CreateIncident(
@@ -117,6 +132,9 @@ def test_postgres_incident_merge_and_split_topology() -> None:
     )
     assert inc_a_confirmed.state == "confirmed"
     assert inc_a_confirmed.version == 4
+    stored = service.detail(inc_a.incident_id, region_id=region_id)
+    assert stored.version == 4
+    assert {str(item) for item in stored.confirmed_member_request_ids} == set(appeal_ids[:2])
 
     # Create Incident B with appeals 2 and 3
     inc_b, _ = service.create(
@@ -163,6 +181,23 @@ def test_postgres_incident_merge_and_split_topology() -> None:
     assert inc_b_confirmed.state == "confirmed"
     assert inc_b_confirmed.version == 4
 
+    with pytest.raises(IncidentError, match="clean attachment"):
+        service.merge(
+            inc_a.incident_id,
+            IncidentMergeCommand(
+                target_incident_id=inc_b.incident_id,
+                source_version=inc_a_confirmed.version,
+                target_version=inc_b_confirmed.version,
+                member_request_ids=[appeal_ids[0], appeal_ids[1]],
+                reason_code="MERGE_INCIDENT_AREAS",
+                evidence_refs=["f" * 64],
+            ),
+            idempotency_key=f"top-invalid-evidence-{uuid4()}",
+            region_id=region_id,
+            actor=actor,
+            correlation_id=f"corr-invalid-evidence-{uuid4()}",
+        )
+
     # Merge Incident A into Incident B
     merge_key = f"top-merge-{uuid4()}"
     merged = service.merge(
@@ -173,7 +208,7 @@ def test_postgres_incident_merge_and_split_topology() -> None:
             target_version=inc_b_confirmed.version,
             member_request_ids=[appeal_ids[0], appeal_ids[1]],
             reason_code="MERGE_INCIDENT_AREAS",
-            evidence_refs=["e" * 64],
+            evidence_refs=[evidence.object_hash],
         ),
         idempotency_key=merge_key,
         region_id=region_id,
@@ -207,7 +242,7 @@ def test_postgres_incident_merge_and_split_topology() -> None:
             source_version=merged["target"]["version"],
             member_request_ids=[appeal_ids[0], appeal_ids[1]],
             reason_code="SPLIT_DISTRICT_CLUSTER",
-            evidence_refs=["f" * 64],
+            evidence_refs=[evidence.object_hash],
         ),
         idempotency_key=split_key,
         region_id=region_id,

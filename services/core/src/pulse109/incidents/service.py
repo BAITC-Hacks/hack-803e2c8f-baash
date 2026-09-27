@@ -12,6 +12,7 @@ from .models import (
     CreateIncident,
     Incident,
     IncidentDecision,
+    IncidentDetail,
     IncidentLifecycleCommand,
     IncidentMember,
     IncidentMergeCommand,
@@ -83,6 +84,22 @@ class IncidentService:
             service_id=record.get("service_id"),
             member_count=member_count,
             version=record["version"],
+        )
+
+    def detail(self, incident_id: UUID, *, region_id: str) -> IncidentDetail:
+        state = self.repository.state
+        incident = self._get(state, incident_id, region_id)
+        current = self._response(state, incident)
+        candidates = sorted(state.proposed_members.get(incident_id, set()))
+        confirmed = sorted(
+            request_id
+            for (member_incident_id, request_id), decisions in state.member_decisions.items()
+            if member_incident_id == incident_id and decisions[-1]["decision"] == "confirm"
+        )
+        return IncidentDetail(
+            **current.model_dump(),
+            candidate_member_request_ids=candidates,
+            confirmed_member_request_ids=confirmed,
         )
 
     @staticmethod

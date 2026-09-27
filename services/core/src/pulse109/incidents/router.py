@@ -10,6 +10,7 @@ from .models import (
     CreateIncident,
     Incident,
     IncidentDecision,
+    IncidentDetail,
     IncidentLifecycleCommand,
     IncidentMember,
     IncidentMergeCommand,
@@ -30,6 +31,21 @@ def _http_error(error: IncidentError) -> HTTPException:
 
 def create_incident_router(service: IncidentService | PostgresIncidentService) -> APIRouter:
     router = APIRouter(prefix="/v1", tags=["Incidents"])
+
+    @router.get(
+        "/incidents/{incident_id}", response_model=IncidentDetail, operation_id="getIncident"
+    )
+    def get_incident(
+        incident_id: UUID,
+        identity: AuthenticatedActor,
+        region_id: str = Header(alias="X-Region-Id", pattern=r"^[A-Z0-9_-]{2,32}$"),
+    ) -> IncidentDetail:
+        identity.require_any_role("operator", "supervisor", "analyst", "auditor", "admin")
+        identity.require_region(region_id)
+        try:
+            return service.detail(incident_id, region_id=region_id)
+        except IncidentError as error:
+            raise _http_error(error) from error
 
     @router.post("/incidents", response_model=Incident, status_code=status.HTTP_201_CREATED)
     def create(

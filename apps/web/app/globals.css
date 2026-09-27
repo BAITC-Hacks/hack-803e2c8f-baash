@@ -628,6 +628,28 @@ textarea:focus-visible {
   background: #fafaff;
 }
 
+.incident-workflow {
+  margin: 24px;
+  padding: 22px;
+  border: 1px solid #c6ded9;
+  border-radius: 6px;
+  background: #f8fbfa;
+}
+
+.incident-workflow .manual-fields {
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  align-items: end;
+}
+
+.incident-workflow li {
+  margin: 9px 0;
+  overflow-wrap: anywhere;
+}
+
+.incident-workflow li button {
+  margin-left: 12px;
+}
+
 .closure-heading,
 .closure-actions {
   display: flex;
@@ -1986,6 +2008,15 @@ textarea:focus-visible {
   .closure-panel {
     margin: 18px 16px;
     padding: 15px;
+  }
+
+  .incident-workflow {
+    margin: 18px 16px;
+    padding: 15px;
+  }
+
+  .incident-workflow .manual-fields {
+    grid-template-columns: 1fr;
   }
 
   .closure-form,

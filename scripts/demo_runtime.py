@@ -5,6 +5,8 @@
 from __future__ import annotations
 
 import argparse
+import base64
+import hashlib
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -33,6 +35,15 @@ FIXTURES: tuple[dict[str, Any], ...] = (
         "received_at_quality": "exact",
     },
     {
+        "source_request_id": "demo-109-water-004",
+        "region_id": "ALA",
+        "channel": "web",
+        "language": "ru",
+        "text": "Синтетический пример: у соседнего дома № 14 на улице Садовой пропал напор воды.",
+        "received_at": "2026-09-25T08:20:00+05:00",
+        "received_at_quality": "exact",
+    },
+    {
         "source_request_id": "demo-109-light-002",
         "region_id": "ALA",
         "channel": "web",
@@ -51,6 +62,9 @@ FIXTURES: tuple[dict[str, Any], ...] = (
         "received_at_quality": "exact",
     },
 )
+
+SYNTHETIC_EVIDENCE = b"Pulse 109 synthetic water repair evidence. No citizen data.\n"
+EVIDENCE_HASH = hashlib.sha256(SYNTHETIC_EVIDENCE).hexdigest()
 
 
 def compose(*arguments: str) -> None:
@@ -84,6 +98,23 @@ def seed() -> None:
             if appeal["source_request_id"] != source_id:
                 raise RuntimeError("Demo seed returned a different source identity")
             print(f"{source_id}: {appeal['request_id']} ({response.status_code})")
+            if source_id == "demo-109-water-001":
+                attachment_path = f"/v1/requests/{appeal['request_id']}/attachments"
+                headers = {"X-Region-Id": fixture["region_id"]}
+                attachments = client.get(attachment_path, headers=headers)
+                attachments.raise_for_status()
+                if not any(item["object_hash"] == EVIDENCE_HASH for item in attachments.json()):
+                    uploaded = client.post(
+                        attachment_path,
+                        headers=headers,
+                        json={
+                            "file_name": "synthetic-repair-evidence.txt",
+                            "mime_type": "text/plain",
+                            "content_base64": base64.b64encode(SYNTHETIC_EVIDENCE).decode("ascii"),
+                        },
+                    )
+                    uploaded.raise_for_status()
+                print(f"synthetic closure evidence: sha256:{EVIDENCE_HASH}")
 
 
 def main() -> None:

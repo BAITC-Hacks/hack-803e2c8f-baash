@@ -609,6 +609,23 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Incident'
+  /v1/incidents/{incident_id}:
+    get:
+      tags: [Incidents]
+      summary: Read one region-scoped incident and its current member decisions
+      operationId: getIncident
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IncidentId'
+        - $ref: '#/components/parameters/RegionId'
+      responses:
+        '200':
+          description: Incident and current member identifiers
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IncidentDetail'
   /v1/incidents/{incident_id}/members:
     post:
       tags: [Incidents]
@@ -2142,6 +2159,22 @@ components:
         version:
           type: integer
           minimum: 1
+    IncidentDetail:
+      allOf:
+        - $ref: '#/components/schemas/Incident'
+        - type: object
+          required: [candidate_member_request_ids, confirmed_member_request_ids]
+          properties:
+            candidate_member_request_ids:
+              type: array
+              items:
+                type: string
+                format: uuid
+            confirmed_member_request_ids:
+              type: array
+              items:
+                type: string
+                format: uuid
     IncidentMember:
       type: object
       required: [incident_id, request_id, decision, decided_at]

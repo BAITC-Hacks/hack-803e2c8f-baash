@@ -45,6 +45,11 @@ class Incident(BaseModel):
     version: int = Field(ge=1)
 
 
+class IncidentDetail(Incident):
+    candidate_member_request_ids: list[UUID] = Field(default_factory=list)
+    confirmed_member_request_ids: list[UUID] = Field(default_factory=list)
+
+
 class MembershipCommand(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

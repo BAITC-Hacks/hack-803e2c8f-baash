@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Intake } from "./intake";
+import { AnalyticsPanel } from "./analytics-panel";
 import { ClosureIntegrityPanel } from "./closure-integrity-panel";
+import { IncidentWorkflowPanel } from "./incident-workflow-panel";
 import { OwnershipHandoffPanel } from "./ownership-handoff-panel";
 
 type Locale = "ru" | "kk";
@@ -36,6 +38,11 @@ type Recommendation = {
   top_topics: { id: string; score: number }[];
   top_services: { id: string; score: number }[];
   priority: string;
+};
+type AttachmentRef = {
+  attachment_id: string;
+  file_name: string;
+  object_hash: string;
 };
 
 const REGION = "ALA";
@@ -120,6 +127,8 @@ export default function OperatorWorkspace() {
   const [recommendation, setRecommendation] = useState<Recommendation | null>(
     null,
   );
+  const [attachments, setAttachments] = useState<AttachmentRef[]>([]);
+  const [attachmentError, setAttachmentError] = useState<string | null>(null);
   const [topic, setTopic] = useState("topic:manual-review");
   const [service, setService] = useState("service:manual-review");
   const [priority, setPriority] = useState("routine");
@@ -157,9 +166,25 @@ export default function OperatorWorkspace() {
       setTopic(row.current_decision?.topic_id ?? "topic:manual-review");
       setService(row.current_decision?.service_id ?? "service:manual-review");
       setPriority(row.current_decision?.priority ?? "routine");
+      try {
+        setAttachments(
+          await api<AttachmentRef[]>(
+            `/requests/${encodeURIComponent(id)}/attachments`,
+          ),
+        );
+        setAttachmentError(null);
+      } catch (failure) {
+        setAttachments([]);
+        setAttachmentError(
+          failure instanceof Error
+            ? failure.message
+            : "attachments_unavailable",
+        );
+      }
       setError(null);
     } catch (failure) {
       setDetail(null);
+      setAttachments([]);
       setError(
         failure instanceof Error ? failure.message : "appeal_unavailable",
       );
@@ -335,6 +360,7 @@ export default function OperatorWorkspace() {
             <p>{copy.statusImplemented}</p>
             <p>{copy.statusBlocked}</p>
             <p>{copy.statusCoverage}</p>
+            <AnalyticsPanel locale={locale} />
           </div>
         </section>
       ) : null}
@@ -376,6 +402,7 @@ export default function OperatorWorkspace() {
                     setSelectedId(appeal.request_id);
                     setRecommendation(null);
                     setDetail(null);
+                    setAttachments([]);
                   }}
                 >
                   <strong>{appeal.source_request_id}</strong>
@@ -547,12 +574,39 @@ export default function OperatorWorkspace() {
                       {detail.synchronization?.external_id ?? "No external ID"}
                     </p>
                   </div>
+                  <div>
+                    <h3>
+                      {locale === "ru"
+                        ? "Доказательства закрытия"
+                        : "Жабу дәлелдері"}
+                    </h3>
+                    {attachmentError ? (
+                      <p role="alert">{attachmentError}</p>
+                    ) : null}
+                    {attachments.length === 0 && !attachmentError ? (
+                      <p>{locale === "ru" ? "Вложений нет" : "Тіркеме жоқ"}</p>
+                    ) : null}
+                    {attachments.map((item) => (
+                      <p key={item.attachment_id}>
+                        {item.file_name} · sha256:{item.object_hash}
+                      </p>
+                    ))}
+                  </div>
                 </div>
                 <OwnershipHandoffPanel
                   key={detail.request_id}
                   locale={locale}
                   regionId={detail.region_id}
                   initialRequestId={detail.request_id}
+                />
+                <IncidentWorkflowPanel
+                  key={`incident-${detail.request_id}`}
+                  locale={locale}
+                  regionId={detail.region_id}
+                  requestId={detail.request_id}
+                  choices={appeals}
+                  topicId={detail.current_decision?.topic_id ?? null}
+                  serviceId={detail.current_decision?.service_id ?? null}
                 />
                 <ClosureIntegrityPanel
                   key={`closure-${detail.request_id}`}

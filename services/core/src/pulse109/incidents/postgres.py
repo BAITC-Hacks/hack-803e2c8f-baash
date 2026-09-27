@@ -16,6 +16,7 @@ from .models import (
     CreateIncident,
     Incident,
     IncidentDecision,
+    IncidentDetail,
     IncidentLifecycleCommand,
     IncidentMember,
     IncidentMergeCommand,
@@ -135,6 +136,33 @@ class PostgresIncidentService:
             member_count=self._member_count(cursor, incident_id),
             version=row["version"],
         )
+
+    def detail(self, incident_id: UUID, *, region_id: str) -> IncidentDetail:
+        with self.repository.connection() as connection, connection.cursor() as cursor:
+            incident = self._incident(cursor, incident_id, region_id, lock=False)
+            cursor.execute(
+                "SELECT request_id FROM incidents.incident_candidate_member "
+                "WHERE incident_id = %s ORDER BY request_id",
+                (incident_id,),
+            )
+            candidates = [row["request_id"] for row in cursor.fetchall()]
+            cursor.execute(
+                """
+                SELECT request_id FROM (
+                    SELECT DISTINCT ON (request_id) request_id, decision
+                    FROM incidents.membership_decision
+                    WHERE incident_id = %s
+                    ORDER BY request_id, decided_at DESC, membership_decision_id DESC
+                ) AS latest WHERE decision = 'confirm' ORDER BY request_id
+                """,
+                (incident_id,),
+            )
+            confirmed = [row["request_id"] for row in cursor.fetchall()]
+            return IncidentDetail(
+                **incident.model_dump(),
+                candidate_member_request_ids=candidates,
+                confirmed_member_request_ids=confirmed,
+            )
 
     def _event(
         self,
@@ -504,6 +532,7 @@ class PostgresIncidentService:
                       AND membership.decision = 'confirm'
                       AND appeal.region_id = %s
                       AND lower(attachment.object_hash) = ANY(%s)
+                      AND attachment.data_classification <> 'security'
                       AND NOT EXISTS (
                           SELECT 1
                           FROM incidents.membership_decision AS newer
@@ -512,7 +541,7 @@ class PostgresIncidentService:
                             AND (newer.decided_at, newer.membership_decision_id) >
                                 (membership.decided_at, membership.membership_decision_id)
                       )
-                    FOR KEY SHARE OF attachment
+                    FOR SHARE OF attachment
                     """,
                     (incident_id, region_id, command.evidence_refs),
                 )
@@ -570,6 +599,31 @@ class PostgresIncidentService:
             (incident_id,),
         )
         return [row["request_id"] for row in cursor.fetchall()]
+
+    @staticmethod
+    def _require_topology_evidence(
+        cursor: Any, hashes: list[str], member_ids: list[UUID], region_id: str
+    ) -> None:
+        cursor.execute(
+            """
+            SELECT lower(attachment.object_hash) AS object_hash
+            FROM appeals.attachment_ref AS attachment
+            JOIN appeals.appeal AS appeal ON appeal.request_id = attachment.appeal_id
+            WHERE attachment.appeal_id = ANY(%s)
+              AND appeal.region_id = %s
+              AND lower(attachment.object_hash) = ANY(%s)
+              AND attachment.data_classification <> 'security'
+            FOR SHARE OF attachment
+            """,
+            (member_ids, region_id, hashes),
+        )
+        available = {row["object_hash"] for row in cursor.fetchall()}
+        if available != set(hashes):
+            raise IncidentError(
+                "evidence_not_found",
+                "Topology evidence must be a clean attachment of a current incident member.",
+                422,
+            )
 
     @staticmethod
     def _record_membership(
@@ -722,6 +776,9 @@ class PostgresIncidentService:
                     "Target incident already contains a source member.",
                     409,
                 )
+            self._require_topology_evidence(
+                cursor, command.evidence_refs, requested + sorted(existing), region_id
+            )
             self._check_no_topology_cycle(cursor, source_id, target.incident_id)
             source_new = source.version + 1
             target_new = target.version + 1
@@ -847,6 +904,7 @@ class PostgresIncidentService:
                     "Split must select confirmed members and leave at least two in the source.",
                     422,
                 )
+            self._require_topology_evidence(cursor, command.evidence_refs, current, region_id)
             child_id = uuid4()
             at = _now()
             source_new = source.version + 1

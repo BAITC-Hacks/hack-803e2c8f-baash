@@ -50,6 +50,14 @@ def test_human_confirmed_incident_preserves_member_appeal_identity() -> None:
     incident_id = created.json()["incident_id"]
     assert created.json()["state"] == "proposed"
     assert created.json()["member_count"] == 0
+    proposed_detail = client.get(f"/v1/incidents/{incident_id}", headers={"X-Region-Id": "ALA"})
+    assert proposed_detail.status_code == 200
+    assert set(proposed_detail.json()["candidate_member_request_ids"]) == {first_id, second_id}
+    assert proposed_detail.json()["confirmed_member_request_ids"] == []
+    assert (
+        client.get(f"/v1/incidents/{incident_id}", headers={"X-Region-Id": "AST"}).status_code
+        == 403
+    )
 
     first_membership = None
     for index, request_id in enumerate((first_id, second_id), start=1):
@@ -112,6 +120,9 @@ def test_human_confirmed_incident_preserves_member_appeal_identity() -> None:
     assert confirmed.json()["state"] == "confirmed"
     assert confirmed.json()["member_count"] == 2
     assert confirmed.json()["version"] == 4
+    confirmed_detail = client.get(f"/v1/incidents/{incident_id}", headers={"X-Region-Id": "ALA"})
+    assert confirmed_detail.status_code == 200
+    assert set(confirmed_detail.json()["confirmed_member_request_ids"]) == {first_id, second_id}
 
     first = client.get(f"/v1/requests/{first_id}", headers={"X-Region-Id": "ALA"})
     second = client.get(f"/v1/requests/{second_id}", headers={"X-Region-Id": "ALA"})
