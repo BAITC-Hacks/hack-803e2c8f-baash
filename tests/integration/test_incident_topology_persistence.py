@@ -196,8 +196,8 @@ def test_postgres_incident_merge_and_split_topology() -> None:
         )
         row = cur.fetchone()
         assert row is not None
-        assert row[0] == "merge"
-        assert row[3] == "MERGE_INCIDENT_AREAS"
+        assert row["operation"] == "merge"
+        assert row["reason_code"] == "MERGE_INCIDENT_AREAS"
 
     # Test Split from Incident B (now having 4 members: 0, 1, 2, 3)
     split_key = f"top-split-{uuid4()}"
