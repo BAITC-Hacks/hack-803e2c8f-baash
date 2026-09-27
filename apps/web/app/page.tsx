@@ -5,6 +5,7 @@ import { Intake } from "./intake";
 import { AnalyticsPanel } from "./analytics-panel";
 import { ClosureIntegrityPanel } from "./closure-integrity-panel";
 import { DataLab } from "./data-lab";
+import { IncidentList } from "./incident-list";
 import { IncidentWarRoom } from "./incident-war-room";
 import { IncidentWorkflowPanel } from "./incident-workflow-panel";
 import { OperationsCenter } from "./operations-center";
@@ -63,6 +64,7 @@ type SessionContext = {
 const labels = {
   ru: {
     operations: "Операционный центр",
+    incidents: "Инциденты",
     datalab: "Лаборатория данных",
     intake: "Подать обращение",
     queue: "Очередь оператора",
@@ -86,6 +88,7 @@ const labels = {
   },
   kk: {
     operations: "Операциялық орталық",
+    incidents: "Оқиғалар",
     datalab: "Деректер зертханасы",
     intake: "Өтініш беру",
     queue: "Оператор кезегі",
@@ -171,7 +174,7 @@ export default function OperatorWorkspace() {
   }
 
   const [view, setView] = useState<
-    "operations" | "datalab" | "queue" | "intake" | "situation"
+    "operations" | "datalab" | "queue" | "incidents" | "intake" | "situation"
   >("operations");
   const [warRoomIncidentId, setWarRoomIncidentId] = useState<string | null>(
     null,
@@ -440,361 +443,410 @@ export default function OperatorWorkspace() {
     );
   }
 
+  // The shell separates where you are from what you are doing. A row of tabs
+  // across the top made every screen look like a setting of one page, which is
+  // why the application read as an admin panel rather than a product.
+  const primaryViews = ["operations", "queue", "incidents", "datalab"] as const;
+  const secondaryViews = ["intake", "situation"] as const;
+
   return (
-    <main>
-      <header className="topbar">
+    <div className="shell">
+      <aside className="sidebar" aria-label="Sections">
         <strong className="brand">Pulse 109</strong>
-        <nav className="view-switch" aria-label="Workspace view">
-          {(
-            ["operations", "datalab", "queue", "intake", "situation"] as const
-          ).map((name) => (
+        <nav className="sidebar-nav">
+          {primaryViews.map((name) => (
             <button
               key={name}
               type="button"
-              aria-pressed={view === name}
+              aria-current={view === name ? "page" : undefined}
+              onClick={() => setView(name)}
+            >
+              {copy[name]}
+            </button>
+          ))}
+          <span className="sidebar-divider" role="presentation" />
+          {secondaryViews.map((name) => (
+            <button
+              key={name}
+              type="button"
+              aria-current={view === name ? "page" : undefined}
               onClick={() => setView(name)}
             >
               {copy[name]}
             </button>
           ))}
         </nav>
-        <div className="topbar-actions">
-          <span className="profile">
-            {profile === "demo"
-              ? "DEMO · SYNTHETIC"
-              : `Profile: ${profile ?? "loading"}`}
-          </span>
-          <div className="locale-switch" aria-label="Language">
-            {(["ru", "kk"] as const).map((name) => (
-              <button
-                key={name}
-                type="button"
-                aria-pressed={locale === name}
-                onClick={() => setLocale(name)}
-              >
-                {name.toUpperCase()}
-              </button>
-            ))}
-          </div>
-        </div>
-      </header>
+      </aside>
 
-      {view === "operations" ? (
-        <div className="workspace real-workspace">
-          {warRoomIncidentId ? (
-            <IncidentWarRoom
-              locale={locale}
-              regionId={region}
-              incidentId={warRoomIncidentId}
-              onClose={() => setWarRoomIncidentId(null)}
-            />
-          ) : null}
-          <OperationsCenter
-            locale={locale}
-            regionId={region}
-            onOpenIncident={(incidentId) => setWarRoomIncidentId(incidentId)}
-          />
-        </div>
-      ) : null}
-      {view === "datalab" ? (
-        <div className="workspace real-workspace">
-          <DataLab locale={locale} regionId={region} />
-        </div>
-      ) : null}
-      {view === "intake" ? (
-        <Intake
-          locale={locale}
-          regionId={region}
-          demoEnabled={profile === "demo"}
-        />
-      ) : null}
-      {view === "situation" ? (
-        <section
-          className="workspace real-workspace"
-          aria-labelledby="platform-status"
-        >
-          <div className="content">
-            <p className="eyebrow">
-              {profile === "demo" ? "DEMO · SYNTHETIC" : `Profile: ${profile}`}
-            </p>
-            <h1 id="platform-status">{copy.situation}</h1>
-            <p>{copy.statusImplemented}</p>
-            <p>{copy.statusBlocked}</p>
-            <p>{copy.statusCoverage}</p>
-            <AnalyticsPanel locale={locale} regionId={region} />
-          </div>
-        </section>
-      ) : null}
-      {view === "queue" ? (
-        <div className="workspace real-workspace">
-          <section className="content" id="queue">
-            <div className="section-heading">
-              <div>
-                <p className="eyebrow">
-                  {regions.length > 1 ? (
-                    <select
-                      aria-label="Region"
-                      value={region}
-                      onChange={(event) => setRegion(event.target.value)}
-                    >
-                      {regions.map((item) => (
-                        <option key={item} value={item}>
-                          {item}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    region
-                  )}{" "}
-                  · {profile}
-                </p>
-                <h1>{copy.queue}</h1>
-              </div>
-              <button
-                className="secondary-action"
-                type="button"
-                onClick={() => void refreshQueue()}
+      <main className="shell-main">
+        <header className="topbar">
+          <div className="topbar-context">
+            {regions.length > 1 ? (
+              <select
+                aria-label="Region"
+                value={region}
+                onChange={(event) => setRegion(event.target.value)}
               >
-                {copy.refresh}
-              </button>
-            </div>
-            {error ? (
-              <p role="alert" className="attention">
-                {error}
-              </p>
-            ) : null}
-            {notice ? <p role="status">{notice}</p> : null}
-            {loading ? <p role="status">{copy.loading}</p> : null}
-            {!loading && !error && appeals.length === 0 ? (
-              <p role="status">{copy.empty}</p>
-            ) : null}
-            <div className="queue" aria-label="Appeals from PostgreSQL">
-              {appeals.map((appeal) => (
+                {regions.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <span className="region-label">{region}</span>
+            )}
+          </div>
+          <div className="topbar-actions">
+            <span
+              className="profile"
+              title={
+                profile === "demo"
+                  ? "Synthetic municipal data. The application logic, PostgreSQL workflows and worker paths are real."
+                  : undefined
+              }
+            >
+              {profile === "demo"
+                ? "DEMO · SYNTHETIC"
+                : `Profile: ${profile ?? "loading"}`}
+            </span>
+            <div className="locale-switch" aria-label="Language">
+              {(["ru", "kk"] as const).map((name) => (
                 <button
-                  className={`queue-row ${selectedId === appeal.request_id ? "selected" : ""}`}
-                  key={appeal.request_id}
+                  key={name}
                   type="button"
-                  onClick={() => {
-                    setSelectedId(appeal.request_id);
-                    setRecommendation(null);
-                    setDetail(null);
-                    setAttachments([]);
-                  }}
+                  aria-pressed={locale === name}
+                  onClick={() => setLocale(name)}
                 >
-                  <strong>{appeal.source_request_id}</strong>
-                  <span>{appeal.region_id}</span>
-                  <span>{appeal.channel}</span>
-                  <span>{appeal.received_at_quality}</span>
-                  <span>{appeal.status}</span>
+                  {name.toUpperCase()}
                 </button>
               ))}
             </div>
-            {detail ? (
-              <section className="appeal-card" aria-labelledby="appeal-title">
-                <div className="appeal-header">
-                  <div>
-                    <p className="eyebrow">
-                      {detail.source_system} · v{detail.version}
-                    </p>
-                    <h2 id="appeal-title">{detail.request_id}</h2>
-                    <p className="appeal-summary">
-                      {detail.text ?? "No operational text recorded"}
-                    </p>
-                  </div>
-                  <span className="status-chip">{detail.status}</span>
+          </div>
+        </header>
+
+        {view === "operations" ? (
+          <div className="workspace real-workspace">
+            {warRoomIncidentId ? (
+              <IncidentWarRoom
+                locale={locale}
+                regionId={region}
+                incidentId={warRoomIncidentId}
+                onClose={() => setWarRoomIncidentId(null)}
+              />
+            ) : null}
+            <OperationsCenter
+              locale={locale}
+              regionId={region}
+              onOpenIncident={(incidentId) => setWarRoomIncidentId(incidentId)}
+            />
+          </div>
+        ) : null}
+        {view === "incidents" ? (
+          <div className="workspace real-workspace">
+            {warRoomIncidentId ? (
+              <IncidentWarRoom
+                locale={locale}
+                regionId={region}
+                incidentId={warRoomIncidentId}
+                onClose={() => setWarRoomIncidentId(null)}
+              />
+            ) : null}
+            <IncidentList
+              locale={locale}
+              regionId={region}
+              onOpenIncident={(incidentId) => setWarRoomIncidentId(incidentId)}
+            />
+          </div>
+        ) : null}
+        {view === "datalab" ? (
+          <div className="workspace real-workspace">
+            <DataLab locale={locale} regionId={region} />
+          </div>
+        ) : null}
+        {view === "intake" ? (
+          <Intake
+            locale={locale}
+            regionId={region}
+            demoEnabled={profile === "demo"}
+          />
+        ) : null}
+        {view === "situation" ? (
+          <section
+            className="workspace real-workspace"
+            aria-labelledby="platform-status"
+          >
+            <div className="content">
+              <p className="eyebrow">
+                {profile === "demo"
+                  ? "DEMO · SYNTHETIC"
+                  : `Profile: ${profile}`}
+              </p>
+              <h1 id="platform-status">{copy.situation}</h1>
+              <p>{copy.statusImplemented}</p>
+              <p>{copy.statusBlocked}</p>
+              <p>{copy.statusCoverage}</p>
+              <AnalyticsPanel locale={locale} regionId={region} />
+            </div>
+          </section>
+        ) : null}
+        {view === "queue" ? (
+          <div className="workspace real-workspace">
+            <section className="content" id="queue">
+              <div className="section-heading">
+                <div>
+                  <p className="eyebrow">{profile}</p>
+                  <h1>{copy.queue}</h1>
                 </div>
-                <div className="meta-grid">
-                  <div>
-                    <span>Region</span>
-                    <strong>{detail.region_id}</strong>
-                  </div>
-                  <div>
-                    <span>Business time quality</span>
-                    <strong>{detail.received_at_quality}</strong>
-                  </div>
-                  <div>
-                    <span>Created</span>
-                    <strong>{detail.created_at}</strong>
-                  </div>
-                  <div>
-                    <span>Sync</span>
-                    <strong>
-                      {detail.synchronization?.status ?? "not required"}
-                    </strong>
-                  </div>
-                </div>
-                <div className="decision-area">
-                  <h3>Human governed routing</h3>
+                <button
+                  className="secondary-action"
+                  type="button"
+                  onClick={() => void refreshQueue()}
+                >
+                  {copy.refresh}
+                </button>
+              </div>
+              {error ? (
+                <p role="alert" className="attention">
+                  {error}
+                </p>
+              ) : null}
+              {notice ? <p role="status">{notice}</p> : null}
+              {loading ? <p role="status">{copy.loading}</p> : null}
+              {!loading && !error && appeals.length === 0 ? (
+                <p role="status">{copy.empty}</p>
+              ) : null}
+              <div className="queue" aria-label="Appeals from PostgreSQL">
+                {appeals.map((appeal) => (
                   <button
-                    className="secondary-action"
+                    className={`queue-row ${selectedId === appeal.request_id ? "selected" : ""}`}
+                    key={appeal.request_id}
                     type="button"
-                    disabled={busy}
-                    onClick={classify}
+                    onClick={() => {
+                      setSelectedId(appeal.request_id);
+                      setRecommendation(null);
+                      setDetail(null);
+                      setAttachments([]);
+                    }}
                   >
-                    {copy.classify}
+                    <strong>{appeal.source_request_id}</strong>
+                    <span>{appeal.region_id}</span>
+                    <span>{appeal.channel}</span>
+                    <span>{appeal.received_at_quality}</span>
+                    <span>{appeal.status}</span>
                   </button>
-                  {recommendation ? (
-                    <p role="status">
-                      Local {recommendation.model_version} ·{" "}
-                      {recommendation.confidence_band} · topic{" "}
-                      {recommendation.top_topics[0].id} (
-                      {Math.round(recommendation.top_topics[0].score * 100)}%) ·
-                      service {recommendation.top_services[0].id} · human
-                      confirmation required
-                    </p>
-                  ) : (
-                    <p>{copy.unavailable}</p>
-                  )}
-                  <div className="manual-fields">
-                    <label>
-                      Topic ID
-                      <input
-                        value={topic}
-                        onChange={(event) => setTopic(event.target.value)}
-                      />
-                    </label>
-                    <label>
-                      Service ID
-                      <input
-                        value={service}
-                        onChange={(event) => setService(event.target.value)}
-                      />
-                    </label>
-                    <label>
-                      Priority
-                      <select
-                        value={priority}
-                        onChange={(event) => setPriority(event.target.value)}
-                      >
-                        <option value="routine">routine</option>
-                        <option value="elevated">elevated</option>
-                        <option value="urgent">urgent</option>
-                        <option value="emergency_handoff">
-                          emergency handoff
-                        </option>
-                      </select>
-                    </label>
+                ))}
+              </div>
+              {detail ? (
+                <section className="appeal-card" aria-labelledby="appeal-title">
+                  <div className="appeal-header">
+                    <div>
+                      <p className="eyebrow">
+                        {detail.source_system} · v{detail.version}
+                      </p>
+                      <h2 id="appeal-title">{detail.request_id}</h2>
+                      <p className="appeal-summary">
+                        {detail.text ?? "No operational text recorded"}
+                      </p>
+                    </div>
+                    <span className="status-chip">{detail.status}</span>
                   </div>
-                  <div className="decision-controls">
-                    <button
-                      className="primary-action"
-                      type="button"
-                      disabled={busy || !topic || !service}
-                      onClick={() => decide(false)}
-                    >
-                      {copy.manual}
-                    </button>
+                  <div className="meta-grid">
+                    <div>
+                      <span>Region</span>
+                      <strong>{detail.region_id}</strong>
+                    </div>
+                    <div>
+                      <span>Business time quality</span>
+                      <strong>{detail.received_at_quality}</strong>
+                    </div>
+                    <div>
+                      <span>Created</span>
+                      <strong>{detail.created_at}</strong>
+                    </div>
+                    <div>
+                      <span>Sync</span>
+                      <strong>
+                        {detail.synchronization?.status ?? "not required"}
+                      </strong>
+                    </div>
+                  </div>
+                  <div className="decision-area">
+                    <h3>Human governed routing</h3>
                     <button
                       className="secondary-action"
                       type="button"
-                      disabled={busy || !recommendation}
-                      onClick={() => decide(true)}
+                      disabled={busy}
+                      onClick={classify}
                     >
-                      {copy.accept}
+                      {copy.classify}
+                    </button>
+                    {recommendation ? (
+                      <p role="status">
+                        Local {recommendation.model_version} ·{" "}
+                        {recommendation.confidence_band} · topic{" "}
+                        {recommendation.top_topics[0].id} (
+                        {Math.round(recommendation.top_topics[0].score * 100)}%)
+                        · service {recommendation.top_services[0].id} · human
+                        confirmation required
+                      </p>
+                    ) : (
+                      <p>{copy.unavailable}</p>
+                    )}
+                    <div className="manual-fields">
+                      <label>
+                        Topic ID
+                        <input
+                          value={topic}
+                          onChange={(event) => setTopic(event.target.value)}
+                        />
+                      </label>
+                      <label>
+                        Service ID
+                        <input
+                          value={service}
+                          onChange={(event) => setService(event.target.value)}
+                        />
+                      </label>
+                      <label>
+                        Priority
+                        <select
+                          value={priority}
+                          onChange={(event) => setPriority(event.target.value)}
+                        >
+                          <option value="routine">routine</option>
+                          <option value="elevated">elevated</option>
+                          <option value="urgent">urgent</option>
+                          <option value="emergency_handoff">
+                            emergency handoff
+                          </option>
+                        </select>
+                      </label>
+                    </div>
+                    <div className="decision-controls">
+                      <button
+                        className="primary-action"
+                        type="button"
+                        disabled={busy || !topic || !service}
+                        onClick={() => decide(false)}
+                      >
+                        {copy.manual}
+                      </button>
+                      <button
+                        className="secondary-action"
+                        type="button"
+                        disabled={busy || !recommendation}
+                        onClick={() => decide(true)}
+                      >
+                        {copy.accept}
+                      </button>
+                    </div>
+                    {detail.current_decision ? (
+                      <p role="status">
+                        Recorded: {detail.current_decision.action} ·{" "}
+                        {detail.current_decision.service_id}
+                      </p>
+                    ) : null}
+                  </div>
+                  <div className="decision-area">
+                    <h3>Assignment and status</h3>
+                    <button
+                      className="primary-action"
+                      type="button"
+                      disabled={busy || !detail.current_decision}
+                      onClick={assign}
+                    >
+                      {copy.assign}
+                    </button>
+                    <label>
+                      Next status
+                      <select
+                        value={nextStatus}
+                        onChange={(event) => setNextStatus(event.target.value)}
+                      >
+                        <option value="triage">triage</option>
+                        <option value="accepted">accepted</option>
+                        <option value="in_progress">in progress</option>
+                        <option value="waiting">waiting</option>
+                        <option value="resolved">resolved</option>
+                      </select>
+                    </label>
+                    <button
+                      className="secondary-action"
+                      type="button"
+                      disabled={busy}
+                      onClick={recordStatus}
+                    >
+                      {copy.status}
                     </button>
                   </div>
-                  {detail.current_decision ? (
-                    <p role="status">
-                      Recorded: {detail.current_decision.action} ·{" "}
-                      {detail.current_decision.service_id}
-                    </p>
-                  ) : null}
-                </div>
-                <div className="decision-area">
-                  <h3>Assignment and status</h3>
-                  <button
-                    className="primary-action"
-                    type="button"
-                    disabled={busy || !detail.current_decision}
-                    onClick={assign}
-                  >
-                    {copy.assign}
-                  </button>
-                  <label>
-                    Next status
-                    <select
-                      value={nextStatus}
-                      onChange={(event) => setNextStatus(event.target.value)}
-                    >
-                      <option value="triage">triage</option>
-                      <option value="accepted">accepted</option>
-                      <option value="in_progress">in progress</option>
-                      <option value="waiting">waiting</option>
-                      <option value="resolved">resolved</option>
-                    </select>
-                  </label>
-                  <button
-                    className="secondary-action"
-                    type="button"
-                    disabled={busy}
-                    onClick={recordStatus}
-                  >
-                    {copy.status}
-                  </button>
-                </div>
-                <div className="activity-grid">
-                  <div>
-                    <h3>Durable timeline</h3>
-                    <ol className="timeline">
-                      {detail.timeline.map((event) => (
-                        <li key={event.event_id}>
-                          {event.event_type} · {event.observed_at}
-                        </li>
-                      ))}
-                    </ol>
-                  </div>
-                  <div>
-                    <h3>External delivery</h3>
-                    <p>{detail.synchronization?.status ?? "not required"}</p>
-                    <p>
-                      {detail.synchronization?.external_id ?? "No external ID"}
-                    </p>
-                  </div>
-                  <div>
-                    <h3>
-                      {locale === "ru"
-                        ? "Доказательства закрытия"
-                        : "Жабу дәлелдері"}
-                    </h3>
-                    {attachmentError ? (
-                      <p role="alert">{attachmentError}</p>
-                    ) : null}
-                    {attachments.length === 0 && !attachmentError ? (
-                      <p>{locale === "ru" ? "Вложений нет" : "Тіркеме жоқ"}</p>
-                    ) : null}
-                    {attachments.map((item) => (
-                      <p key={item.attachment_id}>
-                        {item.file_name} · sha256:{item.object_hash}
+                  <div className="activity-grid">
+                    <div>
+                      <h3>Durable timeline</h3>
+                      <ol className="timeline">
+                        {detail.timeline.map((event) => (
+                          <li key={event.event_id}>
+                            {event.event_type} · {event.observed_at}
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                    <div>
+                      <h3>External delivery</h3>
+                      <p>{detail.synchronization?.status ?? "not required"}</p>
+                      <p>
+                        {detail.synchronization?.external_id ??
+                          "No external ID"}
                       </p>
-                    ))}
+                    </div>
+                    <div>
+                      <h3>
+                        {locale === "ru"
+                          ? "Доказательства закрытия"
+                          : "Жабу дәлелдері"}
+                      </h3>
+                      {attachmentError ? (
+                        <p role="alert">{attachmentError}</p>
+                      ) : null}
+                      {attachments.length === 0 && !attachmentError ? (
+                        <p>
+                          {locale === "ru" ? "Вложений нет" : "Тіркеме жоқ"}
+                        </p>
+                      ) : null}
+                      {attachments.map((item) => (
+                        <p key={item.attachment_id}>
+                          {item.file_name} · sha256:{item.object_hash}
+                        </p>
+                      ))}
+                    </div>
                   </div>
-                </div>
-                <OwnershipHandoffPanel
-                  key={detail.request_id}
-                  locale={locale}
-                  regionId={detail.region_id}
-                  initialRequestId={detail.request_id}
-                />
-                <IncidentWorkflowPanel
-                  key={`incident-${detail.request_id}`}
-                  locale={locale}
-                  regionId={detail.region_id}
-                  requestId={detail.request_id}
-                  choices={appeals}
-                  topicId={detail.current_decision?.topic_id ?? null}
-                  serviceId={detail.current_decision?.service_id ?? null}
-                />
-                <ClosureIntegrityPanel
-                  key={`closure-${detail.request_id}`}
-                  locale={locale}
-                  regionId={detail.region_id}
-                  initialRequestId={detail.request_id}
-                />
-              </section>
-            ) : null}
-          </section>
-        </div>
-      ) : null}
-    </main>
+                  <OwnershipHandoffPanel
+                    key={detail.request_id}
+                    locale={locale}
+                    regionId={detail.region_id}
+                    initialRequestId={detail.request_id}
+                  />
+                  <IncidentWorkflowPanel
+                    key={`incident-${detail.request_id}`}
+                    locale={locale}
+                    regionId={detail.region_id}
+                    requestId={detail.request_id}
+                    choices={appeals}
+                    topicId={detail.current_decision?.topic_id ?? null}
+                    serviceId={detail.current_decision?.service_id ?? null}
+                  />
+                  <ClosureIntegrityPanel
+                    key={`closure-${detail.request_id}`}
+                    locale={locale}
+                    regionId={detail.region_id}
+                    initialRequestId={detail.request_id}
+                  />
+                </section>
+              ) : null}
+            </section>
+          </div>
+        ) : null}
+      </main>
+    </div>
   );
 }

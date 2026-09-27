@@ -307,10 +307,6 @@ export function OperationsCenter({
     <section className="operations" aria-labelledby="operations-title">
       <div className="section-heading">
         <div>
-          <p className="eyebrow">
-            {regionId}
-            {feed?.synthetic ? " · SYNTHETIC" : ""}
-          </p>
           <h1 id="operations-title">{t.title}</h1>
           <p>{t.intro}</p>
         </div>

@@ -167,6 +167,42 @@ class PostgresIncidentWorkspaceService:
         with psycopg.connect(_psycopg_url(self.database_url), row_factory=dict_row) as connection:
             yield connection
 
+    def listing(
+        self, *, region_id: str, state: str | None = None, limit: int = 50
+    ) -> list[dict[str, Any]]:
+        """Incidents in a region, with the counts a list screen needs.
+
+        The member counts come from the membership decisions rather than a
+        stored total, so the list cannot disagree with the card it opens.
+        """
+        with self._connection() as connection, connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT i.incident_id, i.state, i.topic_id, i.service_id, i.version,
+                       i.created_at,
+                       count(*) FILTER (WHERE m.decision = 'confirm') AS confirmed_count,
+                       count(*) FILTER (WHERE m.decision IS NULL) AS candidate_count,
+                       count(c.request_id) AS member_count,
+                       min(a.received_at) AS first_reported_at,
+                       max(a.received_at) AS last_reported_at
+                FROM incidents.incident i
+                LEFT JOIN incidents.incident_candidate_member c
+                       ON c.incident_id = i.incident_id
+                LEFT JOIN LATERAL (
+                    SELECT decision FROM incidents.membership_decision d
+                     WHERE d.incident_id = i.incident_id AND d.request_id = c.request_id
+                     ORDER BY decided_at DESC LIMIT 1
+                ) m ON true
+                LEFT JOIN appeals.appeal a ON a.request_id = c.request_id
+                WHERE i.region_id = %s AND (%s::text IS NULL OR i.state = %s)
+                GROUP BY i.incident_id, i.state, i.topic_id, i.service_id, i.version, i.created_at
+                ORDER BY i.created_at DESC
+                LIMIT %s
+                """,
+                (region_id, state, state, min(limit, 200)),
+            )
+            return [dict(row) for row in cursor.fetchall()]
+
     def workspace(self, incident_id: UUID, *, region_id: str) -> IncidentWorkspace:
         detail: IncidentDetail = self._detail_reader.detail(incident_id, region_id=region_id)
         confirmed = list(detail.confirmed_member_request_ids)[:_MAX_MEMBERS]

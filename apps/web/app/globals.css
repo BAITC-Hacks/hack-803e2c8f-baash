@@ -2597,3 +2597,207 @@ textarea:focus-visible {
   font-size: 0.86rem;
   color: var(--muted);
 }
+
+/* ------------------------------------------------------------------ */
+/* Product shell.                                                      */
+/* A row of tabs across the top made every screen look like a setting  */
+/* of one page. A sidebar separates where you are from what you are    */
+/* doing, which is the difference between a product and an admin panel.*/
+/* ------------------------------------------------------------------ */
+
+:root {
+  --civic: #1c5fb4;
+  --shell-bg: #f6f7f8;
+  --sidebar-bg: #11181c;
+  --sidebar-ink: #c9d2d7;
+  --radius: 12px;
+}
+
+.shell {
+  display: grid;
+  grid-template-columns: 216px 1fr;
+  min-height: 100vh;
+  background: var(--shell-bg);
+}
+
+.sidebar {
+  justify-content: flex-start;
+  background: var(--sidebar-bg);
+  color: var(--sidebar-ink);
+  padding: 22px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  position: sticky;
+  top: 0;
+  align-self: start;
+  height: 100vh;
+}
+
+.sidebar .brand {
+  color: #fff;
+  font-size: 1.02rem;
+  letter-spacing: 0.01em;
+  padding: 0 10px;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sidebar-nav button {
+  appearance: none;
+  background: none;
+  border: none;
+  color: var(--sidebar-ink);
+  font: inherit;
+  font-size: 0.9rem;
+  text-align: left;
+  padding: 9px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 160ms ease;
+}
+
+.sidebar-nav button:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.sidebar-nav button[aria-current="page"] {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.sidebar-divider {
+  display: block;
+  height: 1px;
+  margin: 10px 10px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.shell-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.shell .topbar {
+  /* The legacy topbar was a dark bar with white text. The shell keeps the bar
+     but not the colour, so the override has to restore the ink as well. */
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 28px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.shell .topbar .profile {
+  /* Inherited from the old dark bar, where light grey was legible. */
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+}
+
+.topbar-context .region-label,
+.topbar-context select {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.topbar-context select {
+  appearance: none;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 5px 10px;
+  background: var(--surface);
+}
+
+.shell .workspace {
+  padding: 28px;
+  max-width: 1180px;
+  width: 100%;
+}
+
+.filter-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 14px 0 18px;
+}
+
+.filter-row button {
+  appearance: none;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font: inherit;
+  font-size: 0.84rem;
+  cursor: pointer;
+}
+
+.filter-row button[aria-pressed="true"] {
+  background: var(--ink);
+  color: #fff;
+  border-color: var(--ink);
+}
+
+.incident-cards {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.incident-cards > li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+}
+
+.incident-cards strong {
+  display: block;
+  margin: 2px 0;
+  font-size: 1rem;
+}
+
+@media (max-width: 860px) {
+  .shell {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: static;
+    height: auto;
+    flex-direction: row;
+    align-items: center;
+    overflow-x: auto;
+    gap: 12px;
+  }
+
+  .sidebar-nav {
+    flex-direction: row;
+  }
+
+  .sidebar-divider {
+    display: none;
+  }
+}

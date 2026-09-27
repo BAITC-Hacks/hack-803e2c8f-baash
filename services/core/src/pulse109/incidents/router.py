@@ -1,8 +1,9 @@
 """FastAPI incident routes matching the public v1 contract."""
 
+from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Header, HTTPException, Response, status
+from fastapi import APIRouter, Header, HTTPException, Query, Response, status
 
 from pulse109.security import AuthenticatedActor
 
@@ -36,6 +37,25 @@ def create_incident_router(
     workspace_service: PostgresIncidentWorkspaceService | None = None,
 ) -> APIRouter:
     router = APIRouter(prefix="/v1", tags=["Incidents"])
+
+    @router.get("/incidents", operation_id="listIncidents")
+    def list_incidents(
+        identity: AuthenticatedActor,
+        region_id: str = Header(alias="X-Region-Id", pattern=r"^[A-Z0-9_-]{2,32}$"),
+        state: Annotated[str | None, Query(pattern=r"^[a-z_]{3,32}$")] = None,
+        limit: Annotated[int, Query(ge=1, le=200)] = 50,
+    ) -> list[dict[str, Any]]:
+        identity.require_any_role("operator", "supervisor", "analyst", "auditor", "admin")
+        identity.require_region(region_id)
+        if workspace_service is None:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail={
+                    "code": "workspace_unavailable",
+                    "message": "The incident list needs the PostgreSQL profile.",
+                },
+            )
+        return workspace_service.listing(region_id=region_id, state=state, limit=limit)
 
     @router.get(
         "/incidents/{incident_id}/workspace",
