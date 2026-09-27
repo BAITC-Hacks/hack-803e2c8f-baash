@@ -30,6 +30,11 @@ from pulse109.control_plane.router import BundleVerifierProvider
 from pulse109.database import get_engine
 from pulse109.decisions.publication import ConfidencePublicationService
 from pulse109.decisions.publication_router import create_confidence_publication_router
+from pulse109.discovery import (
+    EmptyDiscoveryRepository,
+    PostgresDiscoveryRepository,
+    create_discovery_router,
+)
 from pulse109.incidents import (
     IncidentService,
     InMemoryIncidentRepository,
@@ -37,6 +42,8 @@ from pulse109.incidents import (
     PostgresIncidentService,
     create_incident_router,
 )
+from pulse109.incidents.workspace import PostgresIncidentWorkspaceService
+from pulse109.incidents.workspace_advisors import ManualPathOwnershipAdvisor
 from pulse109.intake import (
     EmptyIntakePolicyRepository,
     IntakeApplicationService,
@@ -50,7 +57,9 @@ from pulse109.manual_path import (
     PostgresManualRepository,
     create_manual_router,
 )
+from pulse109.next_action import NextActionAdvisor, create_next_action_router
 from pulse109.observability import configure_observability
+from pulse109.operations import PostgresOperationsService, create_operations_router
 from pulse109.outcomes import (
     ClosureIntegrityService,
     PostgresClosureRepository,
@@ -132,16 +141,11 @@ if use_postgres_manual_path:
 else:
     ownership_repository = EmptyOwnershipRepository()
     handoff_service = None
-app.include_router(
-    create_ownership_router(
-        manual_service,
-        OwnershipService(
-            ownership_repository,
-            allow_synthetic=settings.effective_profile in {"local", "development", "test", "demo"},
-        ),
-        handoff_service,
-    )
+ownership_service = OwnershipService(
+    ownership_repository,
+    allow_synthetic=settings.effective_profile in {"local", "development", "test", "demo"},
 )
+app.include_router(create_ownership_router(manual_service, ownership_service, handoff_service))
 app.include_router(
     create_catalog_router(
         PolicyService(settings.database_url if use_postgres_manual_path else None)
@@ -187,7 +191,20 @@ if use_postgres_manual_path:
 else:
     incident_repository = InMemoryIncidentRepository()
     incident_service = IncidentService(incident_repository, manual_repository)
-app.include_router(create_incident_router(incident_service))
+# The war room is a read model over the services above. It owns no state and
+# issues no commands, so every write still goes through its own domain endpoint.
+next_action_advisor = NextActionAdvisor()
+incident_workspace_service: PostgresIncidentWorkspaceService | None = None
+if use_postgres_manual_path:
+    incident_workspace_service = PostgresIncidentWorkspaceService(
+        settings.database_url,
+        detail_reader=incident_service,
+        ownership=ManualPathOwnershipAdvisor(manual_service, ownership_service),
+        next_actions=next_action_advisor,
+        synthetic=synthetic_read_models,
+    )
+app.include_router(create_incident_router(incident_service, incident_workspace_service))
+app.include_router(create_next_action_router(next_action_advisor, incident_workspace_service))
 
 analytics_service = AnalyticsService(synthetic=synthetic_read_models)
 alert_store: AlertStore
@@ -230,6 +247,22 @@ else:
 privacy_service = PrivacyService(privacy_repository)
 app.include_router(create_privacy_router(privacy_service))
 app.include_router(create_session_router())
+app.include_router(
+    create_operations_router(
+        PostgresOperationsService(settings.database_url, synthetic=synthetic_read_models)
+        if use_postgres_manual_path
+        else None
+    )
+)
+app.include_router(
+    create_discovery_router(
+        PostgresDiscoveryRepository(settings.database_url)
+        if use_postgres_manual_path
+        else EmptyDiscoveryRepository(),
+        synthetic=synthetic_read_models,
+        enabled=use_postgres_manual_path,
+    )
+)
 
 replay_repository: ReplayRepository | None
 if use_postgres_manual_path:

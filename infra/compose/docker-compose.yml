@@ -17,14 +17,18 @@ services:
     ports:
       - "5432:5432"
     healthcheck:
+      # The check has to go over TCP. During initdb the image runs a temporary
+      # server on the unix socket only, so a socket check reports healthy while
+      # the real server is still starting, and migrate then races it and dies.
       test:
         [
           "CMD-SHELL",
-          "pg_isready -U ${POSTGRES_USER:-pulse109} -d ${POSTGRES_DB:-pulse109}",
+          "pg_isready -h 127.0.0.1 -p 5432 -U ${POSTGRES_USER:-pulse109} -d ${POSTGRES_DB:-pulse109}",
         ]
       interval: 5s
       timeout: 5s
-      retries: 20
+      retries: 30
+      start_period: 20s
     volumes:
       - pulse109-postgres:/var/lib/postgresql/data
 

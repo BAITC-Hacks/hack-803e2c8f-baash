@@ -20,6 +20,8 @@ from .models import (
 )
 from .postgres import PostgresIncidentService
 from .service import IncidentError, IncidentService
+from .workspace import PostgresIncidentWorkspaceService
+from .workspace_models import IncidentWorkspace
 
 
 def _http_error(error: IncidentError) -> HTTPException:
@@ -29,8 +31,41 @@ def _http_error(error: IncidentError) -> HTTPException:
     )
 
 
-def create_incident_router(service: IncidentService | PostgresIncidentService) -> APIRouter:
+def create_incident_router(
+    service: IncidentService | PostgresIncidentService,
+    workspace_service: PostgresIncidentWorkspaceService | None = None,
+) -> APIRouter:
     router = APIRouter(prefix="/v1", tags=["Incidents"])
+
+    @router.get(
+        "/incidents/{incident_id}/workspace",
+        response_model=IncidentWorkspace,
+        operation_id="getIncidentWorkspace",
+    )
+    def get_incident_workspace(
+        incident_id: UUID,
+        identity: AuthenticatedActor,
+        region_id: str = Header(alias="X-Region-Id", pattern=r"^[A-Z0-9_-]{2,32}$"),
+    ) -> IncidentWorkspace:
+        """One read that assembles the whole war room.
+
+        Read-only by construction. Every write stays on its own domain endpoint,
+        so this cannot become a side door around the human decision path.
+        """
+        identity.require_any_role("operator", "supervisor", "analyst", "auditor", "admin")
+        identity.require_region(region_id)
+        if workspace_service is None:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail={
+                    "code": "workspace_unavailable",
+                    "message": "The incident workspace needs the PostgreSQL profile.",
+                },
+            )
+        try:
+            return workspace_service.workspace(incident_id, region_id=region_id)
+        except IncidentError as error:
+            raise _http_error(error) from error
 
     @router.get(
         "/incidents/{incident_id}", response_model=IncidentDetail, operation_id="getIncident"
