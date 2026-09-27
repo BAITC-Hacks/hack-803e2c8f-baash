@@ -10,14 +10,17 @@ Requirements: Docker Desktop with a working Linux engine, Python 3.10-3.13 and l
 .\demo.ps1 up
 ```
 
-The command builds the normal images, applies the full Alembic chain, waits for healthy services and creates four fixed appeals. It refuses to seed if the core does not report the ready `demo` profile and PostgreSQL. Re-running `seed` is idempotent; it returns the same appeal IDs, keeps operator decisions and does not duplicate the synthetic evidence attachment. Without PowerShell, use `uv run python scripts/demo_runtime.py up` (and substitute the other action names below).
+The command builds the normal images, applies the full Alembic chain, waits for healthy services, loads the synthetic catalog and adaptive-intake policies from `scripts/demo_catalog.sql`, and creates four fixed appeals. Those catalog rows are `synthetic_only`, which the policy repository honours, so they resolve in the local, development, test and demo profiles and nowhere else. They are demo data rather than an approved taxonomy, and blocker B06 stays open. It refuses to seed if the core does not report the ready `demo` profile and PostgreSQL. Re-running `seed` is idempotent; it returns the same appeal IDs, keeps operator decisions and does not duplicate the synthetic evidence attachment. Without PowerShell, use `uv run python scripts/demo_runtime.py up` (and substitute the other action names below).
 
 ```powershell
+.\demo.ps1 verify
 .\demo.ps1 status
 .\demo.ps1 seed
 .\demo.ps1 down
 .\demo.ps1 reset
 ```
+
+`verify` is the single command to run before a walkthrough. It checks that the migration head matches the migration files, that the core reports the ready `demo` profile on PostgreSQL, that the web answers, that the seeded appeals and the synthetic intake policies are present, that no non-synthetic policy sits in a demo database, and that the replay adapter is running. It then runs the full API walkthrough in `scripts/verify_demo_flow.py`, covering intake, decision, assignment, worker delivery, incident confirmation, status, closure with evidence, recurrence and analytics. That walkthrough creates its own appeals, so `verify` finishes by resetting and reseeding, which leaves a clean queue for the demo.
 
 `down` keeps the dedicated demo volumes. `reset` deletes **only** the `pulse109-demo` Compose project's volumes, including demo PostgreSQL rows and local synthetic blobs. It does not touch the default `pulse109` Compose project. Start again with `up` for the same initial state. Check readiness at `http://localhost:8080/v1/health/ready` and the web app at `http://localhost:3000`.
 

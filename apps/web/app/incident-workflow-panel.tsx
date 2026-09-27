@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 type Locale = "ru" | "kk";
 type AppealChoice = { request_id: string; source_request_id: string };
@@ -47,10 +47,23 @@ const copy = {
   },
 } as const;
 
+// A server answer, whatever its status. Anything else leaves the outcome unknown,
+// which is the case where a retry has to reuse its idempotency key.
+class ApiError extends Error {
+  readonly status: number;
+
+  constructor(code: string, status: number) {
+    super(code);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
 async function request<T>(
   path: string,
   regionId: string,
   body?: object,
+  idempotencyKey?: string,
 ): Promise<T> {
   const response = await fetch(`/api/core${path}`, {
     method: body ? "POST" : "GET",
@@ -59,7 +72,7 @@ async function request<T>(
       ...(body
         ? {
             "Content-Type": "application/json",
-            "Idempotency-Key": crypto.randomUUID(),
+            "Idempotency-Key": idempotencyKey ?? crypto.randomUUID(),
           }
         : {}),
     },
@@ -68,7 +81,10 @@ async function request<T>(
   });
   if (!response.ok) {
     const payload = await response.json().catch(() => null);
-    throw new Error(payload?.detail?.code ?? `HTTP ${response.status}`);
+    throw new ApiError(
+      payload?.detail?.code ?? `HTTP ${response.status}`,
+      response.status,
+    );
   }
   return (await response.json()) as T;
 }
@@ -95,6 +111,17 @@ export function IncidentWorkflowPanel({
   const [incident, setIncident] = useState<Incident | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Incident commands are versioned writes. A retry after a lost response must
+  // carry the key of the attempt that may already have committed.
+  const commandKeys = useRef(new Map<string, string>());
+
+  function commandKey(operation: string): string {
+    const existing = commandKeys.current.get(operation);
+    if (existing) return existing;
+    const created = crypto.randomUUID();
+    commandKeys.current.set(operation, created);
+    return created;
+  }
 
   async function load(id: string) {
     const result = await request<Incident>(
@@ -105,12 +132,16 @@ export function IncidentWorkflowPanel({
     setIncidentId(result.incident_id);
   }
 
-  async function run(action: () => Promise<void>) {
+  async function run(action: () => Promise<void>, operation?: string) {
     setBusy(true);
     setError(null);
     try {
       await action();
+      if (operation) commandKeys.current.delete(operation);
     } catch (failure) {
+      if (operation && failure instanceof ApiError) {
+        commandKeys.current.delete(operation);
+      }
       setError(
         failure instanceof Error ? failure.message : "operation_unconfirmed",
       );
@@ -121,43 +152,61 @@ export function IncidentWorkflowPanel({
 
   function create() {
     if (!secondId || !topicId) return;
+    const operation = `incident-create:${requestId}:${secondId}`;
     void run(async () => {
-      const result = await request<Incident>("/incidents", regionId, {
-        region_id: regionId,
-        topic_id: topicId,
-        service_id: serviceId,
-        member_request_ids: [requestId, secondId],
-        proposal_source: "operator",
-        rationale: ["OPERATOR_REVIEW"],
-      });
+      const result = await request<Incident>(
+        "/incidents",
+        regionId,
+        {
+          region_id: regionId,
+          topic_id: topicId,
+          service_id: serviceId,
+          member_request_ids: [requestId, secondId],
+          proposal_source: "operator",
+          rationale: ["OPERATOR_REVIEW"],
+        },
+        commandKey(operation),
+      );
       await load(result.incident_id);
-    });
+    }, operation);
   }
 
   function confirmMember(memberId: string) {
     if (!incident) return;
+    const operation = `member-confirm:${incident.incident_id}:${memberId}:${incident.version}`;
     void run(async () => {
-      await request(`/incidents/${incident.incident_id}/members`, regionId, {
-        request_id: memberId,
-        incident_version: incident.version,
-        decision: "confirm",
-        reason_code: "OPERATOR_VERIFIED",
-        evidence_refs: [],
-      });
+      await request(
+        `/incidents/${incident.incident_id}/members`,
+        regionId,
+        {
+          request_id: memberId,
+          incident_version: incident.version,
+          decision: "confirm",
+          reason_code: "OPERATOR_VERIFIED",
+          evidence_refs: [],
+        },
+        commandKey(operation),
+      );
       await load(incident.incident_id);
-    });
+    }, operation);
   }
 
   function confirmIncident() {
     if (!incident) return;
+    const operation = `incident-confirm:${incident.incident_id}:${incident.version}`;
     void run(async () => {
-      await request(`/incidents/${incident.incident_id}/confirm`, regionId, {
-        incident_version: incident.version,
-        decision: "confirm",
-        reason_code: "TWO_MEMBERS_VERIFIED",
-      });
+      await request(
+        `/incidents/${incident.incident_id}/confirm`,
+        regionId,
+        {
+          incident_version: incident.version,
+          decision: "confirm",
+          reason_code: "TWO_MEMBERS_VERIFIED",
+        },
+        commandKey(operation),
+      );
       await load(incident.incident_id);
-    });
+    }, operation);
   }
 
   return (

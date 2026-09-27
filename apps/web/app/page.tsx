@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Intake } from "./intake";
 import { AnalyticsPanel } from "./analytics-panel";
 import { ClosureIntegrityPanel } from "./closure-integrity-panel";
@@ -91,6 +91,18 @@ const labels = {
   },
 } as const;
 
+// A server answer, whatever its status. Anything else thrown by api() means the
+// outcome is unknown, which is exactly the case where a retry must reuse its key.
+class ApiError extends Error {
+  readonly status: number;
+
+  constructor(code: string, status: number) {
+    super(code);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
 async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`/api/core${path}`, {
     ...init,
@@ -105,20 +117,35 @@ async function api<T>(path: string, init?: RequestInit): Promise<T> {
     } catch {
       /* The HTTP status remains visible. */
     }
-    throw new Error(code);
+    throw new ApiError(code, response.status);
   }
   return (await response.json()) as T;
 }
 
-function commandHeaders(): Record<string, string> {
+function commandHeaders(idempotencyKey: string): Record<string, string> {
   return {
     "Content-Type": "application/json",
-    "Idempotency-Key": crypto.randomUUID(),
+    "Idempotency-Key": idempotencyKey,
   };
 }
 
 export default function OperatorWorkspace() {
   const [locale, setLocale] = useState<Locale>("ru");
+  // An idempotency key has to survive a retry of the same command. If the server
+  // committed the write and only the response was lost, a freshly generated key
+  // would reach the server as a second, different command. Keys are therefore
+  // held per operation and dropped only once the server has answered, whatever
+  // the answer was. A transport failure leaves the key in place for the retry.
+  const commandKeys = useRef(new Map<string, string>());
+
+  function commandKey(operation: string): string {
+    const existing = commandKeys.current.get(operation);
+    if (existing) return existing;
+    const created = crypto.randomUUID();
+    commandKeys.current.set(operation, created);
+    return created;
+  }
+
   const [view, setView] = useState<"queue" | "intake" | "situation">("queue");
   const [profile, setProfile] = useState<string | null>(null);
   const [appeals, setAppeals] = useState<Appeal[]>([]);
@@ -203,17 +230,27 @@ export default function OperatorWorkspace() {
       void Promise.resolve().then(() => refreshDetail(selectedId));
   }, [selectedId, refreshDetail]);
 
-  async function run(action: () => Promise<void>, refresh = true) {
+  async function run(
+    action: () => Promise<void>,
+    refresh = true,
+    operation?: string,
+  ) {
     setBusy(true);
     setError(null);
     setNotice(null);
     try {
       await action();
+      if (operation) commandKeys.current.delete(operation);
       if (refresh) {
         if (selectedId) await refreshDetail(selectedId);
         await refreshQueue();
       }
     } catch (failure) {
+      // The server answered, so this key has done its job. Anything else leaves
+      // the outcome unknown and the key is kept for the retry.
+      if (operation && failure instanceof ApiError) {
+        commandKeys.current.delete(operation);
+      }
       setError(
         failure instanceof Error ? failure.message : "command_unconfirmed",
       );
@@ -224,87 +261,110 @@ export default function OperatorWorkspace() {
 
   function classify() {
     if (!detail) return;
-    void run(async () => {
-      const result = await api<Recommendation>(
-        `/requests/${detail.request_id}/classifications`,
-        {
-          method: "POST",
-          headers: commandHeaders(),
-          body: JSON.stringify({ request_version: detail.version }),
-        },
-      );
-      setRecommendation(result);
-      setTopic(result.top_topics[0].id);
-      setService(result.top_services[0].id);
-      setPriority(result.priority);
-      setNotice(`${result.model_version} · ${result.confidence_band}`);
-    }, false);
+    const operation = `classify:${detail.request_id}:${detail.version}`;
+    void run(
+      async () => {
+        const result = await api<Recommendation>(
+          `/requests/${detail.request_id}/classifications`,
+          {
+            method: "POST",
+            headers: commandHeaders(commandKey(operation)),
+            body: JSON.stringify({ request_version: detail.version }),
+          },
+        );
+        setRecommendation(result);
+        setTopic(result.top_topics[0].id);
+        setService(result.top_services[0].id);
+        setPriority(result.priority);
+        setNotice(`${result.model_version} · ${result.confidence_band}`);
+      },
+      false,
+      operation,
+    );
   }
 
   function decide(accept: boolean) {
     if (!detail) return;
-    void run(async () => {
-      const result = await api<{ decision_id: string }>(
-        `/requests/${detail.request_id}/decisions`,
-        {
-          method: "POST",
-          headers: commandHeaders(),
-          body: JSON.stringify({
-            request_version: detail.version,
-            recommendation_id: accept
-              ? recommendation?.recommendation_id
-              : null,
-            topic_id: topic,
-            service_id: service,
-            priority,
-            action: accept ? "accepted" : "manual",
-          }),
-        },
-      );
-      setNotice(`Decision recorded: ${result.decision_id}`);
-      setRecommendation(null);
-    });
+    const operation = `decide:${detail.request_id}:${detail.version}:${accept}`;
+    void run(
+      async () => {
+        const result = await api<{ decision_id: string }>(
+          `/requests/${detail.request_id}/decisions`,
+          {
+            method: "POST",
+            headers: commandHeaders(commandKey(operation)),
+            body: JSON.stringify({
+              request_version: detail.version,
+              recommendation_id: accept
+                ? recommendation?.recommendation_id
+                : null,
+              topic_id: topic,
+              service_id: service,
+              priority,
+              action: accept ? "accepted" : "manual",
+            }),
+          },
+        );
+        setNotice(`Decision recorded: ${result.decision_id}`);
+        setRecommendation(null);
+      },
+      true,
+      operation,
+    );
   }
 
   function assign() {
     if (!detail?.current_decision) return;
-    void run(async () => {
-      const receipt = await api<{ status: string }>(
-        `/requests/${detail.request_id}/assignments`,
-        {
-          method: "POST",
-          headers: commandHeaders(),
-          body: JSON.stringify({
-            request_version: detail.version,
-            service_id: detail.current_decision?.service_id,
-            reason_code: "operator_confirmed",
-          }),
-        },
-      );
-      setNotice(`Outbox: ${receipt.status}`);
-    });
+    const operation = `assign:${detail.request_id}:${detail.version}`;
+    void run(
+      async () => {
+        const receipt = await api<{ status: string }>(
+          `/requests/${detail.request_id}/assignments`,
+          {
+            method: "POST",
+            headers: commandHeaders(commandKey(operation)),
+            body: JSON.stringify({
+              request_version: detail.version,
+              service_id: detail.current_decision?.service_id,
+              reason_code: "operator_confirmed",
+            }),
+          },
+        );
+        setNotice(`Outbox: ${receipt.status}`);
+      },
+      true,
+      operation,
+    );
   }
 
   function recordStatus() {
     if (!detail) return;
-    void run(async () => {
-      const event = await api<{ event_id: string }>(
-        `/requests/${detail.request_id}/status-events`,
-        {
-          method: "POST",
-          headers: commandHeaders(),
-          body: JSON.stringify({
-            source_event_id: crypto.randomUUID(),
-            source_system: detail.source_system,
-            status: nextStatus,
-            occurred_at: null,
-            occurred_at_quality: "missing",
-            reason_code: "OPERATOR_REVIEW",
-          }),
-        },
-      );
-      setNotice(`Status event recorded: ${event.event_id}`);
-    });
+    const operation = `status:${detail.request_id}:${detail.version}:${nextStatus}`;
+    void run(
+      async () => {
+        // The source event id identifies the same event across retries, so it is
+        // derived from the operation key rather than generated per attempt.
+        const key = commandKey(operation);
+        const event = await api<{ event_id: string }>(
+          `/requests/${detail.request_id}/status-events`,
+          {
+            method: "POST",
+            headers: commandHeaders(key),
+            body: JSON.stringify({
+              source_event_id: key,
+              source_system: detail.source_system,
+              status: nextStatus,
+              occurred_at: null,
+              occurred_at_quality: "missing",
+              reason_code: "OPERATOR_REVIEW",
+            }),
+          },
+        );
+        setNotice(`Status event recorded: ${event.event_id}`);
+      },
+      true,
+      operation,
+    );
   }
 
   return (
