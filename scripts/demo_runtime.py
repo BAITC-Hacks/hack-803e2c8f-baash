@@ -243,6 +243,7 @@ def seed() -> None:
                     uploaded.raise_for_status()
                 print(f"synthetic closure evidence: sha256:{EVIDENCE_HASH}")
         seed_emerging(client)
+        seed_world()
 
 
 def check_environment() -> None:
@@ -404,6 +405,20 @@ def seed_emerging(client: httpx.Client) -> None:
         print(f"emerging scenario: {created} reports over the last 46 minutes")
     else:
         print(f"emerging scenario: {len(EMERGING)} reports already present")
+
+
+def seed_world() -> None:
+    """Populate the wider city so every screen has something to show.
+
+    A reviewer who opens an analytics screen to five records learns nothing
+    about the product. The world is built through the same endpoints an operator
+    uses, so it carries real audit, real outbox entries and real analytics.
+    """
+    subprocess.run(  # noqa: S603
+        [sys.executable, "scripts/demo_world.py", "--api", API],
+        cwd=ROOT,
+        check=True,
+    )
 
 
 def main() -> None:

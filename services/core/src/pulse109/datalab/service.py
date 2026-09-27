@@ -273,26 +273,21 @@ class PostgresDataLabService:
         case that went forward and back is visible as exactly that.
         """
         with self._connection() as connection, connection.cursor() as cursor:
+            # The status event records both sides of the move, so the
+            # transition is read rather than reconstructed from neighbouring
+            # rows. Reconstruction can invent a step the record never made.
             cursor.execute(
                 """
-                WITH ordered AS (
-                    SELECT e.appeal_id,
-                           e.payload ->> 'status' AS status,
-                           row_number() OVER (
-                               PARTITION BY e.appeal_id
-                               ORDER BY COALESCE(e.occurred_at, e.observed_at)
-                           ) AS position
-                    FROM appeals.appeal_event e
-                    JOIN appeals.appeal a ON a.request_id = e.appeal_id
-                    WHERE a.region_id = %s
-                      AND e.event_type = 'appeal.status.changed.v1'
-                      AND e.payload ->> 'status' IS NOT NULL
-                )
-                SELECT prev.status AS from_status, nxt.status AS to_status, count(*) AS total
-                FROM ordered prev
-                JOIN ordered nxt
-                  ON nxt.appeal_id = prev.appeal_id AND nxt.position = prev.position + 1
-                GROUP BY prev.status, nxt.status
+                SELECT e.payload ->> 'previous_status' AS from_status,
+                       e.payload ->> 'new_status' AS to_status,
+                       count(*) AS total
+                FROM appeals.appeal_event e
+                JOIN appeals.appeal a ON a.request_id = e.appeal_id
+                WHERE a.region_id = %s
+                  AND e.event_type = 'appeal.status.changed.v1'
+                  AND e.payload ->> 'new_status' IS NOT NULL
+                  AND e.payload ->> 'previous_status' IS NOT NULL
+                GROUP BY 1, 2
                 ORDER BY total DESC
                 LIMIT 400
                 """,
@@ -390,21 +385,31 @@ class PostgresDataLabService:
 
     def handoffs(self, *, region_id: str) -> HandoffAnalytics:
         with self._connection() as connection, connection.cursor() as cursor:
-            # The assignment row records the handoff itself, so there is no need
-            # to infer one from consecutive rows and no risk of inventing a move
-            # that the record never made.
+            # from_service_id exists on the assignment row but the write path
+            # does not populate it, so a handoff is visible only as consecutive
+            # assignments to different services. Reading the empty column would
+            # report no handoffs at all, which is worse than reading the order.
             cursor.execute(
                 """
-                SELECT s.from_service_id AS from_service,
-                       s.to_service_id AS to_service,
+                WITH ordered AS (
+                    SELECT s.request_id,
+                           s.to_service_id AS service_id,
+                           row_number() OVER (
+                               PARTITION BY s.request_id ORDER BY s.assigned_at, s.created_at
+                           ) AS position
+                    FROM appeals.assignment s
+                    JOIN appeals.appeal a ON a.request_id = s.request_id
+                    WHERE a.region_id = %s AND s.to_service_id IS NOT NULL
+                )
+                SELECT prev.service_id AS from_service,
+                       nxt.service_id AS to_service,
                        count(*) AS total,
-                       count(DISTINCT s.request_id) AS appeals
-                FROM appeals.assignment s
-                JOIN appeals.appeal a ON a.request_id = s.request_id
-                WHERE a.region_id = %s
-                  AND s.from_service_id IS NOT NULL
-                  AND s.from_service_id IS DISTINCT FROM s.to_service_id
-                GROUP BY s.from_service_id, s.to_service_id
+                       count(DISTINCT prev.request_id) AS appeals
+                FROM ordered prev
+                JOIN ordered nxt
+                  ON nxt.request_id = prev.request_id AND nxt.position = prev.position + 1
+                WHERE prev.service_id IS DISTINCT FROM nxt.service_id
+                GROUP BY prev.service_id, nxt.service_id
                 ORDER BY total DESC
                 LIMIT 200
                 """,
@@ -556,8 +561,11 @@ class PostgresDataLabService:
         if key.startswith("handoff:") and ">" in key:
             source, target = key[len("handoff:") :].split(">", 1)
             clause = (
-                "EXISTS (SELECT 1 FROM appeals.assignment s WHERE s.request_id = a.request_id"
-                " AND s.from_service_id = %s AND s.to_service_id = %s)"
+                "EXISTS (SELECT 1 FROM appeals.assignment s1 JOIN appeals.assignment s2"
+                " ON s2.request_id = s1.request_id"
+                " AND (s2.assigned_at, s2.created_at) > (s1.assigned_at, s1.created_at)"
+                " WHERE s1.request_id = a.request_id AND s1.to_service_id = %s"
+                " AND s2.to_service_id = %s)"
             )
             return clause, (source, target), {"from_service": source, "to_service": target}
 
