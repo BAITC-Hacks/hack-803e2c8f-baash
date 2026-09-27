@@ -29,15 +29,15 @@ Architecture, data, human-decision, incident, failure and privacy diagrams are i
 
 ## Repository map
 
-| Path | Responsibility |
-| --- | --- |
-| `services/core` | FastAPI business modules, PostgreSQL repositories and Alembic migrations |
-| `services/worker`, `services/inference` | Outbox delivery and optional inference processes |
-| `adapters` | Replay/Open311 implementations and adapter SDK |
-| `apps/web` | Next.js citizen intake and operator workspace |
-| `contracts` | OpenAPI, canonical schemas, event catalog and ADRs |
-| `infra/compose`, `scripts` | Runtime topology, demo commands, verification and release tooling |
-| `docs`, `output/pdf` | Review documentation and generated organizer questions |
+| Path                                    | Responsibility                                                           |
+| --------------------------------------- | ------------------------------------------------------------------------ |
+| `services/core`                         | FastAPI business modules, PostgreSQL repositories and Alembic migrations |
+| `services/worker`, `services/inference` | Outbox delivery and optional inference processes                         |
+| `adapters`                              | Replay/Open311 implementations and adapter SDK                           |
+| `apps/web`                              | Next.js citizen intake and operator workspace                            |
+| `contracts`                             | OpenAPI, canonical schemas, event catalog and ADRs                       |
+| `infra/compose`, `scripts`              | Runtime topology, demo commands, verification and release tooling        |
+| `docs`, `output/pdf`                    | Review documentation and generated organizer questions                   |
 
 The [RU/EN history](docs/DEVELOPMENT_HISTORY.md) derives chronology and visible authorship from Git. A commit author does not by itself prove a team role or review responsibility; those are not invented here.
 
