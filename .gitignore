@@ -40,3 +40,7 @@ canonical.jsonl
 # about five minutes on CPU by ml/training/retrieval_finetune.py. The model
 # card carries the hash so a checkpoint can be matched to its report.
 ml/evaluation/**/model/
+
+# Generated exploration output. `make eda` rebuilds it, and a committed copy
+# would drift from the code that produces it.
+data/reports/eda/
