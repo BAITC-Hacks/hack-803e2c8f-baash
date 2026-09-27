@@ -64,11 +64,19 @@ jobs:
 
           health = get('/v1/health/ready')
           assert health['profile'] == 'demo' and health['checks']['database'] == 'ready'
-          appeals = get('/v1/requests?limit=50')
-          sources = {appeal['source_request_id'] for appeal in appeals}
-          assert {'demo-109-water-001', 'demo-109-water-004', 'demo-109-light-002', 'demo-109-road-003'} <= sources
+          # The seeded city is larger than one page, so the fixed walkthrough
+          # appeals are no longer guaranteed to be among the most recent. Every
+          # appeal that is returned must still be synthetic.
+          appeals = get('/v1/requests?limit=100')
+          assert appeals, 'the demo profile seeded no appeals'
           assert all(appeal['source_system'].endswith('-synthetic') for appeal in appeals)
           PY
+          walkthrough=$(docker compose -f infra/compose/docker-compose.yml -f infra/compose/docker-compose.demo.yml \
+            exec -T postgres psql -U pulse109 -d pulse109 -Atc \
+            "SELECT count(*) FROM appeals.appeal WHERE source_request_id IN
+             ('demo-109-water-001','demo-109-water-004','demo-109-light-002','demo-109-road-003')")
+          echo "fixed walkthrough appeals present: $walkthrough of 4"
+          test "$walkthrough" = "4"
           curl --fail http://127.0.0.1:3000/api/health
       - name: Verify complete synthetic operator flow through the demo API
         run: uv run python scripts/verify_demo_flow.py
