@@ -61,6 +61,10 @@ class AnalyticsResult(StrictModel):
     synthetic: bool = False
     executed_query: AnalyticsQuery | None = None
 
+    @property
+    def has_missing_regions(self) -> bool:
+        return bool(self.missing_regions)
+
 
 class Forecast(StrictModel):
     metric_id: MetricId

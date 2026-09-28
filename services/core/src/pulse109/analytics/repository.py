@@ -267,6 +267,7 @@ class PostgresAnalyticsRepository:
         data_cutoff: datetime,
     ) -> tuple[list[list[object]], list[MetricColumn], int, int, bool]:
         regions = [region for region, state in coverage.items() if state != "missing"]
+        time_column = "observed_at" if query.metric_version == "1.0.0" else "received_at"
         predicates: list[sql.Composable] = [
             sql.SQL("region_id = ANY(%s)"),
             sql.SQL("observed_at <= %s"),
@@ -279,32 +280,43 @@ class PostgresAnalyticsRepository:
             predicates.append(sql.SQL("{} = ANY(%s)").format(sql.Identifier(item.field)))
             parameters.append(item.value if isinstance(item.value, list) else [str(item.value)])
         where = sql.SQL(" AND ").join(predicates)
-        summary = (
-            connection.execute(
-                sql.SQL(
-                    "SELECT count(*) FILTER (WHERE received_at >= %s AND received_at < %s "
-                    "AND received_at_quality IN ('exact','source_tz_assumed')) AS considered, "
-                    "count(*) FILTER (WHERE received_at IS NULL OR received_at_quality "
-                    "NOT IN ('exact','source_tz_assumed')) AS excluded "
-                    "FROM analytics.appeal_read_model WHERE {} "
-                ).format(where),
-                [query.time_from, query.time_to, *parameters],
-            ).fetchone()
-            or {}
+        trusted = (
+            sql.SQL("TRUE")
+            if query.metric_version == "1.0.0"
+            else sql.SQL("received_at_quality IN ('exact','source_tz_assumed')")
         )
+        selected_time = sql.Identifier(time_column)
+        if query.metric_version == "1.0.0":
+            summary_sql = sql.SQL(
+                "SELECT count(*) AS considered, 0 AS excluded "
+                "FROM analytics.appeal_read_model WHERE {} "
+                "AND {} >= %s AND {} < %s"
+            ).format(where, selected_time, selected_time)
+            summary_parameters: list[object] = [*parameters, query.time_from, query.time_to]
+        else:
+            summary_sql = sql.SQL(
+                "SELECT count(*) FILTER (WHERE {} >= %s AND {} < %s AND {}) AS considered, "
+                "count(*) FILTER (WHERE received_at IS NULL OR received_at_quality "
+                "NOT IN ('exact','source_tz_assumed')) AS excluded "
+                "FROM analytics.appeal_read_model WHERE {}"
+            ).format(selected_time, selected_time, trusted, where)
+            summary_parameters = [query.time_from, query.time_to, *parameters]
+        summary = connection.execute(summary_sql, summary_parameters).fetchone() or {}
         dimensions = query.dimensions or ["region_id"]
-        period = sql.SQL("date_trunc(%s, received_at AT TIME ZONE 'UTC')")
+        period = sql.SQL("date_trunc(%s, {} AT TIME ZONE 'UTC')").format(selected_time)
         fields = [period] + [sql.Identifier(name) for name in dimensions]
         select = sql.SQL(", ").join(fields)
         aggregation = connection.execute(
             sql.SQL(
                 "SELECT {}, count(*) AS value FROM analytics.appeal_read_model "
-                "WHERE {} AND received_at >= %s AND received_at < %s "
-                "AND received_at_quality IN ('exact','source_tz_assumed') "
+                "WHERE {} AND {} >= %s AND {} < %s AND {} "
                 "GROUP BY {} ORDER BY {} LIMIT %s"
             ).format(
                 select,
                 where,
+                selected_time,
+                selected_time,
+                trusted,
                 sql.SQL(", ").join(sql.SQL(str(i)) for i in range(1, len(fields) + 1)),
                 sql.SQL(", ").join(sql.SQL(str(i)) for i in range(1, len(fields) + 1)),
             ),
@@ -319,16 +331,6 @@ class PostgresAnalyticsRepository:
                 else bucket.date().isoformat()
             )
             rows.append([period_label, *(entry[name] for name in dimensions), int(entry["value"])])
-        # A registered source with observed data may have a measured empty period.
-        if dimensions == ["region_id"] and len(aggregation) <= query.limit:
-            represented = {str(row[1]) for row in rows}
-            rows.extend(
-                [
-                    [query.time_from.date().isoformat(), region, 0]
-                    for region in regions
-                    if region not in represented
-                ]
-            )
         columns = [MetricColumn(name="period", type="string")]
         columns.extend(MetricColumn(name=name, type="string") for name in dimensions)
         columns.append(MetricColumn(name="value", type="integer"))
@@ -347,13 +349,15 @@ class PostgresAnalyticsRepository:
         clauses: list[sql.Composable] = [sql.SQL("observed_at <= %s")]
         params: list[object] = [datetime.now(timezone.utc)]
         if arrival_period:
+            timestamp_column = "observed_at" if query.metric_version == "1.0.0" else "received_at"
             clauses.extend(
                 [
-                    sql.SQL("received_at >= %s"),
-                    sql.SQL("received_at < %s"),
-                    sql.SQL("received_at_quality IN ('exact','source_tz_assumed')"),
+                    sql.SQL("{} >= %s").format(sql.Identifier(timestamp_column)),
+                    sql.SQL("{} < %s").format(sql.Identifier(timestamp_column)),
                 ]
             )
+            if query.metric_version != "1.0.0":
+                clauses.append(sql.SQL("received_at_quality IN ('exact','source_tz_assumed')"))
             params.extend([query.time_from, query.time_to])
         if actor_region != "ALL":
             clauses.append(sql.SQL("region_id = %s"))

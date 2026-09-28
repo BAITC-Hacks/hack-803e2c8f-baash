@@ -21,6 +21,11 @@ are still blocker B01. Topic and service aliases come from the active catalog;
 synthetic catalog entries are excluded from operational profiles. B06 remains
 open for the approved taxonomy and SLA policy.
 
+Ask Pulse uses `appeals_volume/2.0.0`; the existing `/analytics/query` default
+continues to use `appeals_volume/1.0.0` and its observed-time meaning. Version
+2.0 adds trusted business time, human-confirmed topic/service dimensions and
+time-quality exclusions without silently changing existing consumers.
+
 Trusted business time is required for aggregation. Missing or ambiguous time is
 excluded, with a count and limitations in provenance. An observation/import time
 is never silently presented as the business event time.
@@ -37,6 +42,9 @@ reference an already registered region or active topic/service. Production
 aliases require an approval reference; demo aliases remain synthetic. Adding
 aliases never creates regional coverage. Forecasts require contiguous measured
 daily history and decline when gaps cannot be distinguished from missing data.
+Unobserved region and time buckets stay absent. A lack of rows is not rendered
+as zero unless an approved freshness policy can establish completeness for the
+whole requested interval.
 
 ## Supported questions and honest limits
 
@@ -109,3 +117,12 @@ See [the demo runbook](../DEMO_RUNBOOK.md#ask-pulse-about-30-seconds). The norma
 manual appeal path stays available with inference stopped. The feature does not
 close B01–B10 or certify production identity, legal basis, retention or a live
 regional integration.
+
+## Verification note
+
+The new migration chain renders successfully with Alembic offline SQL mode.
+Runtime migration and PostgreSQL integration checks were not available in the
+implementation environment: `PULSE109_TEST_DATABASE_URL` is unset, and
+`docker info` cannot open `//./pipe/dockerDesktopLinuxEngine`. The next check is
+to configure an isolated test database at the migration head and run
+`uv run pytest tests/integration/test_ask_analytics_postgres.py -q`.

@@ -81,13 +81,21 @@
         },
         "granularity": {
           "default": "day",
-          "enum": ["hour", "day", "week", "month"],
+          "enum": [
+            "hour",
+            "day",
+            "week",
+            "month"
+          ],
           "title": "Granularity",
           "type": "string"
         },
         "comparison": {
           "default": "none",
-          "enum": ["none", "previous_period"],
+          "enum": [
+            "none",
+            "previous_period"
+          ],
           "title": "Comparison",
           "type": "string"
         },
@@ -120,7 +128,11 @@
           "type": "string"
         }
       },
-      "required": ["intent_type", "time_from", "time_to"],
+      "required": [
+        "intent_type",
+        "time_from",
+        "time_to"
+      ],
       "title": "AnalyticsIntent",
       "type": "object"
     },
@@ -185,7 +197,10 @@
         },
         "locale": {
           "default": "ru-KZ",
-          "enum": ["ru-KZ", "kk-KZ"],
+          "enum": [
+            "ru-KZ",
+            "kk-KZ"
+          ],
           "title": "Locale",
           "type": "string"
         },
@@ -210,12 +225,20 @@
         },
         "model_alias": {
           "default": "champion",
-          "enum": ["champion", "challenger", "baseline"],
+          "enum": [
+            "champion",
+            "challenger",
+            "baseline"
+          ],
           "title": "Model Alias",
           "type": "string"
         }
       },
-      "required": ["question", "reference_time", "catalog"],
+      "required": [
+        "question",
+        "reference_time",
+        "catalog"
+      ],
       "title": "AnalyticsIntentRequest",
       "type": "object"
     },
@@ -240,7 +263,9 @@
           "default": null
         }
       },
-      "required": ["code"],
+      "required": [
+        "code"
+      ],
       "title": "AnalyticsIntentError",
       "type": "object"
     },
@@ -248,12 +273,20 @@
       "additionalProperties": false,
       "properties": {
         "requested_alias": {
-          "enum": ["champion", "challenger", "baseline"],
+          "enum": [
+            "champion",
+            "challenger",
+            "baseline"
+          ],
           "title": "Requested Alias",
           "type": "string"
         },
         "model_alias": {
-          "enum": ["champion", "challenger", "baseline"],
+          "enum": [
+            "champion",
+            "challenger",
+            "baseline"
+          ],
           "title": "Model Alias",
           "type": "string"
         },
@@ -401,7 +434,11 @@
           "type": "integer"
         },
         "approval_state": {
-          "enum": ["deterministic_baseline", "evaluation", "approved"],
+          "enum": [
+            "deterministic_baseline",
+            "evaluation",
+            "approved"
+          ],
           "title": "Approval State",
           "type": "string"
         }
@@ -438,7 +475,10 @@
           "type": "array"
         }
       },
-      "required": ["field", "prompt"],
+      "required": [
+        "field",
+        "prompt"
+      ],
       "title": "AskClarification",
       "type": "object"
     },
@@ -475,7 +515,11 @@
           "$ref": "#/$defs/AnalyticsIntentMetadata"
         }
       },
-      "required": ["intent", "error", "metadata"],
+      "required": [
+        "intent",
+        "error",
+        "metadata"
+      ],
       "title": "AnalyticsIntentResponse",
       "type": "object"
     }

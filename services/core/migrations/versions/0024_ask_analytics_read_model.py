@@ -41,7 +41,7 @@ def upgrade() -> None:
             approval_ref varchar(256),
             PRIMARY KEY (entity_type,entity_id,alias,version),
             CHECK (effective_to IS NULL OR effective_to > effective_from),
-            CHECK (synthetic_only OR length(trim(approval_ref)) > 0 AND approval_ref IS NOT NULL)
+            CHECK (synthetic_only OR (approval_ref IS NOT NULL AND length(trim(approval_ref)) > 0))
         );
         CREATE TRIGGER intent_alias_append_only
             BEFORE UPDATE OR DELETE ON analytics.intent_alias
@@ -61,6 +61,7 @@ def upgrade() -> None:
             data_cutoff timestamptz,
             quality varchar(16),
             records_considered bigint NOT NULL DEFAULT 0,
+            inference_metadata jsonb,
             created_at timestamptz NOT NULL DEFAULT now()
         );
         CREATE TRIGGER ask_audit_append_only

@@ -28,7 +28,10 @@ def load_frozen_dataset(
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     manifest: dict[str, Any] = json.loads(manifest_path.read_text(encoding="utf-8"))
     dataset_path = manifest_path.parent / manifest["dataset_file"]
-    contents = dataset_path.read_bytes()
+    # The frozen digest describes canonical LF-delimited JSONL. Git may
+    # materialize this text file with CRLF on Windows, so normalize line
+    # endings before both verification and parsing.
+    contents = dataset_path.read_bytes().replace(b"\r\n", b"\n")
     if hashlib.sha256(contents).hexdigest() != manifest["dataset_sha256"]:
         raise ValueError("frozen dataset hash changed")
     if manifest["classification"] != "synthetic_contract_only":

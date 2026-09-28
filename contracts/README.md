@@ -8,6 +8,7 @@ This package accompanies the technical specification and architecture document.
 - `canonical_request.schema.json`: canonical appeal contract for regional adapters.
 - `event_catalog.md`: integration event envelope, catalog and compatibility rules.
 - `model_stack.md`: fixed pilot model stack, serving topology, fallbacks and promotion gates.
+- `ask-pulse.schema.json` and `analytics-intent.schema.json`: versioned Ask Pulse response/export and private inference gateway JSON Schemas; `openapi.yaml` contains the operator-facing routes.
 - `adr/`: decisions that keep the first production release small and replaceable.
 - `diagrams/`: architecture diagrams generated from the same design used in the specification.
 

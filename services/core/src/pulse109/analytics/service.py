@@ -50,6 +50,7 @@ class AnalyticsService:
     def forecast(self, *, region_id: str, data_cutoff: datetime) -> Forecast:
         query = AnalyticsQuery(
             metric_id="appeals_volume",
+            metric_version="2.0.0",
             dimensions=["region_id"],
             filters=[MetricFilter(field="region_id", operator="eq", value=region_id)],
             time_from=data_cutoff - timedelta(days=28),

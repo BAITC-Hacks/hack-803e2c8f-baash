@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 
 import pytest
+from pulse109.analytics.catalog import metric_definition
 from pulse109.analytics.models import AnalyticsQuery, AnalyticsResult, MetricColumn
 from pulse109.analytics.service import AnalyticsError, AnalyticsService
 
@@ -54,6 +55,16 @@ def test_validation_prevents_unbounded_or_naive_queries_before_repository() -> N
             ),
             actor_region="ALA",
         )
+
+
+def test_trusted_received_time_is_a_new_metric_version_with_legacy_v1_preserved() -> None:
+    service = AnalyticsService(repository=HistoricalRepository())
+    legacy = metric_definition("appeals_volume", "1.0.0")
+    current = metric_definition("appeals_volume")
+    assert "observed time" in legacy.definition
+    assert "trusted received time" in current.definition
+    assert "topic_id" not in legacy.dimensions
+    assert "topic_id" in current.dimensions
     with pytest.raises(AnalyticsError, match="three years"):
         service.query(
             AnalyticsQuery(

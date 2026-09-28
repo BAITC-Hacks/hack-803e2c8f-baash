@@ -20,8 +20,8 @@ class PostgresAskAudit:
                 connection.execute(
                     "INSERT INTO analytics.ask_audit (query_id,actor_token,region_scope,"
                     "question_hash,locale,parser_version,intent,validated_query,status,"
-                    "reason_code,data_cutoff,quality,records_considered) "
-                    "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                    "reason_code,data_cutoff,quality,records_considered,inference_metadata) "
+                    "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
                     (
                         entry.get("query_id", str(uuid4())),
                         entry["actor_id"],
@@ -36,6 +36,7 @@ class PostgresAskAudit:
                         entry.get("data_cutoff"),
                         entry.get("quality"),
                         entry.get("records_considered") or 0,
+                        Jsonb(entry.get("inference_metadata")),
                     ),
                 )
         except psycopg.Error as error:

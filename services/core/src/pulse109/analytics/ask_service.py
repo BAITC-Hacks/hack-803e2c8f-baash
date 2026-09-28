@@ -61,6 +61,7 @@ def intent_query(intent: AnalyticsIntent) -> AnalyticsQuery:
         filters.append(MetricFilter(field="service_id", operator="eq", value=intent.service_id))
     return AnalyticsQuery(
         metric_id=intent.metric_id,
+        metric_version=metric_definition(intent.metric_id).version,
         dimensions=dimensions,
         filters=filters,
         time_from=intent.time_from,
@@ -323,6 +324,9 @@ class AskService:
                         else None,
                         "quality": response.result.quality if response.result else None,
                         "records_considered": getattr(response.result, "records_considered", None),
+                        "inference_metadata": response.inference.model_dump(mode="json")
+                        if response.inference
+                        else None,
                     }
                 )
             except Exception:

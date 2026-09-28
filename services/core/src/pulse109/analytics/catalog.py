@@ -19,7 +19,7 @@ class MetricDefinition:
 METRIC_CATALOG: dict[MetricId, MetricDefinition] = {
     "appeals_volume": MetricDefinition(
         "appeals_volume",
-        "1.0.0",
+        "2.0.0",
         "Count of accepted appeals by trusted received time; buckets use UTC. "
         "Current human-confirmed topic and service; untrusted arrival times excluded.",
         frozenset({"region_id", "status", "channel", "topic_id", "service_id", "language"}),
@@ -48,11 +48,22 @@ METRIC_CATALOG: dict[MetricId, MetricDefinition] = {
     ),
 }
 
+LEGACY_APPEALS_VOLUME_V1 = MetricDefinition(
+    "appeals_volume",
+    "1.0.0",
+    "Count of accepted appeals by observed time, including records without trusted time.",
+    frozenset({"region_id", "status", "channel"}),
+    frozenset({"region_id", "status", "channel"}),
+)
 
-def metric_definition(metric_id: MetricId, version: str = "1.0.0") -> MetricDefinition:
+
+def metric_definition(metric_id: MetricId, version: str | None = None) -> MetricDefinition:
     definition = METRIC_CATALOG[metric_id]
-    if definition.version != version:
-        raise ValueError(f"unsupported metric version: {metric_id}/{version}")
+    selected = version or definition.version
+    if metric_id == "appeals_volume" and selected == "1.0.0":
+        return LEGACY_APPEALS_VOLUME_V1
+    if definition.version != selected:
+        raise ValueError(f"unsupported metric version: {metric_id}/{selected}")
     return definition
 
 

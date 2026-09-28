@@ -84,6 +84,20 @@ def test_durable_analytics_filters_scope_time_quality_and_drilldown() -> None:
     assert calculated.missing_regions == [missing]
     assert all(row[-2:] == ["kk", 1] for row in calculated.rows)
     assert calculated.synthetic is True
+    legacy = service.query(
+        AnalyticsQuery(
+            metric_id="appeals_volume",
+            metric_version="1.0.0",
+            dimensions=["channel"],
+            filters=[MetricFilter(field="region_id", operator="eq", value=region)],
+            time_from=now - timedelta(days=1),
+            time_to=now + timedelta(minutes=1),
+        ),
+        actor_region=region,
+    )
+    assert legacy.records_considered == 2
+    assert legacy.excluded_records == 0
+    assert sum(int(str(row[-1])) for row in legacy.rows) == 2
     with pytest.raises(AnalyticsError, match="exceeds"):
         service.query(query, actor_region=region)
     scoped = query.model_copy(

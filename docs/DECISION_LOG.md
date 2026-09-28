@@ -777,3 +777,14 @@ Record implementation decisions here when the repository, contracts or available
 - **Consequences:** performance, security, migration and operations impact
 - **Evidence:** benchmark, test, issue or contract reference
 - **Revisit when:** explicit trigger, if any
+
+### D-ASK-01 — Version trusted-time analytics semantics
+
+- **Date:** 2026-09-28
+- **Status:** accepted for pilot review
+- **Context:** Ask Pulse needs trusted business-time filtering, human-confirmed dimensions, and explicit exclusion of records without reliable event time. The existing analytics endpoint already exposes observed-time volume results to consumers.
+- **Decision:** publish trusted-time volume semantics as `appeals_volume/2.0.0` and use that version for Ask Pulse. Keep the existing `appeals_volume/1.0.0` meaning and default intact for `/analytics/query`. Do not synthesize missing region/time buckets as zero without an approved completeness policy.
+- **Alternatives:** silently change the existing metric's meaning; keep using ingestion/observation timestamps for citizen-facing trend questions; infer zero from an empty query result.
+- **Consequences:** existing consumers keep their current interpretation. Ask Pulse excludes ambiguous business times and identifies its metric version. Sparse results remain sparse until source freshness policy establishes completeness.
+- **Evidence:** `services/core/src/pulse109/analytics/catalog.py`, `services/core/src/pulse109/analytics/repository.py`, `services/core/tests/analytics/test_repository_boundary.py`, `docs/features/ASK_PULSE.md`.
+- **Revisit when:** metric versioning becomes a shared contract with external analytics consumers or approved freshness completeness rules are supplied.
