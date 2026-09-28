@@ -27,9 +27,16 @@ def isolated_urls(base_url: str, database_name: str) -> tuple[str, str]:
     parsed = make_url(base_url)
     if parsed.get_backend_name() != "postgresql":
         raise ValueError("PULSE109_TEST_DATABASE_URL must be a PostgreSQL URL")
+    # Alembic reads DATABASE_URL through SQLAlchemy, which picks psycopg2 when
+    # the URL names no driver. This project ships psycopg 3 only, so the driver
+    # is pinned here rather than left to the caller to remember. The admin URL
+    # goes to psycopg directly and must stay driverless.
+    with_driver = parsed.set(drivername="postgresql+psycopg")
     return (
-        parsed.set(database="postgres").render_as_string(hide_password=False),
-        parsed.set(database=database_name).render_as_string(hide_password=False),
+        parsed.set(drivername="postgresql")
+        .set(database="postgres")
+        .render_as_string(hide_password=False),
+        with_driver.set(database=database_name).render_as_string(hide_password=False),
     )
 
 
@@ -52,9 +59,14 @@ def _run_pass(base_url: str, pass_number: int) -> None:
     database_name = f"pulse109_integration_{uuid4().hex}"
     admin_url, test_url = isolated_urls(base_url, database_name)
     _create_database(admin_url, database_name)
+    # Alembic wants the SQLAlchemy URL with its driver. The tests connect with
+    # psycopg directly and want the plain one.
+    plain_test_url = (
+        make_url(test_url).set(drivername="postgresql").render_as_string(hide_password=False)
+    )
     environment = os.environ | {
         "DATABASE_URL": test_url,
-        "PULSE109_TEST_DATABASE_URL": test_url,
+        "PULSE109_TEST_DATABASE_URL": plain_test_url,
     }
     try:
         subprocess.run(  # noqa: S603

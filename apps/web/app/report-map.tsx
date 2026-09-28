@@ -74,13 +74,16 @@ export function ReportMap({
       ((point.longitude - minLon + (lonSpan - (maxLon - minLon)) / 2) /
         lonSpan) *
         (WIDTH - PADDING * 2),
-    // Screen y grows downward while latitude grows upward.
+    // Screen y grows downward while latitude grows upward. The scale band is
+    // reserved at the bottom, because drawing the scale over the plot put its
+    // label on top of a report and made a dense cluster unreadable.
     y:
       HEIGHT -
       PADDING -
+      SCALE_BAND -
       ((point.latitude - minLat + (latSpan - (maxLat - minLat)) / 2) /
         latSpan) *
-        (HEIGHT - PADDING * 2),
+        (HEIGHT - PADDING * 2 - SCALE_BAND),
   });
 
   const widthMetres = lonSpan * metresPerDegreeLongitude(midLat);

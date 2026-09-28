@@ -111,3 +111,44 @@ def test_replay_snapshot_adapter_uses_the_generic_immutable_store(tmp_path: Path
         metadata={"artifact_type": "replay_snapshot"},
     )
     assert storage.restore_verified(artifact) == payload
+
+
+def test_a_blob_without_its_sidecar_is_recovered_not_crashed(tmp_path) -> None:
+    """Found by running the suite on a machine that had older attachments.
+
+    Blobs written before this store existed have no metadata sidecar. The put
+    path read it unconditionally and raised FileNotFoundError, which turns an
+    upgrade into an outage. In a content-addressed store the bytes prove
+    themselves, so the metadata is rewritten instead.
+    """
+    from pulse109.security.object_storage import LocalImmutableObjectStorage
+
+    storage = LocalImmutableObjectStorage(tmp_path)
+    payload = b"legacy attachment bytes"
+    digest = hashlib.sha256(payload).hexdigest()
+    # Simulate the old layout: the object, and nothing beside it.
+    (tmp_path / digest).write_bytes(payload)
+
+    artifact = storage.put_immutable(
+        payload=payload,
+        sha256=digest,
+        content_type="text/plain",
+        metadata={"origin": "legacy"},
+    )
+    assert artifact.sha256 == digest
+    assert (tmp_path / f"{digest}.metadata.json").exists()
+    assert storage.restore_verified(artifact) == payload
+
+
+def test_a_blob_whose_bytes_disagree_with_the_digest_is_refused(tmp_path) -> None:
+    from pulse109.security.object_storage import LocalImmutableObjectStorage
+
+    storage = LocalImmutableObjectStorage(tmp_path)
+    payload = b"honest bytes"
+    digest = hashlib.sha256(payload).hexdigest()
+    (tmp_path / digest).write_bytes(b"tampered bytes")
+
+    with pytest.raises(ValueError):
+        storage.put_immutable(
+            payload=payload, sha256=digest, content_type="text/plain", metadata={}
+        )

@@ -60,6 +60,22 @@ def _safe_metadata(metadata: Mapping[str, str]) -> dict[str, str]:
     return result
 
 
+def _write_metadata(path: Path, artifact: ImmutableArtifact) -> None:
+    path.write_text(
+        json.dumps(
+            {
+                "sha256": artifact.sha256,
+                "byte_size": artifact.byte_size,
+                "content_type": artifact.content_type,
+                "metadata": dict(artifact.metadata),
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+        ),
+        encoding="utf-8",
+    )
+
+
 class LocalImmutableObjectStorage:
     """Filesystem adapter for local, synthetic and restore-drill environments."""
 
@@ -89,32 +105,27 @@ class LocalImmutableObjectStorage:
             metadata=normalized_metadata,
         )
         if object_path.exists():
-            stored = json.loads(metadata_path.read_text(encoding="utf-8"))
-            if (
-                stored.get("content_type") != content_type
-                or stored.get("metadata") != normalized_metadata
-            ):
-                raise ValueError("immutable object metadata does not match existing object")
             existing = self.restore_verified(artifact)
             if existing != payload:
                 raise ValueError("immutable object content does not match its digest")
+            if metadata_path.exists():
+                stored = json.loads(metadata_path.read_text(encoding="utf-8"))
+                if (
+                    stored.get("content_type") != content_type
+                    or stored.get("metadata") != normalized_metadata
+                ):
+                    raise ValueError("immutable object metadata does not match existing object")
+                return artifact
+            # A blob written before this store existed has no sidecar. In a
+            # content-addressed store the bytes prove themselves and the sidecar
+            # is derived, so the metadata is written rather than the call
+            # crashing on a file that was never required at the time.
+            _write_metadata(metadata_path, artifact)
             return artifact
         temporary = self.directory / f".{sha256}.{os.getpid()}.tmp"
         temporary.write_bytes(payload)
         temporary.replace(object_path)
-        metadata_path.write_text(
-            json.dumps(
-                {
-                    "sha256": sha256,
-                    "byte_size": artifact.byte_size,
-                    "content_type": content_type,
-                    "metadata": normalized_metadata,
-                },
-                sort_keys=True,
-                separators=(",", ":"),
-            ),
-            encoding="utf-8",
-        )
+        _write_metadata(metadata_path, artifact)
         return artifact
 
     def restore_verified(self, artifact: ImmutableArtifact) -> bytes:
