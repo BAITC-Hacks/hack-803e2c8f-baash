@@ -22,11 +22,11 @@ The command builds the normal images, applies the full Alembic chain, waits for 
 
 `verify` is the single command to run before a walkthrough. It checks that the migration head matches the migration files, that the core reports the ready `demo` profile on PostgreSQL, that the web answers, that the seeded appeals and the synthetic intake policies are present, that no non-synthetic policy sits in a demo database, and that the replay adapter is running. It then runs the full API walkthrough in `scripts/verify_demo_flow.py`, covering intake, decision, assignment, worker delivery, incident confirmation, status, closure with evidence, recurrence and analytics. That walkthrough creates its own appeals, so `verify` finishes by resetting and reseeding, which leaves a clean queue for the demo.
 
-`down` keeps the dedicated demo volumes. `reset` deletes **only** the `pulse109-demo` Compose project's volumes, including demo PostgreSQL rows and local synthetic blobs. It does not touch the default `pulse109` Compose project. Start again with `up` for the same initial state. Check readiness at `http://localhost:8080/v1/health/ready` and the web app at `http://localhost:3000`.
+`down` keeps the dedicated demo volumes. `reset` deletes **only** the `pulse109-demo` Compose project's volumes, including demo PostgreSQL rows and local synthetic blobs. It does not touch the default `pulse109` Compose project. Start again with `up` for the same initial state. Check readiness at `http://localhost:8080/v1/health/ready`, the landing at `http://localhost:3000` and the operator workspace at `http://localhost:3000/demo`.
 
 ## One deterministic walkthrough (5–8 minutes)
 
-1. Open `http://localhost:3000`. Point to `DEMO · SYNTHETIC` and the four `ALA` queue rows. The two `water` rows are fictional reports of one problem. Say: “These records entered through the normal API and PostgreSQL; no live regional CRM is connected.” The lighting appeal deliberately retains missing business time.
+1. Open `http://localhost:3000` and select **Open Interactive Demo**, or go directly to `http://localhost:3000/demo`. Point to `DEMO · SYNTHETIC` and the four `ALA` queue rows. The two `water` rows are fictional reports of one problem. Say: “These records entered through the normal API and PostgreSQL; no live regional CRM is connected.” The lighting appeal deliberately retains missing business time.
 2. Select `demo-109-water-001`. Show its UUID, source ID, version and timeline. Click **Get recommendation**; explain that it is advisory with a real fallback version. Enter `topic:water`, `service:water`, `urgent` and click **Save manual decision**. Refresh to demonstrate persistence. The **Ownership/Handoff** panel can show an assessment, but any missing approved catalog remains explicit.
 3. Click **Queue assignment**. Show the queued receipt, then **Refresh** until synchronization shows the worker's replay result. Say: “The outbox and worker are real; this external ID is synthetic.”
 4. In **Incident: human decision**, choose `demo-109-water-004`. Click **Propose incident**, confirm both members separately, then **Confirm incident (supervisor)**. Show the stored incident ID, version and two confirmed members. Paste its ID into the load field and reload it to demonstrate durable topology. Both appeals keep independent IDs.
@@ -44,7 +44,8 @@ This is the walkthrough that shows what the platform is for. The seed creates
 six synthetic reports of one developing water problem along a single street,
 arriving over about forty minutes before the moment of seeding.
 
-1. Open `http://localhost:3000`. The **Operations center** opens first. The
+1. Open `http://localhost:3000` and select **Open Interactive Demo**, or open
+   `http://localhost:3000/demo` directly. The **Operations center** opens first. The
    counters are records, not estimates.
 2. Press **Поиск возникающих проблем**. The radar scans a six-hour window. It
    states its own result: `available` with the number of reports scanned, and

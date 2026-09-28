@@ -111,6 +111,13 @@ a {
 .brand {
   font-size: 18px;
   font-weight: 760;
+  color: inherit;
+  text-decoration: none;
+}
+
+.brand:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 4px;
 }
 
 .profile {

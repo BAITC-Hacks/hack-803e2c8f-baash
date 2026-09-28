@@ -26,6 +26,7 @@ COMPOSE = [
 ]
 API = "http://127.0.0.1:8080"
 WEB = "http://127.0.0.1:3000"
+DEMO_WEB = f"{WEB}/demo"
 CATALOG_SQL = ROOT / "scripts" / "demo_catalog.sql"
 
 FIXTURES: tuple[dict[str, Any], ...] = (
@@ -293,8 +294,12 @@ def check_environment() -> None:
 
         web = client.get(WEB, follow_redirects=True)
         if web.status_code != 200:
-            raise RuntimeError(f"web returned {web.status_code}")
-        print("  web                      200")
+            raise RuntimeError(f"landing returned {web.status_code}")
+        print("  landing                  200")
+        demo_web = client.get(DEMO_WEB, follow_redirects=True)
+        if demo_web.status_code != 200:
+            raise RuntimeError(f"operator workspace returned {demo_web.status_code}")
+        print("  operator workspace       200")
 
     counts = subprocess.run(  # noqa: S603
         [
@@ -356,7 +361,8 @@ def verify() -> None:
     compose("down", "--volumes", "--remove-orphans")
     compose("up", "--build", "--wait", "--wait-timeout", "300")
     seed()
-    print("verified, demo ready: http://localhost:3000")
+    print("verified, landing ready: http://localhost:3000")
+    print("operator workspace: http://localhost:3000/demo")
 
 
 def seed_emerging(client: httpx.Client) -> None:
@@ -447,7 +453,8 @@ def main() -> None:
     if args.action == "up":
         compose("up", "--build", "--wait", "--wait-timeout", "300")
         seed()
-        print("Demo ready: http://localhost:3000")
+        print("Demo landing: http://localhost:3000")
+        print("Operator workspace: http://localhost:3000/demo")
     elif args.action == "seed":
         seed()
     elif args.action == "verify":
