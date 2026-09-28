@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import hashlib
+import json
+import textwrap
 from io import BytesIO
 
 from pulse109.analytics.models import AnalyticsResult
@@ -50,7 +52,20 @@ def render_pdf(result: AnalyticsResult, *, watermark: str = "SYNTHETIC / GOVERNE
         document.drawString(40, height - 136, f"Quality: {result.quality}")
         document.drawRightString(width - 40, height - 136, f"Page {page_number}")
 
-        header_y = height - 168
+        document.setFont("Helvetica", 8)
+        document.drawString(
+            40,
+            height - 152,
+            f"Counted: {result.records_considered}; "
+            f"excluded untrusted time: {result.excluded_records}",
+        )
+        document.drawString(
+            40,
+            height - 165,
+            f"Regions: {len(result.coverage)}; missing: {len(result.missing_regions)}",
+        )
+
+        header_y = height - 205
         document.setFillColor(colors.HexColor("#E8F1EE"))
         document.roundRect(40, header_y - 15, width - 80, 24, 3, fill=1, stroke=0)
         document.setFillColor(colors.HexColor("#12201D"))
@@ -76,6 +91,36 @@ def render_pdf(result: AnalyticsResult, *, watermark: str = "SYNTHETIC / GOVERNE
     if not result.rows:
         document.setFillColor(colors.HexColor("#6C7B77"))
         document.drawString(48, y, "No numeric rows available for this governed cutoff.")
+        y -= 22
+    metadata_lines = [
+        "Coverage: " + ", ".join(f"{region}={state}" for region, state in result.coverage.items()),
+        *("Source: " + reference for reference in result.provenance),
+    ]
+    if result.executed_query is not None:
+        query = result.executed_query
+        metadata_lines.extend(
+            [
+                (
+                    f"Period: {query.time_from.isoformat()} to "
+                    f"{query.time_to.isoformat()} (end exclusive)"
+                ),
+                "Filters: "
+                + json.dumps(
+                    [item.model_dump(mode="json") for item in query.filters], ensure_ascii=True
+                ),
+                f"Granularity: {query.granularity}; buckets: UTC",
+            ]
+        )
+    for line in metadata_lines:
+        for fragment in textwrap.wrap(line, width=95):
+            if y < 55:
+                document.showPage()
+                page_number += 1
+                y = draw_header(page_number)
+            document.setFillColor(colors.HexColor("#243531"))
+            document.setFont("Helvetica", 8)
+            document.drawString(40, y, fragment)
+            y -= 13
     document.save()
     return output.getvalue()
 
@@ -100,6 +145,34 @@ def render_xlsx(result: AnalyticsResult, *, watermark: str = "SYNTHETIC / GOVERN
     sheet.auto_filter.ref = (
         f"A3:{get_column_letter(max(1, len(result.columns)))}{max(3, sheet.max_row)}"
     )
+    metadata = workbook.create_sheet("Provenance")
+    metadata.append(["Metric", result.metric_id, result.metric_version])
+    metadata.append(["Data cutoff", result.data_cutoff.isoformat()])
+    metadata.append(["Computed at", result.computed_at.isoformat()])
+    metadata.append(["Quality", result.quality])
+    metadata.append(["Records considered", result.records_considered])
+    metadata.append(["Excluded untrusted time", result.excluded_records])
+    metadata.append(["Truncated", result.truncated])
+    metadata.append(["Synthetic", result.synthetic])
+    if result.executed_query is not None:
+        query = result.executed_query
+        metadata.append(["Period from", query.time_from.isoformat()])
+        metadata.append(["Period to (exclusive)", query.time_to.isoformat()])
+        metadata.append(["Granularity (UTC)", query.granularity])
+        metadata.append(
+            [
+                "Filters",
+                json.dumps(
+                    [item.model_dump(mode="json") for item in query.filters], ensure_ascii=True
+                ),
+            ]
+        )
+    for region, state in result.coverage.items():
+        metadata.append(["Region coverage", _xlsx_value(region), _xlsx_value(state)])
+    for source in result.provenance:
+        metadata.append(["Source", _xlsx_value(source)])
+    metadata.column_dimensions["A"].width = 28
+    metadata.column_dimensions["B"].width = 70
     sheet.row_dimensions[1].height = 24
     for cell in sheet[1]:
         cell.font = Font(bold=True, color="FFFFFF", size=14)

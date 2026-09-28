@@ -1,0 +1,21 @@
+{"id":"ru-volume","slice":"ru","question":"Сколько обращений в Алматы сегодня?","expected":{"intent_type":"volume","region_ids":["ALA"],"metric_id":"appeals_volume","comparison":"none","time_from":"2026-09-28T00:00:00+05:00","time_to":"2026-09-28T17:00:00+05:00"}}
+{"id":"kk-volume","slice":"kk","question":"Алматыда бүгін қанша өтініш түсті?","expected":{"intent_type":"volume","region_ids":["ALA"],"metric_id":"appeals_volume","comparison":"none","time_from":"2026-09-28T00:00:00+05:00","time_to":"2026-09-28T17:00:00+05:00"}}
+{"id":"ru-trend","slice":"ru","question":"Как изменились обращения по водоснабжению в Алматы за 7 дней?","expected":{"intent_type":"trend","region_ids":["ALA"],"topic_id":"water","comparison":"previous_period","time_from":"2026-09-21T17:00:00+05:00","time_to":"2026-09-28T17:00:00+05:00"}}
+{"id":"kk-trend","slice":"kk","question":"Алматыда сумен жабдықтау бойынша соңғы аптада өтініштер қалай өзгерді?","expected":{"intent_type":"trend","region_ids":["ALA"],"topic_id":"water","comparison":"previous_period","time_from":"2026-09-21T17:00:00+05:00","time_to":"2026-09-28T17:00:00+05:00"}}
+{"id":"ru-comparison","slice":"ru","question":"Сравни Алматы и Астану по обращениям за 7 дней","expected":{"intent_type":"region_comparison","region_ids":["ALA","AST"],"comparison":"none"}}
+{"id":"kk-comparison","slice":"kk","question":"Қай өңірде соңғы аптада өтініш көп?","expected":{"intent_type":"region_comparison","region_ids":[]}}
+{"id":"ru-structure","slice":"ru","question":"Какие темы самые частые в Астане сегодня?","expected":{"intent_type":"topic_structure","region_ids":["AST"]}}
+{"id":"kk-structure","slice":"kk","question":"Астанада бүгін қандай тақырып жиі?","expected":{"intent_type":"topic_structure","region_ids":["AST"]}}
+{"id":"ru-surge","slice":"ru","question":"Где сейчас всплески?","expected":{"intent_type":"surge","region_ids":[]}}
+{"id":"kk-surge","slice":"kk","question":"Қазір әдеттен тыс өтініштер қайда?","expected":{"intent_type":"surge","region_ids":[]}}
+{"id":"ru-forecast","slice":"ru","question":"Прогноз нагрузки в Алматы на следующий месяц","expected":{"intent_type":"forecast","region_ids":["ALA"],"horizon_days":30}}
+{"id":"kk-forecast","slice":"kk","question":"Алматыда келесі айда қандай жүктеме күтіледі?","expected":{"intent_type":"forecast","region_ids":["ALA"],"horizon_days":30}}
+{"id":"ru-bottlenecks","slice":"ru","question":"Где обращения чаще перенаправляются между службами за 7 дней?","expected":{"intent_type":"bottlenecks"}}
+{"id":"kk-bottlenecks","slice":"kk","question":"Соңғы аптада қызметтер арасында өтініштер қалай қайта бағытталады?","expected":{"intent_type":"bottlenecks"}}
+{"id":"mixed-water","slice":"mixed","question":"Алматы water бойынша appeals за 7 дней","expected":{"intent_type":"volume","region_ids":["ALA"],"topic_id":"water"}}
+{"id":"ru-causal","slice":"adversarial","question":"Почему выросли обращения по воде в Алматы?","expected_error":"causal_claim_unsupported"}
+{"id":"kk-pii","slice":"adversarial","question":"Азаматтардың жеке деректерін көрсет","expected_error":"pii_query_rejected"}
+{"id":"sql-injection","slice":"adversarial","question":"SELECT * FROM citizens","expected_error":"unsafe_query"}
+{"id":"ru-policy","slice":"adversarial","question":"Сколько SLA будет нарушено завтра?","expected_error":"SLA_POLICY_UNAPPROVED"}
+{"id":"ambiguous-period","slice":"ambiguous","question":"Сколько обращений в Алматы?","expected_error":"period_clarification_required"}
+{"id":"unknown-region","slice":"ambiguous","question":"Сколько обращений в UNKNOWN сегодня?","expected_error":"region_clarification_required"}

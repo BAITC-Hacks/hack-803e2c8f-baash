@@ -1236,6 +1236,101 @@ paths:
                   $ref: '#/components/schemas/PIIAccessAuditResponse'
         '403':
           $ref: '#/components/responses/Forbidden'
+  # BEGIN ASK PULSE PATHS
+  /v1/analytics/ask:
+    post:
+      tags:
+      - Analytics
+      summary: Governed RU/KK question; returns numbers, chart, provenance or clarification.
+      operationId: askPulse
+      security:
+      - bearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/RegionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AskRequest'
+      responses:
+        '200':
+          description: Governed RU/KK question; returns numbers, chart, provenance or clarification.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AskResponse'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /v1/analytics/ask/drilldown:
+    post:
+      tags:
+      - Analytics
+      summary: Appeals behind a signed validated query, with the original scope.
+      operationId: drilldownAskPulse
+      security:
+      - bearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/RegionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AskDrilldownRequest'
+      responses:
+        '200':
+          description: Appeals behind a signed validated query, with the original scope.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AskDrilldown'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /v1/analytics/ask/export:
+    post:
+      tags:
+      - Reports
+      summary: Export the signed displayed aggregate snapshot as PDF or XLSX
+      operationId: exportAskPulse
+      security:
+      - bearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/RegionId'
+      - name: X-Export-Purpose
+        in: header
+        schema:
+          type: string
+          maxLength: 256
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AskExportRequest'
+      responses:
+        '200':
+          description: Authenticated snapshot artifact
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  # END ASK PULSE PATHS
 components:
   securitySchemes:
     bearerAuth:
@@ -2922,3 +3017,1265 @@ components:
         payload:
           type: object
           additionalProperties: true
+    # BEGIN ASK PULSE SCHEMAS
+    AskActions:
+      additionalProperties: false
+      properties:
+        drilldown_url:
+          anyOf:
+          - type: string
+          - type: 'null'
+          default: null
+          title: Drilldown Url
+        export_formats:
+          items:
+            enum:
+            - pdf
+            - xlsx
+            type: string
+          title: Export Formats
+          type: array
+        export_query:
+          anyOf:
+          - $ref: '#/components/schemas/AskAnalyticsQuery'
+          - type: 'null'
+          default: null
+        export_token:
+          anyOf:
+          - type: string
+          - type: 'null'
+          default: null
+          title: Export Token
+      title: AskActions
+      type: object
+    AskAlert:
+      additionalProperties: false
+      properties:
+        alert_id:
+          format: uuid
+          title: Alert Id
+          type: string
+        baseline:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Baseline
+        confidence:
+          anyOf:
+          - maximum: 1
+            minimum: 0
+            type: number
+          - type: 'null'
+          default: null
+          title: Confidence
+        detected_at:
+          format: date-time
+          title: Detected At
+          type: string
+        evidence:
+          additionalProperties: true
+          title: Evidence
+          type: object
+        metric_id:
+          enum:
+          - appeals_volume
+          - sla_risk
+          - source_freshness
+          - coverage
+          title: Metric Id
+          type: string
+        metric_version:
+          title: Metric Version
+          type: string
+        observed_value:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Observed Value
+        region_id:
+          title: Region Id
+          type: string
+        severity:
+          enum:
+          - info
+          - warning
+          - high
+          - critical
+          title: Severity
+          type: string
+        status:
+          enum:
+          - new
+          - acknowledged
+          - resolved
+          - dismissed
+          title: Status
+          type: string
+        type:
+          enum:
+          - volume_spike
+          - incident_growth
+          - sla_risk
+          - data_quality
+          - model_drift
+          title: Type
+          type: string
+      required:
+      - alert_id
+      - type
+      - region_id
+      - severity
+      - status
+      - detected_at
+      - metric_id
+      - metric_version
+      - baseline
+      - observed_value
+      - evidence
+      title: Alert
+      type: object
+    AskAnalyticsQuery:
+      additionalProperties: false
+      properties:
+        dimensions:
+          items:
+            pattern: ^[a-z][a-z0-9_]{0,63}$
+            type: string
+          maxItems: 5
+          title: Dimensions
+          type: array
+        filters:
+          items:
+            $ref: '#/components/schemas/AskMetricFilter'
+          maxItems: 10
+          title: Filters
+          type: array
+        granularity:
+          default: day
+          enum:
+          - hour
+          - day
+          - week
+          - month
+          title: Granularity
+          type: string
+        limit:
+          default: 1000
+          maximum: 5000
+          minimum: 1
+          title: Limit
+          type: integer
+        metric_id:
+          enum:
+          - appeals_volume
+          - sla_risk
+          - source_freshness
+          - coverage
+          title: Metric Id
+          type: string
+        metric_version:
+          default: 1.0.0
+          maxLength: 64
+          minLength: 1
+          title: Metric Version
+          type: string
+        time_from:
+          format: date-time
+          title: Time From
+          type: string
+        time_to:
+          format: date-time
+          title: Time To
+          type: string
+      required:
+      - metric_id
+      - time_from
+      - time_to
+      title: AnalyticsQuery
+      type: object
+    AskAnalyticsResult:
+      additionalProperties: false
+      properties:
+        columns:
+          items:
+            $ref: '#/components/schemas/AskMetricColumn'
+          title: Columns
+          type: array
+        computed_at:
+          format: date-time
+          title: Computed At
+          type: string
+        coverage:
+          additionalProperties:
+            enum:
+            - present
+            - missing
+            - stale
+            type: string
+          title: Coverage
+          type: object
+        data_cutoff:
+          format: date-time
+          title: Data Cutoff
+          type: string
+        excluded_records:
+          default: 0
+          minimum: 0
+          title: Excluded Records
+          type: integer
+        executed_query:
+          anyOf:
+          - $ref: '#/components/schemas/AskAnalyticsQuery'
+          - type: 'null'
+          default: null
+        metric_id:
+          enum:
+          - appeals_volume
+          - sla_risk
+          - source_freshness
+          - coverage
+          title: Metric Id
+          type: string
+        metric_version:
+          title: Metric Version
+          type: string
+        missing_regions:
+          items:
+            type: string
+          title: Missing Regions
+          type: array
+        provenance:
+          items:
+            type: string
+          title: Provenance
+          type: array
+        quality:
+          enum:
+          - complete
+          - partial
+          - stale
+          - missing
+          title: Quality
+          type: string
+        records_considered:
+          default: 0
+          minimum: 0
+          title: Records Considered
+          type: integer
+        rows:
+          items:
+            items: {}
+            type: array
+          title: Rows
+          type: array
+        synthetic:
+          default: false
+          title: Synthetic
+          type: boolean
+        truncated:
+          default: false
+          title: Truncated
+          type: boolean
+      required:
+      - metric_id
+      - metric_version
+      - columns
+      - rows
+      - computed_at
+      - data_cutoff
+      - quality
+      - coverage
+      title: AnalyticsResult
+      type: object
+    AskAnswer:
+      additionalProperties: false
+      properties:
+        change_pct:
+          anyOf:
+          - type: number
+          - type: 'null'
+          default: null
+          title: Change Pct
+        peak:
+          anyOf:
+          - $ref: '#/components/schemas/AskPeak'
+          - type: 'null'
+          default: null
+        previous_total:
+          anyOf:
+          - type: number
+          - type: 'null'
+          default: null
+          title: Previous Total
+        text:
+          title: Text
+          type: string
+        total:
+          anyOf:
+          - type: number
+          - type: 'null'
+          default: null
+          title: Total
+      required:
+      - text
+      title: AskAnswer
+      type: object
+    AskCapabilityState:
+      description: Why a capability's payload looks the way it does.
+      enum:
+      - available
+      - abstained
+      - unavailable
+      title: CapabilityState
+      type: string
+    AskCapabilityStatus:
+      additionalProperties: false
+      description: State plus a controlled reason, never free text from a model.
+      properties:
+        reason_code:
+          anyOf:
+          - pattern: ^[A-Z][A-Z0-9_]{0,63}$
+            type: string
+          - type: 'null'
+          default: null
+          title: Reason Code
+        state:
+          $ref: '#/components/schemas/AskCapabilityState'
+      required:
+      - state
+      title: CapabilityStatus
+      type: object
+    AskChart:
+      additionalProperties: false
+      properties:
+        columns:
+          items:
+            $ref: '#/components/schemas/AskMetricColumn'
+          title: Columns
+          type: array
+        rows:
+          items:
+            items: {}
+            type: array
+          title: Rows
+          type: array
+        series:
+          anyOf:
+          - type: string
+          - type: 'null'
+          default: null
+          title: Series
+        type:
+          enum:
+          - kpi
+          - line
+          - bar
+          - forecast
+          - surge
+          - ranked_edges
+          title: Type
+          type: string
+        x:
+          title: X
+          type: string
+        y:
+          title: Y
+          type: string
+      required:
+      - type
+      - x
+      - y
+      - columns
+      - rows
+      title: AskChart
+      type: object
+    AskDrilldown:
+      additionalProperties: false
+      description: The appeals behind one figure. This is what makes it analytics, not BI.
+      properties:
+        appeals:
+          items:
+            $ref: '#/components/schemas/AskDrilldownAppeal'
+          maxItems: 200
+          title: Appeals
+          type: array
+        filters:
+          additionalProperties:
+            type: string
+          title: Filters
+          type: object
+        key:
+          title: Key
+          type: string
+        provenance:
+          $ref: '#/components/schemas/AskProvenance'
+        status:
+          $ref: '#/components/schemas/AskCapabilityStatus'
+        total:
+          minimum: 0
+          title: Total
+          type: integer
+      required:
+      - status
+      - provenance
+      - key
+      - total
+      title: Drilldown
+      type: object
+    AskDrilldownAppeal:
+      additionalProperties: false
+      properties:
+        channel:
+          title: Channel
+          type: string
+        language:
+          title: Language
+          type: string
+        received_at:
+          anyOf:
+          - format: date-time
+            type: string
+          - type: 'null'
+          title: Received At
+        received_at_quality:
+          title: Received At Quality
+          type: string
+        request_id:
+          format: uuid
+          title: Request Id
+          type: string
+        service_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          default: null
+          title: Service Id
+        source_request_id:
+          title: Source Request Id
+          type: string
+        status:
+          title: Status
+          type: string
+        topic_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          default: null
+          title: Topic Id
+      required:
+      - request_id
+      - source_request_id
+      - status
+      - received_at
+      - received_at_quality
+      - language
+      - channel
+      title: DrilldownAppeal
+      type: object
+    AskDrilldownRequest:
+      additionalProperties: false
+      properties:
+        context_token:
+          maxLength: 12000
+          minLength: 1
+          title: Context Token
+          type: string
+        limit:
+          default: 100
+          maximum: 200
+          minimum: 1
+          title: Limit
+          type: integer
+      required:
+      - context_token
+      title: AskDrilldownRequest
+      type: object
+    AskExportRequest:
+      additionalProperties: false
+      properties:
+        format:
+          enum:
+          - pdf
+          - xlsx
+          title: Format
+          type: string
+        result_token:
+          maxLength: 1500000
+          minLength: 1
+          title: Result Token
+          type: string
+      required:
+      - result_token
+      - format
+      title: AskExportRequest
+      type: object
+    AskForecast:
+      additionalProperties: false
+      properties:
+        baseline:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Baseline
+        candidate:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Candidate
+        data_cutoff:
+          format: date-time
+          title: Data Cutoff
+          type: string
+        lower_bound:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Lower Bound
+        method:
+          enum:
+          - seasonal_naive
+          - unavailable
+          title: Method
+          type: string
+        metric_id:
+          enum:
+          - appeals_volume
+          - sla_risk
+          - source_freshness
+          - coverage
+          title: Metric Id
+          type: string
+        metric_version:
+          title: Metric Version
+          type: string
+        region_id:
+          title: Region Id
+          type: string
+        upper_bound:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Upper Bound
+        version:
+          title: Version
+          type: string
+      required:
+      - metric_id
+      - metric_version
+      - region_id
+      - data_cutoff
+      - baseline
+      - candidate
+      - lower_bound
+      - upper_bound
+      - method
+      - version
+      title: Forecast
+      type: object
+    AskInferenceMetadata:
+      additionalProperties: false
+      properties:
+        approval_state:
+          enum:
+          - deterministic_baseline
+          - evaluation
+          - approved
+          title: Approval State
+          type: string
+        artifact_sha256:
+          anyOf:
+          - type: string
+          - type: 'null'
+          default: null
+          title: Artifact Sha256
+        fallback_reason:
+          anyOf:
+          - enum:
+            - baseline_requested
+            - context_rules
+            - question_refused
+            - model_not_configured
+            - registry_invalid
+            - model_timeout
+            - model_unavailable
+            - invalid_model_output
+            type: string
+          - type: 'null'
+          default: null
+          title: Fallback Reason
+        fallback_used:
+          title: Fallback Used
+          type: boolean
+        input_tokens:
+          anyOf:
+          - minimum: 0
+            type: integer
+          - type: 'null'
+          default: null
+          title: Input Tokens
+        latency_ms:
+          minimum: 0
+          title: Latency Ms
+          type: integer
+        model_alias:
+          enum:
+          - champion
+          - challenger
+          - baseline
+          title: Model Alias
+          type: string
+        model_name:
+          title: Model Name
+          type: string
+        model_revision:
+          anyOf:
+          - type: string
+          - type: 'null'
+          default: null
+          title: Model Revision
+        output_tokens:
+          anyOf:
+          - minimum: 0
+            type: integer
+          - type: 'null'
+          default: null
+          title: Output Tokens
+        prompt_version:
+          const: analytics-intent-prompt-v1
+          default: analytics-intent-prompt-v1
+          title: Prompt Version
+          type: string
+        quantization:
+          anyOf:
+          - type: string
+          - type: 'null'
+          default: null
+          title: Quantization
+        requested_alias:
+          enum:
+          - champion
+          - challenger
+          - baseline
+          title: Requested Alias
+          type: string
+        runtime:
+          title: Runtime
+          type: string
+        runtime_version:
+          anyOf:
+          - type: string
+          - type: 'null'
+          default: null
+          title: Runtime Version
+        schema_version:
+          const: analytics-intent-v1
+          default: analytics-intent-v1
+          title: Schema Version
+          type: string
+        structured_output_valid:
+          title: Structured Output Valid
+          type: boolean
+        tokenizer_revision:
+          anyOf:
+          - type: string
+          - type: 'null'
+          default: null
+          title: Tokenizer Revision
+      required:
+      - requested_alias
+      - model_alias
+      - model_name
+      - runtime
+      - structured_output_valid
+      - fallback_used
+      - latency_ms
+      - approval_state
+      title: AskInferenceMetadata
+      type: object
+    AskMetricColumn:
+      additionalProperties: false
+      properties:
+        name:
+          title: Name
+          type: string
+        type:
+          enum:
+          - string
+          - integer
+          - number
+          - datetime
+          - boolean
+          title: Type
+          type: string
+      required:
+      - name
+      - type
+      title: MetricColumn
+      type: object
+    AskMetricFilter:
+      additionalProperties: false
+      properties:
+        field:
+          pattern: ^[a-z][a-z0-9_]{0,63}$
+          title: Field
+          type: string
+        operator:
+          enum:
+          - eq
+          - in
+          - gte
+          - lte
+          title: Operator
+          type: string
+        value:
+          anyOf:
+          - type: string
+          - type: integer
+          - type: number
+          - items:
+              type: string
+            type: array
+          title: Value
+      required:
+      - field
+      - operator
+      - value
+      title: MetricFilter
+      type: object
+    AskPeak:
+      additionalProperties: false
+      properties:
+        period:
+          title: Period
+          type: string
+        value:
+          title: Value
+          type: number
+      required:
+      - period
+      - value
+      title: AskPeak
+      type: object
+    AskProvenance:
+      additionalProperties: false
+      description: Where a figure came from and what may be concluded from it.
+      properties:
+        cutoff:
+          format: date-time
+          title: Cutoff
+          type: string
+        dataset:
+          const: operational_postgres
+          default: operational_postgres
+          title: Dataset
+          type: string
+        exclusion_reason:
+          anyOf:
+          - type: string
+          - type: 'null'
+          default: null
+          title: Exclusion Reason
+        generated_at:
+          format: date-time
+          title: Generated At
+          type: string
+        metric_version:
+          title: Metric Version
+          type: string
+        region_id:
+          title: Region Id
+          type: string
+        rows_considered:
+          minimum: 0
+          title: Rows Considered
+          type: integer
+        rows_excluded:
+          default: 0
+          minimum: 0
+          title: Rows Excluded
+          type: integer
+        synthetic:
+          default: false
+          title: Synthetic
+          type: boolean
+      required:
+      - region_id
+      - generated_at
+      - cutoff
+      - rows_considered
+      - metric_version
+      title: Provenance
+      type: object
+    AskRequest:
+      additionalProperties: false
+      properties:
+        context_token:
+          anyOf:
+          - maxLength: 12000
+            type: string
+          - type: 'null'
+          default: null
+          title: Context Token
+        locale:
+          default: ru-KZ
+          enum:
+          - ru-KZ
+          - kk-KZ
+          title: Locale
+          type: string
+        question:
+          maxLength: 2000
+          minLength: 1
+          title: Question
+          type: string
+      required:
+      - question
+      title: AskRequest
+      type: object
+    AskResponse:
+      additionalProperties: false
+      properties:
+        actions:
+          $ref: '#/components/schemas/AskActions'
+        alerts:
+          items:
+            $ref: '#/components/schemas/AskAlert'
+          title: Alerts
+          type: array
+        answer:
+          $ref: '#/components/schemas/AskAnswer'
+        chart:
+          anyOf:
+          - $ref: '#/components/schemas/AskChart'
+          - type: 'null'
+          default: null
+        clarification:
+          anyOf:
+          - $ref: '#/components/schemas/InferenceAskClarification'
+          - type: 'null'
+          default: null
+        context_token:
+          anyOf:
+          - type: string
+          - type: 'null'
+          default: null
+          title: Context Token
+        forecast:
+          anyOf:
+          - $ref: '#/components/schemas/AskForecast'
+          - type: 'null'
+          default: null
+        inference:
+          anyOf:
+          - $ref: '#/components/schemas/AskInferenceMetadata'
+          - type: 'null'
+          default: null
+        intent:
+          anyOf:
+          - $ref: '#/components/schemas/InferenceAnalyticsIntent'
+          - type: 'null'
+          default: null
+        previous_result:
+          anyOf:
+          - $ref: '#/components/schemas/AskAnalyticsResult'
+          - type: 'null'
+          default: null
+        provenance:
+          anyOf:
+          - $ref: '#/components/schemas/AskProvenance'
+          - type: 'null'
+          default: null
+        query:
+          anyOf:
+          - $ref: '#/components/schemas/AskAnalyticsQuery'
+          - type: 'null'
+          default: null
+        reason_code:
+          anyOf:
+          - type: string
+          - type: 'null'
+          default: null
+          title: Reason Code
+        result:
+          anyOf:
+          - $ref: '#/components/schemas/AskAnalyticsResult'
+          - type: 'null'
+          default: null
+        schema_version:
+          const: ask-pulse-v1
+          default: ask-pulse-v1
+          title: Schema Version
+          type: string
+        status:
+          enum:
+          - available
+          - clarification_required
+          - abstained
+          - unavailable
+          title: Status
+          type: string
+        synthetic:
+          default: false
+          title: Synthetic
+          type: boolean
+      required:
+      - status
+      - answer
+      title: AskResponse
+      type: object
+    InferenceAnalyticsIntent:
+      additionalProperties: false
+      properties:
+        comparison:
+          default: none
+          enum:
+          - none
+          - previous_period
+          title: Comparison
+          type: string
+        granularity:
+          default: day
+          enum:
+          - hour
+          - day
+          - week
+          - month
+          title: Granularity
+          type: string
+        horizon_days:
+          anyOf:
+          - maximum: 93
+            minimum: 1
+            type: integer
+          - type: 'null'
+          default: null
+          title: Horizon Days
+        intent_type:
+          enum:
+          - volume
+          - trend
+          - region_comparison
+          - topic_structure
+          - surge
+          - forecast
+          - bottlenecks
+          title: Intent Type
+          type: string
+        metric_id:
+          default: appeals_volume
+          enum:
+          - appeals_volume
+          - sla_risk
+          - source_freshness
+          - coverage
+          title: Metric Id
+          type: string
+        region_ids:
+          items:
+            pattern: ^[A-Z0-9_-]{2,32}$
+            type: string
+          maxItems: 20
+          title: Region Ids
+          type: array
+        schema_version:
+          const: analytics-intent-v1
+          default: analytics-intent-v1
+          title: Schema Version
+          type: string
+        service_id:
+          anyOf:
+          - pattern: ^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$
+            type: string
+          - type: 'null'
+          default: null
+          title: Service Id
+        time_from:
+          format: date-time
+          title: Time From
+          type: string
+        time_to:
+          format: date-time
+          title: Time To
+          type: string
+        topic_id:
+          anyOf:
+          - pattern: ^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$
+            type: string
+          - type: 'null'
+          default: null
+          title: Topic Id
+        visualization:
+          default: auto
+          enum:
+          - auto
+          - kpi
+          - line
+          - bar
+          - forecast
+          - surge
+          - ranked_edges
+          title: Visualization
+          type: string
+      required:
+      - intent_type
+      - time_from
+      - time_to
+      title: AnalyticsIntent
+      type: object
+    InferenceAnalyticsIntentError:
+      additionalProperties: false
+      properties:
+        clarification:
+          anyOf:
+          - $ref: '#/components/schemas/InferenceAskClarification'
+          - type: 'null'
+          default: null
+        code:
+          maxLength: 128
+          minLength: 1
+          title: Code
+          type: string
+      required:
+      - code
+      title: AnalyticsIntentError
+      type: object
+    InferenceAnalyticsIntentMetadata:
+      additionalProperties: false
+      properties:
+        approval_state:
+          enum:
+          - deterministic_baseline
+          - evaluation
+          - approved
+          title: Approval State
+          type: string
+        artifact_sha256:
+          anyOf:
+          - type: string
+          - type: 'null'
+          default: null
+          title: Artifact Sha256
+        fallback_reason:
+          anyOf:
+          - enum:
+            - baseline_requested
+            - context_rules
+            - question_refused
+            - model_not_configured
+            - registry_invalid
+            - model_timeout
+            - model_unavailable
+            - invalid_model_output
+            type: string
+          - type: 'null'
+          default: null
+          title: Fallback Reason
+        fallback_used:
+          title: Fallback Used
+          type: boolean
+        input_tokens:
+          anyOf:
+          - minimum: 0
+            type: integer
+          - type: 'null'
+          default: null
+          title: Input Tokens
+        latency_ms:
+          minimum: 0
+          title: Latency Ms
+          type: integer
+        model_alias:
+          enum:
+          - champion
+          - challenger
+          - baseline
+          title: Model Alias
+          type: string
+        model_name:
+          maxLength: 128
+          minLength: 1
+          title: Model Name
+          type: string
+        model_revision:
+          anyOf:
+          - type: string
+          - type: 'null'
+          default: null
+          title: Model Revision
+        output_tokens:
+          anyOf:
+          - minimum: 0
+            type: integer
+          - type: 'null'
+          default: null
+          title: Output Tokens
+        prompt_version:
+          const: analytics-intent-prompt-v1
+          default: analytics-intent-prompt-v1
+          title: Prompt Version
+          type: string
+        quantization:
+          anyOf:
+          - type: string
+          - type: 'null'
+          default: null
+          title: Quantization
+        requested_alias:
+          enum:
+          - champion
+          - challenger
+          - baseline
+          title: Requested Alias
+          type: string
+        runtime:
+          title: Runtime
+          type: string
+        runtime_version:
+          anyOf:
+          - type: string
+          - type: 'null'
+          default: null
+          title: Runtime Version
+        schema_version:
+          const: analytics-intent-v1
+          default: analytics-intent-v1
+          title: Schema Version
+          type: string
+        structured_output_valid:
+          title: Structured Output Valid
+          type: boolean
+        tokenizer_revision:
+          anyOf:
+          - type: string
+          - type: 'null'
+          default: null
+          title: Tokenizer Revision
+      required:
+      - requested_alias
+      - model_alias
+      - model_name
+      - runtime
+      - structured_output_valid
+      - fallback_used
+      - latency_ms
+      - approval_state
+      title: AnalyticsIntentMetadata
+      type: object
+    InferenceAnalyticsIntentRequest:
+      additionalProperties: false
+      properties:
+        catalog:
+          $ref: '#/components/schemas/InferenceIntentCatalog'
+        context:
+          anyOf:
+          - $ref: '#/components/schemas/InferenceAnalyticsIntent'
+          - type: 'null'
+          default: null
+        contract_version:
+          const: analytics-intent-inference-v1
+          default: analytics-intent-inference-v1
+          title: Contract Version
+          type: string
+        locale:
+          default: ru-KZ
+          enum:
+          - ru-KZ
+          - kk-KZ
+          title: Locale
+          type: string
+        model_alias:
+          default: champion
+          enum:
+          - champion
+          - challenger
+          - baseline
+          title: Model Alias
+          type: string
+        question:
+          maxLength: 2000
+          minLength: 1
+          title: Question
+          type: string
+        reference_time:
+          format: date-time
+          title: Reference Time
+          type: string
+      required:
+      - question
+      - reference_time
+      - catalog
+      title: AnalyticsIntentRequest
+      type: object
+    InferenceAnalyticsIntentResponse:
+      additionalProperties: false
+      properties:
+        contract_version:
+          const: analytics-intent-inference-v1
+          default: analytics-intent-inference-v1
+          title: Contract Version
+          type: string
+        error:
+          anyOf:
+          - $ref: '#/components/schemas/InferenceAnalyticsIntentError'
+          - type: 'null'
+        intent:
+          anyOf:
+          - $ref: '#/components/schemas/InferenceAnalyticsIntent'
+          - type: 'null'
+        metadata:
+          $ref: '#/components/schemas/InferenceAnalyticsIntentMetadata'
+      required:
+      - intent
+      - error
+      - metadata
+      title: AnalyticsIntentResponse
+      type: object
+    InferenceAskClarification:
+      additionalProperties: false
+      properties:
+        field:
+          title: Field
+          type: string
+        options:
+          items:
+            type: string
+          title: Options
+          type: array
+        prompt:
+          title: Prompt
+          type: string
+      required:
+      - field
+      - prompt
+      title: AskClarification
+      type: object
+    InferenceIntentCatalog:
+      additionalProperties: false
+      description: Aliases supplied by the approved regional catalog, never by a model.
+      properties:
+        region_aliases:
+          patternProperties:
+            ^[A-Z0-9_-]{2,32}$:
+              items:
+                type: string
+              type: array
+          title: Region Aliases
+          type: object
+        service_aliases:
+          patternProperties:
+            ^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$:
+              items:
+                type: string
+              type: array
+          title: Service Aliases
+          type: object
+        topic_aliases:
+          patternProperties:
+            ^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$:
+              items:
+                type: string
+              type: array
+          title: Topic Aliases
+          type: object
+      title: IntentCatalog
+      type: object

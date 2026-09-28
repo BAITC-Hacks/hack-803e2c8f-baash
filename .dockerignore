@@ -5,6 +5,7 @@
 .env
 .env.*
 .venv
+**/node_modules
 node_modules
 **/.next
 **/__pycache__

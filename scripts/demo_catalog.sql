@@ -81,4 +81,16 @@ VALUES
    'SYNTHETIC_DEMO_POLICY', 'synthetic-demo-author', 'synthetic-demo-reviewer', 'SYNTHETIC_DEMO_ONLY', TRUE)
 ON CONFLICT (region_id, service_id, topic_id, version) DO NOTHING;
 
+-- Synthetic natural-language aliases reference existing canonical entities only.
+-- The pilot supplies reviewed aliases with approval references; no official
+-- regional manifest or taxonomy is created by these demonstration rows.
+INSERT INTO analytics.intent_alias
+    (entity_type,entity_id,alias,version,effective_from,synthetic_only,approval_ref)
+VALUES
+    ('topic','topic:water','вода','synthetic-1.0.0',TIMESTAMPTZ '2026-01-01 00:00:00+00',TRUE,'SYNTHETIC_DEMO_ONLY'),
+    ('topic','topic:water','су','synthetic-1.0.0',TIMESTAMPTZ '2026-01-01 00:00:00+00',TRUE,'SYNTHETIC_DEMO_ONLY'),
+    ('topic','topic:roads','дороги','synthetic-1.0.0',TIMESTAMPTZ '2026-01-01 00:00:00+00',TRUE,'SYNTHETIC_DEMO_ONLY'),
+    ('topic','topic:roads','жол','synthetic-1.0.0',TIMESTAMPTZ '2026-01-01 00:00:00+00',TRUE,'SYNTHETIC_DEMO_ONLY')
+ON CONFLICT DO NOTHING;
+
 COMMIT;

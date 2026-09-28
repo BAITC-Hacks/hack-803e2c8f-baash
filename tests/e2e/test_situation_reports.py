@@ -64,7 +64,8 @@ def test_metric_and_both_exports_share_definition_cutoff_and_rows() -> None:
     )
     assert "Metric: coverage v1.0.0" in pdf_text
     assert "ALA | present" in pdf_text
-    assert "KAR" not in pdf_text
+    assert "KAR |" not in pdf_text
+    assert "KAR=missing" in pdf_text
 
     workbook = load_workbook(BytesIO(report_runtime.contents[jobs[1]]), data_only=False)
     sheet = workbook.active

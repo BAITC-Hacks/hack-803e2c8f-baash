@@ -1,0 +1,16 @@
+{
+  "manifest_version": "analytics-intent-frozen-fixture-v1",
+  "classification": "synthetic_contract_only",
+  "dataset_file": "synthetic_analytics_intent_v1.jsonl",
+  "dataset_sha256": "d7496fa87a2cd6ff3308aed4917d385161f7cc1fda8d398b2a0a4fc6f320c9d5",
+  "cases": 21,
+  "reference_time": "2026-09-28T17:00:00+05:00",
+  "catalog": {
+    "region_aliases": {"ALA": ["Алматы"], "AST": ["Астана"]},
+    "topic_aliases": {"water": ["водоснабжение", "воды", "вода", "воде", "сумен жабдықтау", "су"]},
+    "service_aliases": {}
+  },
+  "source": "Hand-authored synthetic municipal analytics questions, no citizen records or historical approved questions.",
+  "approval_state": "NOT_VALIDATED",
+  "excluded_from_model_quality": true
+}

@@ -28,6 +28,7 @@ Learn       Outcome Memory
 | [Incident War Room](INCIDENT_WAR_ROOM.md)   | implemented                                         |
 | [Next Best Action](NEXT_BEST_ACTION.md)     | implemented, rule-based                             |
 | [Operations Center](OPERATIONS_CENTER.md)   | implemented                                         |
+| [Ask Pulse](ASK_PULSE.md) | implemented, RU/KK governed queries and PostgreSQL aggregates; source coverage and approved catalog remain explicit |
 | [Outcome Memory](OUTCOME_MEMORY.md)         | implemented, abstains until verified closures exist |
 | [Replay Lab](REPLAY_LAB.md)                 | backend implemented, decision diff UI outstanding   |
 
@@ -39,6 +40,9 @@ Every algorithmic capability reports one of three states, defined in
 - `available`: it ran and its result stands.
 - `abstained`: it ran and declined, for example below a coverage threshold.
 - `unavailable`: it did not run, and its payload carries no information.
+
+Ask Pulse additionally returns `clarification_required` when a question needs
+an explicit region, period or other choice before a calculation can run.
 
 Collapsing the last two into an empty result is how a system quietly lies. An
 operator cannot tell "nothing found" from "nothing ran", and those lead to

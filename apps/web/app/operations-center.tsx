@@ -11,6 +11,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ArrivalChart, type Bucket } from "./arrival-chart";
 import { ReportMap, type ReportPoint } from "./report-map";
+import { AskPulse } from "./ask-pulse";
 
 type Locale = "ru" | "kk";
 
@@ -347,6 +348,8 @@ export function OperationsCenter({
           {busy ? t.scanning : t.scan}
         </button>
       </div>
+
+      <AskPulse key={regionId} locale={locale} regionId={regionId} />
 
       {error ? (
         <p role="alert" className="attention">

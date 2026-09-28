@@ -6,6 +6,8 @@ from typing import Any
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey, Ed25519PublicKey
 from fastapi import FastAPI, HTTPException, Request, Response, status
+from fastapi.exception_handlers import request_validation_exception_handler
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from starlette.middleware.base import RequestResponseEndpoint
@@ -17,6 +19,11 @@ from pulse109.analytics import (
     PostgresAlertStore,
     create_analytics_router,
 )
+from pulse109.analytics.ask_inference import create_gateway_parser
+from pulse109.analytics.ask_service import AskService
+from pulse109.analytics.audit import PostgresAskAudit
+from pulse109.analytics.repository import PostgresAnalyticsRepository
+from pulse109.analytics.synthetic import SyntheticAnalyticsRepository
 from pulse109.catalog import PolicyService, create_catalog_router
 from pulse109.config import Settings, get_settings
 from pulse109.control_plane import (
@@ -111,6 +118,24 @@ app = FastAPI(
     redoc_url=None,
 )
 configure_observability(app, get_settings())
+
+
+@app.exception_handler(RequestValidationError)
+async def safe_ask_validation(request: Request, error: RequestValidationError) -> Response:
+    if not request.url.path.startswith("/v1/analytics/ask"):
+        return await request_validation_exception_handler(request, error)
+    return JSONResponse(
+        status_code=422,
+        content={
+            "detail": {
+                "code": "invalid_ask_request",
+                "errors": [
+                    {"location": list(item["loc"]), "type": item["type"]} for item in error.errors()
+                ],
+            }
+        },
+    )
+
 
 # Memory is an explicit local/test fallback. Pilot and production always use PostgreSQL.
 settings = get_settings()
@@ -233,7 +258,12 @@ if use_postgres_manual_path:
 app.include_router(create_incident_router(incident_service, incident_workspace_service))
 app.include_router(create_next_action_router(next_action_advisor, incident_workspace_service))
 
-analytics_service = AnalyticsService(synthetic=synthetic_read_models)
+analytics_service = AnalyticsService(
+    synthetic=synthetic_read_models,
+    repository=PostgresAnalyticsRepository(settings.database_url, synthetic=synthetic_read_models)
+    if use_postgres_manual_path
+    else None,
+)
 alert_store: AlertStore
 if use_postgres_manual_path:
     alert_store = PostgresAlertStore(settings.database_url)
@@ -261,7 +291,18 @@ if synthetic_read_models:
         logging.getLogger(__name__).warning(
             "demo alert seed skipped, storage unavailable at import", exc_info=True
         )
-app.include_router(create_analytics_router(analytics_service, alert_store))
+ask_service = AskService(
+    analytics_service,
+    alert_store,
+    context_secret=settings.ask_context_secret.encode() if settings.ask_context_secret else None,
+    intent_parser=create_gateway_parser(
+        settings.ask_inference_url, timeout_seconds=settings.ask_inference_timeout_seconds
+    )
+    if settings.ask_inference_url
+    else None,
+    audit=PostgresAskAudit(settings.database_url) if use_postgres_manual_path else None,
+)
+app.include_router(create_analytics_router(analytics_service, alert_store, ask_service=ask_service))
 
 report_runtime = ReportRuntime(analytics_service)
 app.include_router(create_report_router(report_runtime))
@@ -395,13 +436,17 @@ async def unavailable_synthetic_read_models(
     """Do not expose demo corpus or volatile report state in operational profiles."""
     path = request.url.path
     demo_route = (
-        path in {"/v1/analytics/query", "/v1/alerts", "/v1/reports", "/v1/appeals/preflight"}
+        path in {"/v1/reports", "/v1/appeals/preflight"}
         or path.startswith("/v1/jobs/")
         or (
             path.startswith("/v1/requests/")
             and path.endswith(("/similar", "/duplicate-candidates"))
         )
     )
+    if isinstance(analytics_service.repository, SyntheticAnalyticsRepository) and (
+        path in {"/v1/analytics/query", "/v1/alerts"} or path.startswith("/v1/analytics/ask")
+    ):
+        demo_route = True
     if not synthetic_read_models and demo_route:
         return JSONResponse(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,

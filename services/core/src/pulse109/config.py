@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import ipaddress
+import re
 from functools import lru_cache
 from typing import Literal
+from urllib.parse import urlsplit
 
-from pydantic import Field, model_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -37,6 +40,39 @@ class Settings(BaseSettings):
     replay_snapshot_dir: str = ".data/snapshots"
     demo_attachment_dir: str = ".data/attachments"
     control_plane_trusted_keys: list[str] = Field(default_factory=list)
+    ask_inference_url: str | None = None
+    ask_inference_timeout_seconds: float = Field(default=6.0, gt=0, le=30)
+    ask_context_secret: str | None = Field(default=None, min_length=32, repr=False)
+
+    @field_validator("ask_inference_url")
+    @classmethod
+    def private_intent_gateway(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        endpoint = urlsplit(value)
+        if (
+            endpoint.scheme not in {"http", "https"}
+            or not endpoint.hostname
+            or endpoint.username
+            or endpoint.password
+            or endpoint.path not in {"", "/"}
+            or endpoint.query
+            or endpoint.fragment
+        ):
+            raise ValueError("Ask inference requires a private HTTP base URL without credentials")
+        try:
+            address = ipaddress.ip_address(endpoint.hostname)
+        except ValueError:
+            if not re.fullmatch(r"[a-z][a-z0-9-]{0,62}", endpoint.hostname):
+                raise ValueError("Ask inference requires a private service name") from None
+        else:
+            networks = ("10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "fc00::/7")
+            if not address.is_loopback and not any(
+                address in ipaddress.ip_network(network) for network in networks
+            ):
+                raise ValueError("Ask inference requires loopback or a private network")
+        _ = endpoint.port
+        return value.rstrip("/")
 
     # Object storage. Credentials are never settings: boto3 reads them from the
     # environment or an instance role on the host, so nothing secret can reach a

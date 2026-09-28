@@ -259,6 +259,7 @@ def build_object_storage(settings: object, *, local_directory: str) -> Immutable
         # Optional dependency. It is absent from the local and demo images on
         # purpose, so the type checker has no stubs for it here either.
         import boto3  # type: ignore[import-not-found]
+        from botocore.config import Config  # type: ignore[import-not-found]
     except ImportError as error:  # pragma: no cover - depends on the deployment image
         raise RuntimeError(
             "S3 object storage was selected but boto3 is not installed in this image"
@@ -268,6 +269,11 @@ def build_object_storage(settings: object, *, local_directory: str) -> Immutable
         "s3",
         endpoint_url=getattr(settings, "object_storage_endpoint", None),
         region_name=getattr(settings, "object_storage_region", None),
+        config=Config(
+            request_checksum_calculation="when_required",
+            response_checksum_validation="when_required",
+            s3={"addressing_style": "path", "payload_signing_enabled": False},
+        ),
     )
     return S3CompatibleImmutableObjectStorage(
         client,

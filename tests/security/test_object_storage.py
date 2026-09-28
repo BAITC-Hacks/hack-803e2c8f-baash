@@ -1,6 +1,8 @@
 import hashlib
+import sys
 from io import BytesIO
 from pathlib import Path
+from types import ModuleType, SimpleNamespace
 
 import pytest
 from pulse109.replay.persistence import ObjectStorageSnapshotStore
@@ -183,6 +185,48 @@ def test_s3_mode_without_a_bucket_is_refused(tmp_path) -> None:
 
     with pytest.raises(ValueError, match="bucket"):
         build_object_storage(_Settings(mode="s3"), local_directory=str(tmp_path))
+
+
+def test_s3_factory_uses_path_style_and_fixed_length_uploads(monkeypatch, tmp_path) -> None:
+    from pulse109.security.object_storage import build_object_storage
+
+    captured: dict[str, object] = {}
+    boto3 = ModuleType("boto3")
+
+    def fake_client(service: str, **kwargs: object) -> FakeS3Client:
+        captured.update(service=service, **kwargs)
+        return FakeS3Client()
+
+    boto3.client = fake_client
+    botocore = ModuleType("botocore")
+    botocore.__path__ = []  # type: ignore[attr-defined]
+    botocore_config = ModuleType("botocore.config")
+    botocore_config.Config = lambda **kwargs: SimpleNamespace(**kwargs)
+    monkeypatch.setitem(sys.modules, "boto3", boto3)
+    monkeypatch.setitem(sys.modules, "botocore", botocore)
+    monkeypatch.setitem(sys.modules, "botocore.config", botocore_config)
+
+    storage = build_object_storage(
+        _Settings(
+            mode="s3",
+            bucket="synthetic-evidence",
+            endpoint="https://objects.example.test",
+            region="test-region",
+        ),
+        local_directory=str(tmp_path),
+    )
+
+    assert isinstance(storage, S3CompatibleImmutableObjectStorage)
+    assert captured["service"] == "s3"
+    assert captured["endpoint_url"] == "https://objects.example.test"
+    assert captured["region_name"] == "test-region"
+    config = captured["config"]
+    assert config.request_checksum_calculation == "when_required"
+    assert config.response_checksum_validation == "when_required"
+    assert config.s3 == {
+        "addressing_style": "path",
+        "payload_signing_enabled": False,
+    }
 
 
 def test_no_credential_field_exists_on_the_settings_surface() -> None:

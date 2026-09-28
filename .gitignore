@@ -44,3 +44,6 @@ ml/evaluation/**/model/
 # Generated exploration output. `make eda` rebuilds it, and a committed copy
 # would drift from the code that produces it.
 data/reports/eda/
+
+# Backup and temporary archives
+*.tar.gz

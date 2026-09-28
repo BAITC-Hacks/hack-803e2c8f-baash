@@ -1,0 +1,53 @@
+# Optional local GPU server. Supply an immutable image digest and a pre-staged
+# model artifact; this profile never downloads weights from a public Hub.
+services:
+  core-api:
+    environment:
+      PULSE109_ASK_INFERENCE_URL: http://inference:8082
+
+  analytics-llm:
+    profiles: [analytics-llm]
+    image: ${PULSE109_ANALYTICS_LLM_IMAGE:?Set a reviewed vLLM image pinned by digest}
+    command:
+      - --model
+      - /models/analytics-intent
+      - --served-model-name
+      - ${PULSE109_ANALYTICS_LLM_MODEL_ID:?Set the registered served model identifier}
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+      - --max-model-len
+      - ${PULSE109_ANALYTICS_LLM_MAX_MODEL_LEN:-4096}
+      - --tensor-parallel-size
+      - "1"
+      - --disable-log-requests
+    environment:
+      HF_HUB_OFFLINE: "1"
+      TRANSFORMERS_OFFLINE: "1"
+    volumes:
+      - ${PULSE109_ANALYTICS_LLM_ARTIFACT_DIR:?Set an approved local artifact directory}:/models/analytics-intent:ro
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"
+      interval: 10s
+      timeout: 3s
+      retries: 20
+
+  inference:
+    environment:
+      PULSE109_ANALYTICS_MODEL_REGISTRY: /config/analytics-intent-registry.json
+      PULSE109_ANALYTICS_MODEL_TIMEOUT_SECONDS: ${PULSE109_ANALYTICS_MODEL_TIMEOUT_SECONDS:-4}
+      PULSE109_ANALYTICS_MODEL_MAX_TOKENS: ${PULSE109_ANALYTICS_MODEL_MAX_TOKENS:-768}
+    volumes:
+      - ${PULSE109_ANALYTICS_MODEL_REGISTRY_FILE:?Set the reviewed registry file}:/config/analytics-intent-registry.json:ro

@@ -2,12 +2,14 @@ from datetime import datetime, timezone
 from typing import Annotated, Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Header, HTTPException, Query
+from fastapi import APIRouter, Header, HTTPException, Query, Response
 from pydantic import BaseModel, ConfigDict, Field
 
 from pulse109.security import AuthenticatedActor
 
 from .alerts import AlertStore
+from .ask_models import AskDrilldownRequest, AskExportRequest, AskRequest, AskResponse
+from .ask_service import AskService
 from .models import Alert, AlertReview, AnalyticsQuery, AnalyticsResult, MetricFilter
 from .service import AnalyticsError, AnalyticsService
 
@@ -54,8 +56,106 @@ class AnalyticsQueryRequest(BaseModel):
         )
 
 
-def create_analytics_router(service: AnalyticsService, alerts: AlertStore) -> APIRouter:
+def create_analytics_router(
+    service: AnalyticsService, alerts: AlertStore, *, ask_service: AskService | None = None
+) -> APIRouter:
     router = APIRouter(prefix="/v1", tags=["Analytics"])
+    ask_runtime = ask_service or AskService(service, alerts)
+
+    @router.post("/analytics/ask", response_model=AskResponse, operation_id="askPulse")
+    def ask_metrics(
+        command: AskRequest,
+        identity: AuthenticatedActor,
+        region_id: str = Header(alias="X-Region-Id", pattern=r"^(ALL|[A-Z0-9_-]{2,32})$"),
+    ) -> AskResponse:
+        try:
+            return ask_runtime.ask(command, identity=identity, actor_region=region_id)
+        except AnalyticsError as error:
+            raise HTTPException(
+                status_code=error.status_code, detail={"code": error.code, "message": error.message}
+            ) from error
+
+    @router.post("/analytics/ask/export", operation_id="exportAskPulse")
+    def export_ask(
+        command: AskExportRequest,
+        identity: AuthenticatedActor,
+        region_id: str = Header(alias="X-Region-Id", pattern=r"^(ALL|[A-Z0-9_-]{2,32})$"),
+        purpose: str = Header(
+            default="synthetic-development", alias="X-Export-Purpose", max_length=256
+        ),
+    ) -> Response:
+        from pulse109.reports.renderers import RendererUnavailable, render_pdf, render_xlsx
+
+        identity.require_any_role("analyst", "supervisor", "auditor", "admin")
+        identity.require_region(region_id)
+        identity.require_purpose(purpose)
+        try:
+            calculated = ask_runtime.export_result(command.result_token, identity, region_id)
+            synthetic = bool(getattr(calculated, "synthetic", False)) or any(
+                "synthetic" in ref for ref in calculated.provenance
+            )
+            watermark = (
+                "SYNTHETIC / GOVERNED"
+                if synthetic
+                else "GOVERNED / PARTIAL COVERAGE"
+                if calculated.quality != "complete"
+                else "GOVERNED"
+            )
+            content = (
+                render_pdf(calculated, watermark=watermark)
+                if command.format == "pdf"
+                else render_xlsx(calculated, watermark=watermark)
+            )
+            return Response(
+                content=content,
+                media_type="application/pdf"
+                if command.format == "pdf"
+                else "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                headers={
+                    "Content-Disposition": f'attachment; filename="ask-pulse.{command.format}"',
+                    "Cache-Control": "no-store",
+                },
+            )
+        except AnalyticsError as error:
+            raise HTTPException(
+                status_code=error.status_code, detail={"code": error.code, "message": error.message}
+            ) from error
+        except RendererUnavailable as error:
+            raise HTTPException(
+                status_code=503, detail={"code": "renderer_unavailable", "message": str(error)}
+            ) from error
+
+    @router.post("/analytics/ask/drilldown", operation_id="drilldownAskPulse")
+    def drilldown_ask(
+        command: AskDrilldownRequest,
+        identity: AuthenticatedActor,
+        region_id: str = Header(alias="X-Region-Id", pattern=r"^(ALL|[A-Z0-9_-]{2,32})$"),
+    ) -> object:
+        identity.require_any_role("operator", "supervisor", "analyst", "auditor", "admin")
+        identity.require_region(region_id)
+        try:
+            intent = ask_runtime.context(command.context_token, identity, region_id)
+            if intent.metric_id != "appeals_volume" or intent.intent_type in {
+                "forecast",
+                "surge",
+                "bottlenecks",
+            }:
+                raise AnalyticsError(
+                    "DRILLDOWN_UNSUPPORTED",
+                    "This capability does not expose a matching appeal drill-down.",
+                )
+            provider = getattr(service, "drilldown", None)
+            if provider is None:
+                raise AnalyticsError(
+                    "drilldown_unavailable", "Underlying appeal drilldown is unavailable.", 503
+                )
+            from .ask_service import intent_query
+
+            return provider(intent_query(intent), actor_region=region_id, limit=command.limit)
+        except AnalyticsError as error:
+            raise HTTPException(
+                status_code=error.status_code, detail={"code": error.code, "message": error.message}
+            ) from error
 
     @router.post("/analytics/query", response_model=AnalyticsResult)
     def query_metrics(

@@ -69,6 +69,38 @@ arriving over about forty minutes before the moment of seeding.
 If asked what happens without ML, stop the inference container. The manual path
 keeps working, which is the invariant the whole design is built on.
 
+## Ask Pulse (about 30 seconds)
+
+Use the normal `demo.ps1 up` PostgreSQL environment and open **Операционный
+центр**. A local in-memory test fixture is not the demo profile.
+
+1. In **Ask Pulse**, select **Динамика обращений за последние 7 дней**. The
+   response shows actual aggregates over the synthetic appeals stored in demo
+   PostgreSQL, a chart, source coverage and cutoff. Counts depend on the current
+   demo database; do not narrate the example numbers from the product brief.
+2. Open **Как рассчитано**. Show the metric version, trusted-time exclusions and
+   source provenance. Missing regions remain missing; no national coverage is
+   inferred from the ALA demo.
+3. Select **Сравни с предыдущим периодом**. The context carries the same scope
+   into an equal preceding period. An undefined percentage or partial comparison
+   remains visible rather than becoming a fabricated growth figure.
+4. Use **Показать обращения** to inspect the underlying metadata. Select
+   **Скачать PDF** or **Скачать Excel** to download the signed snapshot of the
+   displayed result, preserving the same rows and cutoff.
+5. Switch to **KK** and ask **Соңғы 7 күнде өтініштер саны қалай өзгерді?**.
+   The same governed query path runs with localized interaction and answer.
+
+For clarification, start a **Новый вопрос** and enter **Покажи обращения**;
+select an offered period. For an honest refusal, ask why a problem happened or
+request citizen names. For a forecast, ask for next month's load: a fresh demo
+usually lacks the required history, so insufficient history is the expected
+result. Do not invent a forecast interval or staffing recommendation.
+
+The deterministic CPU parser works with inference stopped. Configuring an
+optional local LLM changes intent parsing only; it does not make model quality
+validated or give the model access to citizen records. PostgreSQL query audit
+stores structured queries and question hashes, not raw questions or appeal text.
+
 ## Failure boundaries
 
 - If PostgreSQL is unavailable, core readiness fails and seeding stops. Do not substitute the in-memory repository for the demo.

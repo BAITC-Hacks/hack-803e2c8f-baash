@@ -1,0 +1,1489 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "AskRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "question": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Question",
+          "type": "string"
+        },
+        "locale": {
+          "default": "ru-KZ",
+          "enum": ["ru-KZ", "kk-KZ"],
+          "title": "Locale",
+          "type": "string"
+        },
+        "context_token": {
+          "anyOf": [
+            {
+              "maxLength": 12000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Context Token"
+        }
+      },
+      "required": ["question"],
+      "title": "AskRequest",
+      "type": "object"
+    },
+    "Alert": {
+      "additionalProperties": false,
+      "properties": {
+        "alert_id": {
+          "format": "uuid",
+          "title": "Alert Id",
+          "type": "string"
+        },
+        "type": {
+          "enum": [
+            "volume_spike",
+            "incident_growth",
+            "sla_risk",
+            "data_quality",
+            "model_drift"
+          ],
+          "title": "Type",
+          "type": "string"
+        },
+        "region_id": {
+          "title": "Region Id",
+          "type": "string"
+        },
+        "severity": {
+          "enum": ["info", "warning", "high", "critical"],
+          "title": "Severity",
+          "type": "string"
+        },
+        "status": {
+          "enum": ["new", "acknowledged", "resolved", "dismissed"],
+          "title": "Status",
+          "type": "string"
+        },
+        "detected_at": {
+          "format": "date-time",
+          "title": "Detected At",
+          "type": "string"
+        },
+        "metric_id": {
+          "enum": [
+            "appeals_volume",
+            "sla_risk",
+            "source_freshness",
+            "coverage"
+          ],
+          "title": "Metric Id",
+          "type": "string"
+        },
+        "metric_version": {
+          "title": "Metric Version",
+          "type": "string"
+        },
+        "baseline": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Baseline"
+        },
+        "observed_value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Observed Value"
+        },
+        "confidence": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Confidence"
+        },
+        "evidence": {
+          "additionalProperties": true,
+          "title": "Evidence",
+          "type": "object"
+        }
+      },
+      "required": [
+        "alert_id",
+        "type",
+        "region_id",
+        "severity",
+        "status",
+        "detected_at",
+        "metric_id",
+        "metric_version",
+        "baseline",
+        "observed_value",
+        "evidence"
+      ],
+      "title": "Alert",
+      "type": "object"
+    },
+    "AnalyticsIntent": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "analytics-intent-v1",
+          "default": "analytics-intent-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "intent_type": {
+          "enum": [
+            "volume",
+            "trend",
+            "region_comparison",
+            "topic_structure",
+            "surge",
+            "forecast",
+            "bottlenecks"
+          ],
+          "title": "Intent Type",
+          "type": "string"
+        },
+        "metric_id": {
+          "default": "appeals_volume",
+          "enum": [
+            "appeals_volume",
+            "sla_risk",
+            "source_freshness",
+            "coverage"
+          ],
+          "title": "Metric Id",
+          "type": "string"
+        },
+        "region_ids": {
+          "items": {
+            "pattern": "^[A-Z0-9_-]{2,32}$",
+            "type": "string"
+          },
+          "maxItems": 20,
+          "title": "Region Ids",
+          "type": "array"
+        },
+        "topic_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Topic Id"
+        },
+        "service_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Service Id"
+        },
+        "time_from": {
+          "format": "date-time",
+          "title": "Time From",
+          "type": "string"
+        },
+        "time_to": {
+          "format": "date-time",
+          "title": "Time To",
+          "type": "string"
+        },
+        "granularity": {
+          "default": "day",
+          "enum": ["hour", "day", "week", "month"],
+          "title": "Granularity",
+          "type": "string"
+        },
+        "comparison": {
+          "default": "none",
+          "enum": ["none", "previous_period"],
+          "title": "Comparison",
+          "type": "string"
+        },
+        "horizon_days": {
+          "anyOf": [
+            {
+              "maximum": 93,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Horizon Days"
+        },
+        "visualization": {
+          "default": "auto",
+          "enum": [
+            "auto",
+            "kpi",
+            "line",
+            "bar",
+            "forecast",
+            "surge",
+            "ranked_edges"
+          ],
+          "title": "Visualization",
+          "type": "string"
+        }
+      },
+      "required": ["intent_type", "time_from", "time_to"],
+      "title": "AnalyticsIntent",
+      "type": "object"
+    },
+    "AnalyticsQuery": {
+      "additionalProperties": false,
+      "properties": {
+        "metric_id": {
+          "enum": [
+            "appeals_volume",
+            "sla_risk",
+            "source_freshness",
+            "coverage"
+          ],
+          "title": "Metric Id",
+          "type": "string"
+        },
+        "metric_version": {
+          "default": "1.0.0",
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Metric Version",
+          "type": "string"
+        },
+        "dimensions": {
+          "items": {
+            "pattern": "^[a-z][a-z0-9_]{0,63}$",
+            "type": "string"
+          },
+          "maxItems": 5,
+          "title": "Dimensions",
+          "type": "array"
+        },
+        "filters": {
+          "items": {
+            "$ref": "#/$defs/MetricFilter"
+          },
+          "maxItems": 10,
+          "title": "Filters",
+          "type": "array"
+        },
+        "time_from": {
+          "format": "date-time",
+          "title": "Time From",
+          "type": "string"
+        },
+        "time_to": {
+          "format": "date-time",
+          "title": "Time To",
+          "type": "string"
+        },
+        "granularity": {
+          "default": "day",
+          "enum": ["hour", "day", "week", "month"],
+          "title": "Granularity",
+          "type": "string"
+        },
+        "limit": {
+          "default": 1000,
+          "maximum": 5000,
+          "minimum": 1,
+          "title": "Limit",
+          "type": "integer"
+        }
+      },
+      "required": ["metric_id", "time_from", "time_to"],
+      "title": "AnalyticsQuery",
+      "type": "object"
+    },
+    "AnalyticsResult": {
+      "additionalProperties": false,
+      "properties": {
+        "metric_id": {
+          "enum": [
+            "appeals_volume",
+            "sla_risk",
+            "source_freshness",
+            "coverage"
+          ],
+          "title": "Metric Id",
+          "type": "string"
+        },
+        "metric_version": {
+          "title": "Metric Version",
+          "type": "string"
+        },
+        "columns": {
+          "items": {
+            "$ref": "#/$defs/MetricColumn"
+          },
+          "title": "Columns",
+          "type": "array"
+        },
+        "rows": {
+          "items": {
+            "items": {},
+            "type": "array"
+          },
+          "title": "Rows",
+          "type": "array"
+        },
+        "computed_at": {
+          "format": "date-time",
+          "title": "Computed At",
+          "type": "string"
+        },
+        "data_cutoff": {
+          "format": "date-time",
+          "title": "Data Cutoff",
+          "type": "string"
+        },
+        "quality": {
+          "enum": ["complete", "partial", "stale", "missing"],
+          "title": "Quality",
+          "type": "string"
+        },
+        "coverage": {
+          "additionalProperties": {
+            "enum": ["present", "missing", "stale"],
+            "type": "string"
+          },
+          "title": "Coverage",
+          "type": "object"
+        },
+        "missing_regions": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Missing Regions",
+          "type": "array"
+        },
+        "provenance": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Provenance",
+          "type": "array"
+        },
+        "records_considered": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Records Considered",
+          "type": "integer"
+        },
+        "excluded_records": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Excluded Records",
+          "type": "integer"
+        },
+        "truncated": {
+          "default": false,
+          "title": "Truncated",
+          "type": "boolean"
+        },
+        "synthetic": {
+          "default": false,
+          "title": "Synthetic",
+          "type": "boolean"
+        },
+        "executed_query": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AnalyticsQuery"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "metric_id",
+        "metric_version",
+        "columns",
+        "rows",
+        "computed_at",
+        "data_cutoff",
+        "quality",
+        "coverage"
+      ],
+      "title": "AnalyticsResult",
+      "type": "object"
+    },
+    "AskActions": {
+      "additionalProperties": false,
+      "properties": {
+        "drilldown_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Drilldown Url"
+        },
+        "export_query": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AnalyticsQuery"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "export_formats": {
+          "items": {
+            "enum": ["pdf", "xlsx"],
+            "type": "string"
+          },
+          "title": "Export Formats",
+          "type": "array"
+        },
+        "export_token": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Export Token"
+        }
+      },
+      "title": "AskActions",
+      "type": "object"
+    },
+    "AskAnswer": {
+      "additionalProperties": false,
+      "properties": {
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "total": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Total"
+        },
+        "previous_total": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Previous Total"
+        },
+        "change_pct": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Change Pct"
+        },
+        "peak": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AskPeak"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": ["text"],
+      "title": "AskAnswer",
+      "type": "object"
+    },
+    "AskChart": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "enum": ["kpi", "line", "bar", "forecast", "surge", "ranked_edges"],
+          "title": "Type",
+          "type": "string"
+        },
+        "x": {
+          "title": "X",
+          "type": "string"
+        },
+        "y": {
+          "title": "Y",
+          "type": "string"
+        },
+        "series": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Series"
+        },
+        "columns": {
+          "items": {
+            "$ref": "#/$defs/MetricColumn"
+          },
+          "title": "Columns",
+          "type": "array"
+        },
+        "rows": {
+          "items": {
+            "items": {},
+            "type": "array"
+          },
+          "title": "Rows",
+          "type": "array"
+        }
+      },
+      "required": ["type", "x", "y", "columns", "rows"],
+      "title": "AskChart",
+      "type": "object"
+    },
+    "AskClarification": {
+      "additionalProperties": false,
+      "properties": {
+        "field": {
+          "title": "Field",
+          "type": "string"
+        },
+        "prompt": {
+          "title": "Prompt",
+          "type": "string"
+        },
+        "options": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Options",
+          "type": "array"
+        }
+      },
+      "required": ["field", "prompt"],
+      "title": "AskClarification",
+      "type": "object"
+    },
+    "AskInferenceMetadata": {
+      "additionalProperties": false,
+      "properties": {
+        "requested_alias": {
+          "enum": ["champion", "challenger", "baseline"],
+          "title": "Requested Alias",
+          "type": "string"
+        },
+        "model_alias": {
+          "enum": ["champion", "challenger", "baseline"],
+          "title": "Model Alias",
+          "type": "string"
+        },
+        "model_name": {
+          "title": "Model Name",
+          "type": "string"
+        },
+        "model_revision": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model Revision"
+        },
+        "tokenizer_revision": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tokenizer Revision"
+        },
+        "artifact_sha256": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Artifact Sha256"
+        },
+        "runtime": {
+          "title": "Runtime",
+          "type": "string"
+        },
+        "runtime_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Runtime Version"
+        },
+        "quantization": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Quantization"
+        },
+        "prompt_version": {
+          "const": "analytics-intent-prompt-v1",
+          "default": "analytics-intent-prompt-v1",
+          "title": "Prompt Version",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "analytics-intent-v1",
+          "default": "analytics-intent-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "input_tokens": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Input Tokens"
+        },
+        "output_tokens": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Output Tokens"
+        },
+        "structured_output_valid": {
+          "title": "Structured Output Valid",
+          "type": "boolean"
+        },
+        "fallback_used": {
+          "title": "Fallback Used",
+          "type": "boolean"
+        },
+        "fallback_reason": {
+          "anyOf": [
+            {
+              "enum": [
+                "baseline_requested",
+                "context_rules",
+                "question_refused",
+                "model_not_configured",
+                "registry_invalid",
+                "model_timeout",
+                "model_unavailable",
+                "invalid_model_output"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fallback Reason"
+        },
+        "latency_ms": {
+          "minimum": 0,
+          "title": "Latency Ms",
+          "type": "integer"
+        },
+        "approval_state": {
+          "enum": ["deterministic_baseline", "evaluation", "approved"],
+          "title": "Approval State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "requested_alias",
+        "model_alias",
+        "model_name",
+        "runtime",
+        "structured_output_valid",
+        "fallback_used",
+        "latency_ms",
+        "approval_state"
+      ],
+      "title": "AskInferenceMetadata",
+      "type": "object"
+    },
+    "AskPeak": {
+      "additionalProperties": false,
+      "properties": {
+        "period": {
+          "title": "Period",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "number"
+        }
+      },
+      "required": ["period", "value"],
+      "title": "AskPeak",
+      "type": "object"
+    },
+    "AskProvenance": {
+      "additionalProperties": false,
+      "properties": {
+        "metric_id": {
+          "enum": [
+            "appeals_volume",
+            "sla_risk",
+            "source_freshness",
+            "coverage"
+          ],
+          "title": "Metric Id",
+          "type": "string"
+        },
+        "metric_version": {
+          "title": "Metric Version",
+          "type": "string"
+        },
+        "definition": {
+          "title": "Definition",
+          "type": "string"
+        },
+        "time_from": {
+          "format": "date-time",
+          "title": "Time From",
+          "type": "string"
+        },
+        "time_to": {
+          "format": "date-time",
+          "title": "Time To",
+          "type": "string"
+        },
+        "data_cutoff": {
+          "format": "date-time",
+          "title": "Data Cutoff",
+          "type": "string"
+        },
+        "computed_at": {
+          "format": "date-time",
+          "title": "Computed At",
+          "type": "string"
+        },
+        "coverage": {
+          "additionalProperties": {
+            "enum": ["present", "missing", "stale"],
+            "type": "string"
+          },
+          "title": "Coverage",
+          "type": "object"
+        },
+        "missing_regions": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Missing Regions",
+          "type": "array"
+        },
+        "source_refs": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Source Refs",
+          "type": "array"
+        },
+        "excluded_records": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Excluded Records"
+        },
+        "limitations": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        }
+      },
+      "required": [
+        "metric_id",
+        "metric_version",
+        "definition",
+        "time_from",
+        "time_to",
+        "data_cutoff",
+        "computed_at",
+        "coverage",
+        "missing_regions",
+        "source_refs"
+      ],
+      "title": "AskProvenance",
+      "type": "object"
+    },
+    "Forecast": {
+      "additionalProperties": false,
+      "properties": {
+        "metric_id": {
+          "enum": [
+            "appeals_volume",
+            "sla_risk",
+            "source_freshness",
+            "coverage"
+          ],
+          "title": "Metric Id",
+          "type": "string"
+        },
+        "metric_version": {
+          "title": "Metric Version",
+          "type": "string"
+        },
+        "region_id": {
+          "title": "Region Id",
+          "type": "string"
+        },
+        "data_cutoff": {
+          "format": "date-time",
+          "title": "Data Cutoff",
+          "type": "string"
+        },
+        "baseline": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Baseline"
+        },
+        "candidate": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Candidate"
+        },
+        "lower_bound": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Lower Bound"
+        },
+        "upper_bound": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Upper Bound"
+        },
+        "method": {
+          "enum": ["seasonal_naive", "unavailable"],
+          "title": "Method",
+          "type": "string"
+        },
+        "version": {
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "metric_id",
+        "metric_version",
+        "region_id",
+        "data_cutoff",
+        "baseline",
+        "candidate",
+        "lower_bound",
+        "upper_bound",
+        "method",
+        "version"
+      ],
+      "title": "Forecast",
+      "type": "object"
+    },
+    "MetricColumn": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "type": {
+          "enum": ["string", "integer", "number", "datetime", "boolean"],
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": ["name", "type"],
+      "title": "MetricColumn",
+      "type": "object"
+    },
+    "MetricFilter": {
+      "additionalProperties": false,
+      "properties": {
+        "field": {
+          "pattern": "^[a-z][a-z0-9_]{0,63}$",
+          "title": "Field",
+          "type": "string"
+        },
+        "operator": {
+          "enum": ["eq", "in", "gte", "lte"],
+          "title": "Operator",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "required": ["field", "operator", "value"],
+      "title": "MetricFilter",
+      "type": "object"
+    },
+    "AskResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "ask-pulse-v1",
+          "default": "ask-pulse-v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "available",
+            "clarification_required",
+            "abstained",
+            "unavailable"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "synthetic": {
+          "default": false,
+          "title": "Synthetic",
+          "type": "boolean"
+        },
+        "answer": {
+          "$ref": "#/$defs/AskAnswer"
+        },
+        "intent": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AnalyticsIntent"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "query": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AnalyticsQuery"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "result": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AnalyticsResult"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "previous_result": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AnalyticsResult"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "chart": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AskChart"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "forecast": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Forecast"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "alerts": {
+          "items": {
+            "$ref": "#/$defs/Alert"
+          },
+          "title": "Alerts",
+          "type": "array"
+        },
+        "provenance": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AskProvenance"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "clarification": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AskClarification"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "reason_code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reason Code"
+        },
+        "context_token": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Context Token"
+        },
+        "actions": {
+          "$ref": "#/$defs/AskActions"
+        },
+        "inference": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AskInferenceMetadata"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": ["status", "answer"],
+      "title": "AskResponse",
+      "type": "object"
+    },
+    "AskExportRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "result_token": {
+          "maxLength": 1500000,
+          "minLength": 1,
+          "title": "Result Token",
+          "type": "string"
+        },
+        "format": {
+          "enum": ["pdf", "xlsx"],
+          "title": "Format",
+          "type": "string"
+        }
+      },
+      "required": ["result_token", "format"],
+      "title": "AskExportRequest",
+      "type": "object"
+    },
+    "AskDrilldownRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "context_token": {
+          "maxLength": 12000,
+          "minLength": 1,
+          "title": "Context Token",
+          "type": "string"
+        },
+        "limit": {
+          "default": 100,
+          "maximum": 200,
+          "minimum": 1,
+          "title": "Limit",
+          "type": "integer"
+        }
+      },
+      "required": ["context_token"],
+      "title": "AskDrilldownRequest",
+      "type": "object"
+    },
+    "CapabilityState": {
+      "description": "Why a capability's payload looks the way it does.",
+      "enum": ["available", "abstained", "unavailable"],
+      "title": "CapabilityState",
+      "type": "string"
+    },
+    "CapabilityStatus": {
+      "additionalProperties": false,
+      "description": "State plus a controlled reason, never free text from a model.",
+      "properties": {
+        "state": {
+          "$ref": "#/$defs/CapabilityState"
+        },
+        "reason_code": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Z][A-Z0-9_]{0,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reason Code"
+        }
+      },
+      "required": ["state"],
+      "title": "CapabilityStatus",
+      "type": "object"
+    },
+    "DrilldownAppeal": {
+      "additionalProperties": false,
+      "properties": {
+        "request_id": {
+          "format": "uuid",
+          "title": "Request Id",
+          "type": "string"
+        },
+        "source_request_id": {
+          "title": "Source Request Id",
+          "type": "string"
+        },
+        "status": {
+          "title": "Status",
+          "type": "string"
+        },
+        "received_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Received At"
+        },
+        "received_at_quality": {
+          "title": "Received At Quality",
+          "type": "string"
+        },
+        "language": {
+          "title": "Language",
+          "type": "string"
+        },
+        "channel": {
+          "title": "Channel",
+          "type": "string"
+        },
+        "service_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Service Id"
+        },
+        "topic_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Topic Id"
+        }
+      },
+      "required": [
+        "request_id",
+        "source_request_id",
+        "status",
+        "received_at",
+        "received_at_quality",
+        "language",
+        "channel"
+      ],
+      "title": "DrilldownAppeal",
+      "type": "object"
+    },
+    "Provenance": {
+      "additionalProperties": false,
+      "description": "Where a figure came from and what may be concluded from it.",
+      "properties": {
+        "dataset": {
+          "const": "operational_postgres",
+          "default": "operational_postgres",
+          "title": "Dataset",
+          "type": "string"
+        },
+        "region_id": {
+          "title": "Region Id",
+          "type": "string"
+        },
+        "generated_at": {
+          "format": "date-time",
+          "title": "Generated At",
+          "type": "string"
+        },
+        "cutoff": {
+          "format": "date-time",
+          "title": "Cutoff",
+          "type": "string"
+        },
+        "rows_considered": {
+          "minimum": 0,
+          "title": "Rows Considered",
+          "type": "integer"
+        },
+        "rows_excluded": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Rows Excluded",
+          "type": "integer"
+        },
+        "exclusion_reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Exclusion Reason"
+        },
+        "synthetic": {
+          "default": false,
+          "title": "Synthetic",
+          "type": "boolean"
+        },
+        "metric_version": {
+          "title": "Metric Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "region_id",
+        "generated_at",
+        "cutoff",
+        "rows_considered",
+        "metric_version"
+      ],
+      "title": "Provenance",
+      "type": "object"
+    },
+    "Drilldown": {
+      "additionalProperties": false,
+      "description": "The appeals behind one figure. This is what makes it analytics, not BI.",
+      "properties": {
+        "status": {
+          "$ref": "#/$defs/CapabilityStatus"
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance"
+        },
+        "key": {
+          "title": "Key",
+          "type": "string"
+        },
+        "filters": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Filters",
+          "type": "object"
+        },
+        "total": {
+          "minimum": 0,
+          "title": "Total",
+          "type": "integer"
+        },
+        "appeals": {
+          "items": {
+            "$ref": "#/$defs/DrilldownAppeal"
+          },
+          "maxItems": 200,
+          "title": "Appeals",
+          "type": "array"
+        }
+      },
+      "required": ["status", "provenance", "key", "total"],
+      "title": "Drilldown",
+      "type": "object"
+    }
+  }
+}

@@ -55,6 +55,11 @@ class AnalyticsResult(StrictModel):
     coverage: dict[str, Literal["present", "missing", "stale"]]
     missing_regions: list[str] = Field(default_factory=list)
     provenance: list[str] = Field(default_factory=list)
+    records_considered: int = Field(default=0, ge=0)
+    excluded_records: int = Field(default=0, ge=0)
+    truncated: bool = False
+    synthetic: bool = False
+    executed_query: AnalyticsQuery | None = None
 
 
 class Forecast(StrictModel):

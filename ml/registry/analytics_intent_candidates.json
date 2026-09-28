@@ -1,0 +1,38 @@
+{
+  "catalog_version": "analytics-intent-candidates-v1",
+  "approval_state": "NOT_VALIDATED",
+  "task": "analytics_intent",
+  "candidates": [
+    {
+      "model_id": "Qwen/Qwen3-4B-Instruct-2507",
+      "model_revision": null,
+      "tokenizer_revision": null,
+      "artifact_sha256": null,
+      "runtime_version": null,
+      "quantization": null,
+      "evaluation_ref": null,
+      "status": "candidate_only"
+    },
+    {
+      "model_id": "Qwen/Qwen3-8B",
+      "model_revision": null,
+      "tokenizer_revision": null,
+      "artifact_sha256": null,
+      "runtime_version": null,
+      "quantization": null,
+      "evaluation_ref": null,
+      "status": "candidate_only"
+    },
+    {
+      "model_id": "google/gemma-3-4b-it",
+      "model_revision": null,
+      "tokenizer_revision": null,
+      "artifact_sha256": null,
+      "runtime_version": null,
+      "quantization": null,
+      "evaluation_ref": null,
+      "status": "candidate_only"
+    }
+  ],
+  "notes": "Candidate names are proposals, not downloaded artifacts, approved models or measured quality. B09 and real RU/KK evaluation remain open."
+}
