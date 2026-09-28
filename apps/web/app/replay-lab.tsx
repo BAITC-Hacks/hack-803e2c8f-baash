@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { ChartNoAxesCombined } from "lucide-react";
+import { Skeleton } from "./skeleton";
 
 type Locale = "ru" | "kk";
 
@@ -242,14 +244,41 @@ export function ReplayLab({
           {t.refresh}
         </button>
       </div>
-      {loading ? <p role="status">{t.loading}</p> : null}
+      {loading ? (
+        <div className="replay-loading" role="status" aria-busy="true">
+          <span className="sr-only">{t.loading}</span>
+          <aside className="replay-reports" aria-hidden="true">
+            <Skeleton className="skeleton-heading" />
+            {[0, 1, 2, 3].map((index) => (
+              <div className="replay-skeleton-report" key={index}>
+                <Skeleton className="skeleton-row-primary" />
+                <Skeleton />
+                <Skeleton />
+              </div>
+            ))}
+          </aside>
+          <div
+            className="replay-detail replay-skeleton-detail"
+            aria-hidden="true"
+          >
+            <Skeleton className="skeleton-heading" />
+            <Skeleton className="skeleton-copy" />
+            <Skeleton className="skeleton-chart" />
+          </div>
+        </div>
+      ) : null}
       {error ? (
         <p role="alert" className="attention">
           {t.unavailable}: {error}
         </p>
       ) : null}
       {!loading && !error && reports.length === 0 ? (
-        <p role="status">{t.empty}</p>
+        <div className="empty-state" role="status">
+          <span className="empty-state-mark" aria-hidden="true">
+            <ChartNoAxesCombined size={18} />
+          </span>
+          <p>{t.empty}</p>
+        </div>
       ) : null}
       {!loading && !error && reports.length > 0 ? (
         <div className="replay-layout">

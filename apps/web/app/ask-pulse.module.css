@@ -1,10 +1,11 @@
 .panel {
   min-width: 0;
   margin-bottom: 22px;
-  padding: 22px;
+  padding: 20px;
   border: 1px solid var(--line);
   border-radius: var(--radius-card);
   background: var(--surface);
+  animation: surface-enter 180ms ease-out both;
 }
 
 .heading,
@@ -68,9 +69,13 @@
   border: 1px solid var(--line);
   border-radius: var(--radius-control);
   color: var(--ink);
-  background: var(--canvas);
+  background: var(--surface);
   font: inherit;
   font-size: 14px;
+  transition:
+    border-color var(--motion-fast) ease,
+    box-shadow var(--motion-fast) ease,
+    background-color var(--motion-fast) ease;
 }
 .inputRow button,
 .actions button {
@@ -85,8 +90,9 @@
 .panel button:focus-visible,
 .panel input:focus-visible,
 .panel summary:focus-visible {
-  outline: 2px solid var(--teal);
-  outline-offset: 3px;
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px var(--teal-soft);
 }
 .suggestions {
   display: flex;
@@ -107,10 +113,17 @@
   font-size: 12px;
   text-align: left;
   cursor: pointer;
+  transition:
+    color var(--motion-fast) ease,
+    background-color var(--motion-fast) ease,
+    border-color var(--motion-fast) ease,
+    transform var(--motion-fast) ease;
 }
 .suggestions button:hover {
   color: var(--ink);
-  background: var(--canvas);
+  border-color: var(--line-accent);
+  background: var(--surface-muted);
+  transform: translateY(-1px);
 }
 .suggestions p {
   flex-basis: 100%;
@@ -139,6 +152,7 @@
   padding-top: 20px;
   margin-top: 20px;
   border-top: 1px solid var(--line);
+  animation: surface-enter 180ms ease-out both;
 }
 .question {
   margin: 0 0 12px;
@@ -168,6 +182,13 @@
   margin: 0 0 18px;
   font-variant-numeric: tabular-nums;
 }
+.numbers > div {
+  min-width: 132px;
+  padding: 12px 14px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-control);
+  background: var(--surface-muted);
+}
 .numbers dt {
   margin-bottom: 5px;
   font-size: 12px;
@@ -191,6 +212,15 @@
   display: block;
   width: 100%;
   max-height: 520px;
+  overflow: visible;
+}
+.forecastWindow {
+  fill: color-mix(in srgb, var(--teal-soft) 72%, transparent);
+}
+.forecastBoundary {
+  stroke: var(--line-strong);
+  stroke-dasharray: 3 4;
+  stroke-width: 1.5;
 }
 .axis {
   fill: var(--muted);
@@ -306,12 +336,13 @@
   margin: 6px 0 8px;
 }
 .loading {
+  display: grid;
+  gap: 5px;
   margin: 16px 0 0;
-  padding: 18px;
-  border: 1px dashed var(--line);
-  border-radius: var(--radius-control);
-  color: var(--muted);
-  font-size: 13px;
+  padding: 16px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-card);
+  background: var(--surface);
 }
 .alerts {
   display: grid;
@@ -335,6 +366,7 @@
   padding-top: 18px;
   margin-top: 18px;
   border-top: 1px solid var(--line);
+  animation: surface-enter 180ms ease-out both;
 }
 .drilldown h3 {
   margin: 0;
@@ -350,6 +382,9 @@
   }
   .inputRow button {
     align-self: flex-end;
+  }
+  .suggestions button {
+    min-height: 44px;
   }
   .resultHeading {
     flex-wrap: wrap;

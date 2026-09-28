@@ -20,6 +20,7 @@ import { IncidentWorkflowPanel } from "./incident-workflow-panel";
 import { OperationsCenter } from "./operations-center";
 import { OwnershipHandoffPanel } from "./ownership-handoff-panel";
 import { ReplayLab } from "./replay-lab";
+import { Skeleton } from "./skeleton";
 
 type Locale = "ru" | "kk";
 type Appeal = {
@@ -83,6 +84,16 @@ type SessionContext = {
 
 const labels = {
   ru: {
+    navigation: "Разделы",
+    skipContent: "Перейти к рабочей области",
+    region: "Регион",
+    language: "Язык",
+    profile: "Профиль",
+    profileLoading: "загрузка",
+    record: "Обращение",
+    channel: "Канал",
+    timeQuality: "Надёжность времени",
+    statusField: "Статус",
     operations: "Операционный центр",
     incidents: "Инциденты",
     replay: "Replay Lab",
@@ -108,6 +119,16 @@ const labels = {
       "В этом регионе пока нет обращений. Создайте синтетическое обращение через форму или запустите seed.",
   },
   kk: {
+    navigation: "Бөлімдер",
+    skipContent: "Жұмыс аймағына өту",
+    region: "Өңір",
+    language: "Тіл",
+    profile: "Профиль",
+    profileLoading: "жүктелуде",
+    record: "Өтініш",
+    channel: "Арна",
+    timeQuality: "Уақыт сенімділігі",
+    statusField: "Мәртебе",
     operations: "Операциялық орталық",
     incidents: "Оқиғалар",
     replay: "Replay Lab",
@@ -485,7 +506,10 @@ export default function OperatorWorkspace() {
 
   return (
     <div className="shell">
-      <aside className="sidebar" aria-label="Sections">
+      <a className="skip-link" href="#workspace-main">
+        {copy.skipContent}
+      </a>
+      <aside className="sidebar" aria-label={copy.navigation}>
         <strong className="brand">
           <span className="brand-signal" aria-hidden="true">
             <i />
@@ -537,12 +561,12 @@ export default function OperatorWorkspace() {
         </nav>
       </aside>
 
-      <main className="shell-main">
+      <main className="shell-main" id="workspace-main" tabIndex={-1}>
         <header className="topbar">
-          <div className="topbar-context">
+          <div className="topbar-context" aria-label={copy.region}>
             {regions.length > 1 ? (
               <select
-                aria-label="Region"
+                aria-label={copy.region}
                 value={region}
                 onChange={(event) => setRegion(event.target.value)}
               >
@@ -553,7 +577,9 @@ export default function OperatorWorkspace() {
                 ))}
               </select>
             ) : (
-              <span className="region-label">{region}</span>
+              <span className="region-label" aria-label={copy.region}>
+                {region}
+              </span>
             )}
           </div>
           <div className="topbar-actions">
@@ -567,9 +593,13 @@ export default function OperatorWorkspace() {
             >
               {profile === "demo"
                 ? "DEMO · SYNTHETIC"
-                : `Profile: ${profile ?? "loading"}`}
+                : `${copy.profile}: ${profile ?? copy.profileLoading}`}
             </span>
-            <div className="locale-switch" aria-label="Language">
+            <div
+              className="locale-switch"
+              role="group"
+              aria-label={copy.language}
+            >
               {(["ru", "kk"] as const).map((name) => (
                 <button
                   key={name}
@@ -676,31 +706,62 @@ export default function OperatorWorkspace() {
                 </p>
               ) : null}
               {notice ? <p role="status">{notice}</p> : null}
-              {loading ? <p role="status">{copy.loading}</p> : null}
               {!loading && !error && appeals.length === 0 ? (
-                <p role="status">{copy.empty}</p>
+                <div className="empty-state" role="status">
+                  <span className="empty-state-mark" aria-hidden="true">
+                    <Inbox size={18} />
+                  </span>
+                  <p>{copy.empty}</p>
+                </div>
               ) : null}
-              <div className="queue" aria-label="Appeals from PostgreSQL">
-                {appeals.map((appeal) => (
-                  <button
-                    className={`queue-row ${selectedId === appeal.request_id ? "selected" : ""}`}
-                    key={appeal.request_id}
-                    type="button"
-                    onClick={() => {
-                      setSelectedId(appeal.request_id);
-                      setRecommendation(null);
-                      setDetail(null);
-                      setAttachments([]);
-                    }}
-                  >
-                    <strong>{appeal.source_request_id}</strong>
-                    <span>{appeal.region_id}</span>
-                    <span>{appeal.channel}</span>
-                    <span>{appeal.received_at_quality}</span>
-                    <span>{appeal.status}</span>
-                  </button>
-                ))}
-              </div>
+              {loading ? (
+                <div
+                  className="queue queue-loading"
+                  role="status"
+                  aria-busy="true"
+                >
+                  <span className="sr-only">{copy.loading}</span>
+                  {[0, 1, 2, 3, 4].map((index) => (
+                    <div className="queue-row" key={index}>
+                      <Skeleton className="skeleton-row-primary" />
+                      <Skeleton />
+                      <Skeleton />
+                      <Skeleton />
+                      <Skeleton />
+                    </div>
+                  ))}
+                </div>
+              ) : appeals.length > 0 ? (
+                <div className="queue" role="group" aria-label={copy.queue}>
+                  <div className="queue-head" aria-hidden="true">
+                    <span>{copy.record}</span>
+                    <span>{copy.region}</span>
+                    <span>{copy.channel}</span>
+                    <span>{copy.timeQuality}</span>
+                    <span>{copy.statusField}</span>
+                  </div>
+                  {appeals.map((appeal) => (
+                    <button
+                      className={`queue-row ${selectedId === appeal.request_id ? "selected" : ""}`}
+                      key={appeal.request_id}
+                      type="button"
+                      aria-label={`${copy.record} ${appeal.source_request_id}; ${copy.region} ${appeal.region_id}; ${copy.statusField} ${appeal.status}`}
+                      onClick={() => {
+                        setSelectedId(appeal.request_id);
+                        setRecommendation(null);
+                        setDetail(null);
+                        setAttachments([]);
+                      }}
+                    >
+                      <strong>{appeal.source_request_id}</strong>
+                      <span>{appeal.region_id}</span>
+                      <span>{appeal.channel}</span>
+                      <span>{appeal.received_at_quality}</span>
+                      <span>{appeal.status}</span>
+                    </button>
+                  ))}
+                </div>
+              ) : null}
               {detail ? (
                 <section className="appeal-card" aria-labelledby="appeal-title">
                   <div className="appeal-header">

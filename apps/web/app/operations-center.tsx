@@ -8,10 +8,17 @@
  * element and every row leads somewhere.
  */
 
-import { useCallback, useEffect, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { ArrivalChart, type Bucket } from "./arrival-chart";
 import { ReportMap, type ReportPoint } from "./report-map";
 import { AskPulse } from "./ask-pulse";
+import { Skeleton } from "./skeleton";
 
 type Locale = "ru" | "kk";
 
@@ -90,8 +97,10 @@ const copy = {
   ru: {
     title: "Операционный центр",
     kicker: "01 / Ситуация сейчас",
+    loading: "Загружаем данные об операционной ситуации…",
     intro:
       "Что требует внимания прямо сейчас. Каждая строка открывается, ни одна не создаёт работу автоматически.",
+    attention: "Требует внимания",
     scan: "Поиск возникающих проблем",
     scanning: "Ищем…",
     quiet:
@@ -103,6 +112,8 @@ const copy = {
     queued: "В очереди на доставку",
     failed: "Доставка не удалась",
     activity: "Обращения за сутки",
+    activityChartDescription:
+      "Динамика обращений за сутки по достоверному времени поступления",
     activityNote:
       "Считаются только обращения с достоверным временем поступления. Наведите на точку, чтобы увидеть разбивку по темам.",
     excluded: "Не попали в график, время не достоверно",
@@ -130,8 +141,10 @@ const copy = {
   kk: {
     title: "Операциялық орталық",
     kicker: "01 / Қазіргі жағдай",
+    loading: "Операциялық деректер жүктелуде…",
     intro:
       "Қазір неге назар керек. Әр жол ашылады, ешқайсысы өздігінен жұмыс жасамайды.",
+    attention: "Назар аудару керек",
     scan: "Пайда болған мәселелерді іздеу",
     scanning: "Ізделуде…",
     quiet:
@@ -143,6 +156,8 @@ const copy = {
     queued: "Жеткізу кезегінде",
     failed: "Жеткізілмеді",
     activity: "Өтініштер тәулік ішінде",
+    activityChartDescription:
+      "Сенімді қабылдау уақыты бар өтініштердің тәуліктік динамикасы",
     activityNote: "Тек сенімді түсу уақыты бар өтініштер есептеледі.",
     excluded: "Графикке кірмеді, уақыты сенімсіз",
     noSeries: "Бұл терезе үшін дерек жеткіліксіз",
@@ -362,108 +377,170 @@ export function OperationsCenter({
       {notice ? <p role="status">{notice}</p> : null}
       {semanticOff ? <p className="war-room-note">{t.semanticOff}</p> : null}
 
+      {!feed && !error ? (
+        <div className="operations-kpi-loading" role="status" aria-busy="true">
+          <span className="sr-only">{t.loading}</span>
+          <dl className="city-pulse" aria-hidden="true">
+            {Array.from({ length: 6 }, (_, index) => (
+              <div key={index}>
+                <Skeleton className="skeleton-label" />
+                <Skeleton className="skeleton-value" />
+              </div>
+            ))}
+          </dl>
+        </div>
+      ) : null}
+
       {feed ? (
         <dl className="city-pulse">
           <div>
             <dt>{t.open}</dt>
-            <dd>{feed.pulse.open_appeals}</dd>
+            <dd>
+              <AnimatedCount value={feed.pulse.open_appeals} locale={locale} />
+            </dd>
           </div>
           <div>
             <dt>{t.incidents}</dt>
-            <dd>{feed.pulse.active_incidents}</dd>
+            <dd>
+              <AnimatedCount
+                value={feed.pulse.active_incidents}
+                locale={locale}
+              />
+            </dd>
           </div>
           <div>
             <dt>{t.emerging}</dt>
-            <dd>{feed.pulse.emerging_patterns}</dd>
+            <dd>
+              <AnimatedCount
+                value={feed.pulse.emerging_patterns}
+                locale={locale}
+              />
+            </dd>
           </div>
           <div>
             <dt>{t.unowned}</dt>
-            <dd>{feed.pulse.unowned_incidents}</dd>
+            <dd>
+              <AnimatedCount
+                value={feed.pulse.unowned_incidents}
+                locale={locale}
+              />
+            </dd>
           </div>
           <div>
             <dt>{t.queued}</dt>
-            <dd>{feed.pulse.queued_deliveries}</dd>
+            <dd>
+              <AnimatedCount
+                value={feed.pulse.queued_deliveries}
+                locale={locale}
+              />
+            </dd>
           </div>
           <div>
             <dt>{t.failed}</dt>
-            <dd>{feed.pulse.failed_deliveries}</dd>
+            <dd>
+              <AnimatedCount
+                value={feed.pulse.failed_deliveries}
+                locale={locale}
+              />
+            </dd>
           </div>
         </dl>
       ) : null}
 
-      {arrivals ? (
-        <article className="lab-card">
-          <h2>{t.activity}</h2>
-          <p className="war-room-note">{t.activityNote}</p>
-          <ArrivalChart
-            buckets={arrivals.buckets}
-            baseline={arrivals.baseline_per_bucket}
-            peakStart={arrivals.peak?.start ?? null}
-            excluded={arrivals.excluded_untrusted_time}
-            excludedLabel={t.excluded}
-            emptyLabel={t.noSeries}
-          />
-          {arrivals.peak ? (
-            <p className="codes">
-              {t.peakLabel}: {arrivals.peak.start.slice(11, 16)} ·{" "}
-              {arrivals.peak.count} ·{" "}
-              {Object.entries(arrivals.peak.by_topic)
-                .sort((left, right) => right[1] - left[1])
-                .slice(0, 3)
-                .map(([topic, count]) => `${topic} ${count}`)
-                .join(" · ")}
-            </p>
+      <div className="operations-panels">
+        <section className="operations-chart-panel" aria-label={t.activity}>
+          {!arrivals && !error ? (
+            <article
+              className="lab-card chart-skeleton"
+              role="status"
+              aria-busy="true"
+            >
+              <span className="sr-only">{t.loading}</span>
+              <Skeleton className="skeleton-heading" />
+              <Skeleton className="skeleton-copy" />
+              <Skeleton className="skeleton-chart" />
+            </article>
           ) : null}
-        </article>
-      ) : null}
 
-      {feed && feed.items.length === 0 ? (
-        <p className="war-room-note">{t.quiet}</p>
-      ) : null}
-
-      <ul className="attention-feed">
-        {(feed?.items ?? []).map((item, index) => (
-          <li
-            key={`${item.summary_code}-${index}`}
-            className={`severity-${item.severity}`}
-          >
-            <div className="attention-main">
-              <span
-                className={`severity-dot severity-dot-${item.severity}`}
-                aria-hidden="true"
+          {arrivals ? (
+            <article className="lab-card">
+              <h2>{t.activity}</h2>
+              <p className="war-room-note">{t.activityNote}</p>
+              <ArrivalChart
+                buckets={arrivals.buckets}
+                baseline={arrivals.baseline_per_bucket}
+                peakStart={arrivals.peak?.start ?? null}
+                excluded={arrivals.excluded_untrusted_time}
+                excludedLabel={t.excluded}
+                emptyLabel={t.noSeries}
+                description={t.activityChartDescription}
               />
-              <div>
-                <strong>{item.summary_code}</strong>
+              {arrivals.peak ? (
                 <p className="codes">
-                  {item.count} ·{" "}
-                  {Object.entries(item.detail)
-                    .filter(([, value]) => value !== null)
-                    .map(([key, value]) => `${key}=${value}`)
+                  {t.peakLabel}: {arrivals.peak.start.slice(11, 16)} ·{" "}
+                  {arrivals.peak.count} ·{" "}
+                  {Object.entries(arrivals.peak.by_topic)
+                    .sort((left, right) => right[1] - left[1])
+                    .slice(0, 3)
+                    .map(([topic, count]) => `${topic} ${count}`)
                     .join(" · ")}
                 </p>
-              </div>
-            </div>
-            {item.target_kind === "cluster" && item.target_id ? (
-              <button
-                type="button"
-                className="secondary-action"
-                onClick={() => void openCluster(item.target_id as string)}
+              ) : null}
+            </article>
+          ) : null}
+        </section>
+
+        <section className="operations-feed-panel" aria-label={t.attention}>
+          <h2>{t.attention}</h2>
+          {feed && feed.items.length === 0 ? (
+            <p className="war-room-note">{t.quiet}</p>
+          ) : null}
+
+          <ul className="attention-feed">
+            {(feed?.items ?? []).map((item, index) => (
+              <li
+                key={`${item.summary_code}-${index}`}
+                className={`severity-${item.severity}`}
               >
-                {t.cluster}
-              </button>
-            ) : null}
-            {item.target_kind === "incident" && item.target_id ? (
-              <button
-                type="button"
-                className="secondary-action"
-                onClick={() => onOpenIncident(item.target_id as string)}
-              >
-                {t.incidents}
-              </button>
-            ) : null}
-          </li>
-        ))}
-      </ul>
+                <div className="attention-main">
+                  <span
+                    className={`severity-dot severity-dot-${item.severity}`}
+                    aria-hidden="true"
+                  />
+                  <div>
+                    <strong>{item.summary_code}</strong>
+                    <p className="codes">
+                      {item.count} ·{" "}
+                      {Object.entries(item.detail)
+                        .filter(([, value]) => value !== null)
+                        .map(([key, value]) => `${key}=${value}`)
+                        .join(" · ")}
+                    </p>
+                  </div>
+                </div>
+                {item.target_kind === "cluster" && item.target_id ? (
+                  <button
+                    type="button"
+                    className="secondary-action"
+                    onClick={() => void openCluster(item.target_id as string)}
+                  >
+                    {t.cluster}
+                  </button>
+                ) : null}
+                {item.target_kind === "incident" && item.target_id ? (
+                  <button
+                    type="button"
+                    className="secondary-action"
+                    onClick={() => onOpenIncident(item.target_id as string)}
+                  >
+                    {t.incidents}
+                  </button>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        </section>
+      </div>
 
       {cluster ? (
         <article className="cluster-inspector">
@@ -568,6 +645,53 @@ export function OperationsCenter({
         </article>
       ) : null}
     </section>
+  );
+}
+
+function AnimatedCount({ value, locale }: { value: number; locale: Locale }) {
+  const [displayValue, setDisplayValue] = useState(0);
+  const previousValue = useRef(0);
+  const reduceMotion = useSyncExternalStore(
+    (callback) => {
+      const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+      query.addEventListener("change", callback);
+      return () => query.removeEventListener("change", callback);
+    },
+    () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+    () => false,
+  );
+  const format = (count: number) =>
+    new Intl.NumberFormat(locale === "ru" ? "ru-KZ" : "kk-KZ", {
+      maximumFractionDigits: 0,
+    }).format(count);
+
+  useEffect(() => {
+    const from = previousValue.current;
+    previousValue.current = value;
+    if (from === value) return;
+    if (reduceMotion) return;
+
+    const duration = 420;
+    let frame = 0;
+    let startedAt = 0;
+    const animate = (timestamp: number) => {
+      if (startedAt === 0) startedAt = timestamp;
+      const progress = Math.min((timestamp - startedAt) / duration, 1);
+      const eased = 1 - (1 - progress) ** 3;
+      setDisplayValue(Math.round(from + (value - from) * eased));
+      if (progress < 1) frame = requestAnimationFrame(animate);
+    };
+    frame = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(frame);
+  }, [reduceMotion, value]);
+
+  const visibleValue = reduceMotion ? value : displayValue;
+
+  return (
+    <>
+      <span aria-hidden="true">{format(visibleValue)}</span>
+      <span className="sr-only">{format(value)}</span>
+    </>
   );
 }
 

@@ -94,6 +94,26 @@ export function AnalyticsChart({
     LEFT +
     (categories.indexOf(String(value)) / Math.max(categories.length - 1, 1)) *
       (WIDTH - LEFT - RIGHT);
+  const lastObservedCategoryIndex =
+    spec.type === "forecast" && observedIndex >= 0
+      ? categories.reduce(
+          (lastIndex, category, index) =>
+            spec.rows.some(
+              (row) =>
+                String(row[xIndex]) === category && numeric(row[observedIndex]),
+            )
+              ? index
+              : lastIndex,
+          -1,
+        )
+      : -1;
+  const forecastSplitX =
+    lastObservedCategoryIndex >= 0 &&
+    lastObservedCategoryIndex < categories.length - 1
+      ? (x(categories[lastObservedCategoryIndex]) +
+          x(categories[lastObservedCategoryIndex + 1])) /
+        2
+      : null;
   const barHeight = Math.max(160, rows.length * 34 + 20);
 
   return (
@@ -102,8 +122,18 @@ export function AnalyticsChart({
         viewBox={`0 0 ${WIDTH} ${isBar ? barHeight : HEIGHT}`}
         role="img"
         aria-labelledby={titleId}
+        data-chart-motion="true"
       >
         <title id={titleId}>{title}</title>
+        {forecastSplitX !== null ? (
+          <rect
+            x={forecastSplitX}
+            y={TOP}
+            width={WIDTH - RIGHT - forecastSplitX}
+            height={HEIGHT - TOP - BOTTOM}
+            className={styles.forecastWindow}
+          />
+        ) : null}
         {isBar ? (
           rows.map((row, index) => {
             const value = row[yIndex] as number;
@@ -126,6 +156,7 @@ export function AnalyticsChart({
                   height={spec.type === "surge" ? "10" : "19"}
                   rx="2"
                   className={styles.bar}
+                  data-chart-bar="true"
                 >
                   <title>{`${label(row[xIndex], locale)}: ${value}`}</title>
                 </rect>
@@ -222,6 +253,7 @@ export function AnalyticsChart({
                             ].join(" ")}
                             fill="currentColor"
                             opacity="0.12"
+                            data-chart-area="true"
                           />
                         ) : null;
                       })()
@@ -237,6 +269,8 @@ export function AnalyticsChart({
                     stroke="currentColor"
                     strokeWidth="2.5"
                     strokeDasharray={seriesNumber % 2 ? "6 3" : undefined}
+                    pathLength={1}
+                    data-chart-line="true"
                   />
                   {points.map((row, index) => (
                     <circle
@@ -245,6 +279,10 @@ export function AnalyticsChart({
                       cy={y(row[yIndex] as number)}
                       r="3"
                       fill="currentColor"
+                      data-chart-point="true"
+                      style={{
+                        animationDelay: `${Math.min(index * 18, 360)}ms`,
+                      }}
                     >
                       <title>{`${label(row[xIndex], locale)} · ${name}: ${row[yIndex]}`}</title>
                     </circle>
@@ -265,6 +303,17 @@ export function AnalyticsChart({
                 stroke="var(--muted)"
                 strokeWidth="2"
                 strokeDasharray="4 3"
+                pathLength={1}
+                data-chart-line="historical"
+              />
+            ) : null}
+            {forecastSplitX !== null ? (
+              <line
+                x1={forecastSplitX}
+                x2={forecastSplitX}
+                y1={TOP}
+                y2={HEIGHT - BOTTOM}
+                className={styles.forecastBoundary}
               />
             ) : null}
             {[0, Math.floor((categories.length - 1) / 2), categories.length - 1]

@@ -10,6 +10,7 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
+import { Skeleton } from "./skeleton";
 
 type Locale = "ru" | "kk";
 
@@ -257,7 +258,23 @@ export function DataLab({
           {error}
         </p>
       ) : null}
-      {!quality && !error ? <p role="status">{t.loading}</p> : null}
+      {!quality && !error ? (
+        <div className="lab-loading" role="status" aria-busy="true">
+          <span className="sr-only">{t.loading}</span>
+          <article className="lab-card" aria-hidden="true">
+            <Skeleton className="skeleton-heading" />
+            <Skeleton className="skeleton-copy" />
+            <Skeleton className="skeleton-metric-row" />
+            <Skeleton className="skeleton-metric-row" />
+            <Skeleton className="skeleton-metric-row" />
+          </article>
+          <article className="lab-card" aria-hidden="true">
+            <Skeleton className="skeleton-heading" />
+            <Skeleton className="skeleton-copy" />
+            <Skeleton className="skeleton-chart" />
+          </article>
+        </div>
+      ) : null}
 
       {quality ? (
         <article className="lab-card">
@@ -345,30 +362,32 @@ export function DataLab({
         <article className="lab-card">
           <h2>{t.timings}</h2>
           <p className="war-room-note">{t.timingsNote}</p>
-          <table className="lab-table">
-            <thead>
-              <tr>
-                <th>stage</th>
-                <th>n</th>
-                <th>P50</th>
-                <th>P75</th>
-                <th>P90</th>
-                <th>P95</th>
-              </tr>
-            </thead>
-            <tbody>
-              {timings.map((timing) => (
-                <tr key={timing.stage}>
-                  <td>{timing.stage}</td>
-                  <td>{timing.overall.count}</td>
-                  <td>{timing.overall.p50 ?? "—"}</td>
-                  <td>{timing.overall.p75 ?? "—"}</td>
-                  <td>{timing.overall.p90 ?? "—"}</td>
-                  <td>{timing.overall.p95 ?? "—"}</td>
+          <div className="table-scroll">
+            <table className="lab-table">
+              <thead>
+                <tr>
+                  <th>stage</th>
+                  <th>n</th>
+                  <th>P50</th>
+                  <th>P75</th>
+                  <th>P90</th>
+                  <th>P95</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {timings.map((timing) => (
+                  <tr key={timing.stage}>
+                    <td>{timing.stage}</td>
+                    <td>{timing.overall.count}</td>
+                    <td>{timing.overall.p50 ?? "—"}</td>
+                    <td>{timing.overall.p75 ?? "—"}</td>
+                    <td>{timing.overall.p90 ?? "—"}</td>
+                    <td>{timing.overall.p95 ?? "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </article>
       ) : null}
 
@@ -430,32 +449,35 @@ export function DataLab({
               {t.close}
             </button>
           </div>
-          <table className="lab-table">
-            <thead>
-              <tr>
-                <th>source</th>
-                <th>status</th>
-                <th>received</th>
-                <th>quality</th>
-                <th>lang</th>
-                <th>service</th>
-              </tr>
-            </thead>
-            <tbody>
-              {drill.appeals.map((appeal) => (
-                <tr key={appeal.request_id}>
-                  <td>{appeal.source_request_id}</td>
-                  <td>{appeal.status}</td>
-                  <td>
-                    {appeal.received_at?.slice(0, 16).replace("T", " ") ?? "—"}
-                  </td>
-                  <td>{appeal.received_at_quality}</td>
-                  <td>{appeal.language}</td>
-                  <td>{appeal.service_id ?? "—"}</td>
+          <div className="table-scroll">
+            <table className="lab-table">
+              <thead>
+                <tr>
+                  <th>source</th>
+                  <th>status</th>
+                  <th>received</th>
+                  <th>quality</th>
+                  <th>lang</th>
+                  <th>service</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {drill.appeals.map((appeal) => (
+                  <tr key={appeal.request_id}>
+                    <td>{appeal.source_request_id}</td>
+                    <td>{appeal.status}</td>
+                    <td>
+                      {appeal.received_at?.slice(0, 16).replace("T", " ") ??
+                        "—"}
+                    </td>
+                    <td>{appeal.received_at_quality}</td>
+                    <td>{appeal.language}</td>
+                    <td>{appeal.service_id ?? "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </article>
       ) : null}
 

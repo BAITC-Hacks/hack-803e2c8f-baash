@@ -9,6 +9,7 @@
   --line-strong: #bdcbd1;
   --line-accent: #b5ccd4;
   --surface: #ffffff;
+  --surface-raised: #ffffff;
   --surface-muted: #eef3f5;
   --surface-hover: #f5f9fa;
   --canvas: #f4f7f8;
@@ -34,11 +35,11 @@
   --info-soft: #eaf0fa;
   --focus-ring: #5f9db1;
   --on-primary: #ffffff;
-  --radius-control: 8px;
+  --radius-control: 10px;
   --radius-card: 12px;
   --radius-pill: 999px;
-  --motion-fast: 160ms;
-  --motion-normal: 190ms;
+  --motion-fast: 150ms;
+  --motion-normal: 200ms;
 }
 
 * {
@@ -3107,6 +3108,642 @@ textarea:focus-visible {
   overflow-wrap: anywhere;
   color: var(--muted);
   font-size: 0.72rem;
+}
+
+/* Shared interaction and data presentation layer, adapted from Satword's
+   semantic primitives while keeping Pulse's existing component structure. */
+.shell .content {
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+
+.shell .workspace {
+  width: 100%;
+  max-width: 1440px;
+  padding: clamp(20px, 3vw, 40px) clamp(18px, 3.2vw, 48px) 48px;
+}
+
+.shell
+  :is(
+    .appeal-card,
+    .lab-card,
+    .war-room,
+    .war-room-card,
+    .cluster-inspector,
+    .workflow-state,
+    .security-state,
+    .evidence-panel,
+    .intake-card,
+    .system-state,
+    .ownership-panel,
+    .replay-reports,
+    .replay-detail,
+    .coverage-band,
+    .report-band,
+    .map-panel,
+    .decision-area
+  ) {
+  border-color: var(--line);
+  border-radius: var(--radius-card);
+  box-shadow: none;
+}
+
+.shell .city-pulse > div {
+  border-radius: var(--radius-card);
+  box-shadow: 0 1px 2px rgb(21 35 43 / 3%);
+}
+
+.shell .city-pulse dt,
+.shell .war-room-stats dt,
+.shell .lab-table th {
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 650;
+  letter-spacing: 0.045em;
+}
+
+.shell .city-pulse dd {
+  font-size: clamp(1.7rem, 2vw, 2rem);
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+}
+
+.shell .attention {
+  margin: 14px 0;
+  padding: 10px 13px;
+  border-left: 3px solid var(--accent);
+  border-radius: 0 var(--radius-control) var(--radius-control) 0;
+  background: var(--critical-soft);
+  color: var(--accent);
+  font-size: 0.84rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.shell .attention-feed > li,
+.shell .war-room-card,
+.shell .replay-policies article,
+.shell .replay-actions > li {
+  border-radius: var(--radius-card);
+}
+
+.shell .attention-feed > li {
+  transition:
+    background-color var(--motion-fast) ease,
+    border-color var(--motion-fast) ease,
+    transform var(--motion-fast) ease;
+}
+
+.shell .attention-feed > li:hover {
+  background: var(--surface-hover);
+  transform: translateY(-1px);
+}
+
+.shell .report-actions button,
+.shell .replay-reports button {
+  min-height: 40px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  color: var(--ink-secondary);
+  transition:
+    color var(--motion-fast) ease,
+    background-color var(--motion-fast) ease,
+    border-color var(--motion-fast) ease,
+    transform var(--motion-fast) ease;
+}
+
+.shell .report-actions button {
+  min-height: 40px;
+  padding: 8px 14px;
+  border-radius: var(--radius-pill);
+}
+
+.shell .report-actions button:hover,
+.shell .replay-reports button:hover {
+  border-color: var(--line-accent);
+  background: var(--surface-hover);
+}
+
+.shell .report-actions button:active,
+.shell .replay-reports button:active {
+  transform: translateY(1px);
+}
+
+.shell .replay-reports button[aria-pressed="true"] {
+  border-color: var(--line-accent);
+  background: var(--teal-soft);
+  color: var(--teal-hover);
+}
+
+.shell :is(input, select, textarea) {
+  min-height: 40px;
+  border-color: var(--line-strong);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  transition:
+    border-color var(--motion-fast) ease,
+    box-shadow var(--motion-fast) ease,
+    background-color var(--motion-fast) ease;
+}
+
+.shell :is(input, select, textarea)::placeholder {
+  color: var(--muted-soft);
+}
+
+.shell :is(input, select, textarea):disabled,
+.shell button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.shell .topbar-context select {
+  min-height: 38px;
+  padding-right: 30px;
+}
+
+.shell .lab-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.82rem;
+}
+
+.shell .table-scroll,
+.shell .tableScroll,
+.shell .replay-table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+}
+
+.shell .lab-table th,
+.shell .lab-table td {
+  min-height: 44px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.shell .lab-table th {
+  top: 60px;
+  z-index: 1;
+  background: var(--surface-muted);
+  text-transform: none;
+}
+
+.shell .lab-table tbody tr {
+  transition: background-color var(--motion-fast) ease;
+}
+
+.shell .lab-table tbody tr:hover {
+  background: var(--surface-hover);
+}
+
+.shell .queue-head {
+  position: sticky;
+  top: 60px;
+  z-index: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.045em;
+}
+
+.shell .empty-state {
+  min-height: 180px;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 12px;
+  margin: 12px 0;
+  padding: 24px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-card);
+  color: var(--muted);
+  text-align: center;
+}
+
+.shell .empty-state p {
+  max-width: 38rem;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.shell .empty-state-mark {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--surface-muted);
+  color: var(--teal);
+}
+
+.shell .status-grid {
+  border-radius: var(--radius-card);
+}
+
+.shell .operations-panels {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(340px, 0.95fr);
+  gap: 16px;
+  align-items: start;
+  margin-top: 16px;
+}
+
+.shell .operations-chart-panel,
+.shell .operations-feed-panel {
+  min-width: 0;
+}
+
+.shell .operations-chart-panel .lab-card {
+  margin: 0;
+}
+
+.shell .operations-feed-panel > h2 {
+  margin: 0 0 12px;
+  color: var(--ink);
+  font-size: 0.875rem;
+  font-weight: 650;
+}
+
+.shell .operations-feed-panel .attention-feed {
+  margin-top: 0;
+}
+
+.shell .cluster-inspector {
+  margin-top: 16px;
+}
+
+.shell .war-room-grid {
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  align-items: start;
+}
+
+.shell .war-room-grid > .war-room-card {
+  grid-column: span 6;
+  min-width: 0;
+}
+
+.shell .war-room-grid > .war-room-card:nth-child(1) {
+  grid-column: span 5;
+}
+
+.shell .war-room-grid > .war-room-card:nth-child(2) {
+  grid-column: span 7;
+}
+
+.shell .war-room-grid > .war-room-card.war-room-wide {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 980px) {
+  .shell .operations-panels {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .shell .war-room-grid > .war-room-card,
+  .shell .war-room-grid > .war-room-card:nth-child(1),
+  .shell .war-room-grid > .war-room-card:nth-child(2) {
+    grid-column: 1 / -1;
+  }
+}
+
+.skeleton {
+  display: block;
+  border-radius: 6px;
+  background: var(--surface-muted);
+  animation: skeleton-pulse 1.25s ease-in-out infinite alternate;
+}
+
+.skeleton-label {
+  width: min(72%, 132px);
+  height: 10px;
+}
+
+.skeleton-value {
+  width: 74px;
+  height: 30px;
+  margin-top: 8px;
+}
+
+.skeleton-heading {
+  width: min(42%, 180px);
+  height: 18px;
+}
+
+.skeleton-copy {
+  width: min(70%, 340px);
+  height: 12px;
+  margin-top: 12px;
+}
+
+.skeleton-chart {
+  width: 100%;
+  height: 164px;
+  margin-top: 18px;
+  border-radius: var(--radius-control);
+}
+
+.skeleton-metric-row {
+  width: 100%;
+  height: 14px;
+  margin-top: 18px;
+}
+
+.skeleton-row-primary {
+  width: min(80%, 190px);
+}
+
+.queue-loading .queue-row > .skeleton {
+  width: min(90%, 120px);
+  height: 12px;
+}
+
+.queue-loading .queue-row > .skeleton-row-primary {
+  width: min(84%, 175px);
+}
+
+.lab-loading .lab-card,
+.chart-skeleton {
+  pointer-events: none;
+}
+
+.replay-loading {
+  display: grid;
+  grid-template-columns: minmax(230px, 0.72fr) minmax(0, 2fr);
+  gap: 16px;
+}
+
+.replay-skeleton-report {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.replay-skeleton-report .skeleton {
+  height: 12px;
+}
+
+.replay-skeleton-detail {
+  min-height: 280px;
+}
+
+.chart-skeleton {
+  display: grid;
+  align-content: start;
+}
+
+.city-pulse > div,
+.lab-card,
+.war-room-card,
+.attention-feed > li {
+  animation: surface-enter 200ms ease-out both;
+}
+
+.attention-feed > li:nth-child(2) {
+  animation-delay: 35ms;
+}
+
+.attention-feed > li:nth-child(3) {
+  animation-delay: 70ms;
+}
+
+.attention-feed > li:nth-child(4) {
+  animation-delay: 105ms;
+}
+
+.arrival-area {
+  transform-origin: center bottom;
+  animation: chart-area-enter 320ms ease-out both;
+}
+
+.arrival-line {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: chart-line-enter 650ms 80ms ease-out forwards;
+}
+
+.arrival-point {
+  opacity: 0;
+  animation: point-enter 180ms ease-out forwards;
+  animation-delay: var(--point-delay, 0ms);
+}
+
+.quality-bar,
+.funnel-bar,
+.arrival-histogram .bar {
+  transform: scaleX(0);
+  transform-origin: left center;
+  animation: bar-enter 380ms ease-out forwards;
+}
+
+svg[data-chart-motion] [data-chart-area] {
+  transform-origin: center bottom;
+  animation: chart-area-enter 320ms ease-out both;
+}
+
+svg[data-chart-motion] [data-chart-line] {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: chart-line-enter 620ms ease-out forwards;
+}
+
+svg[data-chart-motion] [data-chart-line="historical"] {
+  animation-delay: 100ms;
+}
+
+svg[data-chart-motion] [data-chart-point] {
+  opacity: 0;
+  animation: point-enter 180ms ease-out forwards;
+}
+
+svg[data-chart-motion] [data-chart-bar] {
+  transform-box: fill-box;
+  transform-origin: left center;
+  animation: bar-enter 380ms ease-out both;
+}
+
+.arrival-histogram > li:nth-child(2) .bar {
+  animation-delay: 35ms;
+}
+
+.arrival-histogram > li:nth-child(3) .bar {
+  animation-delay: 70ms;
+}
+
+.arrival-histogram > li:nth-child(4) .bar {
+  animation-delay: 105ms;
+}
+
+.drilldown-panel,
+.cluster-inspector,
+.ask-pulse-module-enter {
+  animation: surface-enter 180ms ease-out both;
+}
+
+.lab-table,
+.queue-row,
+.city-pulse,
+.arrival-chart {
+  font-variant-numeric: tabular-nums;
+}
+
+.skip-link {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 20;
+  transform: translateY(-150%);
+  border-radius: var(--radius-control);
+  background: var(--navy);
+  padding: 9px 14px;
+  color: var(--sidebar-ink);
+  font-weight: 650;
+  transition: transform var(--motion-fast) ease;
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+@keyframes skeleton-pulse {
+  from {
+    opacity: 0.56;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes surface-enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes chart-area-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes chart-line-enter {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes point-enter {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes bar-enter {
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@media (max-width: 860px) {
+  .shell .content {
+    padding: 0;
+  }
+
+  .replay-loading {
+    grid-template-columns: 1fr;
+  }
+
+  .replay-skeleton-detail {
+    display: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .shell .workspace {
+    padding: 20px 14px 36px;
+  }
+
+  .shell .primary-action,
+  .shell .secondary-action,
+  .shell .report-actions button {
+    min-height: 44px;
+  }
+
+  .city-pulse {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .city-pulse > div {
+    padding: 12px;
+  }
+
+  .city-pulse dt {
+    min-height: 2.5em;
+    line-height: 1.25;
+  }
+
+  .queue {
+    overflow-x: auto;
+  }
+
+  .queue-head,
+  .queue-row {
+    width: 720px;
+    min-width: 720px;
+  }
+
+  .lab-card,
+  .war-room,
+  .cluster-inspector,
+  .intake-card {
+    padding: 16px;
+  }
+
+  .provenance div {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton,
+  .city-pulse > div,
+  .lab-card,
+  .war-room-card,
+  .attention-feed > li,
+  .arrival-area,
+  .arrival-line,
+  .arrival-point,
+  .quality-bar,
+  .funnel-bar,
+  .arrival-histogram .bar,
+  .drilldown-panel,
+  .cluster-inspector {
+    animation: none;
+    opacity: 1;
+    transform: none;
+    stroke-dashoffset: 0;
+  }
+
+  svg[data-chart-motion] [data-chart-area],
+  svg[data-chart-motion] [data-chart-line],
+  svg[data-chart-motion] [data-chart-point],
+  svg[data-chart-motion] [data-chart-bar] {
+    animation: none;
+    opacity: 1;
+    transform: none;
+    stroke-dashoffset: 0;
+  }
 }
 
 .topology-confirmation {

@@ -30,6 +30,7 @@ export function ArrivalChart({
   excluded,
   excludedLabel,
   emptyLabel,
+  description,
 }: {
   buckets: Bucket[];
   baseline: number | null;
@@ -37,6 +38,7 @@ export function ArrivalChart({
   excluded: number;
   excludedLabel: string;
   emptyLabel: string;
+  description: string;
 }) {
   if (buckets.length < 2) {
     return <p className="war-room-note">{emptyLabel}</p>;
@@ -57,10 +59,10 @@ export function ArrivalChart({
       <svg
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
         role="img"
-        aria-label="Appeals over time"
+        aria-label={description}
       >
         <polygon points={area} className="arrival-area" />
-        <polyline points={points} className="arrival-line" />
+        <polyline points={points} className="arrival-line" pathLength={1} />
         {baseline !== null ? (
           <line
             x1={PAD_X}
@@ -81,6 +83,7 @@ export function ArrivalChart({
               className={
                 isPeak ? "arrival-point arrival-peak" : "arrival-point"
               }
+              style={{ animationDelay: `${Math.min(index * 18, 360)}ms` }}
             >
               <title>
                 {`${bucket.start.slice(11, 16)} · ${bucket.count}\n` +

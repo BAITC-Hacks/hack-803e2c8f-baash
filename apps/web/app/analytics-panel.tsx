@@ -98,24 +98,28 @@ export function AnalyticsPanel({
             Cutoff: {result.data_cutoff} · Rows: {result.rows.length}
           </p>
           <p>Provenance: {result.provenance.join(", ") || "none"}</p>
-          <table>
-            <thead>
-              <tr>
-                {result.columns.map((column) => (
-                  <th key={column.name}>{column.name}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {result.rows.slice(0, 10).map((row, index) => (
-                <tr key={index}>
-                  {row.map((cell, cellIndex) => (
-                    <td key={cellIndex}>{String(cell ?? "—")}</td>
+          <div className="table-scroll">
+            <table className="lab-table">
+              <thead>
+                <tr>
+                  {result.columns.map((column) => (
+                    <th key={column.name} scope="col">
+                      {column.name}
+                    </th>
                   ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {result.rows.slice(0, 10).map((row, index) => (
+                  <tr key={index}>
+                    {row.map((cell, cellIndex) => (
+                      <td key={cellIndex}>{String(cell ?? "—")}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       ) : null}
     </section>

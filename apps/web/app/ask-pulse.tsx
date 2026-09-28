@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { AnalyticsChart } from "./analytics-chart";
 import type { AskResponse, Locale } from "./ask-pulse-types";
+import { Skeleton } from "./skeleton";
 import styles from "./ask-pulse.module.css";
 
 const EXPORT_PURPOSE =
@@ -443,9 +444,12 @@ export function AskPulse({
       ) : null}
       <div aria-live="polite" aria-atomic="true">
         {busy ? (
-          <p className={styles.loading} role="status">
-            {t.loading}
-          </p>
+          <div className={styles.loading} role="status" aria-busy="true">
+            <span className="sr-only">{t.loading}</span>
+            <Skeleton className="skeleton-heading" />
+            <Skeleton className="skeleton-copy" />
+            <Skeleton className="skeleton-chart" />
+          </div>
         ) : null}
         {error ? (
           <div className={styles.state} role="alert">
