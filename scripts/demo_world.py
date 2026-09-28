@@ -324,13 +324,94 @@ class World:
         )
         return str(confirmed.get("status")) == "closed"
 
+    # ------------------------------------------------------------------
+
+    def seed_incidents(self, rng: random.Random) -> int:
+        """Create a few standing incidents in different states.
+
+        Each one goes through the incident endpoints, so membership decisions,
+        versions and audit events are the real ones. Nothing is merged
+        automatically, which stays a human act.
+        """
+        existing = self.client.get("/v1/incidents", headers={"X-Region-Id": REGION})
+        existing.raise_for_status()
+        if existing.json():
+            return 0
+
+        by_topic: dict[str, list[Seeded]] = {}
+        for appeal in self.created:
+            by_topic.setdefault(appeal.topic_id, []).append(appeal)
+
+        # topic, how many members, how many of them to confirm, whether a
+        # supervisor confirms the incident itself.
+        plan = (
+            ("topic:water", 5, 4, True),
+            ("topic:roads", 4, 3, True),
+            ("topic:utilities", 3, 1, False),
+            ("topic:waste", 3, 0, False),
+        )
+
+        created = 0
+        for index, (topic_id, size, confirm_count, confirm_incident) in enumerate(plan):
+            members = by_topic.get(topic_id, [])[:size]
+            if len(members) < 2:
+                continue
+            service = next(service for topic, service, _ in TOPIC_MIX if topic == topic_id)
+            incident = self._post(
+                "/v1/incidents",
+                {
+                    "region_id": REGION,
+                    "topic_id": topic_id,
+                    "service_id": service,
+                    "member_request_ids": [member.request_id for member in members],
+                    "proposal_source": "operator",
+                    "rationale": ["SYNTHETIC_DEMO_WORLD"],
+                },
+                f"world-incident-{index}-{topic_id}",
+            )
+            incident_id = str(incident["incident_id"])
+            created += 1
+
+            for member in members[:confirm_count]:
+                current = self.client.get(
+                    f"/v1/incidents/{incident_id}", headers={"X-Region-Id": REGION}
+                )
+                current.raise_for_status()
+                self._post(
+                    f"/v1/incidents/{incident_id}/members",
+                    {
+                        "request_id": member.request_id,
+                        "incident_version": int(current.json()["version"]),
+                        "decision": "confirm",
+                        "reason_code": "OPERATOR_VERIFIED",
+                        "evidence_refs": [],
+                    },
+                    f"world-member-{incident_id}-{member.source_request_id}",
+                )
+
+            if confirm_incident and confirm_count >= 2:
+                current = self.client.get(
+                    f"/v1/incidents/{incident_id}", headers={"X-Region-Id": REGION}
+                )
+                current.raise_for_status()
+                self._post(
+                    f"/v1/incidents/{incident_id}/confirm",
+                    {
+                        "incident_version": int(current.json()["version"]),
+                        "decision": "confirm",
+                        "reason_code": "TWO_MEMBERS_VERIFIED",
+                    },
+                    f"world-incident-confirm-{incident_id}",
+                )
+        return created
+
 
 def build(client: httpx.Client, *, background: int) -> dict[str, int]:
     rng = random.Random(SEED)  # noqa: S311 - a reproducible city, not cryptography
     now = datetime.now(timezone.utc)
     world = World(client, rng, now)
     existing = world._existing_source_ids()
-    counts = {"appeals": 0, "closed": 0, "handoffs": 0, "skipped": 0}
+    counts = {"appeals": 0, "closed": 0, "handoffs": 0, "skipped": 0, "incidents": 0}
 
     # ---- background city -------------------------------------------------
     for index in range(background):
@@ -400,6 +481,13 @@ def build(client: httpx.Client, *, background: int) -> dict[str, int]:
         world.assign(appeal, key_suffix="-b")
         counts["handoffs"] += 1
 
+    # ---- standing incidents ---------------------------------------------
+    # The incident screen holds nothing until somebody promotes a cluster, so a
+    # reviewer who opens it first learns nothing. These are created through the
+    # incident endpoint like any other and left in different states, so the
+    # filters have something to filter.
+    counts["incidents"] = world.seed_incidents(rng)
+
     return counts
 
 
@@ -420,7 +508,8 @@ def main() -> None:
 
     print(
         f"demo world: {counts['appeals']} appeals, {counts['closed']} verified closures, "
-        f"{counts['handoffs']} handoff loops, {counts['skipped']} already present"
+        f"{counts['handoffs']} handoff loops, {counts['incidents']} incidents, "
+        f"{counts['skipped']} already present"
     )
 
 

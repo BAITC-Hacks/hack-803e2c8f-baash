@@ -244,6 +244,7 @@ def seed() -> None:
                 print(f"synthetic closure evidence: sha256:{EVIDENCE_HASH}")
         seed_emerging(client)
         seed_world()
+    seed_replay_dataset()
 
 
 def check_environment() -> None:
@@ -419,6 +420,24 @@ def seed_world() -> None:
         cwd=ROOT,
         check=True,
     )
+
+
+def seed_replay_dataset() -> None:
+    """Give Replay Lab a real report whose numbers are honestly empty.
+
+    The engine refuses to score synthetic cases, so this seed cannot produce
+    agreeable percentages and does not try. It produces the machinery and the
+    rule together: the dataset, the comparison, and a report stating that every
+    case present was synthetic and none was evaluated.
+    """
+    script = ROOT / "scripts" / "demo_replay_dataset.py"
+    with script.open("rb") as handle:
+        subprocess.run(  # noqa: S603
+            [*COMPOSE, "exec", "-T", "core-api", "python", "-"],
+            cwd=ROOT,
+            check=True,
+            stdin=handle,
+        )
 
 
 def main() -> None:
