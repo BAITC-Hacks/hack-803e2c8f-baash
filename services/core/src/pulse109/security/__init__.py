@@ -15,6 +15,7 @@ from .object_storage import (
     ImmutableObjectStorage,
     LocalImmutableObjectStorage,
     S3CompatibleImmutableObjectStorage,
+    build_object_storage,
 )
 from .session_router import SessionContextResponse, create_session_router
 
@@ -31,6 +32,7 @@ __all__ = [
     "MockMalwareScanner",
     "S3CompatibleImmutableObjectStorage",
     "SessionContextResponse",
+    "build_object_storage",
     "check_pdf_active_content",
     "create_session_router",
     "inspect_mime_type",

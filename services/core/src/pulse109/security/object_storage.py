@@ -234,3 +234,43 @@ class S3CompatibleImmutableObjectStorage:
         }:
             raise ValueError("artifact metadata does not match stored metadata")
         return payload
+
+
+def build_object_storage(settings: object, *, local_directory: str) -> ImmutableObjectStorage:
+    """Select a backend from configuration, never from a credential in a setting.
+
+    boto3 resolves credentials from the environment or an instance role.
+
+    Nothing secret passes through this function or through Settings.
+
+    A configuration file therefore cannot carry a key by accident.
+
+    The SDK is imported only when S3 is selected, which keeps it optional.
+    """
+    mode = getattr(settings, "object_storage_mode", "local")
+    if mode != "s3":
+        return LocalImmutableObjectStorage(local_directory)
+
+    bucket = getattr(settings, "object_storage_bucket", None)
+    if not bucket:
+        raise ValueError("S3 object storage requires a bucket name")
+
+    try:
+        # Optional dependency. It is absent from the local and demo images on
+        # purpose, so the type checker has no stubs for it here either.
+        import boto3  # type: ignore[import-not-found]
+    except ImportError as error:  # pragma: no cover - depends on the deployment image
+        raise RuntimeError(
+            "S3 object storage was selected but boto3 is not installed in this image"
+        ) from error
+
+    client = boto3.client(
+        "s3",
+        endpoint_url=getattr(settings, "object_storage_endpoint", None),
+        region_name=getattr(settings, "object_storage_region", None),
+    )
+    return S3CompatibleImmutableObjectStorage(
+        client,
+        bucket=str(bucket),
+        prefix=str(getattr(settings, "object_storage_prefix", "pulse109/artifacts")),
+    )

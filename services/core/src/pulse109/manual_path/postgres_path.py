@@ -26,8 +26,8 @@ from pulse109.config import get_settings
 from pulse109.decisions import InferenceProvider, LocalLexicalInferenceProvider
 from pulse109.security import (
     ImmutableObjectStorage,
-    LocalImmutableObjectStorage,
     MockMalwareScanner,
+    build_object_storage,
     check_pdf_active_content,
     sanitize_filename,
     validate_attachment,
@@ -106,8 +106,10 @@ class PostgresManualPathService:
     ) -> None:
         self.repository = repository
         self.inference_provider = inference_provider or LocalLexicalInferenceProvider()
-        self.attachment_storage = attachment_storage or LocalImmutableObjectStorage(
-            get_settings().demo_attachment_dir
+        # Attachments follow the configured backend, so switching a deployment to
+        # S3 does not need a code change here.
+        self.attachment_storage = attachment_storage or build_object_storage(
+            get_settings(), local_directory=get_settings().demo_attachment_dir
         )
 
     @staticmethod

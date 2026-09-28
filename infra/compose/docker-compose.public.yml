@@ -1,0 +1,70 @@
+# Public deployment overlay.
+#
+# What changes compared with the local topology: nothing but exposure. The same
+# images run, with the same migrations and the same worker. Only the edge is
+# different, because a public address is the one thing local runs never test.
+#
+# PostgreSQL, the worker, the inference process and the adapters publish no
+# ports here. A reverse proxy terminates TLS and is the only thing the internet
+# can reach. Ports that were convenient locally become an open database on a
+# public IP, which is how demo servers get found.
+#
+# Usage on the server:
+#   docker compose -f infra/compose/docker-compose.yml \
+#                  -f infra/compose/docker-compose.demo.yml \
+#                  -f infra/compose/docker-compose.public.yml up -d
+#
+# Secrets live in .env on the host, which is not in Git.
+
+services:
+  postgres:
+    ports: !override []
+
+  core-api:
+    ports: !override []
+    environment:
+      PULSE109_OBJECT_STORAGE_MODE: ${PULSE109_OBJECT_STORAGE_MODE:-local}
+      PULSE109_OBJECT_STORAGE_BUCKET: ${PULSE109_OBJECT_STORAGE_BUCKET:-}
+      PULSE109_OBJECT_STORAGE_PREFIX: ${PULSE109_OBJECT_STORAGE_PREFIX:-pulse109/artifacts}
+      PULSE109_OBJECT_STORAGE_ENDPOINT: ${PULSE109_OBJECT_STORAGE_ENDPOINT:-}
+      PULSE109_OBJECT_STORAGE_REGION: ${PULSE109_OBJECT_STORAGE_REGION:-}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+
+  worker:
+    ports: !override []
+
+  inference:
+    ports: !override []
+
+  adapter-runtime:
+    ports: !override []
+
+  open311-sandbox:
+    ports: !override []
+
+  web:
+    ports: !override []
+
+  proxy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    depends_on:
+      web:
+        condition: service_healthy
+      core-api:
+        condition: service_healthy
+    environment:
+      # The domain drives the certificate Caddy requests, so it is required.
+      PULSE109_PUBLIC_DOMAIN: ${PULSE109_PUBLIC_DOMAIN:?set the public domain}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ../proxy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  caddy-data:
+  caddy-config:

@@ -152,3 +152,43 @@ def test_a_blob_whose_bytes_disagree_with_the_digest_is_refused(tmp_path) -> Non
         storage.put_immutable(
             payload=payload, sha256=digest, content_type="text/plain", metadata={}
         )
+
+
+class _Settings:
+    """A stand-in for Settings carrying only what the factory reads."""
+
+    def __init__(self, **values: object) -> None:
+        self.object_storage_mode = values.get("mode", "local")
+        self.object_storage_bucket = values.get("bucket")
+        self.object_storage_prefix = values.get("prefix", "pulse109/artifacts")
+        self.object_storage_endpoint = values.get("endpoint")
+        self.object_storage_region = values.get("region")
+
+
+def test_local_mode_returns_the_filesystem_backend(tmp_path) -> None:
+    from pulse109.security.object_storage import build_object_storage
+
+    storage = build_object_storage(_Settings(), local_directory=str(tmp_path))
+    assert isinstance(storage, LocalImmutableObjectStorage)
+
+
+def test_s3_mode_without_a_bucket_is_refused(tmp_path) -> None:
+    """A deployment that names no bucket must fail loudly, not fall back to disk.
+
+    Silently writing citizen evidence to a container filesystem because a
+    setting was missing is exactly the failure nobody notices until the
+    container is replaced.
+    """
+    from pulse109.security.object_storage import build_object_storage
+
+    with pytest.raises(ValueError, match="bucket"):
+        build_object_storage(_Settings(mode="s3"), local_directory=str(tmp_path))
+
+
+def test_no_credential_field_exists_on_the_settings_surface() -> None:
+    """Credentials must never be a setting, so they cannot reach a config file."""
+    from pulse109.config import Settings
+
+    names = set(Settings.model_fields)
+    forbidden = {"access_key", "secret_key", "session_token", "password"}
+    assert not any(any(word in name for word in forbidden) for name in names)

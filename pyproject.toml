@@ -30,6 +30,12 @@ dependencies = [
   "uvicorn[standard]==0.35.0",
 ]
 
+[project.optional-dependencies]
+# Installed only in an image that actually talks to S3. Keeping the SDK out of
+# the default set means a local or demo run cannot depend on it by accident,
+# and the factory raises a clear error when S3 is selected without it.
+s3 = ["boto3==1.40.30"]
+
 [dependency-groups]
 dev = [
   "hypothesis==6.138.15",

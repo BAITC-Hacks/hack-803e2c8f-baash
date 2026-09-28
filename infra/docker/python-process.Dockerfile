@@ -15,7 +15,14 @@ COPY pyproject.toml uv.lock README.md ./
 COPY services ./services
 COPY adapters ./adapters
 COPY contracts ./contracts
-RUN uv sync --frozen --no-dev
+# Optional extras for a deployment, empty by default. A local or demo image
+# carries no cloud SDK, so nothing here can start depending on one by accident.
+ARG PULSE109_EXTRAS=""
+RUN if [ -n "$PULSE109_EXTRAS" ]; then \
+      uv sync --frozen --no-dev --extra "$PULSE109_EXTRAS"; \
+    else \
+      uv sync --frozen --no-dev; \
+    fi
 
 # /app belongs to root, but the process runs as pulse109. The replay snapshot
 # store creates .data/snapshots at import, so it must exist and be writable by

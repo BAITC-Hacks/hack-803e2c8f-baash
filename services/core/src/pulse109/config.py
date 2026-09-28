@@ -38,6 +38,15 @@ class Settings(BaseSettings):
     demo_attachment_dir: str = ".data/attachments"
     control_plane_trusted_keys: list[str] = Field(default_factory=list)
 
+    # Object storage. Credentials are never settings: boto3 reads them from the
+    # environment or an instance role on the host, so nothing secret can reach a
+    # configuration file that might be committed.
+    object_storage_mode: Literal["local", "s3"] = "local"
+    object_storage_bucket: str | None = None
+    object_storage_prefix: str = "pulse109/artifacts"
+    object_storage_endpoint: str | None = None
+    object_storage_region: str | None = None
+
     @property
     def effective_profile(self) -> str:
         return self.profile or self.environment
@@ -53,6 +62,8 @@ class Settings(BaseSettings):
             raise ValueError("An operational profile requires the matching environment")
         if self.effective_profile == "demo" and not self.readiness_database_required:
             raise ValueError("The demo profile requires PostgreSQL readiness")
+        if self.object_storage_mode == "s3" and not self.object_storage_bucket:
+            raise ValueError("S3 object storage requires a bucket name")
         return self
 
 
