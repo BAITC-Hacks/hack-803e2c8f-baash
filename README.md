@@ -181,8 +181,12 @@ implemented, what is partial and what is blocked. In short:
 - No live regional integration. Delivery goes to a deterministic replay adapter.
 - No production identity provider. The demo actor is labelled as development.
 - No approved taxonomy or SLA, so intake policies in the demo are synthetic.
-- No object storage integration. Attachments live in a local volume.
-- Not deployed. Local Docker Compose only.
+- Object storage is selected by configuration. Attachments and replay snapshots
+  use a local volume by default and S3 or a compatible endpoint when a
+  deployment sets one. Credentials never pass through application settings.
+- A public deployment overlay exists, with TLS at the edge and no internal port
+  published. Whether an instance is running is a question about that instance,
+  not about this repository.
 - Replay Lab has an inspection-only report list and policy-level metric diff.
   It has no per-case decision trace because the persisted report does not retain
   per-case outputs, confidence, reason codes, status or action.

@@ -22,6 +22,46 @@ servers get found.
   it serves on 443.
 - Docker Engine and the Compose plugin on the host.
 
+## 0. Find out who already owns 80 and 443
+
+Do this before anything else. On a shared server there is often an edge already
+running, and starting a second one either fails to bind or takes over a name
+somebody else is serving.
+
+```bash
+sudo ss -ltnp '( sport = :80 or sport = :443 )'
+docker ps --format '{{.Names}}\t{{.Ports}}'
+```
+
+**Nothing is listening.** Use this overlay as written. Caddy takes the ports and
+obtains the certificate.
+
+**Something is already listening**, for example an organizer proxy that already
+serves the domain. Do not start a second one. Use the other overlay, which runs
+no edge of its own and binds the web container to loopback:
+
+```bash
+docker compose \
+  -f infra/compose/docker-compose.yml \
+  -f infra/compose/docker-compose.demo.yml \
+  -f infra/compose/docker-compose.behind-proxy.yml \
+  up -d
+curl -fsS http://127.0.0.1:3000/api/health
+```
+
+Then add one entry to the existing proxy, for example in nginx:
+
+```nginx
+location / {
+    proxy_pass http://127.0.0.1:3000;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+```
+
+Taking down a neighbour's configuration to put up your own demo is a worse
+outcome than not deploying.
+
 ## 1. Get the code and the secrets in place
 
 ```bash
@@ -56,19 +96,20 @@ Two rules worth stating plainly. Credentials are not settings, so nothing in
 `services/core/src/pulse109/config.py` can carry one. And `.env` never goes into
 Git, no matter how convenient it looks during a demo.
 
-## 2. Build with the S3 extra
+## 2. Build
 
-The SDK is an optional dependency, so an image that talks to S3 has to ask for
-it. If `PULSE109_OBJECT_STORAGE_MODE=s3` and the extra is missing, the
-application refuses at startup with a clear message rather than writing evidence
-to a container filesystem that disappears on the next deploy.
+The SDK is an optional dependency, and the public overlay already builds the API
+and the worker with the `s3` extra, so there is nothing to remember on the
+command line. If the extra were missing while `PULSE109_OBJECT_STORAGE_MODE=s3`,
+the application would refuse at startup with a clear message rather than writing
+evidence to a container filesystem that disappears on the next deploy.
 
 ```bash
 docker compose \
   -f infra/compose/docker-compose.yml \
   -f infra/compose/docker-compose.demo.yml \
   -f infra/compose/docker-compose.public.yml \
-  build --build-arg PULSE109_EXTRAS=s3
+  build
 ```
 
 ## 3. Start

@@ -22,6 +22,12 @@ services:
 
   core-api:
     ports: !override []
+    build:
+      # The overlay selects S3 at runtime, so the image it builds must carry the
+      # SDK. Leaving this to a remembered --build-arg produces a container that
+      # starts, reads its own configuration and dies on a missing import.
+      args:
+        PULSE109_EXTRAS: s3
     environment:
       PULSE109_OBJECT_STORAGE_MODE: ${PULSE109_OBJECT_STORAGE_MODE:-local}
       PULSE109_OBJECT_STORAGE_BUCKET: ${PULSE109_OBJECT_STORAGE_BUCKET:-}
@@ -33,6 +39,9 @@ services:
 
   worker:
     ports: !override []
+    build:
+      args:
+        PULSE109_EXTRAS: s3
 
   inference:
     ports: !override []

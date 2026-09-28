@@ -1,0 +1,56 @@
+# Public deployment behind an edge that already exists.
+#
+# Use this instead of docker-compose.public.yml when something else already owns
+# 80 and 443 on the host, for example an organizer proxy that already serves the
+# domain. Starting a second edge either fails to bind or takes over a name
+# somebody else is serving, and taking down a neighbour's configuration to put up
+# a demo is a worse outcome than not deploying.
+#
+# Everything internal stays unpublished. The web container is bound to loopback
+# only, so the existing proxy can reach it and the internet cannot.
+#
+# Usage:
+#   docker compose -f infra/compose/docker-compose.yml \
+#                  -f infra/compose/docker-compose.demo.yml \
+#                  -f infra/compose/docker-compose.behind-proxy.yml up -d
+#
+# Then point the existing proxy at 127.0.0.1:3000.
+
+services:
+  postgres:
+    ports: !override []
+
+  core-api:
+    ports: !override []
+    build:
+      args:
+        PULSE109_EXTRAS: s3
+    environment:
+      PULSE109_OBJECT_STORAGE_MODE: ${PULSE109_OBJECT_STORAGE_MODE:-local}
+      PULSE109_OBJECT_STORAGE_BUCKET: ${PULSE109_OBJECT_STORAGE_BUCKET:-}
+      PULSE109_OBJECT_STORAGE_PREFIX: ${PULSE109_OBJECT_STORAGE_PREFIX:-pulse109/artifacts}
+      PULSE109_OBJECT_STORAGE_ENDPOINT: ${PULSE109_OBJECT_STORAGE_ENDPOINT:-}
+      PULSE109_OBJECT_STORAGE_REGION: ${PULSE109_OBJECT_STORAGE_REGION:-}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+
+  worker:
+    ports: !override []
+    build:
+      args:
+        PULSE109_EXTRAS: s3
+
+  inference:
+    ports: !override []
+
+  adapter-runtime:
+    ports: !override []
+
+  open311-sandbox:
+    ports: !override []
+
+  web:
+    # Loopback only. Without the address the port would be published on every
+    # interface, which is the same exposure this overlay exists to avoid.
+    ports: !override
+      - "127.0.0.1:3000:3000"
