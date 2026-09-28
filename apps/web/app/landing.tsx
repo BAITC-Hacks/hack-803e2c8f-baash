@@ -38,7 +38,8 @@ const copy = {
     navDemo: "Демо",
     heroKicker: "Pulse 109 · городские операции",
     language: "Язык страницы",
-    heroTitle: "Intelligence for every city signal.",
+    heroTitleEditorial: "Intelligence for",
+    heroTitleSystem: "every city signal.",
     heroText:
       "Превращайте обращения жителей в понятные действия, связанные инциденты и ранние операционные сигналы.",
     openDemo: "Open Interactive Demo",
@@ -144,7 +145,8 @@ const copy = {
     navDemo: "Демо",
     heroKicker: "Pulse 109 · қалалық операциялар",
     language: "Бет тілі",
-    heroTitle: "Intelligence for every city signal.",
+    heroTitleEditorial: "Intelligence for",
+    heroTitleSystem: "every city signal.",
     heroText:
       "Тұрғындардың өтініштерін түсінікті әрекеттерге, байланысқан оқиғаларға және ерте операциялық белгілерге айналдырыңыз.",
     openDemo: "Open Interactive Demo",
@@ -298,7 +300,12 @@ export function LandingPage() {
         <section className={styles.hero} id="top">
           <div className={styles.heroCopy}>
             <p className={styles.kicker}>{t.heroKicker}</p>
-            <h1>{t.heroTitle}</h1>
+            <h1>
+              <span className={styles.editorialHeadline}>
+                {t.heroTitleEditorial}
+              </span>
+              <span className={styles.systemHeadline}>{t.heroTitleSystem}</span>
+            </h1>
             <p className={styles.heroText}>{t.heroText}</p>
             <div className={styles.heroActions}>
               <Link className={styles.primaryButton} href="/demo">
