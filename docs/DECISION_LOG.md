@@ -756,8 +756,18 @@ Record implementation decisions here when the repository, contracts or available
 - **Evidence:** `docs/ml/`, `ml/evaluation/candidate_compare.py`, `tests/model/test_candidate_compare.py`, existing synthetic baseline and Replay Lab contracts.
 - **Revisit when:** approved, privacy-reviewed KK/RU/mixed gold data and deployment resources support a measured candidate experiment.
 
-### D-XXX — Short title
+### D-071 — Keep operator showcase actions contract-bound and integration reruns disposable
 
+- **Date:** 2026-09-28
+- **Status:** accepted for pilot review
+- **Context:** reviewers need to inspect replay comparisons and incident topology actions, but stored replay reports retain aggregate policy metrics rather than per-case decisions. Reusing an integration database causes state from one pass to influence another. Production object storage, identity infrastructure, and delivery environment have not been supplied.
+- **Decision:** expose only persisted Replay Lab report and aggregate metric differences; label case-level decision traces unavailable rather than reconstructing them. Have War Room controls call the existing region-scoped merge/split API with user confirmation, evidence hash, and idempotency key. Run integration passes in newly created UUID-named PostgreSQL databases, never against the caller database. Provide immutable local/S3-compatible storage adapters without wiring them into attachments or replay until approved infrastructure is supplied.
+- **Alternatives:** render invented case decisions; implement client-side topology changes; truncate shared integration tables; claim a bucket or OIDC deployment exists.
+- **Consequences:** the showcase is inspectable and failures remain visible, while per-case replay trace, production storage wiring, IdP, deployment, retention, and recovery targets remain open external work.
+- **Evidence:** `apps/web/app/replay-lab.tsx`, `apps/web/app/incident-war-room.tsx`, `scripts/run_integration_tests.py`, `services/core/src/pulse109/security/object_storage.py`, `tests/architecture/test_integration_isolation.py`, `infra/runbooks/PILOT_DEPLOYMENT_REQUIREMENTS.md`.
+- **Revisit when:** B02/B03 supply decision-time trace semantics, and B07/B08/B10 supply approved service, identity, storage, privacy, and recovery requirements.
+
+### D-XXX — Short title
 
 - **Date:** YYYY-MM-DD
 - **Status:** proposed | accepted | superseded

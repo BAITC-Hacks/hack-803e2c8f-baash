@@ -10,13 +10,11 @@ from __future__ import annotations
 
 import base64
 import json
-import os
 import re
 from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from hashlib import sha256
-from pathlib import Path
 from typing import Any, cast
 from uuid import NAMESPACE_URL, UUID, uuid4, uuid5
 
@@ -27,6 +25,8 @@ from pulse109_inference.models import InferenceRequest
 from pulse109.config import get_settings
 from pulse109.decisions import InferenceProvider, LocalLexicalInferenceProvider
 from pulse109.security import (
+    ImmutableObjectStorage,
+    LocalImmutableObjectStorage,
     MockMalwareScanner,
     check_pdf_active_content,
     sanitize_filename,
@@ -102,9 +102,13 @@ class PostgresManualPathService:
         self,
         repository: PostgresManualRepository,
         inference_provider: InferenceProvider | None = None,
+        attachment_storage: ImmutableObjectStorage | None = None,
     ) -> None:
         self.repository = repository
         self.inference_provider = inference_provider or LocalLexicalInferenceProvider()
+        self.attachment_storage = attachment_storage or LocalImmutableObjectStorage(
+            get_settings().demo_attachment_dir
+        )
 
     @staticmethod
     def _scope(actual: str, requested: str) -> None:
@@ -372,20 +376,24 @@ class PostgresManualPathService:
 
             attachment_id = uuid4()
             at = _now()
-            storage_dir = Path(settings.demo_attachment_dir)
-            storage_dir.mkdir(parents=True, exist_ok=True)
-            blob = storage_dir / validation.sha256
             try:
-                with blob.open("xb") as stream:
-                    stream.write(content)
-                    stream.flush()
-                    os.fsync(stream.fileno())
-            except FileExistsError:
-                if sha256(blob.read_bytes()).hexdigest() != validation.sha256:
-                    raise ManualPathError(
-                        "attachment_hash_conflict", "Stored attachment hash mismatch.", 503
-                    ) from None
-            object_ref = f"demo-blob://sha256/{validation.sha256}/{sanitized_name}"
+                artifact = self.attachment_storage.put_immutable(
+                    content,
+                    sha256=validation.sha256,
+                    content_type=validation.detected_mime or command.mime_type,
+                    metadata={
+                        "artifact_type": "attachment",
+                        "data_classification": "internal",
+                    },
+                )
+                self.attachment_storage.restore_verified(artifact)
+            except (OSError, ValueError) as exc:
+                raise ManualPathError(
+                    "attachment_storage_unavailable",
+                    "Attachment storage could not verify immutable content.",
+                    503,
+                ) from exc
+            object_ref = artifact.object_ref
             cursor.execute(
                 """
                 INSERT INTO appeals.attachment_ref

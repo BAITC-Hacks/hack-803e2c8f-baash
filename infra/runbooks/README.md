@@ -4,6 +4,7 @@
 - `CALL_RECORDING_GATE.md` — legal, privacy, ARI, storage and fallback prerequisites for audio.
 - `FAILURE_MODE_DEMO.md` — ML and adapter outage rehearsal with manual/outbox fallbacks.
 - `MODEL_POLICY_ROLLBACK.md` — immutable model alias and effective policy rollback.
+- `PILOT_DEPLOYMENT_REQUIREMENTS.md` — supplied infrastructure prerequisites, OIDC configuration, and honest release/restore evidence.
 - `SECURITY_PRIVACY.md` — identity, object access, PII, dependency, SBOM, and scan gates.
 - `RELEASE_REHEARSAL.md` — final evidence and rollback sequence.
 

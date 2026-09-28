@@ -2808,6 +2808,263 @@ textarea:focus-visible {
   margin: 14px 0 6px;
 }
 
+.topology-controls {
+  background: #f8fbfa;
+  border-color: #b9d5d0;
+}
+
+.topology-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.topology-form label {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.topology-form input,
+.topology-form select {
+  width: 100%;
+  min-height: 38px;
+  padding: 7px 9px;
+  border: 1px solid #b9ceca;
+  border-radius: 4px;
+  color: var(--ink);
+  background: var(--surface);
+  font: inherit;
+}
+
+.topology-form label .secondary-action {
+  width: fit-content;
+}
+
+.topology-members {
+  display: grid;
+  gap: 7px;
+  margin: 16px 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+}
+
+.topology-members legend {
+  padding: 0 4px;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.topology-members label,
+.topology-confirmation {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.82rem;
+}
+
+.topology-members code {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.topology-confirmation {
+  margin: 0 0 14px;
+}
+
+.topology-ok {
+  margin: 12px 0 0;
+  padding: 9px 11px;
+  border-radius: 5px;
+  color: #185e58;
+  background: #e0f1ee;
+  font-size: 0.8rem;
+}
+
+/* Replay Lab is an inspection surface. It intentionally has no publish or
+   execute control: archived comparisons explain a past evaluation only. */
+.replay-lab {
+  width: min(1120px, 100%);
+}
+
+.replay-layout {
+  display: grid;
+  grid-template-columns: minmax(230px, 0.72fr) minmax(0, 2fr);
+  gap: 16px;
+}
+
+.replay-reports,
+.replay-detail {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 16px;
+}
+
+.replay-reports {
+  position: static;
+  height: auto;
+  color: var(--ink);
+}
+
+.replay-reports h2,
+.replay-detail h2,
+.replay-provenance h3,
+.replay-trace h3 {
+  margin: 0 0 12px;
+  font-size: 0.95rem;
+}
+
+.replay-reports button {
+  width: 100%;
+  display: grid;
+  gap: 4px;
+  margin-top: 8px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: var(--ink);
+  background: var(--surface);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.replay-reports button[aria-pressed="true"] {
+  border-color: var(--teal);
+  background: #eef7f5;
+}
+
+.replay-reports span,
+.replay-reports small,
+.replay-policies span,
+.replay-provenance dt {
+  color: var(--muted);
+  font-size: 0.74rem;
+}
+
+.replay-policies {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.replay-policies article {
+  display: grid;
+  gap: 5px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--canvas);
+}
+
+.replay-policies strong,
+.replay-policies code,
+.replay-provenance dd {
+  overflow-wrap: anywhere;
+}
+
+.replay-provenance {
+  margin-bottom: 16px;
+  padding: 13px;
+  border-left: 3px solid var(--teal);
+  background: var(--canvas);
+}
+
+.replay-provenance dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px 14px;
+  margin: 0;
+}
+
+.replay-provenance dt,
+.replay-provenance dd {
+  margin: 0;
+}
+
+.replay-provenance dd {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.74rem;
+}
+
+.replay-table-wrap {
+  overflow-x: auto;
+}
+
+.replay-table {
+  width: 100%;
+  min-width: 640px;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.replay-table th,
+.replay-table td {
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+
+.replay-table thead th {
+  color: var(--muted);
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.replay-table tbody th {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.73rem;
+  font-weight: 600;
+}
+
+.diff-kind {
+  display: inline-block;
+  padding: 2px 7px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 0.7rem;
+}
+
+.diff-added {
+  color: var(--teal);
+  border-color: var(--teal);
+}
+.diff-removed {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.diff-changed {
+  color: var(--amber);
+  border-color: var(--amber);
+}
+.diff-unchanged {
+  color: var(--muted);
+}
+
+.replay-trace {
+  margin-top: 16px;
+}
+
+@media (max-width: 760px) {
+  .replay-layout,
+  .replay-policies,
+  .replay-provenance dl,
+  .topology-form {
+    grid-template-columns: 1fr;
+  }
+}
+
 .arrival-chart svg {
   width: 100%;
   height: auto;

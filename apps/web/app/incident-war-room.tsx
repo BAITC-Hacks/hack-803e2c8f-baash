@@ -8,7 +8,7 @@
  * ran" lead an operator to opposite conclusions.
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ReportMap, type ReportPoint } from "./report-map";
 
 type Locale = "ru" | "kk";
@@ -84,6 +84,21 @@ type Workspace = {
   timeline: { occurred_at: string; event_type: string; actor_type: string }[];
   evidence: { evidence_ref: string; evidence_type: string }[];
   synthetic: boolean;
+};
+
+type IncidentDetail = {
+  incident_id: string;
+  region_id: string;
+  state: string;
+  version: number;
+  confirmed_member_request_ids: string[];
+};
+
+type IncidentTopologyResponse = {
+  operation: "merge" | "split";
+  source: IncidentDetail;
+  target: IncidentDetail;
+  member_request_ids: string[];
 };
 
 const copy = {
@@ -168,6 +183,270 @@ function StateBadge({
       {label}
       {status.reason_code ? ` · ${status.reason_code}` : ""}
     </span>
+  );
+}
+
+function IncidentTopologyControls({
+  incident,
+  members,
+  regionId,
+  onChanged,
+}: {
+  incident: Pick<Workspace, "incident_id" | "state" | "version">;
+  members: Member[];
+  regionId: string;
+  onChanged: () => Promise<void>;
+}) {
+  const confirmedMembers = members.filter(
+    (member) => member.membership === "confirmed",
+  );
+  const [operation, setOperation] = useState<"merge" | "split">("split");
+  const [targetId, setTargetId] = useState("");
+  const [target, setTarget] = useState<IncidentDetail | null>(null);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [reasonCode, setReasonCode] = useState("");
+  const [evidenceRef, setEvidenceRef] = useState("");
+  const [confirmed, setConfirmed] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<IncidentTopologyResponse | null>(null);
+  const commandKeys = useRef(new Map<string, string>());
+
+  function commandKey(key: string): string {
+    const current = commandKeys.current.get(key);
+    if (current) return current;
+    const created = crypto.randomUUID();
+    commandKeys.current.set(key, created);
+    return created;
+  }
+
+  async function loadTarget() {
+    if (!targetId.trim()) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const response = await fetch(
+        `/api/core/incidents/${encodeURIComponent(targetId.trim())}`,
+        {
+          headers: { "X-Region-Id": regionId },
+          cache: "no-store",
+        },
+      );
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        throw new Error(body?.detail?.code ?? `HTTP ${response.status}`);
+      }
+      const detail = (await response.json()) as IncidentDetail;
+      if (detail.region_id !== regionId)
+        throw new Error("incident_region_mismatch");
+      setTarget(detail);
+    } catch (failure) {
+      setTarget(null);
+      setError(
+        failure instanceof Error ? failure.message : "incident_unavailable",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function submit() {
+    if (selected.length < 2 || !confirmed || !reasonCode || !evidenceRef)
+      return;
+    if (operation === "merge" && (!target || target.state !== "confirmed"))
+      return;
+    const operationId = `${operation}:${incident.incident_id}:${incident.version}:${target?.incident_id ?? "new"}:${selected.join(",")}`;
+    setBusy(true);
+    setError(null);
+    try {
+      const body =
+        operation === "merge"
+          ? {
+              target_incident_id: target!.incident_id,
+              source_version: incident.version,
+              target_version: target!.version,
+              member_request_ids: selected,
+              reason_code: reasonCode,
+              evidence_refs: [evidenceRef],
+            }
+          : {
+              source_version: incident.version,
+              member_request_ids: selected,
+              reason_code: reasonCode,
+              evidence_refs: [evidenceRef],
+            };
+      const response = await fetch(
+        `/api/core/incidents/${encodeURIComponent(incident.incident_id)}/${operation}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Region-Id": regionId,
+            "Idempotency-Key": commandKey(operationId),
+          },
+          body: JSON.stringify(body),
+        },
+      );
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        throw new Error(payload?.detail?.code ?? `HTTP ${response.status}`);
+      }
+      const responseBody = (await response.json()) as IncidentTopologyResponse;
+      commandKeys.current.delete(operationId);
+      setResult(responseBody);
+      setSelected([]);
+      setConfirmed(false);
+      await onChanged();
+    } catch (failure) {
+      setError(
+        failure instanceof Error
+          ? failure.message
+          : "incident_topology_unconfirmed",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <article className="war-room-card war-room-wide topology-controls">
+      <h3>Incident membership topology</h3>
+      <p className="war-room-note">
+        Human-confirmed only. Appeals keep their own IDs, timelines, and SLA
+        clocks. This control never publishes a policy or merges automatically.
+      </p>
+      <div className="topology-form">
+        <label>
+          Operation
+          <select
+            value={operation}
+            disabled={busy}
+            onChange={(event) => {
+              setOperation(event.target.value as "merge" | "split");
+              setResult(null);
+            }}
+          >
+            <option value="split">
+              Split selected members into proposed incident
+            </option>
+            <option value="merge">
+              Merge selected members into confirmed incident
+            </option>
+          </select>
+        </label>
+        {operation === "merge" ? (
+          <label>
+            Confirmed target incident UUID
+            <input
+              value={targetId}
+              disabled={busy}
+              onChange={(event) => {
+                setTargetId(event.target.value);
+                setTarget(null);
+              }}
+            />
+            <button
+              type="button"
+              className="secondary-action"
+              disabled={busy || !targetId.trim()}
+              onClick={() => void loadTarget()}
+            >
+              Check target
+            </button>
+          </label>
+        ) : null}
+        <label>
+          Reason code
+          <input
+            value={reasonCode}
+            disabled={busy}
+            pattern="[A-Z][A-Z0-9_]{0,63}"
+            onChange={(event) =>
+              setReasonCode(event.target.value.toUpperCase())
+            }
+            placeholder="MERGE_INCIDENT_AREAS"
+          />
+        </label>
+        <label>
+          Evidence SHA-256
+          <input
+            value={evidenceRef}
+            disabled={busy}
+            pattern="[0-9a-f]{64}"
+            onChange={(event) => setEvidenceRef(event.target.value)}
+            placeholder="64 lowercase hexadecimal characters"
+          />
+        </label>
+      </div>
+      {operation === "merge" && target ? (
+        <p
+          className={target.state === "confirmed" ? "topology-ok" : "attention"}
+        >
+          Target {target.incident_id} · {target.state} · v{target.version}
+        </p>
+      ) : null}
+      <fieldset className="topology-members" disabled={busy}>
+        <legend>Select at least two confirmed appeal memberships</legend>
+        {confirmedMembers.length === 0 ? (
+          <p className="war-room-note">No confirmed members can be moved.</p>
+        ) : (
+          confirmedMembers.map((member) => (
+            <label key={member.request_id}>
+              <input
+                type="checkbox"
+                checked={selected.includes(member.request_id)}
+                onChange={(event) =>
+                  setSelected((current) =>
+                    event.target.checked
+                      ? [...current, member.request_id]
+                      : current.filter((id) => id !== member.request_id),
+                  )
+                }
+              />
+              {member.source_request_id} <code>{member.request_id}</code>
+            </label>
+          ))
+        )}
+      </fieldset>
+      <label className="topology-confirmation">
+        <input
+          type="checkbox"
+          checked={confirmed}
+          disabled={busy}
+          onChange={(event) => setConfirmed(event.target.checked)}
+        />{" "}
+        I reviewed membership, target, reason and evidence. Submit this human
+        decision.
+      </label>
+      <button
+        type="button"
+        className="primary-action"
+        disabled={
+          busy ||
+          selected.length < 2 ||
+          !confirmed ||
+          !reasonCode ||
+          !evidenceRef ||
+          (operation === "merge" && target?.state !== "confirmed")
+        }
+        onClick={() => void submit()}
+      >
+        {operation === "merge" ? "Confirm merge" : "Confirm split"}
+      </button>
+      {error ? (
+        <p role="alert" className="attention">
+          {error}
+        </p>
+      ) : null}
+      {result ? (
+        <p role="status" className="topology-ok">
+          {result.operation} committed · source v{result.source.version} ·
+          target v{result.target.version} · {result.member_request_ids.length}{" "}
+          memberships. War Room refreshed; audit timeline and outbox state
+          remain server records.
+        </p>
+      ) : null}
+    </article>
   );
 }
 
@@ -418,6 +697,13 @@ export function IncidentWarRoom({
           ) : null}
           <p className="war-room-note">{t.advisory}</p>
         </article>
+
+        <IncidentTopologyControls
+          incident={workspace}
+          members={workspace.members}
+          regionId={regionId}
+          onChanged={load}
+        />
 
         <article className="war-room-card">
           <h3>{t.sync}</h3>

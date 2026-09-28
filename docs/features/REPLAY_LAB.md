@@ -39,5 +39,14 @@ aggregate would hide it.
 ## Current state
 
 The backend, snapshots and persistence are implemented, and CI reconciles a
-replay report against its snapshot. The decision diff review screen is the
-outstanding piece, and `docs/FEATURE_STATUS.md` is the authority on that line.
+replay report against its snapshot. The operator workspace now lists reports
+and compares the persisted baseline and candidate metrics, versions, cutoff and
+dataset digest. It is inspection-only: it cannot publish a policy, assign an
+appeal, or alter a production decision.
+
+The stored report contract does **not** retain per-case policy outputs,
+confidence, reason codes, status, actions or feature values. The UI renders
+that as `REPLAY_DECISION_TRACE_NOT_RECORDED`, rather than reconstructing or
+inventing a case trace. A future trace contract requires approved historical
+decisions; blocker B02/B03 remains visible. `docs/FEATURE_STATUS.md` is the
+authority on capability state.

@@ -152,13 +152,17 @@ uv run python scripts/demo_runtime.py verify   # the demo, end to end
 ```
 
 PostgreSQL integration tests need `PULSE109_TEST_DATABASE_URL`. Without it
-pytest reports them as skipped, which is not the same as passing.
+pytest reports them as skipped, which is not the same as passing. Run them with
+the isolated runner; it creates, migrates and removes a UUID-named database for
+each pass, without modifying the configured base or demo database:
 
-Point that variable at a database of its own. Several integration tests insert
-catalog and jurisdiction rows and do not clean them up, so a second run against
-the same database sees overlapping records and fails, correctly. CI is green
-because every run starts on a fresh database. Running them against the demo
-database will also fail for the same reason. CI runs four
+```bash
+PULSE109_TEST_DATABASE_URL=postgresql://<role>:<password>@<host>:5432/<any-existing-db> \
+  uv run python scripts/run_integration_tests.py --runs 2
+```
+
+The database role must be allowed to create and drop the runner's own isolated
+databases. CI runs two passes as a second-run regression check. CI runs four
 jobs: quality, a containerised smoke with a restore drill, a demo profile smoke
 and a supply chain audit.
 
@@ -179,7 +183,9 @@ implemented, what is partial and what is blocked. In short:
 - No approved taxonomy or SLA, so intake policies in the demo are synthetic.
 - No object storage integration. Attachments live in a local volume.
 - Not deployed. Local Docker Compose only.
-- Replay Lab has a backend but no decision diff screen.
+- Replay Lab has an inspection-only report list and policy-level metric diff.
+  It has no per-case decision trace because the persisted report does not retain
+  per-case outputs, confidence, reason codes, status or action.
 
 The ten external blockers are recorded in
 [DECISIONS_AND_BLOCKERS.md](DECISIONS_AND_BLOCKERS.md). They belong to the

@@ -90,8 +90,8 @@ from pulse109.recurrence import (
     create_recurrence_router,
 )
 from pulse109.replay import (
-    FileSnapshotStore,
     MemoryReplayRepository,
+    ObjectStorageSnapshotStore,
     PolicyMetrics,
     PostgresReplayRepository,
     ReplayReport,
@@ -100,7 +100,7 @@ from pulse109.replay import (
 )
 from pulse109.reports import ReportRuntime, create_report_router
 from pulse109.retrieval import HybridRetriever, create_retrieval_router, synthetic_corpus
-from pulse109.security import create_session_router
+from pulse109.security import LocalImmutableObjectStorage, create_session_router
 
 app = FastAPI(
     title="Pulse 109 Core API",
@@ -300,7 +300,9 @@ app.include_router(
 
 replay_repository: ReplayRepository | None
 if use_postgres_manual_path:
-    snapshot_store = FileSnapshotStore(settings.replay_snapshot_dir)
+    snapshot_store = ObjectStorageSnapshotStore(
+        LocalImmutableObjectStorage(settings.replay_snapshot_dir)
+    )
     replay_repository = PostgresReplayRepository(settings.database_url, snapshot_store)
 elif synthetic_read_models:
     mem_repo = MemoryReplayRepository()

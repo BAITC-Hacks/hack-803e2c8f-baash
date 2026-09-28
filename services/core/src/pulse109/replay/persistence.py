@@ -18,6 +18,8 @@ from typing import Any, Protocol, cast
 import psycopg
 from psycopg.rows import dict_row
 
+from pulse109.security.object_storage import ImmutableObjectStorage
+
 from .engine import ReplayDataset, ReplayReport
 
 
@@ -64,6 +66,30 @@ class FileSnapshotStore:
         if target_path.is_file():
             return target_path.read_bytes()
         return None
+
+
+class ObjectStorageSnapshotStore:
+    """Adapt the generic immutable artifact boundary to Replay Lab snapshots.
+
+    PostgreSQL deliberately retains the existing canonical ``sha256:<digest>``
+    reference, while the injected storage implementation retains the physical
+    object reference and verifies its bytes before a manifest is committed.
+    """
+
+    def __init__(self, storage: ImmutableObjectStorage) -> None:
+        self.storage = storage
+
+    def put_immutable(self, payload: bytes, *, sha256: str) -> str:
+        artifact = self.storage.put_immutable(
+            payload,
+            sha256=sha256,
+            content_type="application/json",
+            metadata={"artifact_type": "replay_snapshot"},
+        )
+        if artifact.sha256 != sha256:
+            raise ValueError("artifact storage returned an unexpected snapshot digest")
+        self.storage.restore_verified(artifact)
+        return f"sha256:{sha256}"
 
 
 ConnectionFactory = Callable[..., AbstractContextManager[Any]]

@@ -10,6 +10,7 @@ import { IncidentWarRoom } from "./incident-war-room";
 import { IncidentWorkflowPanel } from "./incident-workflow-panel";
 import { OperationsCenter } from "./operations-center";
 import { OwnershipHandoffPanel } from "./ownership-handoff-panel";
+import { ReplayLab } from "./replay-lab";
 
 type Locale = "ru" | "kk";
 type Appeal = {
@@ -65,6 +66,7 @@ const labels = {
   ru: {
     operations: "Операционный центр",
     incidents: "Инциденты",
+    replay: "Replay Lab",
     datalab: "Лаборатория данных",
     intake: "Подать обращение",
     queue: "Очередь оператора",
@@ -89,6 +91,7 @@ const labels = {
   kk: {
     operations: "Операциялық орталық",
     incidents: "Оқиғалар",
+    replay: "Replay Lab",
     datalab: "Деректер зертханасы",
     intake: "Өтініш беру",
     queue: "Оператор кезегі",
@@ -174,7 +177,13 @@ export default function OperatorWorkspace() {
   }
 
   const [view, setView] = useState<
-    "operations" | "datalab" | "queue" | "incidents" | "intake" | "situation"
+    | "operations"
+    | "datalab"
+    | "queue"
+    | "incidents"
+    | "replay"
+    | "intake"
+    | "situation"
   >("operations");
   const [warRoomIncidentId, setWarRoomIncidentId] = useState<string | null>(
     null,
@@ -446,7 +455,13 @@ export default function OperatorWorkspace() {
   // The shell separates where you are from what you are doing. A row of tabs
   // across the top made every screen look like a setting of one page, which is
   // why the application read as an admin panel rather than a product.
-  const primaryViews = ["operations", "queue", "incidents", "datalab"] as const;
+  const primaryViews = [
+    "operations",
+    "queue",
+    "incidents",
+    "datalab",
+    "replay",
+  ] as const;
   const secondaryViews = ["intake", "situation"] as const;
 
   return (
@@ -562,6 +577,11 @@ export default function OperatorWorkspace() {
         {view === "datalab" ? (
           <div className="workspace real-workspace">
             <DataLab locale={locale} regionId={region} />
+          </div>
+        ) : null}
+        {view === "replay" ? (
+          <div className="workspace real-workspace">
+            <ReplayLab locale={locale} regionId={region} />
           </div>
         ) : null}
         {view === "intake" ? (

@@ -10,6 +10,12 @@ from .attachments import (
     validate_attachment,
 )
 from .identity import ActorContext, AuthenticatedActor, require_actor
+from .object_storage import (
+    ImmutableArtifact,
+    ImmutableObjectStorage,
+    LocalImmutableObjectStorage,
+    S3CompatibleImmutableObjectStorage,
+)
 from .session_router import SessionContextResponse, create_session_router
 
 __all__ = [
@@ -17,9 +23,13 @@ __all__ = [
     "ActorContext",
     "AttachmentValidationResult",
     "AuthenticatedActor",
+    "ImmutableArtifact",
+    "ImmutableObjectStorage",
+    "LocalImmutableObjectStorage",
     "MalwareScanResult",
     "MalwareScanner",
     "MockMalwareScanner",
+    "S3CompatibleImmutableObjectStorage",
     "SessionContextResponse",
     "check_pdf_active_content",
     "create_session_router",
