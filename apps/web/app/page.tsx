@@ -1,6 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  Activity,
+  ChartNoAxesCombined,
+  ClipboardPlus,
+  Inbox,
+  RotateCcw,
+  ShieldCheck,
+  Siren,
+} from "lucide-react";
 import { Intake } from "./intake";
 import { AnalyticsPanel } from "./analytics-panel";
 import { ClosureIntegrityPanel } from "./closure-integrity-panel";
@@ -56,6 +65,16 @@ type AttachmentRef = {
 // local fallback mirrors whatever region it was asked about, so this default
 // stands in until a real one is connected.
 const DEFAULT_REGION = process.env.NEXT_PUBLIC_PULSE109_REGION ?? "ALA";
+
+const viewIcons = {
+  operations: Activity,
+  queue: Inbox,
+  incidents: Siren,
+  datalab: ChartNoAxesCombined,
+  replay: RotateCcw,
+  intake: ClipboardPlus,
+  situation: ShieldCheck,
+} as const;
 
 type SessionContext = {
   regions: string[];
@@ -467,29 +486,54 @@ export default function OperatorWorkspace() {
   return (
     <div className="shell">
       <aside className="sidebar" aria-label="Sections">
-        <strong className="brand">Pulse 109</strong>
+        <strong className="brand">
+          <span className="brand-signal" aria-hidden="true">
+            <i />
+            <i />
+            <i />
+          </span>
+          <span>Pulse 109</span>
+        </strong>
         <nav className="sidebar-nav">
-          {primaryViews.map((name) => (
-            <button
-              key={name}
-              type="button"
-              aria-current={view === name ? "page" : undefined}
-              onClick={() => setView(name)}
-            >
-              {copy[name]}
-            </button>
-          ))}
+          {primaryViews.map((name) => {
+            const Icon = viewIcons[name];
+            return (
+              <button
+                key={name}
+                type="button"
+                aria-current={view === name ? "page" : undefined}
+                onClick={() => setView(name)}
+              >
+                <Icon
+                  size={16}
+                  aria-hidden="true"
+                  focusable="false"
+                  strokeWidth={1.8}
+                />
+                <span>{copy[name]}</span>
+              </button>
+            );
+          })}
           <span className="sidebar-divider" role="presentation" />
-          {secondaryViews.map((name) => (
-            <button
-              key={name}
-              type="button"
-              aria-current={view === name ? "page" : undefined}
-              onClick={() => setView(name)}
-            >
-              {copy[name]}
-            </button>
-          ))}
+          {secondaryViews.map((name) => {
+            const Icon = viewIcons[name];
+            return (
+              <button
+                key={name}
+                type="button"
+                aria-current={view === name ? "page" : undefined}
+                onClick={() => setView(name)}
+              >
+                <Icon
+                  size={16}
+                  aria-hidden="true"
+                  focusable="false"
+                  strokeWidth={1.8}
+                />
+                <span>{copy[name]}</span>
+              </button>
+            );
+          })}
         </nav>
       </aside>
 

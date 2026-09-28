@@ -89,6 +89,7 @@ type ClusterDetail = {
 const copy = {
   ru: {
     title: "Операционный центр",
+    kicker: "01 / Ситуация сейчас",
     intro:
       "Что требует внимания прямо сейчас. Каждая строка открывается, ни одна не создаёт работу автоматически.",
     scan: "Поиск возникающих проблем",
@@ -128,6 +129,7 @@ const copy = {
   },
   kk: {
     title: "Операциялық орталық",
+    kicker: "01 / Қазіргі жағдай",
     intro:
       "Қазір неге назар керек. Әр жол ашылады, ешқайсысы өздігінен жұмыс жасамайды.",
     scan: "Пайда болған мәселелерді іздеу",
@@ -336,6 +338,7 @@ export function OperationsCenter({
     <section className="operations" aria-labelledby="operations-title">
       <div className="section-heading">
         <div>
+          <p className="eyebrow">{t.kicker}</p>
           <h1 id="operations-title">{t.title}</h1>
           <p>{t.intro}</p>
         </div>
