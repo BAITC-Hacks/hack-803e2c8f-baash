@@ -140,7 +140,7 @@ def main() -> int:
     candidate = StaticPolicy("routing-lexical", "1.1.0", offset=1)
     report = ReplayEngine().compare(dataset, baseline, candidate)
     # An actor label, not a credential. The store records who produced a report.
-    repository.persist_report(report, dataset, created_by_token=SEED_ACTOR)  # noqa: S106
+    repository.persist_report(report, dataset, created_by_token=SEED_ACTOR)
 
     print(
         f"replay dataset {dataset.dataset_id}: {len(dataset.cases)} synthetic cases, "
