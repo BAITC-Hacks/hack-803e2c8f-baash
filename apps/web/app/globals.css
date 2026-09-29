@@ -1,43 +1,73 @@
+/* Core Typefaces: PP Formula SemiExtended + IBM Plex Sans + Cinetype */
+@font-face {
+  font-family: "PP Formula SemiExtended";
+  src: local("PP Formula SemiExtended"), local("PP Formula"), local("Space Grotesk");
+  font-weight: 400 800;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Cinetype";
+  src: local("Cinetype"), local("IBM Plex Mono");
+  font-weight: 400 700;
+  font-display: swap;
+}
+
 :root {
   color-scheme: light;
-  --ink: #11181c;
-  --ink-secondary: #33434b;
-  --muted: #66727a;
-  --muted-soft: #a6b2b8;
-  --line: #d8e1e5;
-  --line-soft: #e7edf0;
-  --line-strong: #bdcbd1;
-  --line-accent: #b5ccd4;
+  --ink: #080720;
+  --ink-secondary: #252128;
+  --muted: #6a565b;
+  --muted-soft: #99797d;
+  --line: rgba(8, 7, 32, 0.12);
+  --line-soft: rgba(8, 7, 32, 0.06);
+  --line-strong: rgba(8, 7, 32, 0.24);
+  --line-accent: rgba(212, 158, 70, 0.35);
   --surface: #ffffff;
-  --surface-raised: #ffffff;
-  --surface-muted: #eef3f5;
-  --surface-hover: #f5f9fa;
-  --canvas: #f4f7f8;
-  --navy: #15232b;
-  --navy-raised: #20323b;
-  --sidebar-ink: #edf3f6;
-  --sidebar-muted: #b8c4ca;
-  --sidebar-icon: #8ea4ae;
-  --sidebar-icon-active: #9fd0da;
-  --signal: #71aab9;
-  --sidebar-hover: rgb(255 255 255 / 7%);
-  --sidebar-active: rgb(255 255 255 / 10%);
-  --accent: #b44848;
-  --critical-soft: #f8e9e8;
-  --teal: #1e5f74;
-  --teal-hover: #174b5b;
-  --teal-soft: #e3f0f4;
-  --amber: #b97922;
-  --warning-soft: #fbf3e4;
-  --success: #2d7a64;
-  --success-soft: #e7f2ed;
-  --info: #3b6fb6;
-  --info-soft: #eaf0fa;
-  --focus-ring: #5f9db1;
+  --surface-raised: #fbf9f9;
+  --surface-muted: #f6f3ed;
+  --surface-hover: #f1ede4;
+  --canvas: #f6f3ed;
+  --navy: #080720;
+  --navy-raised: #14141c;
+  --sidebar-ink: #fbf9f9;
+  --sidebar-muted: #bcb4d4;
+  --sidebar-icon: #ecc484;
+  --sidebar-icon-active: #d49e46;
+  --signal: #d49e46;
+  --sidebar-hover: rgb(255 255 255 / 8%);
+  --sidebar-active: rgb(255 255 255 / 14%);
+  --accent: #d49e46;
+  --critical-soft: #fbf0f0;
+  --teal: #080720;
+  --teal-hover: #14141c;
+  --teal-soft: #f3efe6;
+  --amber: #d49e46;
+  --warning-soft: #fdf6ec;
+  --success: #5c9c4c;
+  --success-soft: #edf5eb;
+  --info: #080720;
+  --info-soft: #f0eef8;
+  --focus-ring: #d49e46;
   --on-primary: #ffffff;
-  --radius-control: 10px;
-  --radius-card: 12px;
-  --radius-pill: 999px;
+  --hex-ink: #080720;
+  --hex-gold: #d49e46;
+  --hex-gold-soft: #ecc484;
+  --hex-status-green: #5c9c4c;
+  --hex-muted-violet: #bcb4d4;
+  --hex-surface: #ffffff;
+  --hex-surface-paper: #fbf9f9;
+  --hex-canvas: #f6f3ed;
+  --hex-line: rgba(8, 7, 32, 0.12);
+  --hex-line-subtle: rgba(8, 7, 32, 0.06);
+  --hex-line-strong: rgba(8, 7, 32, 0.22);
+  --hex-radius: 1px;
+  --hex-font-display: "PP Formula SemiExtended", "PP Formula", "Space Grotesk", sans-serif;
+  --hex-font-sans: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --hex-font-mono: "Cinetype", "IBM Plex Mono", monospace;
+  --radius-control: 1px;
+  --radius-card: 1px;
+  --radius-pill: 2px;
   --motion-fast: 150ms;
   --motion-normal: 200ms;
 }
@@ -56,14 +86,13 @@ body {
   color: var(--ink);
   background: var(--canvas);
   font-family:
+    "IBM Plex Sans",
     Inter,
     ui-sans-serif,
     system-ui,
     -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
     sans-serif;
-  letter-spacing: 0;
+  letter-spacing: -0.01em;
   line-height: 1.5;
 }
 
@@ -72,40 +101,45 @@ a {
 }
 
 .topbar {
-  min-height: 58px;
-  padding: 0 24px;
+  min-height: 56px;
+  padding: 0 28px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: var(--navy);
+  background: var(--hex-ink);
   color: var(--surface);
-  border-bottom: 3px solid var(--accent);
+  border-bottom: 2px solid var(--hex-gold);
 }
 
 .view-switch {
   display: flex;
   gap: 2px;
-  padding: 3px;
-  background: var(--navy-raised);
-  border-radius: 4px;
+  padding: 2px;
+  background: #14141c;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1px;
 }
 
 .view-switch button {
-  min-height: 32px;
-  padding: 6px 11px;
+  min-height: 30px;
+  padding: 5px 12px;
   border: 0;
-  border-radius: 3px;
+  border-radius: 1px;
   color: var(--sidebar-muted);
   background: transparent;
-  font: inherit;
-  font-size: 12px;
-  font-weight: 700;
+  font-family: "IBM Plex Sans", sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
   cursor: pointer;
+  transition: all 140ms ease;
 }
 
 .view-switch button[aria-pressed="true"] {
-  color: var(--ink);
-  background: var(--surface);
+  color: var(--hex-ink);
+  background: var(--hex-gold-soft);
+  font-weight: 700;
 }
 
 .brand {
@@ -136,14 +170,14 @@ a {
   gap: 2px;
   padding: 2px;
   background: var(--navy-raised);
-  border-radius: 4px;
+  border-radius: var(--hex-radius);
 }
 
 .locale-switch button {
   min-height: 28px;
   padding: 4px 7px;
   border: 0;
-  border-radius: 3px;
+  border-radius: var(--hex-radius);
   color: var(--sidebar-muted);
   background: transparent;
   font: inherit;
@@ -207,7 +241,7 @@ nav a.active {
   gap: 10px;
   padding: 12px;
   border-top: 1px solid var(--line);
-  color: var(--teal);
+  color: var(--hex-ink);
 }
 
 .fallback div,
@@ -242,31 +276,46 @@ nav a.active {
 }
 
 .eyebrow {
-  margin: 0 0 5px;
-  color: var(--teal);
+  margin: 0 0 6px;
+  color: var(--hex-gold);
+  font-family: var(--hex-font-mono);
   font-size: 11px;
-  font-weight: 650;
-  letter-spacing: 0.07em;
+  font-weight: 600;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 h1,
 h2,
+h3,
 p {
   margin-top: 0;
 }
 
 h1 {
   margin-bottom: 0;
-  font-size: clamp(25px, 2vw, 30px);
+  font-family: var(--hex-font-display);
+  font-size: clamp(26px, 2.5vw, 36px);
   line-height: 1.15;
-  font-weight: 650;
-  letter-spacing: -0.03em;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  color: var(--hex-ink);
 }
 
 h2 {
   margin-bottom: 0;
-  font-size: 19px;
+  font-family: var(--hex-font-sans);
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  color: var(--hex-ink);
+}
+
+h3 {
+  font-family: var(--hex-font-display);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--hex-ink);
 }
 
 .count {
@@ -318,8 +367,8 @@ h2 {
 }
 
 .queue-row.selected {
-  background: var(--teal-soft);
-  box-shadow: inset 3px 0 0 var(--teal);
+  background: rgba(212, 158, 70, 0.08);
+  box-shadow: inset 3px 0 0 var(--hex-gold);
 }
 
 .queue-row:focus-visible,
@@ -386,12 +435,16 @@ textarea:focus-visible {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 28px;
-  padding: 5px 9px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 700;
+  min-height: 24px;
+  padding: 2px 8px;
+  border-radius: var(--hex-radius);
+  font-family: var(--hex-font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   white-space: nowrap;
+  border: 1px solid currentColor;
 }
 
 .status-chip {
@@ -444,7 +497,7 @@ textarea:focus-visible {
   margin: 24px;
   padding: 22px;
   border: 1px solid var(--line-accent);
-  border-radius: 6px;
+  border-radius: var(--hex-radius);
   background: var(--surface-muted);
 }
 
@@ -474,7 +527,7 @@ textarea:focus-visible {
 .advisory-chip {
   flex: none;
   padding: 6px 10px;
-  border-radius: 999px;
+  border-radius: var(--hex-radius);
   color: var(--success);
   background: var(--success-soft);
   font-size: 12px;
@@ -508,7 +561,7 @@ textarea:focus-visible {
   min-height: 40px;
   padding: 8px 10px;
   border: 1px solid var(--line-strong);
-  border-radius: 4px;
+  border-radius: var(--hex-radius);
   background: white;
   color: var(--ink);
   font: inherit;
@@ -517,7 +570,7 @@ textarea:focus-visible {
 
 .ownership-outcome-form textarea {
   resize: vertical;
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-family: var(--hex-font-mono);
 }
 
 .ownership-facts {
@@ -544,7 +597,7 @@ textarea:focus-visible {
 .ownership-error {
   margin: 0;
   padding: 9px 11px;
-  border-radius: 4px;
+  border-radius: var(--hex-radius);
   color: var(--amber);
   background: var(--warning-soft);
   font-size: 13px;
@@ -561,7 +614,7 @@ textarea:focus-visible {
   min-width: 0;
   padding: 13px;
   border: 1px solid var(--line);
-  border-radius: 5px;
+  border-radius: var(--hex-radius);
   background: white;
 }
 
@@ -630,7 +683,7 @@ textarea:focus-visible {
   display: grid;
   gap: 5px;
   padding: 11px;
-  border-radius: 4px;
+  border-radius: var(--hex-radius);
   color: var(--success);
   background: var(--success-soft);
   font-size: 13px;
@@ -660,14 +713,14 @@ textarea:focus-visible {
   width: 18px;
   min-height: 18px;
   margin: 1px 0 0;
-  accent-color: var(--teal);
+  accent-color: var(--hex-gold);
 }
 
 .closure-panel {
   margin: 24px;
   padding: 22px;
   border: 1px solid var(--line-soft);
-  border-radius: 6px;
+  border-radius: var(--hex-radius);
   background: var(--surface-hover);
 }
 
@@ -675,7 +728,7 @@ textarea:focus-visible {
   margin: 24px;
   padding: 22px;
   border: 1px solid var(--line-accent);
-  border-radius: 6px;
+  border-radius: var(--hex-radius);
   background: var(--surface-muted);
 }
 
@@ -736,7 +789,7 @@ textarea:focus-visible {
   min-height: 40px;
   padding: 8px 10px;
   border: 1px solid var(--line-strong);
-  border-radius: 4px;
+  border-radius: var(--hex-radius);
   background: white;
   color: var(--ink);
   font: inherit;
@@ -758,7 +811,7 @@ textarea:focus-visible {
   gap: 6px;
   margin-top: 14px;
   padding: 12px;
-  border-radius: 4px;
+  border-radius: var(--hex-radius);
   color: var(--success);
   background: var(--success-soft);
   font-size: 13px;
@@ -782,7 +835,7 @@ textarea:focus-visible {
 
 .recurrence-abstention {
   padding: 10px;
-  border-radius: 4px;
+  border-radius: var(--hex-radius);
   color: var(--amber) !important;
   background: var(--warning-soft);
 }
@@ -895,7 +948,7 @@ textarea:focus-visible {
 }
 
 .recommendation-panel li > strong {
-  color: var(--teal);
+  color: var(--hex-ink);
   font-size: 13px;
 }
 
@@ -938,16 +991,17 @@ textarea:focus-visible {
 
 .primary-action,
 .secondary-action {
-  min-height: 40px;
-  padding: 9px 16px;
+  min-height: 38px;
+  padding: 8px 16px;
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  border-radius: var(--radius-pill);
+  gap: 8px;
+  border-radius: var(--hex-radius);
   border: 1px solid transparent;
-  font: inherit;
+  font-family: var(--hex-font-sans);
   font-size: 13px;
-  font-weight: 650;
+  font-weight: 600;
+  letter-spacing: 0.01em;
   cursor: pointer;
   transition:
     color var(--motion-fast) ease,
@@ -958,24 +1012,26 @@ textarea:focus-visible {
 }
 
 .primary-action {
-  color: var(--on-primary);
-  background: var(--teal);
+  color: #ffffff;
+  background: var(--hex-ink);
+  border-color: var(--hex-ink);
 }
 
 .secondary-action {
-  color: var(--ink-secondary);
+  color: var(--hex-ink);
   background: var(--surface);
   border-color: var(--line-strong);
 }
 
 .primary-action:hover {
-  background: var(--teal-hover);
+  background: #191820;
+  border-color: var(--hex-gold);
   transform: translateY(-1px);
 }
 
 .secondary-action:hover {
   background: var(--surface-hover);
-  border-color: var(--line-accent);
+  border-color: var(--hex-ink);
   transform: translateY(-1px);
 }
 
@@ -1014,7 +1070,7 @@ textarea:focus-visible {
   color: var(--ink);
   background: var(--surface);
   border: 1px solid var(--line-strong);
-  border-radius: 4px;
+  border-radius: var(--hex-radius);
   font: inherit;
   font-size: 13px;
 }
@@ -1037,7 +1093,7 @@ textarea:focus-visible {
   align-items: center;
   gap: 8px;
   margin-bottom: 12px;
-  color: var(--teal);
+  color: var(--hex-ink);
 }
 
 .activity-heading h3 {
@@ -1068,7 +1124,7 @@ textarea:focus-visible {
 }
 
 .timeline-dot.complete {
-  background: var(--teal);
+  background: var(--hex-status-green);
 }
 
 .timeline li div {
@@ -1116,7 +1172,7 @@ textarea:focus-visible {
 .system-state {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: var(--hex-radius);
 }
 
 .workflow-state {
@@ -1136,7 +1192,7 @@ textarea:focus-visible {
   min-height: 36px;
   padding: 6px 9px;
   border: 1px solid var(--line-strong);
-  border-radius: 4px;
+  border-radius: var(--hex-radius);
   color: var(--ink);
   background: var(--surface);
   font: inherit;
@@ -1189,7 +1245,7 @@ textarea:focus-visible {
   width: min(480px, calc(100% - 32px));
   padding: 24px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--hex-radius);
   color: var(--ink);
   box-shadow: 0 18px 60px rgb(24 32 31 / 22%);
 }
@@ -1219,7 +1275,7 @@ textarea:focus-visible {
   min-height: 40px;
   padding: 8px 10px;
   border: 1px solid var(--line-strong);
-  border-radius: 4px;
+  border-radius: var(--hex-radius);
   color: var(--ink);
   background: var(--surface);
   font: inherit;
@@ -1272,7 +1328,7 @@ textarea:focus-visible {
   gap: 0.85rem;
   padding: 1.1rem;
   border: 1px solid var(--line, #dce4e7);
-  border-radius: 14px;
+  border-radius: var(--hex-radius);
   background: var(--surface-muted, #f7f9fa);
 }
 
@@ -1312,9 +1368,10 @@ textarea:focus-visible {
   display: inline-flex;
   margin-top: 0.45rem;
   padding: 0.2rem 0.5rem;
-  border-radius: 999px;
-  background: var(--teal-soft);
-  color: var(--teal-hover);
+  border-radius: var(--hex-radius);
+  background: rgba(212, 158, 70, 0.12);
+  color: var(--hex-ink);
+  border: 1px solid var(--hex-gold);
   font-size: 0.75rem;
 }
 
@@ -1336,7 +1393,7 @@ textarea:focus-visible {
 .required-evidence li {
   padding: 0.25rem 0.55rem;
   border: 1px solid var(--line, #dce4e7);
-  border-radius: 999px;
+  border-radius: var(--hex-radius);
   background: white;
   font-size: 0.75rem;
 }
@@ -1369,13 +1426,13 @@ textarea:focus-visible {
   margin: 26px 0 30px;
   overflow: hidden;
   background: var(--line-soft);
-  border-radius: 999px;
+  border-radius: var(--hex-radius);
 }
 
 .progress-track span {
   display: block;
   height: 100%;
-  background: var(--teal);
+  background: var(--hex-ink);
   border-radius: inherit;
   transition: width 180ms ease;
 }
@@ -1408,7 +1465,7 @@ textarea:focus-visible {
   min-height: 44px;
   padding: 10px 12px;
   border: 1px solid var(--line-accent);
-  border-radius: 4px;
+  border-radius: var(--hex-radius);
   color: var(--ink);
   background: var(--surface);
   font: inherit;
@@ -1435,7 +1492,7 @@ textarea:focus-visible {
   align-items: center;
   gap: 9px;
   border: 1px solid var(--line);
-  border-radius: 4px;
+  border-radius: var(--hex-radius);
   color: var(--ink);
   cursor: pointer;
 }
@@ -1444,7 +1501,7 @@ textarea:focus-visible {
   width: 18px;
   height: 18px;
   margin: 0;
-  accent-color: var(--teal);
+  accent-color: var(--hex-gold);
 }
 
 .form-error {
@@ -1457,7 +1514,7 @@ textarea:focus-visible {
 .draft-status {
   min-height: 18px;
   margin: 14px 0 0;
-  color: var(--teal);
+  color: var(--hex-ink);
   font-size: 12px;
 }
 
@@ -1484,7 +1541,7 @@ textarea:focus-visible {
   gap: 4px;
   padding: 13px;
   border: 1px solid var(--line-strong);
-  border-radius: 4px;
+  border-radius: var(--hex-radius);
   background: var(--surface-hover);
 }
 
@@ -1531,7 +1588,7 @@ textarea:focus-visible {
   gap: 1px;
   background: var(--line);
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: var(--hex-radius);
   overflow: hidden;
 }
 
@@ -1543,7 +1600,7 @@ textarea:focus-visible {
 
 .status-grid svg {
   margin-bottom: 8px;
-  color: var(--teal);
+  color: var(--hex-gold);
 }
 
 .situation {
@@ -1579,7 +1636,7 @@ textarea:focus-visible {
   padding: 20px;
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: var(--hex-radius);
 }
 
 .band-title {
@@ -1588,7 +1645,7 @@ textarea:focus-visible {
 
 .band-title svg,
 .panel-heading svg {
-  color: var(--teal);
+  color: var(--hex-gold);
 }
 
 .band-title h2,
@@ -1634,7 +1691,7 @@ textarea:focus-visible {
 }
 
 .state-present {
-  color: var(--teal);
+  color: var(--hex-status-green);
 }
 
 .state-stale {
@@ -1656,7 +1713,7 @@ textarea:focus-visible {
   grid-column: 1 / -1;
   padding: 22px;
   border: 1px solid var(--border);
-  border-radius: 22px;
+  border-radius: var(--hex-radius);
   background: var(--surface);
 }
 
@@ -1665,7 +1722,7 @@ textarea:focus-visible {
   margin-top: 16px;
   overflow: hidden;
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: var(--hex-radius);
 }
 
 .map-alternative {
@@ -1715,7 +1772,7 @@ textarea:focus-visible {
   min-height: 240px;
   padding: 22px;
   border: 1px solid var(--border);
-  border-radius: 20px;
+  border-radius: var(--hex-radius);
   background: var(--surface);
 }
 
@@ -1751,7 +1808,7 @@ textarea:focus-visible {
   width: 100%;
   padding: 11px 12px;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--hex-radius);
 }
 
 @media (max-width: 960px) {
@@ -1783,7 +1840,7 @@ textarea:focus-visible {
   flex-direction: column;
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: var(--hex-radius);
 }
 
 .panel-heading {
@@ -1813,7 +1870,7 @@ textarea:focus-visible {
 .trend-chart span {
   width: min(30px, 80%);
   min-height: 4px;
-  background: var(--teal);
+  background: var(--hex-ink);
   border-radius: 2px 2px 0 0;
 }
 
@@ -1922,7 +1979,7 @@ textarea:focus-visible {
   align-items: center;
   gap: 6px;
   border: 1px solid var(--line-accent);
-  border-radius: 4px;
+  border-radius: var(--hex-radius);
   color: var(--ink);
   background: var(--surface);
   font: inherit;
@@ -1933,7 +1990,7 @@ textarea:focus-visible {
 
 .report-state {
   min-width: 140px;
-  color: var(--teal);
+  color: var(--hex-ink);
   font-size: 12px;
   text-align: right;
 }
@@ -2150,9 +2207,17 @@ textarea:focus-visible {
 
 .city-pulse > div {
   background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 14px 16px;
+  border: 1px solid var(--hex-line);
+  border-top: 2px solid var(--hex-gold);
+  border-radius: var(--hex-radius);
+  padding: 14px 18px;
+  position: relative;
+  transition: border-color var(--motion-fast) ease, box-shadow var(--motion-fast) ease;
+}
+
+.city-pulse > div:hover {
+  border-color: var(--hex-gold);
+  box-shadow: 0 2px 8px rgba(8, 7, 32, 0.06);
 }
 
 .city-pulse dt {
@@ -2164,8 +2229,10 @@ textarea:focus-visible {
 
 .city-pulse dd {
   margin: 6px 0 0;
-  font-size: 1.7rem;
-  font-weight: 650;
+  font-family: var(--hex-font-display);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--hex-ink);
   font-variant-numeric: tabular-nums;
 }
 
@@ -2185,7 +2252,7 @@ textarea:focus-visible {
   background: var(--surface);
   border: 1px solid var(--line);
   border-left-width: 4px;
-  border-radius: 10px;
+  border-radius: var(--hex-radius);
   padding: 14px 16px;
 }
 
@@ -2196,7 +2263,7 @@ textarea:focus-visible {
   border-left-color: var(--amber);
 }
 .attention-feed > li.severity-routine {
-  border-left-color: var(--teal);
+  border-left-color: var(--hex-status-green);
 }
 
 .attention-main {
@@ -2222,12 +2289,11 @@ textarea:focus-visible {
   background: var(--amber);
 }
 .severity-dot-routine {
-  background: var(--teal);
+  background: var(--hex-status-green);
 }
 
 .codes {
-  font-family:
-    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-family: var(--hex-font-mono);
   font-size: 0.78rem;
   color: var(--muted);
   margin: 4px 0 0;
@@ -2243,7 +2309,7 @@ textarea:focus-visible {
   width: 100%;
   height: auto;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--hex-radius);
 }
 
 .report-map-bg {
@@ -2251,21 +2317,21 @@ textarea:focus-visible {
 }
 
 .report-map-spread {
-  fill: color-mix(in srgb, var(--success) 10%, transparent);
-  stroke: var(--teal);
+  fill: rgba(92, 156, 76, 0.1);
+  stroke: var(--hex-status-green);
   stroke-dasharray: 4 4;
   stroke-width: 1;
 }
 
 .report-map-point {
-  fill: var(--teal);
+  fill: var(--hex-gold);
   stroke: var(--surface);
   stroke-width: 2;
 }
 
 .report-map-point-candidate {
   fill: var(--surface);
-  stroke: var(--teal);
+  stroke: var(--hex-gold);
   stroke-width: 2;
   stroke-dasharray: 3 2;
 }
@@ -2282,7 +2348,7 @@ textarea:focus-visible {
 
 .report-map-empty {
   border: 1px dashed var(--line);
-  border-radius: 10px;
+  border-radius: var(--hex-radius);
   padding: 36px 16px;
   text-align: center;
   color: var(--muted);
@@ -2294,7 +2360,7 @@ textarea:focus-visible {
 .war-room {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--hex-radius);
   padding: 20px;
   margin-bottom: 20px;
 }
@@ -2320,7 +2386,7 @@ textarea:focus-visible {
 
 .war-room-card {
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--hex-radius);
   padding: 14px 16px;
   background: var(--surface);
 }
@@ -2402,7 +2468,7 @@ textarea:focus-visible {
 
 .war-room-actions > li {
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--hex-radius);
   padding: 12px 14px;
   margin-bottom: 10px;
 }
@@ -2416,8 +2482,7 @@ textarea:focus-visible {
 
 .action-target {
   margin: 6px 0 0;
-  font-family:
-    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-family: var(--hex-font-mono);
   font-size: 0.82rem;
 }
 
@@ -2429,12 +2494,11 @@ textarea:focus-visible {
 }
 
 .codes-list > li {
-  font-family:
-    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-family: var(--hex-font-mono);
   font-size: 0.72rem;
   background: var(--canvas);
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: var(--hex-radius);
   padding: 2px 9px;
   color: var(--muted);
 }
@@ -2443,13 +2507,13 @@ textarea:focus-visible {
   font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  border-radius: 999px;
+  border-radius: var(--hex-radius);
   padding: 2px 10px;
   border: 1px solid var(--line);
 }
 .confidence-high {
-  color: var(--teal);
-  border-color: var(--teal);
+  color: var(--hex-status-green);
+  border-color: var(--hex-status-green);
 }
 .confidence-medium {
   color: var(--amber);
@@ -2463,9 +2527,8 @@ textarea:focus-visible {
 /* ran and found nothing, or the operator reads silence as an answer. */
 .capability {
   font-size: 0.7rem;
-  font-family:
-    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
-  border-radius: 999px;
+  font-family: var(--hex-font-mono);
+  border-radius: var(--hex-radius);
   padding: 2px 9px;
   border: 1px dashed var(--line);
   color: var(--muted);
@@ -2489,7 +2552,7 @@ textarea:focus-visible {
 .cluster-inspector {
   margin-top: 20px;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--hex-radius);
   padding: 20px;
   background: var(--surface);
 }
@@ -2519,8 +2582,8 @@ textarea:focus-visible {
 .arrival-histogram .bar {
   display: block;
   height: 12px;
-  background: var(--teal);
-  border-radius: 3px;
+  background: var(--hex-gold);
+  border-radius: var(--hex-radius);
   min-width: 2px;
 }
 
@@ -2538,7 +2601,7 @@ textarea:focus-visible {
 .lab-card {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--hex-radius);
   padding: 20px;
   margin-bottom: 18px;
 }
@@ -2578,13 +2641,13 @@ textarea:focus-visible {
 .funnel-bar {
   display: block;
   height: 10px;
-  border-radius: 3px;
+  border-radius: var(--hex-radius);
   margin: 6px 0;
   min-width: 2px;
 }
 
 .quality-bar {
-  background: var(--teal);
+  background: var(--hex-gold);
 }
 
 .funnel-bar {
@@ -2596,7 +2659,7 @@ textarea:focus-visible {
   background: none;
   border: none;
   padding: 0;
-  color: var(--teal);
+  color: var(--hex-gold);
   font: inherit;
   font-size: 0.82rem;
   cursor: pointer;
@@ -2636,7 +2699,7 @@ textarea:focus-visible {
 }
 
 .drilldown-panel {
-  border-color: var(--teal);
+  border-color: var(--hex-gold);
 }
 
 .definitions > div {
@@ -2670,7 +2733,7 @@ textarea:focus-visible {
 /* ------------------------------------------------------------------ */
 
 :root {
-  --civic: var(--teal);
+  --civic: var(--hex-ink);
   --shell-bg: var(--canvas);
   --sidebar-bg: var(--navy);
   --radius: var(--radius-card);
@@ -2680,18 +2743,18 @@ textarea:focus-visible {
   display: grid;
   grid-template-columns: 240px minmax(0, 1fr);
   min-height: 100dvh;
-  background: var(--shell-bg);
+  background: var(--hex-canvas);
 }
 
 .sidebar {
   justify-content: flex-start;
-  background: var(--sidebar-bg);
-  border-right: 0;
+  background: var(--hex-ink);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
   color: var(--sidebar-ink);
-  padding: 24px 16px;
+  padding: 20px 14px;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
   position: sticky;
   top: 0;
   align-self: start;
@@ -2699,46 +2762,38 @@ textarea:focus-visible {
 }
 
 .sidebar .brand {
-  color: var(--sidebar-ink);
-  font-size: 1.02rem;
-  font-weight: 650;
+  color: #ffffff;
+  font-family: var(--hex-font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
   letter-spacing: -0.02em;
-  padding: 0 8px;
+  padding: 4px 8px;
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
 .brand-signal {
-  width: 25px;
-  height: 25px;
+  width: 24px;
+  height: 24px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  border: 1px solid rgb(237 243 246 / 18%);
-  border-radius: var(--radius-control);
-  background: rgb(255 255 255 / 5%);
+  border: 1px solid var(--hex-gold);
+  border-radius: var(--hex-radius);
+  background: rgba(212, 158, 70, 0.15);
+  color: var(--hex-gold-soft);
+  font-family: var(--hex-font-mono);
+  font-size: 11px;
+  font-weight: 700;
 }
 
 .brand-signal i {
-  width: 2px;
-  border-radius: 2px;
-  background: var(--signal);
+  display: none;
 }
 
-.brand-signal i:nth-child(1) {
-  height: 6px;
-  opacity: 0.65;
-}
-
-.brand-signal i:nth-child(2) {
-  height: 12px;
-}
-
-.brand-signal i:nth-child(3) {
-  height: 8px;
-  opacity: 0.8;
+.brand-signal::after {
+  content: "P";
 }
 
 .sidebar-nav {
@@ -2753,113 +2808,118 @@ textarea:focus-visible {
   background: none;
   border: none;
   color: var(--sidebar-muted);
-  font: inherit;
-  font-size: 0.9rem;
+  font-family: var(--hex-font-sans);
+  font-size: 0.88rem;
+  font-weight: 550;
   text-align: left;
-  min-height: 42px;
-  padding: 8px 10px 8px 8px;
+  min-height: 38px;
+  padding: 6px 12px;
   display: flex;
   align-items: center;
   gap: 10px;
   border-left: 2px solid transparent;
-  border-radius: 0 8px 8px 0;
+  border-radius: var(--hex-radius);
   cursor: pointer;
-  transition:
-    background-color var(--motion-fast) ease,
-    color var(--motion-fast) ease,
-    border-color var(--motion-fast) ease;
+  transition: all var(--motion-fast) ease;
 }
 
 .sidebar-nav button svg {
   flex: 0 0 16px;
-  color: var(--sidebar-icon);
+  color: var(--sidebar-muted);
+  transition: color var(--motion-fast) ease;
 }
 
 .sidebar-nav button:hover {
-  background: var(--sidebar-hover);
-  color: var(--sidebar-ink);
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+}
+
+.sidebar-nav button:hover svg {
+  color: var(--hex-gold-soft);
 }
 
 .sidebar-nav button[aria-current="page"] {
-  border-left-color: var(--signal);
-  background: var(--sidebar-active);
-  color: var(--sidebar-ink);
-  font-weight: 620;
+  border-left-color: var(--hex-gold);
+  background: rgba(212, 158, 70, 0.12);
+  color: #ffffff;
+  font-weight: 650;
 }
 
 .sidebar-nav button[aria-current="page"] svg {
-  color: var(--sidebar-icon-active);
+  color: var(--hex-gold);
 }
 
 .sidebar-divider {
   display: block;
   height: 1px;
-  margin: 8px 8px;
-  background: rgb(237 243 246 / 14%);
+  margin: 6px 8px;
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .shell-main {
   min-width: 0;
   display: flex;
   flex-direction: column;
+  background: var(--hex-canvas);
 }
 
 .shell .topbar {
-  /* The legacy topbar was a dark bar with white text. The shell keeps the bar
-     but not the colour, so the override has to restore the ink as well. */
-  color: var(--ink);
+  color: var(--hex-ink);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  min-height: 60px;
-  padding: 10px 28px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--line);
+  min-height: 56px;
+  padding: 8px 28px;
+  background: rgba(246, 243, 237, 0.94);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--hex-border);
   position: sticky;
   top: 0;
-  z-index: 5;
-  box-shadow: 0 1px 0 rgb(21 35 43 / 2%);
+  z-index: 10;
 }
 
 .shell .topbar .profile {
-  /* Inherited from the old dark bar, where light grey was legible. */
-  color: var(--teal-hover);
-  border: 1px solid var(--line-accent);
-  border-radius: var(--radius-pill);
-  padding: 5px 10px;
-  background: var(--teal-soft);
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
+  color: var(--hex-ink);
+  border: 1px solid var(--hex-border);
+  border-radius: var(--hex-radius);
+  padding: 4px 10px;
+  background: var(--hex-surface);
+  font-family: var(--hex-font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 .shell .locale-switch {
-  border: 1px solid var(--line-soft);
-  border-radius: var(--radius-pill);
-  background: var(--surface-muted);
+  border: 1px solid var(--hex-border);
+  border-radius: var(--hex-radius);
+  background: rgba(255, 255, 255, 0.6);
   padding: 2px;
 }
 
 .shell .locale-switch button {
-  min-width: 34px;
-  min-height: 30px;
-  border-radius: var(--radius-pill);
-  color: var(--muted);
-  transition:
-    color var(--motion-fast) ease,
-    background-color var(--motion-fast) ease;
+  min-width: 32px;
+  min-height: 26px;
+  border-radius: var(--hex-radius);
+  font-family: var(--hex-font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--hex-muted);
+  transition: all var(--motion-fast) ease;
 }
 
 .shell .locale-switch button[aria-pressed="true"] {
-  color: var(--ink);
-  background: var(--surface);
-  box-shadow: 0 1px 2px rgb(21 35 43 / 8%);
+  color: var(--hex-ink);
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(8, 7, 32, 0.08);
 }
 
 .topbar-context .region-label,
 .topbar-context select {
-  font-size: 0.9rem;
+  font-family: var(--hex-font-mono);
+  font-size: 0.85rem;
   font-weight: 600;
 }
 
@@ -2869,30 +2929,31 @@ textarea:focus-visible {
 
 .topbar-context select {
   appearance: none;
-  border: 1px solid var(--line);
-  min-height: 38px;
-  border-radius: var(--radius-control);
-  padding: 6px 11px;
-  background: var(--surface);
+  border: 1px solid var(--hex-border);
+  min-height: 34px;
+  border-radius: var(--hex-radius);
+  padding: 4px 10px;
+  background: var(--hex-surface);
+  color: var(--hex-ink);
+  font-family: var(--hex-font-sans);
 }
 
 .shell .workspace {
-  padding: 24px 32px 40px;
-  max-width: 1320px;
+  padding: 28px 36px 48px;
+  max-width: 1440px;
   width: 100%;
   margin-inline: auto;
 }
 
 .shell :is(input, select, textarea) {
-  border-color: var(--line-strong);
-  border-radius: var(--radius-control);
+  border-color: var(--hex-border);
+  border-radius: var(--hex-radius);
 }
 
 .shell :is(input, select, textarea):focus-visible {
-  border-color: var(--teal);
-  outline: 2px solid var(--focus-ring);
+  border-color: var(--hex-gold);
+  outline: 2px solid var(--hex-gold);
   outline-offset: 2px;
-  box-shadow: 0 0 0 3px var(--teal-soft);
 }
 
 .filter-row {
@@ -2904,20 +2965,30 @@ textarea:focus-visible {
 
 .filter-row button {
   appearance: none;
-  border: 1px solid var(--line);
+  border: 1px solid var(--hex-line-strong);
   background: var(--surface);
-  border-radius: var(--radius-pill);
-  min-height: 36px;
-  padding: 6px 14px;
-  font: inherit;
-  font-size: 0.84rem;
+  border-radius: var(--hex-radius);
+  min-height: 32px;
+  padding: 4px 12px;
+  font-family: var(--hex-font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--hex-ink);
   cursor: pointer;
+  transition: all var(--motion-fast) ease;
+}
+
+.filter-row button:hover {
+  border-color: var(--hex-gold);
+  background: var(--hex-surface-paper);
 }
 
 .filter-row button[aria-pressed="true"] {
-  background: var(--teal-soft);
-  color: var(--teal-hover);
-  border-color: var(--line-accent);
+  background: var(--hex-ink);
+  color: #ffffff;
+  border-color: var(--hex-ink);
 }
 
 .incident-cards {
@@ -2934,9 +3005,14 @@ textarea:focus-visible {
   justify-content: space-between;
   gap: 16px;
   background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-card);
+  border: 1px solid var(--hex-border);
+  border-radius: var(--hex-radius);
   padding: 16px 18px;
+  transition: all var(--motion-fast) ease;
+}
+
+.incident-cards > li:hover {
+  border-color: var(--hex-gold);
 }
 
 .incident-cards strong {
@@ -3076,7 +3152,7 @@ textarea:focus-visible {
   min-height: 38px;
   padding: 7px 9px;
   border: 1px solid var(--line-strong);
-  border-radius: 4px;
+  border-radius: var(--hex-radius);
   color: var(--ink);
   background: var(--surface);
   font: inherit;
@@ -3092,7 +3168,7 @@ textarea:focus-visible {
   margin: 16px 0;
   padding: 12px;
   border: 1px solid var(--line);
-  border-radius: 7px;
+  border-radius: var(--hex-radius);
 }
 
 .topology-members legend {
@@ -3240,8 +3316,9 @@ textarea:focus-visible {
 
 .shell .replay-reports button[aria-pressed="true"] {
   border-color: var(--line-accent);
-  background: var(--teal-soft);
-  color: var(--teal-hover);
+  background: rgba(212, 158, 70, 0.12);
+  color: var(--hex-ink);
+  border: 1px solid var(--hex-gold);
 }
 
 .shell :is(input, select, textarea) {
@@ -3342,7 +3419,7 @@ textarea:focus-visible {
   border: 1px solid var(--line);
   border-radius: var(--radius-control);
   background: var(--surface-muted);
-  color: var(--teal);
+  color: var(--hex-ink);
 }
 
 .shell .status-grid {
@@ -3417,7 +3494,7 @@ textarea:focus-visible {
 
 .skeleton {
   display: block;
-  border-radius: 6px;
+  border-radius: var(--hex-radius);
   background: var(--surface-muted);
   animation: skeleton-pulse 1.25s ease-in-out infinite alternate;
 }
@@ -3760,7 +3837,7 @@ svg[data-chart-motion] [data-chart-bar] {
 .topology-ok {
   margin: 12px 0 0;
   padding: 9px 11px;
-  border-radius: 5px;
+  border-radius: var(--hex-radius);
   color: var(--success);
   background: var(--success-soft);
   font-size: 0.8rem;
@@ -3808,7 +3885,7 @@ svg[data-chart-motion] [data-chart-bar] {
   margin-top: 8px;
   padding: 10px;
   border: 1px solid var(--line);
-  border-radius: 7px;
+  border-radius: var(--hex-radius);
   color: var(--ink);
   background: var(--surface);
   font: inherit;
@@ -3817,8 +3894,8 @@ svg[data-chart-motion] [data-chart-bar] {
 }
 
 .replay-reports button[aria-pressed="true"] {
-  border-color: var(--teal);
-  background: var(--teal-soft);
+  border-color: var(--hex-gold);
+  background: rgba(212, 158, 70, 0.1);
 }
 
 .replay-reports span,
@@ -3841,7 +3918,7 @@ svg[data-chart-motion] [data-chart-bar] {
   gap: 5px;
   padding: 12px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--hex-radius);
   background: var(--canvas);
 }
 
@@ -3854,7 +3931,7 @@ svg[data-chart-motion] [data-chart-bar] {
 .replay-provenance {
   margin-bottom: 16px;
   padding: 13px;
-  border-left: 3px solid var(--teal);
+  border-left: 3px solid var(--hex-gold);
   background: var(--canvas);
 }
 
@@ -3871,7 +3948,7 @@ svg[data-chart-motion] [data-chart-bar] {
 }
 
 .replay-provenance dd {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--hex-font-mono);
   font-size: 0.74rem;
 }
 
@@ -3901,7 +3978,7 @@ svg[data-chart-motion] [data-chart-bar] {
 }
 
 .replay-table tbody th {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--hex-font-mono);
   font-size: 0.73rem;
   font-weight: 600;
 }
@@ -3910,13 +3987,13 @@ svg[data-chart-motion] [data-chart-bar] {
   display: inline-block;
   padding: 2px 7px;
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: var(--hex-radius);
   font-size: 0.7rem;
 }
 
 .diff-added {
-  color: var(--teal);
-  border-color: var(--teal);
+  color: var(--hex-status-green);
+  border-color: var(--hex-status-green);
 }
 .diff-removed {
   color: var(--accent);
@@ -3949,7 +4026,7 @@ svg[data-chart-motion] [data-chart-bar] {
 }
 
 .arrival-area {
-  fill: color-mix(in srgb, var(--teal) 9%, transparent);
+  fill: rgba(212, 158, 70, 0.08);
 }
 
 .arrival-line {
@@ -3980,4 +4057,87 @@ svg[data-chart-motion] [data-chart-bar] {
 .arrival-axis {
   fill: var(--muted);
   font-size: 11px;
+}
+
+
+/* Hex Bento Grid Shell Enhancements */
+.sidebar-footer {
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sidebar-portal-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  color: var(--sidebar-muted);
+  text-decoration: none;
+  font-family: var(--hex-font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: var(--hex-radius);
+  transition: all var(--motion-fast) ease;
+}
+
+.sidebar-portal-link:hover {
+  color: var(--hex-gold-soft);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.sidebar-version-badge {
+  font-family: var(--hex-font-mono);
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.35);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0 10px;
+}
+
+.topbar-module-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border: 1px solid var(--hex-line);
+  border-radius: var(--hex-radius);
+  background: var(--surface);
+  color: var(--hex-ink);
+  font-family: var(--hex-font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.topbar-context-divider {
+  color: var(--muted-soft);
+  font-family: var(--hex-font-mono);
+  font-size: 12px;
+}
+
+/* Bento card framing across workspace */
+.lab-card,
+.appeal-card,
+.cluster-inspector,
+.war-room,
+.intake-card,
+.replay-reports,
+.replay-detail {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--hex-line);
+  border-top: 2px solid var(--hex-gold);
+  border-radius: var(--hex-radius);
+  box-shadow: 0 1px 3px rgba(8, 7, 32, 0.03);
+  transition: border-color var(--motion-fast) ease, box-shadow var(--motion-fast) ease;
+}
+
+.lab-card:hover,
+.cluster-inspector:hover,
+.replay-detail:hover {
+  border-color: var(--hex-line-strong);
 }

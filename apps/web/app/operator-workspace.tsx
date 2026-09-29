@@ -560,11 +560,19 @@ export default function OperatorWorkspace() {
             );
           })}
         </nav>
+        <div className="sidebar-footer">
+          <Link href="/" className="sidebar-portal-link" aria-label="Вернуться на главную">
+            <span>← {locale === "ru" ? "Главная страница" : "Басты бет"}</span>
+          </Link>
+          <span className="sidebar-version-badge">v1.4.0 · BENTO</span>
+        </div>
       </aside>
 
       <main className="shell-main" id="workspace-main" tabIndex={-1}>
         <header className="topbar">
           <div className="topbar-context" aria-label={copy.region}>
+            <span className="topbar-module-badge">{copy[view]}</span>
+            <span className="topbar-context-divider" aria-hidden="true">/</span>
             {regions.length > 1 ? (
               <select
                 aria-label={copy.region}

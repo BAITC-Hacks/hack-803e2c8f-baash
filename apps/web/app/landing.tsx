@@ -260,9 +260,7 @@ export function LandingPage() {
         <div className={styles.headerInner}>
           <a className={styles.brand} href="#top" aria-label="Pulse 109">
             <span className={styles.brandMark} aria-hidden="true">
-              <i />
-              <i />
-              <i />
+              <span className={styles.brandMarkHex}>P</span>
             </span>
             <span>Pulse 109</span>
           </a>
@@ -299,7 +297,10 @@ export function LandingPage() {
       <main id="main">
         <section className={styles.hero} id="top">
           <div className={styles.heroCopy}>
-            <p className={styles.kicker}>{t.heroKicker}</p>
+            <div className={styles.kickerBadge}>
+              <span className={styles.kickerBadgeDot} aria-hidden="true" />
+              {t.heroKicker}
+            </div>
             <h1>
               <span className={styles.editorialHeadline}>
                 {t.heroTitleEditorial}
@@ -310,17 +311,17 @@ export function LandingPage() {
             <div className={styles.heroActions}>
               <Link className={styles.primaryButton} href="/demo">
                 {t.openDemo}
-                <ArrowRight aria-hidden="true" size={17} />
+                <ArrowRight aria-hidden="true" size={16} />
               </Link>
               <a className={styles.textButton} href="#product">
                 {t.howItWorks}
-                <ArrowDown aria-hidden="true" size={15} />
+                <ArrowDown aria-hidden="true" size={14} />
               </a>
             </div>
-            <p className={styles.heroNote}>
-              <span className={styles.signalDot} aria-hidden="true" />
-              {t.footerNote}
-            </p>
+            <div className={styles.heroNote}>
+              <span className={styles.kickerBadgeDot} aria-hidden="true" />
+              <span>{t.footerNote}</span>
+            </div>
           </div>
 
           <ProductStage t={t} />
@@ -499,9 +500,7 @@ export function LandingPage() {
       <footer className={styles.footer}>
         <a className={styles.brand} href="#top">
           <span className={styles.brandMark} aria-hidden="true">
-            <i />
-            <i />
-            <i />
+            <span className={styles.brandMarkHex}>P</span>
           </span>
           <span>Pulse 109</span>
         </a>
@@ -519,15 +518,19 @@ type Copy = (typeof copy)[Locale];
 function ProductStage({ t }: { t: Copy }) {
   return (
     <div className={styles.productStage} aria-label={t.synthetic}>
-      <div className={styles.stageGrid} aria-hidden="true" />
       <article className={styles.operationsWindow}>
+        <span className={`${styles.bentoCross} ${styles.bentoCrossTopLeft}`} aria-hidden="true">+</span>
+        <span className={`${styles.bentoCross} ${styles.bentoCrossTopRight}`} aria-hidden="true">+</span>
+        <span className={`${styles.bentoCross} ${styles.bentoCrossBottomLeft}`} aria-hidden="true">+</span>
+        <span className={`${styles.bentoCross} ${styles.bentoCrossBottomRight}`} aria-hidden="true">+</span>
+        
         <header className={styles.windowTopbar}>
           <div className={styles.windowBrand}>
-            <span className={styles.brandMarkSmall}>P</span> Pulse 109
+            <span className={styles.brandMarkSmall}>P</span> Pulse 109 · Core
           </div>
           <div className={styles.windowPills}>
             <span>ALA</span>
-            <span>{t.synthetic}</span>
+            <span className={styles.syntheticTag}>{t.synthetic}</span>
           </div>
         </header>
         <div className={styles.windowLayout}>
@@ -552,10 +555,10 @@ function ProductStage({ t }: { t: Copy }) {
           <div className={styles.previewContent}>
             <div className={styles.previewHeading}>
               <div>
-                <span className={styles.previewKicker}>City pulse</span>
+                <span className={styles.previewKicker}>City pulse · Operations</span>
                 <h3>{t.opsTitle}</h3>
               </div>
-              <span className={styles.liveDot}>DEMO</span>
+              <span className={styles.liveDot}>DEMO PIPELINE</span>
             </div>
             <div className={styles.previewMetrics}>
               <Metric label={t.reports} value="148" />
@@ -565,7 +568,7 @@ function ProductStage({ t }: { t: Copy }) {
             <div className={styles.previewChartCard}>
               <div className={styles.previewCardHeading}>
                 <strong>{t.arrivals}</strong>
-                <span>{t.synthetic}</span>
+                <span>{t.synthetic} · 24h</span>
               </div>
               <ArrivalChart
                 buckets={arrivals}
@@ -589,44 +592,50 @@ function ProductStage({ t }: { t: Copy }) {
         </div>
       </article>
 
-      <article className={`${styles.floatingWindow} ${styles.askWindow}`}>
-        <div className={styles.floatingHeading}>
-          <span>Ask Pulse</span>
-          <span className={styles.syntheticTag}>{t.synthetic}</span>
-        </div>
-        <div className={styles.askPrompt}>
-          <span>⌕</span>
-          {t.askQuestion}
-        </div>
-        <div className={styles.askMiniResult}>
-          <strong>142</strong>
-          <span>{t.result}</span>
-          <MiniLine />
-        </div>
-      </article>
+      <div className={styles.heroBentoCol}>
+        <article className={styles.bentoCard}>
+          <span className={`${styles.bentoCross} ${styles.bentoCrossTopLeft}`} aria-hidden="true">+</span>
+          <span className={`${styles.bentoCross} ${styles.bentoCrossTopRight}`} aria-hidden="true">+</span>
+          <div className={styles.floatingHeading}>
+            <span>Ask Pulse · Studio</span>
+            <span className={styles.syntheticTag}>{t.synthetic}</span>
+          </div>
+          <div className={styles.askPrompt}>
+            <span>⌕</span>
+            {t.askQuestion}
+          </div>
+          <div className={styles.askMiniResult}>
+            <strong>142</strong>
+            <span>{t.result}</span>
+            <MiniLine />
+          </div>
+        </article>
 
-      <article className={`${styles.floatingWindow} ${styles.warRoomWindow}`}>
-        <div className={styles.warRoomLabel}>
-          <span className={styles.severityMarker} />
-          {t.incident} · elevated
-        </div>
-        <h3>{t.emerging}</h3>
-        <div className={styles.memberDots} aria-hidden="true">
-          <i />
-          <i />
-          <i />
-          <i />
-          <i />
-          <i />
-        </div>
-        <div className={styles.warRoomFooter}>
-          <span>06 {t.reports}</span>
-          <span className={styles.operatorCheck}>
-            <ShieldCheck size={13} aria-hidden="true" />
-            {t.confirmed}
-          </span>
-        </div>
-      </article>
+        <article className={styles.bentoCard}>
+          <span className={`${styles.bentoCross} ${styles.bentoCrossBottomLeft}`} aria-hidden="true">+</span>
+          <span className={`${styles.bentoCross} ${styles.bentoCrossBottomRight}`} aria-hidden="true">+</span>
+          <div className={styles.warRoomLabel}>
+            <span className={styles.severityMarker} />
+            {t.incident} · elevated signal
+          </div>
+          <h3>{t.emerging}</h3>
+          <div className={styles.memberDots} aria-hidden="true">
+            <i />
+            <i />
+            <i />
+            <i />
+            <i />
+            <i />
+          </div>
+          <div className={styles.warRoomFooter}>
+            <span>06 {t.reports}</span>
+            <span className={styles.operatorCheck}>
+              <ShieldCheck size={14} aria-hidden="true" />
+              {t.confirmed}
+            </span>
+          </div>
+        </article>
+      </div>
     </div>
   );
 }
