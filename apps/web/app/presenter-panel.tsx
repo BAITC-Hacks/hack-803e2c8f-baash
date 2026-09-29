@@ -11,15 +11,17 @@ export type PresenterPreset = {
   longitude: number;
 };
 
+export const DEMO_WATER_PRESET: PresenterPreset = {
+  id: 0,
+  description:
+    "После ремонта вода стала мутной и появился металлический запах.",
+  location: "Условный квартал Алмалы, Алматы",
+  latitude: 43.2414,
+  longitude: 76.8951,
+};
+
 export function createWaterPreset(id = Date.now()): PresenterPreset {
-  return {
-    id,
-    description:
-      "После ремонта вода стала мутной и появился металлический запах.",
-    location: "Условный квартал Алмалы, Алматы",
-    latitude: 43.2414,
-    longitude: 76.8951,
-  };
+  return { ...DEMO_WATER_PRESET, id };
 }
 
 type PresenterView = "intake" | "queue" | "operations" | "incidents";

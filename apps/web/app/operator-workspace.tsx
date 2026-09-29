@@ -25,6 +25,7 @@ import { OperationsCenter } from "./operations-center";
 import { OwnershipHandoffPanel } from "./ownership-handoff-panel";
 import {
   createWaterPreset,
+  DEMO_WATER_PRESET,
   PresenterPanel,
   type PresenterPreset,
 } from "./presenter-panel";
@@ -315,7 +316,7 @@ export default function OperatorWorkspace() {
     useState<PresenterPreset | null>(() =>
       typeof window !== "undefined" &&
       new URLSearchParams(window.location.search).get("presenter") === "1"
-        ? createWaterPreset(0)
+        ? DEMO_WATER_PRESET
         : null,
     );
   useEffect(() => {
@@ -650,6 +651,15 @@ export default function OperatorWorkspace() {
     "replay",
   ] as const;
   const secondaryViews = ["intake", "situation"] as const;
+  const intakePresenterPreset =
+    presenterPreset ?? (isDemoProfile ? DEMO_WATER_PRESET : null);
+
+  function navigateView(target: typeof view) {
+    if (target === "intake" && isDemoProfile && !presenterPreset) {
+      setPresenterPreset(createWaterPreset());
+    }
+    setView(target);
+  }
 
   function openSubmittedAppeal(requestId: string) {
     setRecommendation(null);
@@ -703,7 +713,7 @@ export default function OperatorWorkspace() {
                 title={sidebarCollapsed ? copy[name] : undefined}
                 aria-label={copy[name]}
                 onClick={() => {
-                  setView(name);
+                  navigateView(name);
                   setSidebarOpen(false);
                 }}
               >
@@ -728,7 +738,7 @@ export default function OperatorWorkspace() {
                 title={sidebarCollapsed ? copy[name] : undefined}
                 aria-label={copy[name]}
                 onClick={() => {
-                  setView(name);
+                  navigateView(name);
                   setSidebarOpen(false);
                 }}
               >
@@ -894,11 +904,11 @@ export default function OperatorWorkspace() {
         ) : null}
         {view === "intake" ? (
           <Intake
-            key={presenterPreset?.id ?? "normal"}
+            key={intakePresenterPreset?.id ?? "normal"}
             locale={locale}
             regionId={region}
             demoEnabled={isDemoProfile}
-            presenterPreset={presenterPreset}
+            presenterPreset={intakePresenterPreset}
             onOpenSubmitted={openSubmittedAppeal}
           />
         ) : null}
