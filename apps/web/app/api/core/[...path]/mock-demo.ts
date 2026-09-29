@@ -366,8 +366,53 @@ export async function handleMockDemo(req: Request, path: string[]) {
       suggested_fields: [],
       synthetic: true,
     });
-  if (p === "appeals/preflight")
-    return json({ candidates: [], status: "available", synthetic: true });
+  if (p === "appeals/preflight" && req.method === "POST") {
+    const regionId = String(input.region_id ?? "ALA");
+    const requestedTopic = String(input.topic_id ?? "");
+    const topicId =
+      requestedTopic === "topic:water" ? "topic:water_quality" : requestedTopic;
+    const incomingWords = new Set(
+      String(input.text ?? "")
+        .toLocaleLowerCase("ru")
+        .match(/[\p{L}\p{N}]{4,}/gu) ?? [],
+    );
+    const candidates = s.appeals
+      .filter(
+        (appeal) =>
+          appeal.region_id === regionId &&
+          appeal.topic_id === topicId &&
+          !["closed", "resolved", "cancelled"].includes(appeal.status),
+      )
+      .map((appeal) => {
+        const words = new Set(
+          appeal.text.toLocaleLowerCase("ru").match(/[\p{L}\p{N}]{4,}/gu) ?? [],
+        );
+        const shared = [...incomingWords].filter((word) => words.has(word));
+        return { appeal, shared };
+      })
+      .filter(({ shared }) => shared.length > 0)
+      .sort((left, right) => right.shared.length - left.shared.length)
+      .slice(0, 3)
+      .map(({ appeal, shared }, index) => ({
+        candidate_type: "request",
+        candidate_id: appeal.request_id,
+        score: Math.min(0.96, 0.79 + shared.length * 0.035 - index * 0.015),
+        reasons: [
+          "Совпадает тема обращения",
+          `Похожие слова: ${shared.slice(0, 3).join(", ")}`,
+        ],
+        distance_m: null,
+        time_delta_minutes: null,
+        needs_human_confirmation: true,
+      }));
+    return json({
+      candidates,
+      evaluated_factors: ["category", "lexical"],
+      needs_human_confirmation: true,
+      automatic_merge: false,
+      synthetic_only: true,
+    });
+  }
   if (p.startsWith("requests/")) {
     const parts = p.split("/"),
       id = decodeURIComponent(parts[1] ?? ""),

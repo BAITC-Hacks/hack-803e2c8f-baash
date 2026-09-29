@@ -11,6 +11,17 @@ export type PresenterPreset = {
   longitude: number;
 };
 
+export function createWaterPreset(id = Date.now()): PresenterPreset {
+  return {
+    id,
+    description:
+      "После ремонта вода стала мутной и появился металлический запах.",
+    location: "Условный квартал Алмалы, Алматы",
+    latitude: 43.2414,
+    longitude: 76.8951,
+  };
+}
+
 type PresenterView = "intake" | "queue" | "operations" | "incidents";
 type Check = { label: string; ready: boolean; detail: string };
 
@@ -18,7 +29,7 @@ const steps: { label: string; view: PresenterView; hint: string }[] = [
   {
     label: "Обращение",
     view: "intake",
-    hint: "Загрузите пресет и отправьте вручную.",
+    hint: "Проверьте текст и похожие обращения. Отправка остаётся ручной.",
   },
   {
     label: "Оператор",
@@ -209,14 +220,7 @@ export function PresenterPanel({
   }, [regionId, refresh]);
 
   function loadWaterPreset() {
-    onLoadPreset({
-      id: Date.now(),
-      description:
-        "Синтетический пример: после ремонта вода стала мутной и появился металлический запах.",
-      location: "Условный квартал Алмалы, Алматы",
-      latitude: 43.2414,
-      longitude: 76.8951,
-    });
+    onLoadPreset(createWaterPreset());
     onNavigate("intake");
     setStep(0);
   }

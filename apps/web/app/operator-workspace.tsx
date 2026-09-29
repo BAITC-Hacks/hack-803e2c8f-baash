@@ -23,7 +23,11 @@ import { IncidentWarRoom } from "./incident-war-room";
 import { IncidentWorkflowPanel } from "./incident-workflow-panel";
 import { OperationsCenter } from "./operations-center";
 import { OwnershipHandoffPanel } from "./ownership-handoff-panel";
-import { PresenterPanel, type PresenterPreset } from "./presenter-panel";
+import {
+  createWaterPreset,
+  PresenterPanel,
+  type PresenterPreset,
+} from "./presenter-panel";
 import { ReplayLab } from "./replay-lab";
 import { Skeleton } from "./skeleton";
 
@@ -288,7 +292,12 @@ export default function OperatorWorkspace() {
     | "replay"
     | "intake"
     | "situation"
-  >("operations");
+  >(() =>
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("presenter") === "1"
+      ? "intake"
+      : "operations",
+  );
   const [warRoomIncidentId, setWarRoomIncidentId] = useState<string | null>(
     null,
   );
@@ -303,7 +312,12 @@ export default function OperatorWorkspace() {
       new URLSearchParams(window.location.search).get("presenter") === "1",
   );
   const [presenterPreset, setPresenterPreset] =
-    useState<PresenterPreset | null>(null);
+    useState<PresenterPreset | null>(() =>
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).get("presenter") === "1"
+        ? createWaterPreset(0)
+        : null,
+    );
   useEffect(() => {
     function closeDemoDisclosure(event: KeyboardEvent) {
       if (event.key === "Escape") setDemoDisclosureOpen(false);
@@ -1246,7 +1260,7 @@ export default function OperatorWorkspace() {
           </div>
         ) : null}
       </main>
-      {profile === "demo" && presenterMode ? (
+      {isDemoProfile && presenterMode ? (
         <PresenterPanel
           regionId={region}
           onNavigate={(target) => setView(target)}

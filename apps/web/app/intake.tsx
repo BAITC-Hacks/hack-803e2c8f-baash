@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { PresenterPreset } from "./presenter-panel";
 
 type Locale = "ru" | "kk";
@@ -182,6 +182,58 @@ export function Intake({
   const [intakePlan, setIntakePlan] = useState<IntakePlan | null>(null);
   const [intakePlanUnavailable, setIntakePlanUnavailable] = useState(false);
   const [submittedNumber, setSubmittedNumber] = useState("");
+  const preflightPromise = useRef<Promise<void> | null>(null);
+
+  const prepareDuplicateCandidates = useCallback(async () => {
+    if (!syntheticAssistEnabled) {
+      setPreflightState("unavailable");
+      return;
+    }
+    if (preflightState === "ready" || preflightState === "unavailable") return;
+    if (!preflightPromise.current) {
+      setPreflightState("loading");
+      preflightPromise.current = (async () => {
+        const category = inferSyntheticCategory(draft.description);
+        try {
+          const response = await fetch("/api/core/appeals/preflight", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-Region-Id": regionId,
+            },
+            body: JSON.stringify({
+              region_id: regionId,
+              service_id: `service:${category}`,
+              topic_id: `topic:${category}`,
+              text: draft.description,
+              occurred_at: null,
+              occurred_at_quality: "missing",
+            }),
+          });
+          if (!response.ok) throw new Error("preflight_failed");
+          const result = (await response.json()) as {
+            candidates?: DuplicateCandidate[];
+          };
+          setDuplicates(result.candidates ?? []);
+          setPreflightState("ready");
+        } catch {
+          setDuplicates([]);
+          setPreflightState("unavailable");
+        } finally {
+          preflightPromise.current = null;
+        }
+      })();
+    }
+    await preflightPromise.current;
+  }, [draft.description, preflightState, regionId, syntheticAssistEnabled]);
+
+  useEffect(() => {
+    if (!presenterPreset || !syntheticAssistEnabled) return;
+    const timer = window.setTimeout(() => {
+      void prepareDuplicateCandidates();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [presenterPreset, prepareDuplicateCandidates, syntheticAssistEnabled]);
 
   useEffect(() => {
     if (presenterPreset) return;
@@ -257,38 +309,7 @@ export function Intake({
       }
     }
     if (step === 3) {
-      if (!syntheticAssistEnabled) {
-        setPreflightState("unavailable");
-      } else {
-        setPreflightState("loading");
-        const category = inferSyntheticCategory(draft.description);
-        try {
-          const response = await fetch("/api/core/appeals/preflight", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "X-Region-Id": regionId,
-            },
-            body: JSON.stringify({
-              region_id: regionId,
-              service_id: `service:${category}`,
-              topic_id: `topic:${category}`,
-              text: draft.description,
-              occurred_at: null,
-              occurred_at_quality: "missing",
-            }),
-          });
-          if (!response.ok) throw new Error("preflight_failed");
-          const result = (await response.json()) as {
-            candidates?: DuplicateCandidate[];
-          };
-          setDuplicates(result.candidates ?? []);
-          setPreflightState("ready");
-        } catch {
-          setDuplicates([]);
-          setPreflightState("unavailable");
-        }
-      }
+      await prepareDuplicateCandidates();
     }
     setError("");
     setStep((current) => Math.min(4, current + 1));
@@ -538,11 +559,13 @@ export function Intake({
                     ? copy.noDuplicates
                     : ""}
             </p>
-            {duplicates.map((candidate) => (
+            {duplicates.map((candidate, index) => (
               <div className="duplicate-option" key={candidate.candidate_id}>
                 <strong>
-                  {candidate.candidate_id} · {Math.round(candidate.score * 100)}
-                  %
+                  {locale === "ru"
+                    ? `Похожее обращение ${index + 1}`
+                    : `Ұқсас өтініш ${index + 1}`}{" "}
+                  · {Math.round(candidate.score * 100)}%
                 </strong>
                 <span>{candidate.reasons.join(" · ")}</span>
                 <label className="radio-row">
