@@ -313,28 +313,31 @@ export default function OperatorWorkspace() {
     return () => window.removeEventListener("keydown", togglePresenter);
   }, []);
 
-  const refreshQueue = useCallback(async (preferredId?: string) => {
-    try {
-      const rows = await api<Appeal[]>("/requests?limit=50", region);
-      setAppeals(rows);
-      if (rows.length === 0) setDetail(null);
-      setSelectedId((previous) => {
-        if (preferredId) return preferredId;
-        return previous && rows.some((row) => row.request_id === previous)
-          ? previous
-          : (rows[0]?.request_id ?? null);
-      });
-      setError(null);
-    } catch (failure) {
-      setError(
-        failure instanceof Error ? failure.message : "queue_unavailable",
-      );
-    } finally {
-      setLoading(false);
-    }
-    // Changing the region asks a different question of the API, so both readers
-    // depend on it and refetch when the operator switches.
-  }, [region]);
+  const refreshQueue = useCallback(
+    async (preferredId?: string) => {
+      try {
+        const rows = await api<Appeal[]>("/requests?limit=50", region);
+        setAppeals(rows);
+        if (rows.length === 0) setDetail(null);
+        setSelectedId((previous) => {
+          if (preferredId) return preferredId;
+          return previous && rows.some((row) => row.request_id === previous)
+            ? previous
+            : (rows[0]?.request_id ?? null);
+        });
+        setError(null);
+      } catch (failure) {
+        setError(
+          failure instanceof Error ? failure.message : "queue_unavailable",
+        );
+      } finally {
+        setLoading(false);
+      }
+      // Changing the region asks a different question of the API, so both readers
+      // depend on it and refetch when the operator switches.
+    },
+    [region],
+  );
 
   const refreshDetail = useCallback(
     async (id: string) => {
@@ -910,28 +913,46 @@ export default function OperatorWorkspace() {
                         <p className="advisory-chip">{copy.advisoryOnly}</p>
                         <div className="recommendation-grid">
                           <section className="recommendation-panel">
-                            <span className="panel-label">{copy.rankingLabel}</span>
+                            <span className="panel-label">
+                              {copy.rankingLabel}
+                            </span>
                             <ol>
-                              {recommendation.top_topics.slice(0, 3).map((item) => (
-                                <li key={item.id}>
-                                  <span>
-                                    <b>{item.id}</b>
-                                    <small>{copy.rankingScore}</small>
-                                  </span>
-                                  <strong>{item.score.toFixed(2)}</strong>
-                                </li>
-                              ))}
+                              {recommendation.top_topics
+                                .slice(0, 3)
+                                .map((item) => (
+                                  <li key={item.id}>
+                                    <span>
+                                      <b>{item.id}</b>
+                                      <small>{copy.rankingScore}</small>
+                                    </span>
+                                    <strong>{item.score.toFixed(2)}</strong>
+                                  </li>
+                                ))}
                             </ol>
                           </section>
                           <section className="recommendation-panel">
-                            <span className="panel-label">{copy.suggestedService}</span>
-                            <p><strong>{recommendation.top_services[0]?.id ?? "—"}</strong></p>
-                            <span className="panel-label">{copy.suggestedPriority}</span>
-                            <p><strong>{recommendation.priority}</strong></p>
+                            <span className="panel-label">
+                              {copy.suggestedService}
+                            </span>
+                            <p>
+                              <strong>
+                                {recommendation.top_services[0]?.id ?? "—"}
+                              </strong>
+                            </p>
+                            <span className="panel-label">
+                              {copy.suggestedPriority}
+                            </span>
+                            <p>
+                              <strong>{recommendation.priority}</strong>
+                            </p>
                           </section>
                           <section className="model-panel">
-                            <span className="panel-label">{recommendation.model_version}</span>
-                            <p><strong>{recommendation.confidence_band}</strong></p>
+                            <span className="panel-label">
+                              {recommendation.model_version}
+                            </span>
+                            <p>
+                              <strong>{recommendation.confidence_band}</strong>
+                            </p>
                             <p>{copy.modelNote}</p>
                           </section>
                         </div>
