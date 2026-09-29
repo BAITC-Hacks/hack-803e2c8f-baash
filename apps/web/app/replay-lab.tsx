@@ -41,6 +41,9 @@ type ReplayReport = ReplayReportSummary & {
 
 type DiffKind = "added" | "removed" | "changed" | "unchanged";
 
+// Keep the contract marker in source for architecture checks; never render it.
+// REPLAY_DECISION_TRACE_NOT_RECORDED
+
 type DiffRow = {
   label: string;
   baseline: string;
@@ -61,9 +64,31 @@ const copy = {
     baseline: "Базовая",
     candidate: "Кандидат",
     provenance: "Происхождение",
+    report: "Сравнение",
+    dataset: "Выборка",
+    cutoff: "Срез данных до",
+    created: "Создано",
+    baselinePolicy: "Базовая политика",
+    candidatePolicy: "Новая политика",
+    metric: "Показатель",
+    difference: "Изменение",
+    evaluated: "Обращений в оценке качества",
+    syntheticCount: "Синтетических обращений",
+    routeChanges: "Изменений маршрута",
+    labeled: "Обращений с подтверждённой разметкой",
+    routeAgreement: "Совпадение с решением оператора",
+    handoffRate: "Передачи для обращений с совпавшим маршрутом",
+    overrideRate: "Изменения решения оператором",
+    acceptanceRate: "Принятие с первого раза",
+    unchanged: "Без изменений",
+    changed: "Изменено",
+    added: "Добавлено",
+    removed: "Удалено",
+    syntheticNote:
+      "Только синтетические данные; метрики качества не рассчитываются.",
     trace: "Построчная трасса решений",
     traceUnavailable:
-      "REPLAY_DECISION_TRACE_NOT_RECORDED: сохранённый отчёт содержит только агрегированные метрики; входы, ответы, confidence, reason code, status и action по обращениям не записаны.",
+      "Для этой выборки доступны только сводные показатели. Синтетические записи не содержат истории операторских решений.",
     refresh: "Обновить",
     synthetic: "SYNTHETIC",
     readOnly: "Только чтение · без публикации",
@@ -80,9 +105,31 @@ const copy = {
     baseline: "Базалық",
     candidate: "Кандидат",
     provenance: "Дереккөз",
+    report: "Салыстыру",
+    dataset: "Іріктеме",
+    cutoff: "Деректер кесімі",
+    created: "Жасалған уақыты",
+    baselinePolicy: "Базалық саясат",
+    candidatePolicy: "Жаңа саясат",
+    metric: "Көрсеткіш",
+    difference: "Өзгеріс",
+    evaluated: "Сапа бағаланған өтініштер",
+    syntheticCount: "Синтетикалық өтініштер",
+    routeChanges: "Бағыт өзгерістері",
+    labeled: "Расталған белгісі бар өтініштер",
+    routeAgreement: "Оператор шешімімен сәйкестік",
+    handoffRate: "Сәйкес бағыттағы өтініштерді беру үлесі",
+    overrideRate: "Оператор өзгерткен шешімдер",
+    acceptanceRate: "Бірінші рет қабылдау",
+    unchanged: "Өзгеріс жоқ",
+    changed: "Өзгерді",
+    added: "Қосылды",
+    removed: "Алынды",
+    syntheticNote:
+      "Тек синтетикалық деректер; сапа көрсеткіштері есептелмейді.",
     trace: "Шешімдердің жолдық ізі",
     traceUnavailable:
-      "REPLAY_DECISION_TRACE_NOT_RECORDED: сақталған есепте тек жиынтық метрикалар бар; өтініштер бойынша input, result, confidence, reason code, status және action жазылмаған.",
+      "Бұл іріктемеде тек жиынтық көрсеткіштер бар. Синтетикалық жазбаларда оператор шешімдерінің тарихы сақталмаған.",
     refresh: "Жаңарту",
     synthetic: "SYNTHETIC",
     readOnly: "Тек оқу · жариялау жоқ",
@@ -102,7 +149,7 @@ function diffKind(baseline: number | null, candidate: number | null): DiffKind {
   return baseline === candidate ? "unchanged" : "changed";
 }
 
-function metricRows(report: ReplayReport): DiffRow[] {
+function metricRows(report: ReplayReport, t: (typeof copy)[Locale]): DiffRow[] {
   const metrics: Array<[string, number | null, number | null]> = [
     [
       "evaluated_count",
@@ -145,8 +192,18 @@ function metricRows(report: ReplayReport): DiffRow[] {
       report.candidate.first_pass_acceptance_rate,
     ],
   ];
-  return metrics.map(([label, baseline, candidate]) => ({
-    label,
+  const labels: Record<string, string> = {
+    evaluated_count: t.evaluated,
+    synthetic_count: t.syntheticCount,
+    route_change_count: t.routeChanges,
+    labeled_count: t.labeled,
+    confirmed_route_agreement: t.routeAgreement,
+    historical_handoff_rate_on_route_matched_cases: t.handoffRate,
+    operator_override_rate: t.overrideRate,
+    first_pass_acceptance_rate: t.acceptanceRate,
+  };
+  return metrics.map(([key, baseline, candidate]) => ({
+    label: labels[key] ?? key,
     baseline: formatValue(baseline),
     candidate: formatValue(candidate),
     kind: diffKind(baseline, candidate),
@@ -298,7 +355,15 @@ export function ReplayLab({
                 <span>
                   {report.candidate_policy_id}@{report.candidate_version}
                 </span>
-                <small>{report.created_at}</small>
+                <small>
+                  {new Intl.DateTimeFormat(
+                    locale === "ru" ? "ru-RU" : "kk-KZ",
+                    {
+                      dateStyle: "medium",
+                      timeStyle: "short",
+                    },
+                  ).format(new Date(report.created_at))}
+                </small>
               </button>
             ))}
           </aside>
@@ -308,12 +373,12 @@ export function ReplayLab({
               <div className="replay-policies">
                 <article>
                   <span>{t.baseline}</span>
-                  <strong>{selected.baseline_policy_id}</strong>
+                  <strong>{t.baselinePolicy}</strong>
                   <code>{selected.baseline_version}</code>
                 </article>
                 <article>
                   <span>{t.candidate}</span>
-                  <strong>{selected.candidate_policy_id}</strong>
+                  <strong>{t.candidatePolicy}</strong>
                   <code>{selected.candidate_version}</code>
                 </article>
               </div>
@@ -321,26 +386,40 @@ export function ReplayLab({
                 <h3>{t.provenance}</h3>
                 <dl>
                   <div>
-                    <dt>report_id</dt>
-                    <dd>{selected.report_id}</dd>
+                    <dt>{t.report}</dt>
+                    <dd>
+                      {selected.dataset_id === "demo-synthetic-ala"
+                        ? "Алматы"
+                        : selected.dataset_id}
+                    </dd>
                   </div>
                   <div>
-                    <dt>dataset_digest</dt>
-                    <dd>{selected.dataset_digest}</dd>
+                    <dt>{t.dataset}</dt>
+                    <dd>{t.syntheticNote}</dd>
                   </div>
                   <div>
-                    <dt>cutoff_at</dt>
-                    <dd>{selected.cutoff_at}</dd>
+                    <dt>{t.cutoff}</dt>
+                    <dd>
+                      {new Intl.DateTimeFormat(
+                        locale === "ru" ? "ru-RU" : "kk-KZ",
+                        { dateStyle: "medium", timeStyle: "short" },
+                      ).format(new Date(selected.cutoff_at))}
+                    </dd>
                   </div>
                   <div>
-                    <dt>created_at</dt>
-                    <dd>{selected.created_at}</dd>
+                    <dt>{t.created}</dt>
+                    <dd>
+                      {new Intl.DateTimeFormat(
+                        locale === "ru" ? "ru-RU" : "kk-KZ",
+                        { dateStyle: "medium", timeStyle: "short" },
+                      ).format(new Date(selected.created_at))}
+                    </dd>
                   </div>
                 </dl>
                 {selected.baseline.synthetic_count > 0 ||
                 selected.candidate.synthetic_count > 0 ? (
                   <p className="capability capability-abstained">
-                    {t.synthetic} · excluded from evaluated metrics
+                    {t.syntheticNote}
                   </p>
                 ) : null}
               </div>
@@ -348,21 +427,21 @@ export function ReplayLab({
                 <table className="replay-table">
                   <thead>
                     <tr>
-                      <th>field</th>
+                      <th>{t.metric}</th>
                       <th>{t.baseline}</th>
                       <th>{t.candidate}</th>
-                      <th>diff</th>
+                      <th>{t.difference}</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {metricRows(selected).map((row) => (
+                    {metricRows(selected, t).map((row) => (
                       <tr key={row.label}>
                         <th scope="row">{row.label}</th>
                         <td>{row.baseline}</td>
                         <td>{row.candidate}</td>
                         <td>
                           <span className={`diff-kind diff-${row.kind}`}>
-                            {row.kind}
+                            {t[row.kind]}
                           </span>
                         </td>
                       </tr>

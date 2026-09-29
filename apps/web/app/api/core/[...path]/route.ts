@@ -1,8 +1,24 @@
 import { NextResponse } from "next/server";
+import { handleMockDemo } from "./mock-demo";
 
 const METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE"] as const;
 
 async function proxy(request: Request, path: string[]) {
+  const fromDemoPage = (() => {
+    const referer = request.headers.get("referer");
+    if (!referer) return false;
+    try {
+      return (
+        new URL(referer).pathname === "/demo" ||
+        new URL(referer).pathname.startsWith("/demo/")
+      );
+    } catch {
+      return false;
+    }
+  })();
+  if (process.env.PULSE109_DEMO_MOCKS === "1" && fromDemoPage) {
+    return handleMockDemo(request, path);
+  }
   const apiUrl = process.env.API_URL;
   if (!apiUrl) {
     return NextResponse.json(

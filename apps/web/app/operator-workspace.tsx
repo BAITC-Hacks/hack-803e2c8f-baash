@@ -7,6 +7,9 @@ import {
   ChartNoAxesCombined,
   ClipboardPlus,
   Inbox,
+  Menu,
+  PanelLeftClose,
+  PanelLeftOpen,
   RotateCcw,
   ShieldCheck,
   Siren,
@@ -68,6 +71,23 @@ type AttachmentRef = {
 // local fallback mirrors whatever region it was asked about, so this default
 // stands in until a real one is connected.
 const DEFAULT_REGION = process.env.NEXT_PUBLIC_PULSE109_REGION ?? "ALA";
+
+function statusLabel(status: string, locale: Locale): string {
+  const labels: Record<string, { ru: string; kk: string }> = {
+    received: { ru: "Новое", kk: "Жаңа" },
+    triage: { ru: "На проверке", kk: "Тексерілуде" },
+    classified: { ru: "Классифицировано", kk: "Санатталды" },
+    assigned: { ru: "Назначено", kk: "Тағайындалды" },
+    accepted: { ru: "Принято", kk: "Қабылданды" },
+    in_progress: { ru: "В работе", kk: "Жұмыста" },
+    waiting: { ru: "Ожидает ответа", kk: "Жауап күтуде" },
+    resolved: { ru: "Решено", kk: "Шешілді" },
+    closed: { ru: "Закрыто", kk: "Жабылды" },
+    needs_attention: { ru: "Требует внимания", kk: "Назар аудару қажет" },
+    delivery_failed: { ru: "Ошибка доставки", kk: "Жеткізу қатесі" },
+  };
+  return labels[status]?.[locale] ?? status;
+}
 
 const viewIcons = {
   operations: Activity,
@@ -273,10 +293,14 @@ export default function OperatorWorkspace() {
     null,
   );
   const [profile, setProfile] = useState<string | null>(null);
+  const isDemoProfile = profile === "demo" || profile === "demo-mock";
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [presenterMode, setPresenterMode] = useState(
     () =>
       typeof window !== "undefined" &&
-      new URLSearchParams(window.location.search).get("presenter") === "1",
+      (window.location.pathname === "/demo" ||
+        new URLSearchParams(window.location.search).get("presenter") === "1"),
   );
   const [presenterPreset, setPresenterPreset] =
     useState<PresenterPreset | null>(null);
@@ -299,7 +323,39 @@ export default function OperatorWorkspace() {
   const copy = labels[locale];
 
   useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      try {
+        setSidebarCollapsed(
+          window.localStorage?.getItem("pulse109-sidebar-collapsed") === "1",
+        );
+      } catch {
+        setSidebarCollapsed(false);
+      }
+    });
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
+  function toggleSidebar() {
+    if (window.matchMedia("(max-width: 760px)").matches) {
+      setSidebarOpen((open) => !open);
+      return;
+    }
+    setSidebarCollapsed((collapsed) => {
+      try {
+        window.localStorage?.setItem(
+          "pulse109-sidebar-collapsed",
+          collapsed ? "0" : "1",
+        );
+      } catch {
+        // Collapsing still works when storage is unavailable.
+      }
+      return !collapsed;
+    });
+  }
+
+  useEffect(() => {
     function togglePresenter(event: KeyboardEvent) {
+      if (event.key === "Escape") setSidebarOpen(false);
       if (
         (event.ctrlKey || event.metaKey) &&
         event.shiftKey &&
@@ -583,19 +639,38 @@ export default function OperatorWorkspace() {
   }
 
   return (
-    <div className="shell" lang={locale}>
+    <div
+      className={`shell${sidebarCollapsed ? " sidebar-collapsed" : ""}${sidebarOpen ? " sidebar-open" : ""}`}
+      lang={locale}
+    >
       <a className="skip-link" href="#workspace-main">
         {copy.skipContent}
       </a>
       <aside className="sidebar" aria-label={copy.navigation}>
-        <Link className="brand" href="/" aria-label="Pulse 109 — на главную">
-          <span className="brand-signal" aria-hidden="true">
-            <i />
-            <i />
-            <i />
-          </span>
-          <span>Pulse 109</span>
-        </Link>
+        <div className="sidebar-brand-row">
+          <Link className="brand" href="/" aria-label="Pulse 109 — на главную">
+            <span className="brand-signal" aria-hidden="true">
+              <i />
+              <i />
+              <i />
+            </span>
+            <span>Pulse 109</span>
+          </Link>
+          <button
+            className="sidebar-collapse"
+            type="button"
+            aria-label={sidebarCollapsed ? "Развернуть меню" : "Свернуть меню"}
+            title={sidebarCollapsed ? "Развернуть меню" : "Свернуть меню"}
+            aria-expanded={!sidebarCollapsed}
+            onClick={toggleSidebar}
+          >
+            {sidebarCollapsed ? (
+              <PanelLeftOpen size={17} aria-hidden="true" />
+            ) : (
+              <PanelLeftClose size={17} aria-hidden="true" />
+            )}
+          </button>
+        </div>
         <nav className="sidebar-nav">
           {primaryViews.map((name) => {
             const Icon = viewIcons[name];
@@ -604,7 +679,12 @@ export default function OperatorWorkspace() {
                 key={name}
                 type="button"
                 aria-current={view === name ? "page" : undefined}
-                onClick={() => setView(name)}
+                title={sidebarCollapsed ? copy[name] : undefined}
+                aria-label={copy[name]}
+                onClick={() => {
+                  setView(name);
+                  setSidebarOpen(false);
+                }}
               >
                 <Icon
                   size={16}
@@ -624,7 +704,12 @@ export default function OperatorWorkspace() {
                 key={name}
                 type="button"
                 aria-current={view === name ? "page" : undefined}
-                onClick={() => setView(name)}
+                title={sidebarCollapsed ? copy[name] : undefined}
+                aria-label={copy[name]}
+                onClick={() => {
+                  setView(name);
+                  setSidebarOpen(false);
+                }}
               >
                 <Icon
                   size={16}
@@ -649,8 +734,25 @@ export default function OperatorWorkspace() {
         </div>
       </aside>
 
+      {sidebarOpen ? (
+        <button
+          className="sidebar-backdrop"
+          type="button"
+          aria-label="Закрыть меню"
+          onClick={() => setSidebarOpen(false)}
+        />
+      ) : null}
+
       <main className="shell-main" id="workspace-main" tabIndex={-1}>
         <header className="topbar">
+          <button
+            className="shell-menu-toggle"
+            type="button"
+            aria-label="Открыть меню"
+            onClick={toggleSidebar}
+          >
+            <Menu size={18} aria-hidden="true" />
+          </button>
           <div className="topbar-context" aria-label={copy.region}>
             <span className="topbar-module-badge">{copy[view]}</span>
             <span className="topbar-context-divider" aria-hidden="true">
@@ -678,13 +780,17 @@ export default function OperatorWorkspace() {
             <span
               className="profile"
               title={
-                profile === "demo"
-                  ? "Вымышленные муниципальные обращения. Сервисы приложения, PostgreSQL, worker и аналитика работают в обычном режиме."
+                isDemoProfile
+                  ? profile === "demo-mock"
+                    ? "Полностью локальная симуляция: все данные, действия, аналитика и доставка синтетические; внешние сервисы не подключены."
+                    : "Вымышленные муниципальные обращения. Сервисы приложения, PostgreSQL, worker и аналитика работают в обычном режиме."
                   : undefined
               }
             >
-              {profile === "demo"
-                ? "DEMO DATA"
+              {isDemoProfile
+                ? profile === "demo-mock"
+                  ? "MOCK DEMO · СИМУЛЯЦИЯ"
+                  : "DEMO DATA"
                 : `${copy.profile}: ${profile ?? copy.profileLoading}`}
             </span>
             <div
@@ -697,6 +803,7 @@ export default function OperatorWorkspace() {
                   key={name}
                   type="button"
                   aria-pressed={locale === name}
+                  title={name === "ru" ? "Русский" : "Қазақша"}
                   onClick={() => setLocale(name)}
                 >
                   {name.toUpperCase()}
@@ -755,7 +862,7 @@ export default function OperatorWorkspace() {
             key={presenterPreset?.id ?? "normal"}
             locale={locale}
             regionId={region}
-            demoEnabled={profile === "demo"}
+            demoEnabled={isDemoProfile}
             presenterPreset={presenterPreset}
             onOpenSubmitted={openSubmittedAppeal}
           />
@@ -767,7 +874,11 @@ export default function OperatorWorkspace() {
           >
             <div className="content">
               <p className="eyebrow">
-                {profile === "demo" ? "DEMO DATA" : `Profile: ${profile}`}
+                {isDemoProfile
+                  ? profile === "demo-mock"
+                    ? "MOCK DEMO · СИМУЛЯЦИЯ"
+                    : "DEMO DATA"
+                  : `Profile: ${profile}`}
               </p>
               <h1 id="platform-status">{copy.situation}</h1>
               <p>{copy.statusImplemented}</p>
@@ -782,7 +893,13 @@ export default function OperatorWorkspace() {
             <section className="content" id="queue">
               <div className="section-heading">
                 <div>
-                  <p className="eyebrow">{profile}</p>
+                  <p className="eyebrow">
+                    {isDemoProfile
+                      ? locale === "ru"
+                        ? "МОК-ДЕМО · СИМУЛЯЦИЯ"
+                        : "МОК-ДЕМО · СИМУЛЯЦИЯ"
+                      : profile}
+                  </p>
                   <h1>{copy.queue}</h1>
                 </div>
                 <button
@@ -838,7 +955,7 @@ export default function OperatorWorkspace() {
                       className={`queue-row ${selectedId === appeal.request_id ? "selected" : ""}`}
                       key={appeal.request_id}
                       type="button"
-                      aria-label={`${copy.record} ${appeal.source_request_id}; ${copy.region} ${appeal.region_id}; ${copy.statusField} ${appeal.status}`}
+                      aria-label={`${copy.record} ${appeal.source_request_id}; ${copy.region} ${appeal.region_id}; ${copy.statusField} ${statusLabel(appeal.status, locale)}`}
                       onClick={() => {
                         setSelectedId(appeal.request_id);
                         setRecommendation(null);
@@ -850,7 +967,9 @@ export default function OperatorWorkspace() {
                       <span>{appeal.region_id}</span>
                       <span>{appeal.channel}</span>
                       <span>{appeal.received_at_quality}</span>
-                      <span>{appeal.status}</span>
+                      <span className={`status-chip status-${appeal.status}`}>
+                        {statusLabel(appeal.status, locale)}
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -867,7 +986,9 @@ export default function OperatorWorkspace() {
                         {detail.text ?? copy.noText}
                       </p>
                     </div>
-                    <span className="status-chip">{detail.status}</span>
+                    <span className={`status-chip status-${detail.status}`}>
+                      {statusLabel(detail.status, locale)}
+                    </span>
                   </div>
                   <div className="meta-grid">
                     <div>
@@ -1116,7 +1237,7 @@ export default function OperatorWorkspace() {
           </div>
         ) : null}
       </main>
-      {profile === "demo" && presenterMode ? (
+      {isDemoProfile && presenterMode ? (
         <PresenterPanel
           regionId={region}
           onNavigate={(target) => setView(target)}

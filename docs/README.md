@@ -7,14 +7,15 @@ Read in this order to understand the repository in roughly thirty minutes.
 | 01  | [Product capabilities](features/README.md)        | What the product does end to end, and the three states every algorithmic capability reports | Current    |
 | 02  | [Golden Demo](GOLDEN_DEMO.md)                     | Preparation command and the current presenter click path                                    | Current    |
 | 03  | [Demo runbook](DEMO_RUNBOOK.md)                   | Startup, reset, verify, and the exact click path for a walkthrough                          | Current    |
-| 03a | [Golden Demo](GOLDEN_DEMO.md)                    | Русский маршрут ведущего, команда prepare и честные границы синтетического сценария          | Current    |
+| 03b | [Local mock demo](MOCK_DEMO.md)                   | Start the presenter UI without Docker or backend services                                   | Current    |
+| 03a | [Golden Demo](GOLDEN_DEMO.md)                     | Русский маршрут ведущего, команда prepare и честные границы синтетического сценария         | Current    |
 | 04  | [Architecture](architecture/README.md)            | Runtime, data, human decision, incident, failure and privacy diagrams in RU and EN          | Current    |
 | 05  | [Feature status](FEATURE_STATUS.md)               | What is implemented, partial, research or blocked. The authority on current state           | Current    |
 | 06  | [Data Lab](features/DATA_LAB.md)                  | Offline exploration, data quality, live analytics and drill-down                            | Current    |
 | 07  | [ML research](ml/README.md)                       | Candidates, PulseDM design, shared evaluation protocol, governance boundaries               | Current    |
 | 08  | [Security notes](security/README.md)              | Attachment validation, privacy boundary, access checks                                      | Current    |
 | 09  | [Decision log](DECISION_LOG.md)                   | Architecture and product decisions with their rationale                                     | Current    |
-| 09a | [Development and verification](DEVELOPMENT.md)   | Local checks, integration runner and CI context                                             | Current    |
+| 09a | [Development and verification](DEVELOPMENT.md)    | Local checks, integration runner and CI context                                             | Current    |
 | 10  | [External blockers](../DECISIONS_AND_BLOCKERS.md) | The ten things owned by the customer and the organizers                                     | Current    |
 | 11  | [Development history](DEVELOPMENT_HISTORY.md)     | Chronology derived from Git                                                                 | Historical |
 

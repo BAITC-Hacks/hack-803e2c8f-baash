@@ -75,6 +75,21 @@ async function readChecks(regionId: string): Promise<Check[]> {
     profile: string;
     checks?: { database?: string };
   }>("/api/core/health/ready", regionId);
+  if (health.profile === "demo-mock") {
+    return [
+      {
+        label: "Локальная симуляция",
+        ready: true,
+        detail: "Без Docker, API и БД",
+      },
+      {
+        label: "Данные",
+        ready: true,
+        detail: "Синтетические, в памяти процесса",
+      },
+      { label: "Внешняя доставка", ready: true, detail: "Только имитация" },
+    ];
+  }
   const checks: Check[] = [
     {
       label: "Приложение и БД",
@@ -185,7 +200,7 @@ export function PresenterPanel({
       .catch(() => {
         if (active) {
           setChecks(null);
-          setCheckError("Проверка недоступна; используйте demo.ps1 prepare.");
+          setCheckError("Проверка недоступна; проверьте подключение демо.");
         }
       });
     return () => {
@@ -241,6 +256,19 @@ export function PresenterPanel({
         onClick={() => setRefresh((value) => value + 1)}
       >
         Проверить ещё раз
+      </button>
+      <button
+        className={styles.textButton}
+        type="button"
+        onClick={async () => {
+          await fetch("/api/core/demo/reset", {
+            method: "POST",
+            cache: "no-store",
+          });
+          window.location.reload();
+        }}
+      >
+        Сбросить демо
       </button>
       <div className={styles.stepCard}>
         <span>

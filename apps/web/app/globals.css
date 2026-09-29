@@ -163,6 +163,11 @@ a {
   color: var(--sidebar-muted);
 }
 
+.shell .topbar .profile:has(+ .locale-switch) {
+  color: #f2c36b;
+  font-weight: 750;
+}
+
 .topbar-actions,
 .locale-switch {
   display: flex;
@@ -2747,33 +2752,85 @@ textarea:focus-visible {
 
 .shell {
   display: grid;
-  grid-template-columns: 240px minmax(0, 1fr);
+  grid-template-columns: 232px minmax(0, 1fr);
   min-height: 100dvh;
   background: var(--hex-canvas);
+  --hex-ink: #171923;
+  --hex-gold: #6676df;
+  --hex-gold-soft: #8b98f0;
+  --hex-canvas: #f7f8fa;
+  --hex-surface: #ffffff;
+  --hex-surface-paper: #fbfbfd;
+  --hex-line: rgba(23, 25, 35, 0.1);
+  --hex-line-subtle: rgba(23, 25, 35, 0.055);
+  --hex-line-strong: rgba(23, 25, 35, 0.18);
+  --hex-border: rgba(23, 25, 35, 0.12);
+  --hex-muted: #687080;
+  --hex-radius: 8px;
+  --radius-control: 8px;
+  --radius-card: 12px;
+  --radius-pill: 999px;
+  --focus-ring: #6676df;
+}
+
+.shell.sidebar-collapsed {
+  grid-template-columns: 68px minmax(0, 1fr);
 }
 
 .sidebar {
   justify-content: flex-start;
-  background: var(--hex-ink);
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
-  color: var(--sidebar-ink);
-  padding: 20px 14px;
+  background: #f2f3f6;
+  border-right: 1px solid #e5e7eb;
+  color: #252833;
+  padding: 16px 12px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
   position: sticky;
   top: 0;
   align-self: start;
   height: 100vh;
 }
 
+.sidebar-brand-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 34px;
+  gap: 4px;
+}
+
+.sidebar-collapse,
+.shell-menu-toggle {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  display: inline-grid;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  color: #646b78;
+  background: transparent;
+  cursor: pointer;
+}
+
+.sidebar-collapse:hover,
+.shell-menu-toggle:hover {
+  color: #232633;
+  background: rgba(35, 38, 51, 0.07);
+}
+
+.shell-menu-toggle {
+  display: none;
+}
+
 .sidebar .brand {
-  color: #ffffff;
+  color: #252833;
   font-family: var(--hex-font-display);
   font-size: 1.05rem;
   font-weight: 700;
   letter-spacing: -0.02em;
-  padding: 4px 8px;
+  padding: 4px 2px;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -2785,10 +2842,10 @@ textarea:focus-visible {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--hex-gold);
-  border-radius: var(--hex-radius);
-  background: rgba(212, 158, 70, 0.15);
-  color: var(--hex-gold-soft);
+  border: 1px solid rgba(102, 118, 223, 0.2);
+  border-radius: 8px;
+  background: #e8ebff;
+  color: #5263cd;
   font-family: var(--hex-font-mono);
   font-size: 11px;
   font-weight: 700;
@@ -2813,53 +2870,86 @@ textarea:focus-visible {
   appearance: none;
   background: none;
   border: none;
-  color: var(--sidebar-muted);
+  color: #606775;
   font-family: var(--hex-font-sans);
   font-size: 0.88rem;
   font-weight: 550;
   text-align: left;
-  min-height: 38px;
-  padding: 6px 12px;
+  min-height: 40px;
+  padding: 7px 10px;
   display: flex;
   align-items: center;
   gap: 10px;
-  border-left: 2px solid transparent;
-  border-radius: var(--hex-radius);
+  border-radius: 8px;
   cursor: pointer;
-  transition: all var(--motion-fast) ease;
+  transition:
+    color 140ms ease,
+    background-color 140ms ease;
 }
 
 .sidebar-nav button svg {
   flex: 0 0 16px;
-  color: var(--sidebar-muted);
+  color: #727988;
   transition: color var(--motion-fast) ease;
 }
 
 .sidebar-nav button:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: #ffffff;
+  background: rgba(37, 40, 51, 0.055);
+  color: #252833;
 }
 
 .sidebar-nav button:hover svg {
-  color: var(--hex-gold-soft);
+  color: #5364ce;
 }
 
 .sidebar-nav button[aria-current="page"] {
-  border-left-color: var(--hex-gold);
-  background: rgba(212, 158, 70, 0.12);
-  color: #ffffff;
+  background: #e7eaff;
+  color: #303d99;
   font-weight: 650;
 }
 
 .sidebar-nav button[aria-current="page"] svg {
-  color: var(--hex-gold);
+  color: #5364ce;
 }
 
 .sidebar-divider {
   display: block;
   height: 1px;
   margin: 6px 8px;
-  background: rgba(255, 255, 255, 0.08);
+  background: #dfe2e8;
+}
+
+.sidebar-collapsed .sidebar {
+  padding-inline: 10px;
+}
+
+.sidebar-collapsed .sidebar-brand-row {
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sidebar-collapsed .sidebar .brand {
+  padding: 0;
+}
+
+.sidebar-collapsed .sidebar .brand > span:last-child,
+.sidebar-collapsed .sidebar-nav button > span,
+.sidebar-collapsed .sidebar-portal-link span,
+.sidebar-collapsed .sidebar-version-badge {
+  display: none;
+}
+
+.sidebar-collapsed .sidebar-nav button {
+  justify-content: center;
+  padding-inline: 0;
+}
+
+.sidebar-collapsed .sidebar-footer {
+  align-items: center;
+}
+
+.sidebar-backdrop {
+  display: none;
 }
 
 .shell-main {
@@ -2877,7 +2967,7 @@ textarea:focus-visible {
   gap: 16px;
   min-height: 56px;
   padding: 8px 28px;
-  background: rgba(246, 243, 237, 0.94);
+  background: rgba(247, 248, 250, 0.94);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--hex-border);
   position: sticky;
@@ -2896,6 +2986,12 @@ textarea:focus-visible {
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
+}
+
+.shell .topbar .profile:has(+ .locale-switch) {
+  color: #3949a5;
+  border-color: #dfe3ff;
+  background: #eef0ff;
 }
 
 .shell .locale-switch {
@@ -2945,7 +3041,7 @@ textarea:focus-visible {
 }
 
 .shell .workspace {
-  padding: 28px 36px 48px;
+  padding: 28px clamp(20px, 3vw, 42px) 48px;
   max-width: 1440px;
   width: 100%;
   margin-inline: auto;
@@ -4212,4 +4308,157 @@ svg[data-chart-motion] [data-chart-bar] {
 .cluster-inspector:hover,
 .replay-detail:hover {
   border-color: var(--hex-line-strong);
+}
+
+/* Focused product shell polish: neutral canvas, compact navigation and quiet data surfaces. */
+.shell .sidebar-footer {
+  gap: 10px;
+}
+
+.shell .sidebar-portal-link {
+  color: #596170;
+  border-radius: 8px;
+}
+
+.shell .sidebar-version-badge {
+  color: #858b97;
+}
+
+.shell .topbar .profile:has(+ .locale-switch) {
+  color: #3949a5;
+  border-color: #dfe3ff;
+  background: #eef0ff;
+}
+
+.shell .queue-row {
+  min-height: 44px;
+  border-color: transparent;
+}
+
+.shell .queue-row:hover {
+  background: rgba(102, 118, 223, 0.055);
+}
+
+.shell .queue-row.selected {
+  background: #eef0ff;
+  box-shadow: inset 2px 0 #6676df;
+}
+
+.shell .status-chip {
+  border-color: transparent;
+}
+
+.shell .status-received,
+.shell .status-triage,
+.shell .status-in_progress {
+  color: #315bb5;
+  background: #eaf1ff;
+}
+
+.shell .status-assigned,
+.shell .status-classified {
+  color: #6650a4;
+  background: #f0ebff;
+}
+
+.shell .status-accepted {
+  color: #356e58;
+  background: #e8f5ee;
+}
+
+.shell .status-waiting,
+.shell .status-needs_attention {
+  color: #986500;
+  background: #fff4d9;
+}
+
+.shell .status-resolved,
+.shell .status-closed {
+  color: #34744e;
+  background: #e8f5ec;
+}
+
+.shell .status-delivery_failed {
+  color: #aa4545;
+  background: #fff0ef;
+}
+
+.shell .lab-table th,
+.shell .lab-table td {
+  padding: 8px 10px;
+  border-bottom-color: rgba(23, 25, 35, 0.07);
+}
+
+.shell .lab-table tbody tr:hover {
+  background: rgba(102, 118, 223, 0.045);
+}
+
+.sidebar-nav button:focus-visible,
+.sidebar-collapse:focus-visible,
+.shell-menu-toggle:focus-visible {
+  outline: 2px solid #6676df;
+  outline-offset: 2px;
+}
+
+@media (max-width: 760px) {
+  .shell,
+  .shell.sidebar-collapsed {
+    display: block;
+  }
+
+  .shell .sidebar {
+    position: fixed;
+    z-index: 30;
+    inset: 0 auto 0 0;
+    width: min(280px, calc(100vw - 56px));
+    height: 100dvh;
+    transform: translateX(-105%);
+    transition: transform 180ms ease;
+    box-shadow: 14px 0 38px rgba(20, 23, 34, 0.12);
+  }
+
+  .shell.sidebar-open .sidebar {
+    transform: translateX(0);
+  }
+
+  .shell.sidebar-collapsed .sidebar-brand-row {
+    flex-direction: row;
+  }
+
+  .shell.sidebar-collapsed .sidebar .brand > span:last-child,
+  .shell.sidebar-collapsed .sidebar-nav button > span,
+  .shell.sidebar-collapsed .sidebar-portal-link span,
+  .shell.sidebar-collapsed .sidebar-version-badge {
+    display: initial;
+  }
+
+  .shell.sidebar-collapsed .sidebar-nav button {
+    justify-content: flex-start;
+    padding-inline: 10px;
+  }
+
+  .shell.sidebar-collapsed .sidebar-footer {
+    align-items: stretch;
+  }
+
+  .shell .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    z-index: 29;
+    inset: 0;
+    border: 0;
+    background: rgba(14, 17, 26, 0.28);
+  }
+
+  .shell .shell-menu-toggle {
+    display: inline-grid;
+  }
+
+  .shell .topbar {
+    padding-inline: 14px;
+  }
+
+  .shell .workspace {
+    padding: 20px 16px 36px;
+  }
 }

@@ -114,6 +114,19 @@ const copy = {
     loading: "Загрузка…",
     empty: "Нет данных для этого среза",
     synthetic: "Синтетические данные",
+    stageName: "Этап",
+    countShort: "Обращений",
+    source: "Источник",
+    status: "Статус",
+    received: "Новые",
+    classified: "Классифицировано",
+    assigned: "Назначено",
+    closed: "Решено",
+    district: "Районная служба",
+    water: "Водоснабжение",
+    roads: "Дороги",
+    lighting: "Освещение",
+    waste: "Вывоз отходов",
   },
   kk: {
     title: "Деректер зертханасы",
@@ -142,11 +155,29 @@ const copy = {
     loading: "Жүктелуде…",
     empty: "Бұл кесінді үшін дерек жоқ",
     synthetic: "Синтетикалық деректер",
+    stageName: "Кезең",
+    countShort: "Өтініш",
+    source: "Дереккөз",
+    status: "Мәртебе",
+    received: "Жаңа",
+    classified: "Санатталды",
+    assigned: "Тағайындалды",
+    closed: "Шешілді",
+    district: "Аудандық қызмет",
+    water: "Сумен жабдықтау",
+    roads: "Жолдар",
+    lighting: "Көше жарығы",
+    waste: "Қалдықтарды шығару",
   },
 } as const;
 
 function pct(value: number | null): string {
   return value === null ? "—" : `${(value * 100).toFixed(1)}%`;
+}
+
+function humanize(value: string, t: (typeof copy)[Locale]): string {
+  const key = value.replace(/^(topic|service):/, "") as keyof typeof t;
+  return key in t ? t[key] : value;
 }
 
 export function DataLab({
@@ -323,7 +354,7 @@ export function DataLab({
               return (
                 <li key={stage.stage}>
                   <div className="funnel-head">
-                    <strong>{stage.stage}</strong>
+                    <strong>{humanize(stage.stage, t)}</strong>
                     <span className="codes">{stage.count}</span>
                   </div>
                   <span
@@ -356,8 +387,8 @@ export function DataLab({
             <table className="lab-table">
               <thead>
                 <tr>
-                  <th>stage</th>
-                  <th>n</th>
+                  <th>{t.stageName}</th>
+                  <th>{t.countShort}</th>
                   <th>P50</th>
                   <th>P75</th>
                   <th>P90</th>
@@ -367,7 +398,7 @@ export function DataLab({
               <tbody>
                 {timings.map((timing) => (
                   <tr key={timing.stage}>
-                    <td>{timing.stage}</td>
+                    <td>{humanize(timing.stage, t)}</td>
                     <td>{timing.overall.count}</td>
                     <td>{timing.overall.p50 ?? "—"}</td>
                     <td>{timing.overall.p75 ?? "—"}</td>
@@ -397,7 +428,8 @@ export function DataLab({
               {handoffs.edges.map((edge) => (
                 <li key={`${edge.from_service}-${edge.to_service}`}>
                   <strong>
-                    {edge.from_service} → {edge.to_service}
+                    {humanize(edge.from_service, t)} →{" "}
+                    {humanize(edge.to_service, t)}
                   </strong>
                   <span className="codes">{edge.count}</span>
                   <button
@@ -443,26 +475,28 @@ export function DataLab({
             <table className="lab-table">
               <thead>
                 <tr>
-                  <th>source</th>
-                  <th>status</th>
-                  <th>received</th>
-                  <th>quality</th>
-                  <th>lang</th>
-                  <th>service</th>
+                  <th>{t.source}</th>
+                  <th>{t.status}</th>
+                  <th>{t.stageName}</th>
+                  <th>{t.quality}</th>
+                  <th>Язык</th>
+                  <th>{t.handoffs}</th>
                 </tr>
               </thead>
               <tbody>
                 {drill.appeals.map((appeal) => (
                   <tr key={appeal.request_id}>
                     <td>{appeal.source_request_id}</td>
-                    <td>{appeal.status}</td>
+                    <td>{humanize(appeal.status, t)}</td>
                     <td>
                       {appeal.received_at?.slice(0, 16).replace("T", " ") ??
                         "—"}
                     </td>
                     <td>{appeal.received_at_quality}</td>
                     <td>{appeal.language}</td>
-                    <td>{appeal.service_id ?? "—"}</td>
+                    <td>
+                      {appeal.service_id ? humanize(appeal.service_id, t) : "—"}
+                    </td>
                   </tr>
                 ))}
               </tbody>

@@ -710,7 +710,7 @@ export function OperationsCenter({
 }
 
 function AnimatedCount({ value, locale }: { value: number; locale: Locale }) {
-  const [displayValue, setDisplayValue] = useState(0);
+  const [displayValue, setDisplayValue] = useState(value);
   const previousValue = useRef(0);
   const reduceMotion = useSyncExternalStore(
     (callback) => {

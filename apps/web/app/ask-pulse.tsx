@@ -408,6 +408,11 @@ export function AskPulse({
           {t.label}
         </label>
         <div className={styles.inputRow}>
+          <Sparkles
+            className={styles.composerIcon}
+            size={17}
+            aria-hidden="true"
+          />
           <input
             ref={inputRef}
             id="ask-pulse-question"
@@ -422,9 +427,10 @@ export function AskPulse({
             type="submit"
             className="primary-action"
             disabled={busy || !question.trim()}
+            aria-label={busy ? t.loading : t.send}
           >
             <Send size={16} aria-hidden="true" />
-            {busy ? t.loading : t.send}
+            <span className="sr-only">{busy ? t.loading : t.send}</span>
           </button>
         </div>
       </form>
