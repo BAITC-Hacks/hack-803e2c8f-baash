@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import type { PresenterPreset } from "./presenter-panel";
 
 type Locale = "ru" | "kk";
 type IntakeDraft = {
@@ -145,15 +146,25 @@ export function Intake({
   locale,
   regionId,
   demoEnabled,
+  presenterPreset,
 }: {
   locale: Locale;
   regionId: string;
   demoEnabled: boolean;
+  presenterPreset?: PresenterPreset | null;
 }) {
   const syntheticAssistEnabled = demoEnabled;
   const copy = labels[locale];
   const [step, setStep] = useState(0);
-  const [draft, setDraft] = useState<IntakeDraft>(initialDraft);
+  const [draft, setDraft] = useState<IntakeDraft>(
+    presenterPreset
+      ? {
+          description: presenterPreset.description,
+          location: presenterPreset.location,
+          contact: "none",
+        }
+      : initialDraft,
+  );
   const [error, setError] = useState("");
   const [submitError, setSubmitError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -169,6 +180,7 @@ export function Intake({
   const [submittedNumber, setSubmittedNumber] = useState("");
 
   useEffect(() => {
+    if (presenterPreset) return;
     const oldDraft = window.localStorage.getItem(
       "pulse109-guided-intake-draft",
     );
@@ -189,7 +201,7 @@ export function Intake({
     } catch {
       // An unreadable legacy draft is removed without exposing its contents.
     }
-  }, []);
+  }, [presenterPreset]);
 
   const progress = useMemo(() => `${step + 1} / 5`, [step]);
 
@@ -288,18 +300,34 @@ export function Intake({
     setSubmitError("");
     if (!attemptRef.current) {
       const sourceRequestId = `web-${crypto.randomUUID()}`;
+      const presetLocation =
+        presenterPreset &&
+        regionId === "ALA" &&
+        draft.location === presenterPreset.location;
       attemptRef.current = {
         idempotencyKey: crypto.randomUUID(),
         body: JSON.stringify({
-          source_system: "pulse109-web-synthetic",
+          source_system: presenterPreset
+            ? "pulse109-demo-synthetic"
+            : "pulse109-web-synthetic",
           source_request_id: sourceRequestId,
           region_id: regionId,
-          received_at: null,
-          received_at_quality: "missing",
+          received_at: presenterPreset ? new Date().toISOString() : null,
+          received_at_quality: presenterPreset ? "exact" : "missing",
           channel: "web",
           language: locale,
           text: `${draft.description}\n${draft.location}`,
           consent_or_legal_basis: "SYNTHETIC_TEST_ONLY",
+          ...(presetLocation
+            ? {
+                location: {
+                  latitude: presenterPreset.latitude,
+                  longitude: presenterPreset.longitude,
+                  precision_m: 40,
+                  geo_id: "ALA-SYNTHETIC-DISTRICT-4",
+                },
+              }
+            : {}),
         }),
       };
     }

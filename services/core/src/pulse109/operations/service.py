@@ -39,6 +39,14 @@ OPEN_APPEAL_STATES = ("new", "triage", "assigned", "accepted", "in_progress", "w
 # hour describes less of the region than a reader would assume.
 TIME_QUALITY_FLOOR = 0.80
 ACTIVE_INCIDENT_STATES = ("proposed", "confirmed", "monitoring")
+# Only these outbox types are claimed by the regional delivery worker. Other
+# durable events are retained for audit/integration subscribers, but are not a
+# backlog of deliveries to the regional adapter.
+DELIVERY_EVENT_TYPES = (
+    "appeal.assigned.v1",
+    "appeal.reassigned.v1",
+    "appeal.status.changed.v1",
+)
 
 
 def _psycopg_url(database_url: str) -> str:
@@ -99,11 +107,13 @@ class PostgresOperationsService:
                 WHERE region_id = %s AND state IN ('open', 'under_review')) AS emerging,
               (SELECT count(*) FROM integration.outbox o
                  JOIN appeals.appeal a ON a.request_id::text = o.subject_id
-                WHERE a.region_id = %s AND o.status IN ('pending', 'processing', 'retrying'))
+                WHERE a.region_id = %s AND o.status IN ('pending', 'processing', 'retrying')
+                  AND o.event_type = ANY(%s))
                 AS queued,
               (SELECT count(*) FROM integration.outbox o
                  JOIN appeals.appeal a ON a.request_id::text = o.subject_id
-                WHERE a.region_id = %s AND o.status = 'dead_letter') AS failed
+                WHERE a.region_id = %s AND o.status = 'dead_letter'
+                  AND o.event_type = ANY(%s)) AS failed
             """,
             (
                 region_id,
@@ -112,7 +122,9 @@ class PostgresOperationsService:
                 list(ACTIVE_INCIDENT_STATES),
                 region_id,
                 region_id,
+                list(DELIVERY_EVENT_TYPES),
                 region_id,
+                list(DELIVERY_EVENT_TYPES),
             ),
         )
         row = cursor.fetchone() or {}
@@ -216,8 +228,9 @@ class PostgresOperationsService:
             FROM integration.outbox o
             JOIN appeals.appeal a ON a.request_id::text = o.subject_id
             WHERE a.region_id = %s AND o.status IN ('pending', 'processing', 'retrying')
+              AND o.event_type = ANY(%s)
             """,
-            (region_id,),
+            (region_id, list(DELIVERY_EVENT_TYPES)),
         )
         row = cursor.fetchone() or {}
         if not row.get("oldest"):

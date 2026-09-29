@@ -14,7 +14,9 @@ from pathlib import Path
 from typing import Any
 
 import httpx
-from demo_pagination import existing_source_ids
+from demo_clock import demo_now
+from demo_pagination import existing_source_ids, existing_source_rows
+from verify_demo_world import verify_world
 
 ROOT = Path(__file__).resolve().parents[1]
 COMPOSE = [
@@ -43,7 +45,7 @@ FIXTURES: tuple[dict[str, Any], ...] = (
         "channel": "phone",
         "language": "ru",
         "text": "Синтетический пример: у дома № 12 на улице Садовой протекает водопровод.",
-        "received_at": "2026-09-25T08:15:00+05:00",
+        "minutes_ago": 180,
         "received_at_quality": "exact",
     },
     {
@@ -58,7 +60,7 @@ FIXTURES: tuple[dict[str, Any], ...] = (
         "channel": "web",
         "language": "ru",
         "text": "Синтетический пример: у соседнего дома № 14 на улице Садовой пропал напор воды.",
-        "received_at": "2026-09-25T08:20:00+05:00",
+        "minutes_ago": 175,
         "received_at_quality": "exact",
     },
     {
@@ -88,70 +90,68 @@ FIXTURES: tuple[dict[str, Any], ...] = (
         "channel": "mobile",
         "language": "ru",
         "text": "Синтетический пример: на улице Парковой появилась выбоина у остановки.",
-        "received_at": "2026-09-25T09:00:00+05:00",
+        "minutes_ago": 130,
         "received_at_quality": "exact",
     },
 )
 
-# The emerging-pattern scenario. Six reports of one developing water problem,
-# arriving inside about forty minutes along a single street. Their timestamps are
-# anchored to the moment of seeding, because the radar reads a recent window and a
-# fixed date would fall straight out of it. The four fixtures above keep their
-# fixed times so the scripted walkthrough stays reproducible.
+# Six fictional water-quality reports in one district, all created through the
+# normal API. The text varies on purpose; the radar measures geo/time affinity,
+# not lexical similarity or a fabricated causal explanation.
 EMERGING: tuple[tuple[str, int, float, float, str, str, str], ...] = (
     (
         "demo-emerging-water-01",
-        46,
+        43,
         43.2402,
         76.8931,
         "phone",
         "ru",
-        "Синтетический пример: во дворе пропала вода.",
+        "Синтетический пример: после ремонта вода стала мутной.",
     ),
     (
         "demo-emerging-water-02",
-        42,
+        36,
         43.2407,
         76.8939,
         "phone",
         "kk",
-        "Синтетикалық мысал: екінші сағат бойы су жоқ.",
+        "Синтетикалық мысал: судың түсі өзгерді.",
     ),
     (
         "demo-emerging-water-03",
-        39,
+        29,
         43.2411,
         76.8946,
         "web",
         "ru",
-        "Синтетический пример: слабое давление воды.",
+        "Синтетический пример: из крана идёт металлический запах.",
     ),
     (
         "demo-emerging-water-04",
-        36,
+        20,
         43.2416,
         76.8952,
         "mobile",
         "ru",
-        "Синтетический пример: в соседнем доме тоже нет воды.",
+        "Синтетический пример: вода после работ выглядит мутной.",
     ),
     (
         "demo-emerging-water-05",
-        29,
+        11,
         43.2421,
         76.8959,
         "phone",
         "kk",
-        "Синтетикалық мысал: көшеде су ағып жатыр.",
+        "Синтетикалық мысал: су лай болып тұр.",
     ),
     (
         "demo-emerging-water-06",
-        24,
+        4,
         43.2426,
         76.8966,
         "web",
         "ru",
-        "Синтетический пример: давление резко упало.",
+        "Синтетический пример: у воды появился странный запах.",
     ),
 )
 
@@ -200,6 +200,7 @@ def seed_catalog() -> None:
 
 
 def seed() -> None:
+    now = demo_now()
     with httpx.Client(base_url=API, timeout=20) as client:
         ready = client.get("/v1/health/ready")
         ready.raise_for_status()
@@ -207,13 +208,21 @@ def seed() -> None:
         if data.get("profile") != "demo" or data.get("checks", {}).get("database") != "ready":
             raise RuntimeError("Refusing to seed: core is not the ready PostgreSQL demo profile")
         seed_catalog()
+        existing = existing_source_rows(client, region_id="ALA")
         for fixture in FIXTURES:
             source_id = fixture["source_request_id"]
+            if source_id in existing:
+                print(f"{source_id}: already present")
+                if source_id == "demo-109-water-001":
+                    ensure_evidence(client, str(existing[source_id]["request_id"]))
+                continue
             body = {
-                **fixture,
+                **{key: value for key, value in fixture.items() if key != "minutes_ago"},
                 "source_system": "pulse109-demo-synthetic",
                 "consent_or_legal_basis": "SYNTHETIC_TEST_ONLY",
             }
+            if "minutes_ago" in fixture:
+                body["received_at"] = (now - timedelta(minutes=fixture["minutes_ago"])).isoformat()
             response = client.post(
                 "/v1/requests",
                 headers={
@@ -228,25 +237,29 @@ def seed() -> None:
                 raise RuntimeError("Demo seed returned a different source identity")
             print(f"{source_id}: {appeal['request_id']} ({response.status_code})")
             if source_id == "demo-109-water-001":
-                attachment_path = f"/v1/requests/{appeal['request_id']}/attachments"
-                headers = {"X-Region-Id": fixture["region_id"]}
-                attachments = client.get(attachment_path, headers=headers)
-                attachments.raise_for_status()
-                if not any(item["object_hash"] == EVIDENCE_HASH for item in attachments.json()):
-                    uploaded = client.post(
-                        attachment_path,
-                        headers=headers,
-                        json={
-                            "file_name": "synthetic-repair-evidence.txt",
-                            "mime_type": "text/plain",
-                            "content_base64": base64.b64encode(SYNTHETIC_EVIDENCE).decode("ascii"),
-                        },
-                    )
-                    uploaded.raise_for_status()
-                print(f"synthetic closure evidence: sha256:{EVIDENCE_HASH}")
-        seed_emerging(client)
-        seed_world()
+                ensure_evidence(client, str(appeal["request_id"]))
+        seed_emerging(client, now=now)
+        seed_world(now=now)
     seed_replay_dataset()
+
+
+def ensure_evidence(client: httpx.Client, request_id: str) -> None:
+    attachment_path = f"/v1/requests/{request_id}/attachments"
+    headers = {"X-Region-Id": "ALA"}
+    attachments = client.get(attachment_path, headers=headers)
+    attachments.raise_for_status()
+    if not any(item["object_hash"] == EVIDENCE_HASH for item in attachments.json()):
+        uploaded = client.post(
+            attachment_path,
+            headers=headers,
+            json={
+                "file_name": "synthetic-repair-evidence.txt",
+                "mime_type": "text/plain",
+                "content_base64": base64.b64encode(SYNTHETIC_EVIDENCE).decode("ascii"),
+            },
+        )
+        uploaded.raise_for_status()
+    print(f"synthetic closure evidence: sha256:{EVIDENCE_HASH}")
 
 
 def check_environment() -> None:
@@ -366,14 +379,50 @@ def verify() -> None:
     print("operator workspace: http://localhost:3000/demo")
 
 
-def seed_emerging(client: httpx.Client) -> None:
+def check_live_demo_clock(now: datetime) -> None:
+    """A pinned fixture clock cannot make the application's live Radar travel in time."""
+    if abs(datetime.now(timezone.utc) - now.astimezone(timezone.utc)) > timedelta(minutes=5):
+        raise RuntimeError(
+            "PULSE109_DEMO_NOW is more than five minutes from wall time. "
+            "Unset it (or set it near now) for a live Radar walkthrough."
+        )
+
+
+def prepare() -> None:
+    """Exercise the workflow, then leave a fresh, verified synthetic world."""
+    check_live_demo_clock(demo_now())
+    compose("up", "--build", "--wait", "--wait-timeout", "300")
+    with httpx.Client(base_url=API, timeout=20) as client:
+        ready = client.get("/v1/health/ready")
+        ready.raise_for_status()
+        data = ready.json()
+        if data.get("profile") != "demo" or data.get("checks", {}).get("database") != "ready":
+            raise RuntimeError("Refusing to prepare: core is not the ready PostgreSQL demo profile")
+    seed_catalog()
+    print("end-to-end API walkthrough")
+    subprocess.run(  # noqa: S603
+        [sys.executable, "scripts/verify_demo_flow.py"], cwd=ROOT, check=True
+    )
+    print("restoring a clean demo after the walkthrough")
+    compose("down", "--volumes", "--remove-orphans")
+    compose("up", "--build", "--wait", "--wait-timeout", "300")
+    seed()
+    print("golden demo checks")
+    check_environment()
+    with httpx.Client(base_url=API, timeout=45) as client:
+        verify_world(client, persist_radar=True)
+    print("PULSE 109 DEMO READY — synthetic ALA scenario, 120-day history")
+    print("Open: http://localhost:3000/demo")
+    print("Not yet ready: 20-region coverage, approved taxonomy and fine-tuned runtime models")
+
+
+def seed_emerging(client: httpx.Client, *, now: datetime) -> None:
     """Seed the developing water problem the radar is meant to notice.
 
     These reports carry no operator decision on purpose. An appeal nobody has
     routed yet is exactly the traffic an existing category may not cover, which
     is what the radar scores as novelty.
     """
-    now = datetime.now(timezone.utc)
     # These bodies carry a time relative to the moment of seeding, so re-running
     # seed would send a different body under the same idempotency key and the
     # server would rightly refuse it. Existing reports are left alone, which
@@ -408,12 +457,12 @@ def seed_emerging(client: httpx.Client) -> None:
         response.raise_for_status()
         created += 1
     if created:
-        print(f"emerging scenario: {created} reports over the last 46 minutes")
+        print(f"emerging scenario: {created} reports over the last 43 minutes")
     else:
         print(f"emerging scenario: {len(EMERGING)} reports already present")
 
 
-def seed_world() -> None:
+def seed_world(*, now: datetime) -> None:
     """Populate the wider city so every screen has something to show.
 
     A reviewer who opens an analytics screen to five records learns nothing
@@ -421,7 +470,7 @@ def seed_world() -> None:
     uses, so it carries real audit, real outbox entries and real analytics.
     """
     subprocess.run(  # noqa: S603
-        [sys.executable, "scripts/demo_world.py", "--api", API],
+        [sys.executable, "scripts/demo_world.py", "--api", API, "--now", now.isoformat()],
         cwd=ROOT,
         check=True,
     )
@@ -447,7 +496,9 @@ def seed_replay_dataset() -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("up", "seed", "verify", "status", "down", "reset"))
+    parser.add_argument(
+        "action", choices=("up", "seed", "verify", "prepare", "status", "down", "reset")
+    )
     args = parser.parse_args()
     if args.action == "up":
         compose("up", "--build", "--wait", "--wait-timeout", "300")
@@ -458,6 +509,8 @@ def main() -> None:
         seed()
     elif args.action == "verify":
         verify()
+    elif args.action == "prepare":
+        prepare()
     elif args.action == "status":
         compose("ps")
     elif args.action == "down":

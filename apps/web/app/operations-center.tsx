@@ -182,6 +182,64 @@ const copy = {
   },
 } as const;
 
+function localTime(value: string | number, locale: Locale): string {
+  return new Intl.DateTimeFormat(locale === "ru" ? "ru-RU" : "kk-KZ", {
+    timeZone: "Asia/Almaty",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).format(new Date(value));
+}
+
+function appealCount(count: number, locale: Locale): string {
+  if (locale === "kk") return `${count} өтініш`;
+  const ending = count % 10;
+  const teen = count % 100;
+  const noun =
+    ending === 1 && teen !== 11
+      ? "обращение"
+      : ending >= 2 && ending <= 4 && (teen < 12 || teen > 14)
+        ? "обращения"
+        : "обращений";
+  return `${count} ${noun}`;
+}
+
+function attentionTitle(item: AttentionItem, locale: Locale): string {
+  if (item.kind === "emerging_cluster") {
+    return locale === "ru" ? "Новый локальный сигнал" : "Жаңа жергілікті белгі";
+  }
+  if (item.kind === "adapter_lag") {
+    return locale === "ru" ? "Задержка доставки" : "Жеткізу кідірісі";
+  }
+  return item.summary_code.replaceAll("_", " ");
+}
+
+function attentionDescription(item: AttentionItem, locale: Locale): string {
+  if (item.kind === "emerging_cluster") {
+    const radius = item.detail.radius_m;
+    const spread =
+      typeof radius === "number"
+        ? ` · ${copy[locale].radius.toLowerCase()} ${Math.round(radius)} м`
+        : "";
+    return `${appealCount(item.count, locale)}${spread}`;
+  }
+  return `${item.count} · ${Object.entries(item.detail)
+    .filter(([, value]) => value !== null)
+    .map(([key, value]) => `${key}=${value}`)
+    .join(" · ")}`;
+}
+
+function signalLabel(signal: string, locale: Locale): string {
+  const labels: Record<string, [string, string]> = {
+    geo: ["география", "география"],
+    time: ["время", "уақыт"],
+    taxonomy: ["темы", "тақырыптар"],
+    novelty: ["новизна", "жаңалық"],
+    semantic: ["смысл", "мағына"],
+  };
+  return labels[signal]?.[locale === "ru" ? 0 : 1] ?? signal;
+}
+
 export function OperationsCenter({
   locale,
   regionId,
@@ -506,13 +564,9 @@ export function OperationsCenter({
                     aria-hidden="true"
                   />
                   <div>
-                    <strong>{item.summary_code}</strong>
+                    <strong>{attentionTitle(item, locale)}</strong>
                     <p className="codes">
-                      {item.count} ·{" "}
-                      {Object.entries(item.detail)
-                        .filter(([, value]) => value !== null)
-                        .map(([key, value]) => `${key}=${value}`)
-                        .join(" · ")}
+                      {attentionDescription(item, locale)}
                     </p>
                   </div>
                 </div>
@@ -547,11 +601,14 @@ export function OperationsCenter({
           <div className="war-room-head">
             <div>
               <p className="eyebrow">
-                {t.cluster} · {cluster.state} · {cluster.algorithm_version}
+                {t.cluster} ·{" "}
+                {cluster.state === "open"
+                  ? locale === "ru"
+                    ? "новый сигнал"
+                    : "жаңа белгі"
+                  : cluster.state}
               </p>
-              <h2>
-                {cluster.appeal_count} {t.members}
-              </h2>
+              <h2>{appealCount(cluster.appeal_count, locale)}</h2>
             </div>
             <button
               type="button"
@@ -566,8 +623,8 @@ export function OperationsCenter({
             <div>
               <dt>{t.window}</dt>
               <dd>
-                {cluster.first_seen_at.slice(11, 16)}–
-                {cluster.last_seen_at.slice(11, 16)}
+                {localTime(cluster.first_seen_at, locale)}–
+                {localTime(cluster.last_seen_at, locale)}
               </dd>
             </div>
             <div>
@@ -580,11 +637,11 @@ export function OperationsCenter({
             </div>
             <div>
               <dt>{t.novelty}</dt>
-              <dd>{cluster.novelty_score}</dd>
+              <dd>{Math.round(cluster.novelty_score * 100)}%</dd>
             </div>
             <div>
               <dt>{t.cohesion}</dt>
-              <dd>{cluster.cohesion_score}</dd>
+              <dd>{Math.round(cluster.cohesion_score * 100)}%</dd>
             </div>
           </dl>
 
@@ -604,10 +661,14 @@ export function OperationsCenter({
           />
 
           <h3>{t.timeline}</h3>
-          <ArrivalHistogram members={cluster.members} />
+          <ArrivalHistogram members={cluster.members} locale={locale} />
 
           <p className="codes">
-            {t.signals}: {cluster.signals_used.join(" · ")} · {t.languages}:{" "}
+            {t.signals}:{" "}
+            {cluster.signals_used
+              .map((signal) => signalLabel(signal, locale))
+              .join(" · ")}{" "}
+            · {t.languages}:{" "}
             {Object.entries(cluster.languages)
               .map(([code, count]) => `${code} ${count}`)
               .join(" · ")}
@@ -696,7 +757,13 @@ function AnimatedCount({ value, locale }: { value: number; locale: Locale }) {
 }
 
 /** How the reports arrived over time, in five-minute buckets. */
-function ArrivalHistogram({ members }: { members: ClusterMember[] }) {
+function ArrivalHistogram({
+  members,
+  locale,
+}: {
+  members: ClusterMember[];
+  locale: Locale;
+}) {
   const times = members
     .map((member) =>
       member.received_at ? Date.parse(member.received_at) : null,
@@ -719,7 +786,7 @@ function ArrivalHistogram({ members }: { members: ClusterMember[] }) {
       {counts.map((count, index) => (
         <li key={index}>
           <span className="time">
-            {new Date(start + index * bucketMs).toISOString().slice(11, 16)}
+            {localTime(start + index * bucketMs, locale)}
           </span>
           <span
             className="bar"

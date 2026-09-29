@@ -8,6 +8,11 @@ production deployment. `Demo` describes what a reviewer sees in the
 `PULSE109_PROFILE=demo` environment, where the municipal data is synthetic and
 the application, PostgreSQL, outbox, worker and audit are real.
 
+The current [Golden Demo](GOLDEN_DEMO.md) seeds a 120-day synthetic ALA history,
+six fresh water reports and a presenter-only form preset. Ask Pulse can produce
+30/60/90-day seasonal-naive forecasts from this fictional history. This does
+not establish 20-region coverage or validate any fine-tuned runtime model.
+
 Legend: ✅ implemented · 🟡 partial · 🔬 research · 🚫 blocked externally · `none` not started
 
 ## Flagship capabilities

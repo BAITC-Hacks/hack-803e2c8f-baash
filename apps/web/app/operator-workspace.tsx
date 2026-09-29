@@ -20,6 +20,7 @@ import { IncidentWarRoom } from "./incident-war-room";
 import { IncidentWorkflowPanel } from "./incident-workflow-panel";
 import { OperationsCenter } from "./operations-center";
 import { OwnershipHandoffPanel } from "./ownership-handoff-panel";
+import { PresenterPanel, type PresenterPreset } from "./presenter-panel";
 import { ReplayLab } from "./replay-lab";
 import { Skeleton } from "./skeleton";
 
@@ -258,6 +259,13 @@ export default function OperatorWorkspace() {
     null,
   );
   const [profile, setProfile] = useState<string | null>(null);
+  const [presenterMode, setPresenterMode] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).get("presenter") === "1",
+  );
+  const [presenterPreset, setPresenterPreset] =
+    useState<PresenterPreset | null>(null);
   const [appeals, setAppeals] = useState<Appeal[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [detail, setDetail] = useState<Detail | null>(null);
@@ -275,6 +283,21 @@ export default function OperatorWorkspace() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const copy = labels[locale];
+
+  useEffect(() => {
+    function togglePresenter(event: KeyboardEvent) {
+      if (
+        (event.ctrlKey || event.metaKey) &&
+        event.shiftKey &&
+        event.key.toLowerCase() === "d"
+      ) {
+        event.preventDefault();
+        setPresenterMode((current) => !current);
+      }
+    }
+    window.addEventListener("keydown", togglePresenter);
+    return () => window.removeEventListener("keydown", togglePresenter);
+  }, []);
 
   const refreshQueue = useCallback(async () => {
     try {
@@ -630,12 +653,12 @@ export default function OperatorWorkspace() {
               className="profile"
               title={
                 profile === "demo"
-                  ? "Synthetic municipal data. The application logic, PostgreSQL workflows and worker paths are real."
+                  ? "Вымышленные муниципальные обращения. Сервисы приложения, PostgreSQL, worker и аналитика работают в обычном режиме."
                   : undefined
               }
             >
               {profile === "demo"
-                ? "DEMO · SYNTHETIC"
+                ? "DEMO DATA"
                 : `${copy.profile}: ${profile ?? copy.profileLoading}`}
             </span>
             <div
@@ -703,9 +726,11 @@ export default function OperatorWorkspace() {
         ) : null}
         {view === "intake" ? (
           <Intake
+            key={presenterPreset?.id ?? "normal"}
             locale={locale}
             regionId={region}
             demoEnabled={profile === "demo"}
+            presenterPreset={presenterPreset}
           />
         ) : null}
         {view === "situation" ? (
@@ -715,9 +740,7 @@ export default function OperatorWorkspace() {
           >
             <div className="content">
               <p className="eyebrow">
-                {profile === "demo"
-                  ? "DEMO · SYNTHETIC"
-                  : `Profile: ${profile}`}
+                {profile === "demo" ? "DEMO DATA" : `Profile: ${profile}`}
               </p>
               <h1 id="platform-status">{copy.situation}</h1>
               <p>{copy.statusImplemented}</p>
@@ -1026,6 +1049,14 @@ export default function OperatorWorkspace() {
           </div>
         ) : null}
       </main>
+      {profile === "demo" && presenterMode ? (
+        <PresenterPanel
+          regionId={region}
+          onNavigate={(target) => setView(target)}
+          onLoadPreset={setPresenterPreset}
+          onClose={() => setPresenterMode(false)}
+        />
+      ) : null}
     </div>
   );
 }

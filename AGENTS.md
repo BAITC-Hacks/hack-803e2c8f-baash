@@ -74,7 +74,8 @@ Concretely: do not invent an SLA, a retention period, an RPO or RTO, a taxonomy,
 
 `PULSE109_PROFILE=demo` runs the real API, real PostgreSQL, real migrations, real business services, real audit, real outbox and real worker. Only the appeals, the external delivery receipts and the demo identities are synthetic, and each is labelled as such.
 
-- `uv run python scripts/demo_runtime.py up` builds, migrates, waits for health and seeds three fixed appeals.
+- `uv run python scripts/demo_runtime.py up` builds, migrates, waits for health and seeds the synthetic ALA demo world, including 120 days of history.
+- `prepare` exercises the API workflow, resets only demo volumes, reseeds and verifies Radar, Ask Pulse, forecasts and exports. Its pinned fixture clock must be near wall time for the live Radar.
 - `reset` removes only the `pulse109-demo` project volumes. `down` keeps them.
 - `verify` runs the environment checks and the end-to-end API walkthrough in `scripts/verify_demo_flow.py`.
 - `docs/DEMO_RUNBOOK.md` holds the click path.

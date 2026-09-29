@@ -10,6 +10,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ReportMap, type ReportPoint } from "./report-map";
+import {
+  incidentDuration,
+  incidentServiceLabel,
+  incidentTopicLabel,
+} from "./incident-display";
 
 type Locale = "ru" | "kk";
 
@@ -571,13 +576,18 @@ export function IncidentWarRoom({
               <dd>
                 {workspace.active_minutes === null
                   ? "—"
-                  : `${workspace.active_minutes} ${t.minutes}`}
+                  : incidentDuration(workspace.active_minutes, locale)}
               </dd>
             </div>
           </dl>
-          <p className="war-room-topic">
-            {workspace.topic_id}
-            {workspace.service_id ? ` → ${workspace.service_id}` : ""}
+          <p
+            className="war-room-topic"
+            title={`${workspace.topic_id} / ${workspace.service_id ?? "—"}`}
+          >
+            {incidentTopicLabel(workspace.topic_id, locale)}
+            {workspace.service_id
+              ? ` → ${incidentServiceLabel(workspace.service_id, locale)}`
+              : ""}
           </p>
         </article>
 

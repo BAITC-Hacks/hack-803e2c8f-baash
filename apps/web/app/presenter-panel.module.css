@@ -1,0 +1,146 @@
+.panel {
+  position: fixed;
+  z-index: 1000;
+  right: 20px;
+  bottom: 20px;
+  width: min(360px, calc(100vw - 28px));
+  max-height: min(740px, calc(100vh - 32px));
+  overflow-y: auto;
+  padding: 18px;
+  border: 1px solid var(--hex-gold);
+  box-shadow: 0 20px 70px rgb(8 7 32 / 25%);
+  color: var(--hex-ink);
+  background: var(--hex-surface);
+  font-family: var(--hex-font-sans);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.header h2 {
+  margin: 4px 0 0;
+  font-size: 20px;
+}
+
+.header button {
+  border: 0;
+  color: var(--hex-ink);
+  background: transparent;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.kicker,
+.stepCard > span {
+  color: var(--muted);
+  font-family: var(--hex-font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+.notice,
+.footnote {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.checks {
+  display: grid;
+  gap: 7px;
+  padding: 12px 0;
+  border-top: 1px solid var(--hex-line);
+  border-bottom: 1px solid var(--hex-line);
+}
+
+.checks p {
+  margin: 0;
+  font-size: 12px;
+}
+
+.check {
+  display: grid;
+  grid-template-columns: 16px 1fr auto;
+  gap: 8px;
+  align-items: center;
+  font-size: 12px;
+}
+
+.check small {
+  color: var(--muted);
+  font-size: 10px;
+  text-align: right;
+}
+
+.ready {
+  color: var(--hex-status-green);
+}
+
+.notReady {
+  color: #a44d42;
+}
+
+.textButton {
+  margin: 8px 0 0;
+  padding: 0;
+  border: 0;
+  color: var(--hex-ink);
+  background: transparent;
+  font-size: 11px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.stepCard {
+  margin: 14px 0;
+  padding: 12px;
+  border: 1px solid var(--hex-line);
+  background: var(--hex-surface-paper);
+}
+
+.stepCard h3 {
+  margin: 4px 0;
+  font-size: 17px;
+}
+
+.stepCard p {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.actions {
+  display: flex;
+  gap: 6px;
+}
+
+.actions button,
+.presetButton {
+  padding: 8px 9px;
+  border: 1px solid var(--hex-line-strong);
+  background: var(--hex-surface);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.actions button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.presetButton {
+  width: 100%;
+  color: var(--hex-ink);
+  border-color: var(--hex-gold);
+  background: var(--hex-gold-soft);
+  font-weight: 700;
+}
+
+.footnote {
+  margin-bottom: 0;
+}

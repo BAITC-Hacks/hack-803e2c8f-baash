@@ -7,9 +7,10 @@ real outbox and is visible to the real analytics. Nothing is inserted behind the
 application's back, because a demo that bypasses the system proves nothing about
 the system.
 
-Determinism comes from a fixed seed and fixed identifiers, so `reset` followed by
-`up` returns the same city every time and a rehearsed walkthrough stays
-rehearsed.
+Determinism comes from a fixed seed, fixed identifiers and an optional pinned
+fixture clock. Without a pinned clock the world follows the current date, so
+time-sensitive Radar reports remain fresh. A repeat seed preserves existing
+records and decisions.
 
 Usage:
     uv run python scripts/demo_world.py --api http://127.0.0.1:8080
@@ -29,10 +30,10 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import httpx
-from demo_pagination import existing_source_ids
+from demo_clock import demo_now, demo_seed
+from demo_pagination import existing_source_rows
 
 REGION = "ALA"
-SEED = 109
 SOURCE_SYSTEM = "pulse109-demo-synthetic"
 LEGAL_BASIS = "SYNTHETIC_TEST_ONLY"
 
@@ -144,6 +145,13 @@ def pick(rng: random.Random, mix: tuple[tuple[Any, ...], ...]) -> Any:
     return mix[-1][:-1] if len(mix[-1]) > 2 else mix[-1][0]
 
 
+def historical_daily_volume(day: datetime, rng: random.Random) -> int:
+    """A small, bounded demo demand curve, not a model of real city volume."""
+    weekday_weight = 1 if day.weekday() < 5 else 0
+    winter_weight = 1 if day.month in {11, 12, 1, 2} else 0
+    return 1 + weekday_weight + winter_weight + rng.randrange(2)
+
+
 class World:
     def __init__(self, client: httpx.Client, rng: random.Random, now: datetime) -> None:
         self.client = client
@@ -178,8 +186,8 @@ class World:
         appeal.version = int(response.json()["version"])
         return appeal.version
 
-    def _existing_source_ids(self) -> set[str]:
-        return existing_source_ids(self.client, region_id=REGION)
+    def _existing_source_rows(self) -> dict[str, dict[str, object]]:
+        return existing_source_rows(self.client, region_id=REGION)
 
     # ------------------------------------------------------------------
 
@@ -193,7 +201,9 @@ class World:
         language: str,
         channel: str,
         jitter: float = 0.004,
+        rng: random.Random | None = None,
     ) -> Seeded:
+        generator = rng or self.rng
         name, latitude, longitude = district
         texts = TEXTS[topic_id][language]
         body = {
@@ -202,13 +212,13 @@ class World:
             "region_id": REGION,
             "channel": channel,
             "language": language,
-            "text": self.rng.choice(texts),
+            "text": generator.choice(texts),
             "received_at": (self.now - timedelta(minutes=minutes_ago)).isoformat(),
             "received_at_quality": "exact",
             "consent_or_legal_basis": LEGAL_BASIS,
             "location": {
-                "latitude": round(latitude + self.rng.uniform(-jitter, jitter), 6),
-                "longitude": round(longitude + self.rng.uniform(-jitter, jitter), 6),
+                "latitude": round(latitude + generator.uniform(-jitter, jitter), 6),
+                "longitude": round(longitude + generator.uniform(-jitter, jitter), 6),
                 "precision_m": 40.0,
                 "geo_id": f"ALA-SYNTHETIC-{name.upper()}",
             },
@@ -258,14 +268,22 @@ class World:
         )
         appeal.version = int(result.get("new_version", appeal.version))
 
-    def set_status(self, appeal: Seeded, status: str, *, minutes_ago: float) -> None:
+    def set_status(self, appeal: Seeded, status: str, *, minutes_ago: float | None = None) -> None:
+        # Historical source status events have an explicit synthetic business
+        # time. Live workflow events instead use the actual time of this API
+        # action, so they cannot precede a decision/assignment made just now.
+        occurred = (
+            self.now - timedelta(minutes=minutes_ago)
+            if minutes_ago is not None
+            else datetime.now(timezone.utc)
+        )
         result = self._post(
             f"/v1/requests/{appeal.request_id}/status-events",
             {
                 "source_event_id": f"world-{appeal.source_request_id}-{status}",
                 "source_system": SOURCE_SYSTEM,
                 "status": status,
-                "occurred_at": (self.now - timedelta(minutes=minutes_ago)).isoformat(),
+                "occurred_at": occurred.isoformat(),
                 "occurred_at_quality": "exact",
                 "reason_code": "OPERATOR_REVIEW",
             },
@@ -336,7 +354,12 @@ class World:
             return 0
 
         by_topic: dict[str, list[Seeded]] = {}
+        # History establishes the 120-day baseline, but a standing incident
+        # should represent the recent city queue rather than a six-day-old
+        # resolved report selected solely because it was inserted first.
         for appeal in self.created:
+            if not appeal.source_request_id.startswith("DEMO-CITY-"):
+                continue
             by_topic.setdefault(appeal.topic_id, []).append(appeal)
 
         # topic, how many members, how many of them to confirm, whether a
@@ -402,13 +425,81 @@ class World:
                 )
         return created
 
+    def seed_history(
+        self, existing: dict[str, dict[str, object]], *, days: int = 120
+    ) -> tuple[int, int]:
+        """Import a contiguous synthetic daily history through the public API.
 
-def build(client: httpx.Client, *, background: int) -> dict[str, int]:
-    rng = random.Random(SEED)  # noqa: S311 - a reproducible city, not cryptography
-    now = datetime.now(timezone.utc)
+        Resolved source statuses are recorded at their historical business time.
+        We do not backdate an operator decision made during today's seed, which
+        would create a fictitious time-to-first-decision KPI.
+        """
+        created = skipped = 0
+        for days_ago in range(days, 0, -1):
+            day = self.now - timedelta(days=days_ago)
+            day_key = day.date().isoformat()
+            day_rng = random.Random(  # noqa: S311 - synthetic, reproducible volume
+                f"{demo_seed()}:history-day:{day_key}"
+            )
+            volume = historical_daily_volume(day, day_rng)
+            for index in range(volume):
+                source_id = f"DEMO-HISTORY-{day:%Y%m%d}-{index:02d}"
+                if source_id in existing:
+                    row = existing[source_id]
+                    if row.get("status") not in {"resolved", "closed"}:
+                        received_raw = row.get("received_at")
+                        if not isinstance(received_raw, str):
+                            raise RuntimeError(f"{source_id} has no received_at to resume")
+                        occurred = datetime.fromisoformat(received_raw) + timedelta(minutes=45)
+                        appeal = Seeded(
+                            request_id=str(row["request_id"]),
+                            version=int(str(row["version"])),
+                            source_request_id=source_id,
+                            topic_id="topic:manual-review",
+                            service_id="service:manual-review",
+                        )
+                        minutes_since = (self.now - occurred).total_seconds() / 60
+                        self.set_status(appeal, "resolved", minutes_ago=minutes_since)
+                    skipped += 1
+                    continue
+                record_rng = random.Random(  # noqa: S311 - synthetic fixtures
+                    f"{demo_seed()}:history-record:{day_key}:{index}"
+                )
+                topic_id, _service = pick(record_rng, TOPIC_MIX)
+                received = day.replace(hour=11 + index, minute=0, second=0, microsecond=0)
+                minutes_ago = (self.now - received).total_seconds() / 60
+                appeal = self.create_appeal(
+                    source_id,
+                    minutes_ago=minutes_ago,
+                    topic_id=topic_id,
+                    district=DISTRICTS[record_rng.randrange(len(DISTRICTS))],
+                    language=pick(record_rng, LANGUAGE_MIX),
+                    channel=pick(record_rng, CHANNEL_MIX),
+                    jitter=0.018,
+                    rng=record_rng,
+                )
+                self.set_status(appeal, "resolved", minutes_ago=minutes_ago - 45)
+                created += 1
+        return created, skipped
+
+
+def build(client: httpx.Client, *, background: int, now: datetime) -> dict[str, int]:
+    rng = random.Random(demo_seed())  # noqa: S311 - reproducible fixtures, not cryptography
     world = World(client, rng, now)
-    existing = world._existing_source_ids()
-    counts = {"appeals": 0, "closed": 0, "handoffs": 0, "skipped": 0, "incidents": 0}
+    existing_rows = world._existing_source_rows()
+    existing = set(existing_rows)
+    counts = {
+        "appeals": 0,
+        "history": 0,
+        "closed": 0,
+        "handoffs": 0,
+        "skipped": 0,
+        "incidents": 0,
+    }
+
+    counts["history"], history_skipped = world.seed_history(existing_rows)
+    counts["appeals"] += counts["history"]
+    counts["skipped"] += history_skipped
 
     # ---- background city -------------------------------------------------
     for index in range(background):
@@ -420,11 +511,12 @@ def build(client: httpx.Client, *, background: int) -> dict[str, int]:
         district = DISTRICTS[rng.randrange(len(DISTRICTS))]
         language = pick(rng, LANGUAGE_MIX)
         channel = pick(rng, CHANNEL_MIX)
-        # Most of the city arrived in the last few hours, with a tail going back
-        # a couple of days. The seeding script cannot backdate a decision, since
-        # decisions are stamped by the server, so a report backdated by a week
-        # would show a week-long time to first decision that never happened.
-        minutes = rng.uniform(5, 420) if rng.random() < 0.75 else rng.uniform(420, 60 * 40)
+        # The ambient city fills the previous 7-40 hours. Keeping it outside
+        # the six-hour Radar window prevents random density from drowning the
+        # deliberately fresh water-quality scenario in incidental clusters.
+        # The seeding script cannot backdate a decision, so this range also
+        # avoids a week-long fictitious time-to-first-decision KPI.
+        minutes = rng.uniform(420, 60 * 40)
         appeal = world.create_appeal(
             source_id,
             minutes_ago=minutes,
@@ -445,10 +537,10 @@ def build(client: httpx.Client, *, background: int) -> dict[str, int]:
         world.assign(appeal)
         if stage == "assigned":
             continue
-        world.set_status(appeal, "in_progress", minutes_ago=max(minutes - 30, 1))
+        world.set_status(appeal, "in_progress")
         if stage == "in_progress":
             continue
-        world.set_status(appeal, "resolved", minutes_ago=max(minutes - 60, 1))
+        world.set_status(appeal, "resolved")
         if stage == "resolved":
             continue
         if world.close_with_evidence(appeal):
@@ -464,9 +556,9 @@ def build(client: httpx.Client, *, background: int) -> dict[str, int]:
             continue
         appeal = world.create_appeal(
             source_id,
-            minutes_ago=rng.uniform(60, 300),
+            minutes_ago=rng.uniform(5, 90),
             topic_id="topic:water",
-            district=DISTRICTS[1],
+            district=DISTRICTS[index % len(DISTRICTS)],
             language="ru",
             channel="phone",
         )
@@ -492,6 +584,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--api", default="http://127.0.0.1:8080")
     parser.add_argument("--background", type=int, default=120)
+    parser.add_argument("--now", type=datetime.fromisoformat, default=None)
     args = parser.parse_args()
 
     with httpx.Client(base_url=args.api, timeout=30) as client:
@@ -501,10 +594,11 @@ def main() -> None:
         if data.get("profile") != "demo":
             print("refusing to build a demo world outside the demo profile", file=sys.stderr)
             raise SystemExit(1)
-        counts = build(client, background=args.background)
+        counts = build(client, background=args.background, now=args.now or demo_now())
 
     print(
-        f"demo world: {counts['appeals']} appeals, {counts['closed']} verified closures, "
+        f"demo world: {counts['appeals']} appeals ({counts['history']} historical), "
+        f"{counts['closed']} verified closures, "
         f"{counts['handoffs']} handoff loops, {counts['incidents']} incidents, "
         f"{counts['skipped']} already present"
     )

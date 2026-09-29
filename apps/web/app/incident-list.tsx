@@ -3,6 +3,11 @@
 /** Incidents as city problems, filterable by the state an operator cares about. */
 
 import { useCallback, useEffect, useState } from "react";
+import {
+  incidentReportCount,
+  incidentServiceLabel,
+  incidentTopicLabel,
+} from "./incident-display";
 
 type Locale = "ru" | "kk";
 
@@ -40,7 +45,6 @@ const copy = {
     resolved: "Решены",
     empty:
       "Инцидентов в этом срезе нет. Создайте его из кластера в операционном центре.",
-    reports: "обращений",
     confirmedCount: "подтверждено",
     open: "Открыть карточку",
     age: "возраст",
@@ -55,7 +59,6 @@ const copy = {
     monitoring: "Бақылауда",
     resolved: "Шешілген",
     empty: "Бұл кесіндіде оқиға жоқ.",
-    reports: "өтініш",
     confirmedCount: "расталды",
     open: "Картаны ашу",
     age: "жасы",
@@ -145,11 +148,15 @@ export function IncidentList({
                 <p className="eyebrow">
                   {row.state} · v{row.version} · {t.age} {age(row.created_at)}
                 </p>
-                <strong>{row.topic_id}</strong>
+                <strong title={row.topic_id}>
+                  {incidentTopicLabel(row.topic_id, locale)}
+                </strong>
                 <p className="codes">
-                  {row.member_count} {t.reports} · {row.confirmed_count}{" "}
-                  {t.confirmedCount}
-                  {row.service_id ? ` · ${row.service_id}` : ""}
+                  {incidentReportCount(row.member_count, locale)} ·{" "}
+                  {row.confirmed_count} {t.confirmedCount}
+                  {row.service_id
+                    ? ` · ${incidentServiceLabel(row.service_id, locale)}`
+                    : ""}
                 </p>
               </div>
               <button
