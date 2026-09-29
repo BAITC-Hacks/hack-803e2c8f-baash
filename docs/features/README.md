@@ -1,56 +1,45 @@
-# Pulse 109 capabilities
+# Возможности Pulse 109
 
-Pulse 109 turns scattered citizen reports into detected city problems, coordinates
-who resolves them, checks the result and learns from confirmed outcomes.
+Pulse 109 превращает отдельные обращения в связанный, проверяемый процесс. Это **слой помощи**, а не замена региональной CRM и не автономный диспетчер.
 
+```text
+Обращения жителей
+       ↓
+Обнаружить    Радар возникающих проблем
+       ↓
+Понять        Ситуационная карточка + Лаборатория данных
+       ↓
+Решить        Оператор, ownership, рекомендации
+       ↓
+Действовать   Outbox + worker + региональный адаптер
+       ↓
+Проверить     Доказательства закрытия и повторные обращения
+       ↓
+Учиться       Память исходов + Replay Lab
+
+Операционный центр показывает состояние всего процесса.
+Ask Pulse даёт проверяемые ответы на вопросы к данным.
 ```
-Citizen signals
-      ↓
-Detect      Emerging Issues Radar + Data Lab anomalies
-      ↓
-Understand  Incident War Room + Data Lab
-      ↓
-Coordinate  Ownership + Next Best Action
-      ↓
-Act         Outbox, worker, regional adapter
-      ↓
-Verify      Closure Integrity, Recurrence
-      ↓
-Learn       Outcome Memory
-      ↓
-            Operations Center shows the whole loop
-            Replay Lab tests a change before it ships
-```
 
-| Capability                                  | State                                               |
-| ------------------------------------------- | --------------------------------------------------- |
-| [Emerging Issues Radar](EMERGING_ISSUES.md) | implemented, semantic signal blocked on B02         |
-| [Incident War Room](INCIDENT_WAR_ROOM.md)   | implemented                                         |
-| [Next Best Action](NEXT_BEST_ACTION.md)     | implemented, rule-based                             |
-| [Operations Center](OPERATIONS_CENTER.md)   | implemented                                         |
-| [Ask Pulse](ASK_PULSE.md) | implemented, RU/KK governed queries and PostgreSQL aggregates; source coverage and approved catalog remain explicit |
-| [Outcome Memory](OUTCOME_MEMORY.md)         | implemented, abstains until verified closures exist |
-| [Replay Lab](REPLAY_LAB.md)                 | backend implemented, decision diff UI outstanding   |
+| Модуль                                          | В двух словах                                                              | Статус                                                        |
+| ----------------------------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| [Радар возникающих проблем](EMERGING_ISSUES.md) | Похожие по месту и времени сообщения для проверки человеком.               | Реализован; семантика по текстам граждан ждёт `B02`.          |
+| [Ситуационная карточка](INCIDENT_WAR_ROOM.md)   | Один инцидент: участники, место, история, ответственный, действия.         | Реализована.                                                  |
+| [Следующее действие](NEXT_BEST_ACTION.md)       | Рекомендация с объяснимыми основаниями.                                    | Рабочий rule-based baseline.                                  |
+| [Операционный центр](OPERATIONS_CENTER.md)      | Показатели и лента внимания.                                               | Реализован; пороги требуют калибровки.                        |
+| [Ask Pulse](ASK_PULSE.md)                       | RU/KK вопрос → управляемая аналитика PostgreSQL → происхождение и экспорт. | Реализован на синтетическом демо; охват источников ограничен. |
+| [Память исходов](OUTCOME_MEMORY.md)             | Подтверждённые похожие закрытия.                                           | Реализована; реальные исторические исходы ещё нужны.          |
+| [Replay Lab](REPLAY_LAB.md)                     | Сравнение политики с одобренной историей до выпуска.                       | Backend есть, UI не показывает трассу по каждому случаю.      |
+| [Лаборатория данных](DATA_LAB.md)               | Качество, показатели и переход к исходным обращениям.                      | Реализована.                                                  |
 
-## One rule they all share
+## Одно правило для всех алгоритмов
 
-Every algorithmic capability reports one of three states, defined in
-`pulse109.capability`:
+Результат всегда сообщает, что именно произошло:
 
-- `available`: it ran and its result stands.
-- `abstained`: it ran and declined, for example below a coverage threshold.
-- `unavailable`: it did not run, and its payload carries no information.
+- `available` — расчёт выполнен, результат доступен;
+- `abstained` — расчёт выполнен, но система обоснованно воздержалась;
+- `unavailable` — расчёт не выполнялся, полезного результата нет.
 
-Ask Pulse additionally returns `clarification_required` when a question needs
-an explicit region, period or other choice before a calculation can run.
+К каждому состоянию прилагается контролируемый код причины. Ask Pulse дополнительно возвращает `clarification_required`, если для расчёта нужно выбрать регион, период или другой параметр. Пустой результат и неработающий модуль — **разные ситуации для оператора**; интерфейс не должен их смешивать.
 
-Collapsing the last two into an empty result is how a system quietly lies. An
-operator cannot tell "nothing found" from "nothing ran", and those lead to
-opposite decisions. Each state carries a controlled reason code, never free text
-from a model.
-
-The concrete consequences are visible in the demo. The map reports
-`COORDINATES_ABSENT` rather than drawing an empty canvas, because no regional
-export in this programme carries coordinates. The radar reports
-`CITIZEN_TEXT_ABSENT` for its semantic signal rather than letting taxonomy codes
-stand in for what people actually wrote.
+Актуальные ограничения, включая семь из двадцати регионов и отсутствие проверенных fine-tuned моделей, перечислены в [матрице функций](../FEATURE_STATUS.md) и [аудите ТЗ](../review/COMPETITION_AUDIT_2026-09-29.md).

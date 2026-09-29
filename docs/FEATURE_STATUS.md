@@ -1,84 +1,61 @@
-# Feature status
+# Текущий статус Pulse 109
 
-What is implemented, what is a demo substitute and what is waiting on somebody
-outside this repository. Read this before believing anything else.
+Это основной документ о том, **что реализовано, что только показано на синтетических данных и что ждёт внешнего решения**. «Реализовано» означает наличие кода и тестов в репозитории, а не сертификацию промышленного развёртывания.
 
-`Implemented` means code and tests exist in this checkout. It does not certify a
-production deployment. `Demo` describes what a reviewer sees in the
-`PULSE109_PROFILE=demo` environment, where the municipal data is synthetic and
-the application, PostgreSQL, outbox, worker and audit are real.
+В профиле `PULSE109_PROFILE=demo` настоящие API, PostgreSQL, миграции, бизнес-операции, аудит, outbox и worker. Обращения, каталог, демо-идентичности и квитанции внешней доставки — синтетические.
 
-Legend: ✅ implemented · 🟡 partial · 🔬 research · 🚫 blocked externally · `none` not started
+**Обозначения:** ✅ код и проверка есть · 🟡 частично / нужен пилот · 🔬 исследование, не runtime · 🚫 внешняя зависимость.
 
-## Flagship capabilities
+## Экраны и возможности
 
-| Capability                                           | Backend                                                 | UI                                                           | Demo                                   | Production                         | External dependency                            |
-| ---------------------------------------------------- | ------------------------------------------------------- | ------------------------------------------------------------ | -------------------------------------- | ---------------------------------- | ---------------------------------------------- |
-| [Emerging Issues Radar](features/EMERGING_ISSUES.md) | ✅ geo, time, taxonomy                                  | ✅ scan and cluster inspector                                | ✅ deterministic scenario              | 🟡 thresholds need real volume     | 🚫 semantic signal needs raw appeal text (B02) |
-| [Incident War Room](features/INCIDENT_WAR_ROOM.md)   | ✅ one-read workspace                                   | ✅ full screen                                               | ✅ populated                           | 🟡                                 | `none`                                         |
-| [Next Best Action](features/NEXT_BEST_ACTION.md)     | ✅ rule engine and decision preview                     | ✅ inside the war room                                       | ✅                                     | 🟡 a baseline for a learned scorer | 🚫 labelled corpus of operator moves           |
-| [Outcome Memory](features/OUTCOME_MEMORY.md)         | ✅ governed retrieval                                   | ✅ war room card                                             | ✅ synthetic corpus from demo closures | 🟡                                 | 🚫 verified historical outcomes                |
-| [Operations Center](features/OPERATIONS_CENTER.md)   | ✅ attention feed                                       | ✅ city pulse and feed                                       | ✅                                     | 🟡 thresholds need calibration     | `none`                                         |
-| [Ask Pulse](features/ASK_PULSE.md) | ✅ governed intent, PostgreSQL aggregates, signed context and exact-result exports | ✅ RU/KK questions, charts, provenance, drill-down and downloads | ✅ synthetic records on real PostgreSQL | 🟡 catalog, source coverage and forecast history required | 🚫 authoritative manifest (B01), taxonomy/SLA (B06), identity/legal basis (B08/B10), optional GPU (B09) |
-| [Replay Lab](features/REPLAY_LAB.md)                 | ✅ snapshots, persistence, CI reconciliation            | 🟡 report list and policy-level diff; case trace unavailable | 🟡 requires stored report              | 🟡                                 | 🚫 approved historical decisions               |
-| [Data Lab](features/DATA_LAB.md)                     | ✅ quality, funnel, flow, timings, handoffs, drill-down | ✅ full screen                                               | ✅                                     | 🟡                                 | `none`                                         |
+| Возможность                                                 | В демо                                                                                                        | Граница готовности                                                                                                                           |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| [Радар возникающих проблем](features/EMERGING_ISSUES.md) ✅ | Поиск близких по месту, времени и тематике обращений, просмотр группы.                                        | Пороги требуют калибровки на реальном потоке; семантический сигнал ждёт тексты граждан (`B02`). Радар не устанавливает причину.              |
+| [Ситуационная карточка](features/INCIDENT_WAR_ROOM.md) ✅   | Карта сообщений, история, ответственный, подтверждённые похожие исходы и следующие действия.                  | Исходы в демо синтетические; действия подтверждает человек.                                                                                  |
+| [Следующее действие](features/NEXT_BEST_ACTION.md) ✅       | Правила и объяснимые рекомендации внутри карточки.                                                            | Это baseline, не обученный скорер действий на подтверждённой истории.                                                                        |
+| [Память исходов](features/OUTCOME_MEMORY.md) ✅             | Поиск подтверждённых закрытий; при нехватке данных — честный отказ.                                           | Нужны проверенные исторические исходы вместо демо-корпуса.                                                                                   |
+| [Операционный центр](features/OPERATIONS_CENTER.md) ✅      | Показатели, динамика, лента внимания и переход к исходным записям.                                            | Пороги оповещений требуют калибровки; отдельный утверждённый внешний канал уведомлений не подключён.                                         |
+| [Ask Pulse](features/ASK_PULSE.md) ✅                       | RU/KK вопросы → разрешённый intent → PostgreSQL-агрегат; график, происхождение, drill-down и точный PDF/XLSX. | Полный охват регионов, утверждённый каталог и история для прогноза отсутствуют. LLM не получает произвольный SQL.                            |
+| [Replay Lab](features/REPLAY_LAB.md) 🟡                     | Снимки, сохранение отчёта, сравнение политик.                                                                 | UI показывает список отчётов и агрегатные различия, но не трассу решения по каждому кейсу; для оценки нужны одобренные исторические решения. |
+| [Лаборатория данных](features/DATA_LAB.md) ✅               | Качество, абсолютные показатели, потоки, сроки и обращения за метрикой.                                       | Разные текущие статусы **не** считаются вложенными стадиями одной когорты; ложный процент перехода удалён.                                   |
 
-## Platform
+## Операционная платформа
 
-| Capability                         | State | Demo behaviour                                                                                       | Production boundary                                                                                  | Evidence                                           |
-| ---------------------------------- | ----- | ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| Appeal intake and manual decisions | ✅    | PostgreSQL transaction, idempotency, timeline, audit, outbox                                         | Approved source reference, legal basis and retention required                                        | `pulse109.manual_path`                             |
-| Adaptive intake                    | ✅    | Synthetic approved policies for four services, conditional questions, evidence requirements          | 🚫 approved taxonomy and question policy (B06)                                                       | `pulse109.intake`, `scripts/demo_catalog.sql`      |
-| Recommendation                     | ✅    | Deterministic CPU lexical fallback, real version and confidence shown, human action required         | 🚫 approved taxonomy and measured model quality                                                      | `pulse109.decisions`                               |
-| Assignments and status             | ✅    | Durable command, queued outbox, deterministic replay delivery                                        | 🚫 approved live regional adapter (B07)                                                              | `pulse109_worker`, adapter SDK                     |
-| Incident membership and lifecycle  | ✅    | Region-bound versioned decisions, reversible member history, list and workspace                      | Merge and split exist in the API, operator controls do not                                           | `pulse109.incidents`                               |
-| Incident merge and split           | ✅    | Versioned API with locking, cycle detection, evidence checks and War Room confirmation controls      | Operator selects members, target, reason and evidence; server refresh follows commit                 | `pulse109.incidents.postgres`                      |
-| Handoff Guard and Decision Gateway | ✅    | Advisory assessment, version-bound durable receipts                                                  | 🚫 approved unit directory                                                                           | `pulse109.ownership`, `pulse109.decisions.gateway` |
-| Signed regional configuration      | ✅    | Ed25519 verification, monotonic activation, rollback tooling                                         | 🚫 approved key distribution and release process                                                     | `pulse109.control_plane`                           |
-| Privacy reference access           | ✅    | Region and role checked, access audited, legacy unowned rows inaccessible                            | 🚫 vault, lawful basis and retention (B10)                                                           | `pulse109.privacy`                                 |
-| Identity                           | 🟡    | Local development actor, clearly labelled `authentication_source: development`                       | 🚫 real identity provider and browser session (B08)                                                  | `pulse109.security.identity`                       |
-| Attachments and closure evidence   | 🟡    | Validated synthetic bytes in a local volume, closure checks metadata and quarantine                  | The scanner is a mock and must not be called antivirus. Storage follows the object storage row below | `pulse109.security.attachments`                    |
-| Object storage                     | ✅    | Filesystem volume by default, S3 selected by configuration                                           | Credentials come from the host environment, never from settings                                      | `pulse109.security.object_storage`                 |
-| Offline exploration                | ✅    | `make eda` over the committed synthetic fixture                                                      | Point `INPUT` at an approved dataset outside the repository                                          | `analytics/offline`                                |
-| Operator web                       | ✅    | Sidebar shell, region from session context, operations, appeals, incidents, data lab, intake, status; landing frames static captures of those real demo screens | 🚫 production OIDC session (B08)                                                                     | `apps/web/app`                                     |
-| Live deployment                    | 🟡    | Local Docker Compose, plus a public overlay with TLS and no internal port published                  | Whether an instance runs is a fact about that instance, not this repository                          | `infra/compose/docker-compose.public.yml`          |
+| Область                         | Что есть                                                                                                                                | Граница пилота / production                                                                  |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Приём и ручные решения ✅       | PostgreSQL-транзакция, идемпотентность, история, аудит и outbox.                                                                        | Нужны одобренный источник и правовое основание (`B07`, `B10`).                               |
+| Адаптивный приём ✅             | Условные вопросы и требования к доказательствам по синтетическому каталогу четырёх служб.                                               | Официальная таксономия и правила ожидаются (`B06`).                                          |
+| Рекомендация маршрута ✅        | Детерминированный CPU/лексический fallback, версия и уровень уверенности; решение сохраняет оператор.                                   | Это не fine-tuned классификатор; качество на одобренном корпусе не доказано (`B02`, `B06`).  |
+| Назначение и статус ✅          | Durable-команда, outbox, повторы и replay-доставка.                                                                                     | Рабочий региональный адаптер не подключён (`B07`).                                           |
+| Инциденты ✅                    | Версионные решения по участникам; merge/split API с блокировками, проверкой циклов и доказательств; подтверждающие controls в War Room. | Ни одно объединение обращений не происходит автоматически.                                   |
+| Ownership / Decision Gateway ✅ | Подсказки и квитанции, привязанные к версии обращения.                                                                                  | Нужен утверждённый справочник подразделений.                                                 |
+| Региональная конфигурация ✅    | Проверка подписи Ed25519, монотонная активация и откат.                                                                                 | Нужны утверждённые ключи и процесс выпуска.                                                  |
+| Доступ к приватным ссылкам ✅   | Проверка региона и роли, аудит доступа.                                                                                                 | Нужны хранилище секретов, основание обработки и сроки хранения (`B10`).                      |
+| Идентификация 🟡                | Локальный actor явно помечен как development.                                                                                           | Нужны реальный IdP и браузерная сессия (`B08`).                                              |
+| Вложения и закрытие 🟡          | В демо валидируются синтетические файлы и метаданные доказательств.                                                                     | Сканер — **mock**, не антивирус; рабочая загрузка ждёт одобренного хранилища и сканирования. |
+| Объектное хранилище ✅          | Локальный том по умолчанию, S3-совместимый backend по конфигурации.                                                                     | Секреты приходят из окружения, не из настроек приложения.                                    |
+| Веб-интерфейс ✅                | Очередь, обращения, инциденты, аналитика, приём и статус; лендинг показывает статичные снимки реальных demo-экранов.                    | Для production нужен IdP (`B08`).                                                            |
+| Развёртывание 🟡                | Локальный Compose и публичный overlay с TLS на внешнем контуре.                                                                         | Наличие конфигурации не доказывает работоспособность или безопасность конкретного VPS.       |
 
-## ML and research
+## ML: не путать исследование и работающую модель
 
-| Track                                   | State | Note                                                                          |
-| --------------------------------------- | ----- | ----------------------------------------------------------------------------- |
-| Candidate comparison harness            | ✅    | Pinned dataset, time and group splits, exact test cohort, RU/KK/mixed metrics |
-| XLM-R, Qwen, BGE, E5 routing candidates | 🔬    | `NOT_VALIDATED`. No approved labels, no privacy review, no measured latency   |
-| PulseDM                                 | 🔬    | Design only                                                                   |
-| Retrieval fine-tuning                   | 🔬    | Measured against a lexical baseline on executor text, not citizen text        |
+| Направление                            | Статус | Что можно утверждать                                                                                                                     |
+| -------------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Сравнение кандидатов                   | ✅     | Есть воспроизводимый протокол и срезы RU/KK/mixed; он не заменяет качество на требуемых текстах обращений.                               |
+| XLM-R, Qwen, BGE, E5 для маршрутизации | 🔬     | Кандидаты `NOT_VALIDATED`: нет разрешённой разметки, privacy review и подтверждённой задержки runtime.                                   |
+| Fine-tuning поиска                     | 🔬     | Эксперимент проведён на текстах исполнителей и proxy-разметке, не на текстах граждан. В runtime используется явно обозначенный fallback. |
+| PulseDM                                | 🔬     | Дизайн, не исполняемая модель демо.                                                                                                      |
 
-## External blockers
+По обязательному ТЗ ещё не доказаны fine-tuned классификатор по минимум десяти темам RU/KK, fine-tuned embedding-поиск и качество на отложенной выборке. Подробные доказательства и цифры — в [аудите](review/COMPETITION_AUDIT_2026-09-29.md).
 
-These belong to the customer and the organizers. Writing a plausible value for
-any of them would turn an honest gap into a false claim.
+## Внешние блокеры
 
-`B01` remaining regions and an authoritative service manifest ·
-`B02` raw pre-decision appeal text ·
-`B03` field lifecycle and leakage semantics ·
-`B04` duplicate labels ·
-`B05` reassignment and correction history ·
-`B06` official taxonomy and SLA ·
-`B07` real regional API, sandbox and credentials ·
-`B08` identity provider, network and hosting ·
-`B09` GPU hardware ·
-`B10` privacy, legal basis and retention.
+`B01` остальные 13 регионов и манифест · `B02` исходные дооператорские тексты · `B03` семантика доступности полей · `B04` подтверждённые пары дублей · `B05` история переназначений · `B06` таксономия и SLA · `B07` региональное API · `B08` IdP, сеть и хостинг · `B09` GPU · `B10` правовое основание и хранение. Владельцы и безопасные временные решения описаны в [DECISIONS_AND_BLOCKERS.md](../DECISIONS_AND_BLOCKERS.md).
 
-Details in [DECISIONS_AND_BLOCKERS.md](../DECISIONS_AND_BLOCKERS.md).
+## Чего демо не утверждает
 
-## What the demo does not claim
-
-- The municipal records are synthetic. The application logic, PostgreSQL
-  workflows, outbox, worker and audit trail are real.
-- External delivery goes to a deterministic replay adapter, not a live
-  municipal CRM.
-- The malware scanner is a mock. It must never be presented as production
-  antivirus.
-- No model quality number here is validated. The routing recommendation in the
-  demo is a lexical baseline, and it says so on screen.
-- The radar reports that a group of similar reports appeared. It never names a
-  cause.
+- Синтетические записи не являются обращениями граждан и не подтверждают национальный охват.
+- Replay-квитанция не является доставкой в действующую региональную CRM.
+- Mock scanner не является промышленным антивирусом.
+- Исследовательский отчёт не означает, что модель запущена в runtime и прошла оценку на одобренном корпусе.
+- Прогноз при недостаточной непрерывной истории должен отказаться от ответа, а не выдумывать точность.

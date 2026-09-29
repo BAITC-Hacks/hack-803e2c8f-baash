@@ -1,209 +1,110 @@
 # Pulse 109
 
-Pulse 109 turns scattered citizen appeals into detected city problems,
-coordinates who resolves them, verifies the result and learns from confirmed
-outcomes.
+**Помогаем городу увидеть одну проблему за множеством обращений.** Pulse 109 связывает приём обращения, решение оператора, обнаружение инцидента и проверку результата. Система дополняет региональные службы 109, а не заменяет их CRM.
 
-## Why it exists
+> **Статус:** интерактивное техническое демо на синтетических муниципальных данных. API, PostgreSQL, миграции, аудит, outbox и worker работают по настоящему коду. Боевая интеграция и обязательные fine-tuned модели по ТЗ пока не готовы. [Текущий статус](docs/FEATURE_STATUS.md) · [Аудит перед защитой](docs/review/COMPETITION_AUDIT_2026-09-29.md).
 
-A 109 hotline routes against a taxonomy that already exists. A city problem can
-appear before a category for it does. Six people report that the water smells
-odd, tastes metallic and looks cloudy after repairs, a classifier scatters them
-across four categories, and nobody sees that they are one thing.
+![Операционный центр Pulse 109 на синтетических данных](apps/web/public/product/operations-center.jpg)
 
-Pulse 109 sits beside the existing regional systems rather than replacing them.
-An accepted appeal keeps its own identifier, timeline and version even when it
-joins an incident. Routing, priority, incident membership and closure stay human
-decisions.
+_Операционный центр в работающем демо. Снимок статичен; показатели могут измениться после запуска вашего экземпляра._
 
-## The product flow
+## Что можно показать
 
-```
-Citizen signals
-      ↓
-DETECT      Emerging Issues Radar, Data Lab anomalies
-      ↓
-UNDERSTAND  Incident War Room, Data Lab
-      ↓
-DECIDE      Ownership, Next Best Action, human confirmation
-      ↓
-ACT         Transactional outbox, worker, regional adapter
-      ↓
-VERIFY      Closure integrity, evidence, recurrence
-      ↓
-LEARN       Outcome Memory, Replay Lab
-```
+| Экран                                                       | Что делает                                                                                                |
+| ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| [Операционный центр](docs/features/OPERATIONS_CENTER.md)    | Показывает обращения, активные инциденты, динамику и сигналы, требующие внимания.                         |
+| [Умный приём](docs/FEATURE_STATUS.md)                       | Собирает контекст нового обращения; в демо используются только вымышленные сведения.                      |
+| [Очередь оператора](docs/FEATURE_STATUS.md)                 | Показывает обращение, рекомендацию по маршруту, ручное решение и назначение.                              |
+| [Радар проблем](docs/features/EMERGING_ISSUES.md)           | Ищет близкие по месту и времени сообщения и предлагает проверить группу.                                  |
+| [Ситуационная карточка](docs/features/INCIDENT_WAR_ROOM.md) | Объединяет карту сообщений, историю, ответственного и рекомендации без автоматического слияния обращений. |
+| [Ask Pulse](docs/features/ASK_PULSE.md)                     | Отвечает на разрешённые вопросы RU/KK, показывает расчёт, обращения и экспорт точного среза в PDF/XLSX.   |
+| [Лаборатория данных](docs/features/DATA_LAB.md)             | Показывает качество данных, абсолютные показатели и переход к обращениям за цифрой.                       |
 
-## Architecture
+Каждое обращение сохраняет свой ID, историю и сроки. Рекомендация модели не равна решению: маршрутизацию и важные действия подтверждает человек. Ручной путь доступен и при отказе ML.
 
-```mermaid
-flowchart TD
-    C[Citizen, 109 hotline, regional import] --> I[Intake and privacy boundary]
-    I --> A[(Appeal in PostgreSQL)]
-    A --> G[Decision Gateway]
-    G --> O[Ownership and Handoff Guard]
-    O --> N[Incident]
-    N --> W[Transactional outbox and worker]
-    W --> X[Regional adapter]
-    X --> E[External municipal system]
+## Быстрый запуск
 
-    A -.-> R[Emerging Issues Radar]
-    R -.-> N
-    N -.-> M[Outcome Memory]
-    E -.-> V[Closure integrity and evidence]
-    V --> M
-    A -.-> D[Data Lab]
-    N -.-> P[Operations Center]
-    G -.-> L[Replay Lab]
-```
-
-Detailed diagrams live in the [architecture notes](docs/architecture/README.md).
-
-## Flagship capabilities
-
-| Capability                                                | What it does                                                                      |
-| --------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| [Emerging Issues Radar](docs/features/EMERGING_ISSUES.md) | Groups reports that arrive close in space and time and fit the taxonomy poorly    |
-| [Incident War Room](docs/features/INCIDENT_WAR_ROOM.md)   | One incident as one city problem, assembled in a single read                      |
-| [Next Best Action](docs/features/NEXT_BEST_ACTION.md)     | Evidence-backed suggestions with the reason codes that produced them              |
-| [Outcome Memory](docs/features/OUTCOME_MEMORY.md)         | What was actually done about comparable problems, human-confirmed closures only   |
-| [Operations Center](docs/features/OPERATIONS_CENTER.md)   | Where the city needs attention now, every row opening the thing it describes      |
-| [Replay Lab](docs/features/REPLAY_LAB.md)                 | Test a routing change against approved history before it ships                    |
-| [Data Lab](docs/features/DATA_LAB.md)                     | Reproducible exploration and live analytics that drill down to individual appeals |
-
-Each capability reports one of three states: `available`, `abstained` or
-`unavailable`, with a controlled reason code. An operator can always tell
-"nothing found" from "nothing ran".
-
-## What is real and what is synthetic
-
-| Real                                         | Synthetic in the demo                   |
-| -------------------------------------------- | --------------------------------------- |
-| FastAPI business logic and validation        | The municipal records themselves        |
-| PostgreSQL schema, migrations, transactions  | Coordinates placed on the map           |
-| Transactional outbox, worker leases, retries | The external system that receives them  |
-| Audit trail, provenance, idempotency         | The service catalog and intake policies |
-| Incident merge, split, membership decisions  | Historical outcomes                     |
-| Closure integrity and evidence checks        |                                         |
-
-The malware scanner is a mock and must never be described as production
-antivirus. No model quality number in this repository is validated.
-
-## Quick start
-
-Requires Docker with a working Linux engine, Python 3.10 to 3.13, `uv`, and free
-ports 3000, 5432 and 8080 to 8084.
+Нужны Docker с работающим Linux engine, Python 3.10–3.13, [`uv`](https://docs.astral.sh/uv/) и свободные порты **3000, 5432, 8080–8084**. Из корня репозитория:
 
 ```bash
 uv sync --all-groups --frozen
 uv run python scripts/demo_runtime.py up
 ```
 
-Open **http://localhost:3000**. The command applies migrations, loads the
-synthetic catalog and builds a deterministic city of roughly 130 appeals through
-the same endpoints an operator uses. On Windows use `.\demo.ps1 up`.
-The landing uses static captures from this working synthetic demo; its controls
-are on `/demo`, not inside the captures.
+Откройте [лендинг](http://localhost:3000) и нажмите «Открыть демо» или сразу перейдите в [рабочее пространство](http://localhost:3000/demo). На Windows доступны `./demo.ps1 up` и другие действия из [инструкции](docs/DEMO_RUNBOOK.md). На Mac с Apple Silicon PostgreSQL/PostGIS работает под эмуляцией `amd64`, поэтому первый старт может быть дольше.
 
-```bash
-uv run python scripts/demo_runtime.py verify   # checks, end-to-end flow, then reseeds
-uv run python scripts/demo_runtime.py reset    # removes only the demo volumes
+`up` собирает контейнеры, применяет миграции и наполняет PostgreSQL синтетическими обращениями. Иллюстрации на лендинге — **статичные снимки настоящих экранов**; для действий откройте `/demo`.
+
+| Команда                                        | Результат                                                                                                                            |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `uv run python scripts/demo_runtime.py status` | Проверить локальные сервисы.                                                                                                         |
+| `uv run python scripts/demo_runtime.py seed`   | Повторить наполнение без дублей фиксированных обращений.                                                                             |
+| `uv run python scripts/demo_runtime.py down`   | Остановить контейнеры, **сохранив** demo-тома.                                                                                       |
+| `uv run python scripts/demo_runtime.py verify` | Проверить сквозной путь API, затем **сбросить и заново наполнить** demo-БД. Не запускайте, если нужно сохранить ручную работу в ней. |
+| `uv run python scripts/demo_runtime.py reset`  | Удалить тома **только** проекта `pulse109-demo`, включая его PostgreSQL и синтетические вложения.                                    |
+
+Для проверки без сброса БД есть `uv run python scripts/verify_demo_flow.py`: он создаёт отдельные синтетические тестовые записи. Полный маршрут — в [пошаговом сценарии](docs/DEMO_RUNBOOK.md), короткая речь — в [карточке выступающего](docs/DEMO_SCRIPT.md).
+
+## Демонстрация за несколько минут
+
+1. В **Операционном центре** запустите «Поиск возникающих проблем».
+2. Откройте найденную группу: покажите сообщения, карту и временную динамику. Это **сигнал о похожих обращениях**, а не автоматический вывод о причине.
+3. Оператор создаёт инцидент и открывает **Ситуационную карточку**. Рекомендация обоснована, но решение остаётся за человеком.
+4. В **Очереди оператора** откройте обращение, получите рекомендацию, сохраните решение и назначение. Worker обработает событие через **синтетический replay-адаптер**.
+5. В **Ask Pulse** спросите о динамике за семь дней; откройте «Как рассчитано», обращения под числом и экспорт. В **Лаборатории данных** покажите качество и точные абсолютные значения.
+
+Числа зависят от состояния demo-БД. Не зачитывайте заготовленные значения как текущие.
+
+## Что настоящее, а что синтетическое
+
+| Работает по настоящему коду                             | Синтетическое или не подключено                      |
+| ------------------------------------------------------- | ---------------------------------------------------- |
+| FastAPI, Next.js, PostgreSQL/PostGIS/pgvector, миграции | Тексты обращений, координаты и каталог служб         |
+| Транзакции, идемпотентность, аудит, история событий     | Демо-оператор вместо production IdP                  |
+| Outbox, worker, повторы доставки, контракт адаптера     | Replay-квитанция вместо действующей региональной CRM |
+| Ручное решение, инциденты, аналитические запросы        | Примеры исторических исходов и обучающие данные      |
+
+Проверка вредоносных вложений в демо — **mock**, а не промышленный антивирус. Исследовательские метрики нельзя выдавать за качество работающего классификатора. Исторические данные доступны лишь по **7 из 20 регионов**; остальные источники ожидаются от организаторов.
+
+## Архитектура и проверки
+
+```text
+Житель / региональный источник
+           ↓
+Next.js → FastAPI → PostgreSQL (обращение + история + аудит + outbox)
+                           ↓
+                     worker → адаптер → региональная система
+                              (в демо — replay)
 ```
 
-### The 60 second walkthrough
-
-1. **Operations center** opens first. Press **Run scan**.
-2. An emerging pattern appears. Open it: the reports on a map, how the arrivals
-   built up, the signals that linked them.
-3. **Create an incident** from the cluster. The war room opens.
-4. Read one suggestion with its reason codes, then confirm the assignment.
-5. Watch the outbox deliver, attach evidence, close with verification.
-6. **Data lab**: press any figure to reach the appeals behind it.
-
-The full path is in the [demo runbook](docs/DEMO_RUNBOOK.md).
-
-## Repository map
-
-| Path                                    | Responsibility                                                        |
-| --------------------------------------- | --------------------------------------------------------------------- |
-| `apps/web`                              | Next.js operator workspace and citizen intake                         |
-| `services/core`                         | FastAPI business modules, PostgreSQL repositories, Alembic migrations |
-| `services/worker`, `services/inference` | Outbox delivery and the optional inference process                    |
-| `adapters`                              | Replay and Open311 implementations, and the adapter SDK               |
-| `analytics`                             | Reproducible offline exploration of approved canonical datasets       |
-| `ml`                                    | Candidate evaluation harness and offline comparison protocol          |
-| `contracts`                             | OpenAPI, canonical schemas, event catalog, ADRs                       |
-| `data`                                  | Schemas, manifests and synthetic fixtures. Never real records         |
-| `infra/compose`, `scripts`              | Runtime topology, demo commands, verification and release tooling     |
-| `docs`                                  | Product, capability, architecture and status documentation            |
-| `tests`                                 | Contract, integration and end-to-end suites                           |
-
-## Engineering
-
-FastAPI · Next.js · PostgreSQL with PostGIS and pgvector · Alembic forward-only
-migrations · Docker Compose · transactional outbox with `FOR UPDATE SKIP LOCKED`
-· idempotency keys · append-only audit and provenance · human-in-the-loop
-decision model · Ed25519 signed configuration bundles.
-
-## Verification
+ML даёт необязательную подсказку, оператор подтверждает действие. Схемы — в [архитектуре](docs/architecture/README.md), публичные контракты — в [`contracts/`](contracts/).
 
 ```bash
 make lint typecheck test contract-test e2e
-make eda                                       # reproducible exploration report
-uv run python scripts/demo_runtime.py verify   # the demo, end to end
+pnpm --filter @pulse109/web build
+uv build
 ```
 
-PostgreSQL integration tests need `PULSE109_TEST_DATABASE_URL`. Without it
-pytest reports them as skipped, which is not the same as passing. Run them with
-the isolated runner; it creates, migrates and removes a UUID-named database for
-each pass, without modifying the configured base or demo database:
+PostgreSQL integration-тестам нужен `PULSE109_TEST_DATABASE_URL`. Без него они **пропущены, а не пройдены**. Изолированный runner создаёт и удаляет собственную БД с UUID, не сбрасывая demo-БД:
 
 ```bash
-PULSE109_TEST_DATABASE_URL=postgresql://<role>:<password>@<host>:5432/<any-existing-db> \
+PULSE109_TEST_DATABASE_URL=postgresql://<role>:<password>@<host>:5432/<existing-db> \
   uv run python scripts/run_integration_tests.py --runs 2
 ```
 
-The database role must be allowed to create and drop the runner's own isolated
-databases. CI runs two passes as a second-run regression check. CI runs four
-jobs: quality, a containerised smoke with a restore drill, a demo profile smoke
-and a supply chain audit.
+Роли нужны права на создание и удаление **тестовых** БД. Результаты последних локальных проверок — в [аудите](docs/review/COMPETITION_AUDIT_2026-09-29.md); состояние CI смотрите в GitHub Actions, а не в старой заметке README.
 
-**CI status note.** If you are reading this on the BAITC-Hacks mirror, its
-Actions checks show red. The jobs never start there: GitHub reports
-`The job was not started because your account is locked due to a billing issue`,
-which is an organization billing lock, not a failure of this code. The same four
-jobs pass on the development repository, for example
-[this run](https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/36299408363).
+## Что ещё нужно до пилота
 
-## Current state and limitations
+- Нет подтверждённого fine-tuned классификатора по обязательным темам RU/KK и fine-tuned embeddings на одобренных текстах граждан. Работающий CPU/fallback не заменяет требования ТЗ.
+- Нет всех 20 регионов, согласованной таксономии и SLA, подтверждённых пар дублей и подключённой региональной CRM.
+- Для реальных персональных данных нужны IdP, правовое основание, сроки хранения, утверждённые хранилище вложений и сканирование.
+- Публичный Docker Compose overlay существует, но он не доказывает, что конкретный VPS развёрнут, защищён и прошёл проверку TLS.
 
-The [feature matrix](docs/FEATURE_STATUS.md) is the authority on what is
-implemented, what is partial and what is blocked. In short:
+Внешние вопросы перечислены в [DECISIONS_AND_BLOCKERS.md](DECISIONS_AND_BLOCKERS.md). Не закрывайте их вымышленными данными ради презентации.
 
-- No live regional integration. Delivery goes to a deterministic replay adapter.
-- No production identity provider. The demo actor is labelled as development.
-- No approved taxonomy or SLA, so intake policies in the demo are synthetic.
-- Object storage is selected by configuration. Attachments and replay snapshots
-  use a local volume by default and S3 or a compatible endpoint when a
-  deployment sets one. Credentials never pass through application settings.
-- A public deployment overlay exists, with TLS at the edge and no internal port
-  published. Whether an instance is running is a question about that instance,
-  not about this repository.
-- Replay Lab has an inspection-only report list and policy-level metric diff.
-  It has no per-case decision trace because the persisted report does not retain
-  per-case outputs, confidence, reason codes, status or action.
+## Документация
 
-The ten external blockers are recorded in
-[DECISIONS_AND_BLOCKERS.md](DECISIONS_AND_BLOCKERS.md). They belong to the
-customer and the organizers. Writing a plausible value for any of them would
-turn an honest gap into a false claim.
+[Навигатор по документам](docs/README.md) · [Текущий статус](docs/FEATURE_STATUS.md) · [Сценарий демо](docs/DEMO_RUNBOOK.md) · [Карточка выступающего](docs/DEMO_SCRIPT.md) · [Аудит ТЗ](docs/review/COMPETITION_AUDIT_2026-09-29.md) · [Вопросы организаторам](docs/GOVTECH_BUSINESS_QUESTIONS.md)
 
-## Documentation
-
-[Index](docs/README.md) · [Capabilities](docs/features/README.md) ·
-[Demo runbook](docs/DEMO_RUNBOOK.md) · [Feature status](docs/FEATURE_STATUS.md) ·
-[Architecture](docs/architecture/README.md) ·
-[Decision log](docs/DECISION_LOG.md) ·
-[Development history](docs/DEVELOPMENT_HISTORY.md) ·
-[ML research](docs/ml/README.md) ·
-[Questions for organizers](docs/GOVTECH_BUSINESS_QUESTIONS.md)
+Код: [`apps/web`](apps/web/), [`services/core`](services/core/), [`services/worker`](services/worker/), [`services/inference`](services/inference/), [`adapters`](adapters/). Углублённые технические материалы собраны в [индексе документации](docs/README.md).

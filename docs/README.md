@@ -1,47 +1,37 @@
-# Documentation index
+# Документация Pulse 109
 
-Read in this order to understand the repository in roughly thirty minutes.
+Этот раздел разделяет **текущий продукт**, **проверяемое демо** и **историю разработки**. Если старый план противоречит работающему коду, ориентируйтесь на [матрицу функций](FEATURE_STATUS.md), контракты и тесты. Демо использует синтетические записи; рабочая региональная интеграция ещё не подключена.
 
-| #   | Document                                          | Purpose                                                                                     | Status     |
-| --- | ------------------------------------------------- | ------------------------------------------------------------------------------------------- | ---------- |
-| 01  | [Product capabilities](features/README.md)        | What the product does end to end, and the three states every algorithmic capability reports | Current    |
-| 02  | [Presenter card](DEMO_SCRIPT.md)                  | One scenario, four to five minutes, what to click and what to say                           | Current    |
-| 03  | [Demo runbook](DEMO_RUNBOOK.md)                   | Startup, reset, verify, and the exact click path for a walkthrough                          | Current    |
-| 04  | [Architecture](architecture/README.md)            | Runtime, data, human decision, incident, failure and privacy diagrams in RU and EN          | Current    |
-| 05  | [Feature status](FEATURE_STATUS.md)               | What is implemented, partial, research or blocked. The authority on current state           | Current    |
-| 06  | [Data Lab](features/DATA_LAB.md)                  | Offline exploration, data quality, live analytics and drill-down                            | Current    |
-| 07  | [ML research](ml/README.md)                       | Candidates, PulseDM design, shared evaluation protocol, governance boundaries               | Current    |
-| 08  | [Security notes](security/README.md)              | Attachment validation, privacy boundary, access checks                                      | Current    |
-| 09  | [Decision log](DECISION_LOG.md)                   | Architecture and product decisions with their rationale                                     | Current    |
-| 10  | [External blockers](../DECISIONS_AND_BLOCKERS.md) | The ten things owned by the customer and the organizers                                     | Current    |
-| 11  | [Development history](DEVELOPMENT_HISTORY.md)     | Chronology derived from Git                                                                 | Historical |
+## Начните здесь
 
-## Capability pages
+| Задача                           | Документ                                                                                                    | Время    |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------- | -------- |
+| Понять идею и запустить проект   | [README проекта](../README.md)                                                                              | 5 минут  |
+| Узнать, что реально готово       | [Статус функций](FEATURE_STATUS.md)                                                                         | 7 минут  |
+| Подготовиться к защите           | [Карточка выступающего](DEMO_SCRIPT.md)                                                                     | 5 минут  |
+| Пройти весь сценарий             | [Инструкция по демо](DEMO_RUNBOOK.md)                                                                       | 10 минут |
+| Увидеть незакрытые требования ТЗ | [Аудит перед защитой](review/COMPETITION_AUDIT_2026-09-29.md)                                               | 10 минут |
+| Запросить решения организаторов  | [Вопросы по бизнес-логике](GOVTECH_BUSINESS_QUESTIONS.md) и [внешние блокеры](../DECISIONS_AND_BLOCKERS.md) | 10 минут |
 
-One page per flagship capability, each stating what it refuses to do as plainly
-as what it does.
+## Продукт и архитектура
 
-[Emerging Issues Radar](features/EMERGING_ISSUES.md) ·
-[Incident War Room](features/INCIDENT_WAR_ROOM.md) ·
-[Next Best Action](features/NEXT_BEST_ACTION.md) ·
-[Outcome Memory](features/OUTCOME_MEMORY.md) ·
-[Operations Center](features/OPERATIONS_CENTER.md) ·
-[Replay Lab](features/REPLAY_LAB.md) ·
-[Data Lab](features/DATA_LAB.md) ·
-[Ask Pulse](features/ASK_PULSE.md)
+- [Карта возможностей](features/README.md): связь основных модулей и значения состояний `available`, `abstained`, `unavailable`.
+- [Архитектура](architecture/README.md): границы доверия, поток данных и процесс решения человеком. Содержит русские и английские схемы.
+- [Контракты](../contracts/README.md): OpenAPI, JSON Schema, события и ADR. Имена полей и коды ошибок сохраняются на языке API.
+- [Журнал решений](DECISION_LOG.md): почему выбраны текущие границы и какие изменения требуют согласования.
 
-## Also here
+## Возможности по отдельности
 
-[Questions for the organizers](GOVTECH_BUSINESS_QUESTIONS.md) and its
-[PDF](../output/pdf/govtech_business_questions.pdf) ·
-[Contracts](../contracts/) ·
-[Competition audit, 2026-09-29](review/COMPETITION_AUDIT_2026-09-29.md) ·
-[Repository cleanup review](review/REPOSITORY_CLEANUP.md)
+[Радар возникающих проблем](features/EMERGING_ISSUES.md) · [Ситуационная карточка инцидента](features/INCIDENT_WAR_ROOM.md) · [Следующее действие](features/NEXT_BEST_ACTION.md) · [Память исходов](features/OUTCOME_MEMORY.md) · [Операционный центр](features/OPERATIONS_CENTER.md) · [Ask Pulse](features/ASK_PULSE.md) · [Replay Lab](features/REPLAY_LAB.md) · [Лаборатория данных](features/DATA_LAB.md)
 
-## Historical
+Эти углублённые технические страницы местами остаются на английском; пользовательский маршрут и ограничения изложены по-русски в README, статусе и сценарии демо.
 
-[Project journal](PROJECT_JOURNAL.md) and the [archive](archive/README.md) hold
-earlier planning, audits, specifications and generated exports. They record how
-the repository reached its current state and are not an authority on what it is
-now. [IMPLEMENTATION_STATUS.md](../IMPLEMENTATION_STATUS.md) is in the same
-category: a milestone record, superseded by the feature matrix above.
+## Исследования, безопасность и эксплуатация
+
+- [Исследования ML](ml/README.md): кандидаты и протокол оценки. Исследовательский артефакт **не равен** модели в рабочем runtime.
+- [Безопасность и приватность](security/README.md) и [эксплуатационные инструкции](../infra/runbooks/README.md).
+- [Вопросы по данным и источникам](GOVTECH_BUSINESS_QUESTIONS.md).
+
+## История — не текущий план
+
+[История разработки](DEVELOPMENT_HISTORY.md), [журнал проекта](PROJECT_JOURNAL.md), [архив](archive/README.md) и [старые вехи реализации](../IMPLEMENTATION_STATUS.md) объясняют, как проект пришёл к текущему состоянию. Незакрытый пункт старого плана не обязательно означает отсутствие функции сейчас; проверяйте [актуальный статус](FEATURE_STATUS.md).

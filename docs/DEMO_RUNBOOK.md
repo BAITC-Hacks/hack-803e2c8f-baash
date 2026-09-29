@@ -1,114 +1,59 @@
-# Local demo startup and Mock Demo Day runbook
+# Инструкция по демонстрации Pulse 109
 
-This is the real Pulse 109 application in a dedicated `PULSE109_PROFILE=demo` runtime. It uses the same API, PostgreSQL migrations, business services, audit, outbox, worker and Next.js frontend as the local topology. Data and delivery are explicitly synthetic. No regional CRM is contacted.
+Профиль `PULSE109_PROFILE=demo` запускает **настоящее приложение**: Next.js, FastAPI, PostgreSQL, миграции, аудит, outbox и worker. Обращения, каталог служб, личности и квитанции региональной доставки синтетические. Действующая CRM 109 не подключена.
 
-The landing's product images are static captures of this running synthetic
-workspace. They are not live counters or substitute controls; use **Open demo**
-to interact with the real application.
+Снимки экранов на лендинге статичны. Для действий используйте кнопку **«Открыть демо»** или адрес `http://localhost:3000/demo`.
 
-## Start and reset
+## Подготовка
 
-Requirements: Docker Desktop with a working Linux engine, Python 3.10-3.13 and locked Python dependencies (`uv sync --all-groups --frozen`). Ports 3000, 5432 and 8080-8084 must be free. On Apple Silicon the PostgreSQL image runs under emulation, because `postgis/postgis` publishes amd64 only; the Compose file pins that one service to `linux/amd64` and the rest build natively. From the repository root:
+Нужны Docker с Linux engine, Python 3.10–3.13, установленные зависимости (`uv sync --all-groups --frozen`) и свободные порты 3000, 5432, 8080–8084. На Apple Silicon только PostgreSQL/PostGIS запускается под эмуляцией `linux/amd64`. Выполняйте команды из корня репозитория:
 
-```powershell
-.\demo.ps1 up
+```bash
+uv run python scripts/demo_runtime.py up
+uv run python scripts/demo_runtime.py status
 ```
 
-The command builds the normal images, applies the full Alembic chain, waits for healthy services, loads the synthetic catalog and adaptive-intake policies from `scripts/demo_catalog.sql`, and creates four fixed appeals. Those catalog rows are `synthetic_only`, which the policy repository honours, so they resolve in the local, development, test and demo profiles and nowhere else. They are demo data rather than an approved taxonomy, and blocker B06 stays open. It refuses to seed if the core does not report the ready `demo` profile and PostgreSQL. Re-running `seed` is idempotent; it returns the same appeal IDs, keeps operator decisions and does not duplicate the synthetic evidence attachment. Without PowerShell, use `uv run python scripts/demo_runtime.py up` (and substitute the other action names below).
+На Windows аналогичные команды доступны через `./demo.ps1 up` и `./demo.ps1 status`. `up` собирает обычные образы, применяет миграции, дожидается готовности сервисов и наполняет БД синтетическим каталогом и фиксированными примерами. Повторное `seed` не дублирует эти примеры и не стирает решения оператора.
 
-```powershell
-.\demo.ps1 verify
-.\demo.ps1 status
-.\demo.ps1 seed
-.\demo.ps1 down
-.\demo.ps1 reset
+Проверьте [готовность API](http://localhost:8080/v1/health/ready), [лендинг](http://localhost:3000) и [демо](http://localhost:3000/demo). Если профиль API не `demo` или PostgreSQL недоступен, наполнение должно остановиться — подменять его in-memory режимом нельзя.
+
+> **Осторожно с данными демо.** `down` оставляет тома. `verify` проходит сквозной сценарий и в конце **сбрасывает и заново наполняет** demo-БД. `reset` удаляет тома только Compose-проекта `pulse109-demo`, включая его обращения и синтетические вложения. Если вы сохраняете ручной сценарий, используйте вместо `verify` тест ниже без сброса.
+
+```bash
+uv run python scripts/verify_demo_flow.py
 ```
 
-`verify` is the single command to run before a walkthrough. It checks that the migration head matches the migration files, that the core reports the ready `demo` profile on PostgreSQL, that the web answers, that the seeded appeals and the synthetic intake policies are present, that no non-synthetic policy sits in a demo database, and that the replay adapter is running. It then runs the full API walkthrough in `scripts/verify_demo_flow.py`, covering intake, decision, assignment, worker delivery, incident confirmation, status, closure with evidence, recurrence and analytics. That walkthrough creates its own appeals, so `verify` finishes by resetting and reseeding, which leaves a clean queue for the demo.
+Этот тест создаёт собственные синтетические обращения и проверяет приём, решение, назначение, доставку worker, инцидент, статусы, закрытие и аналитику. Он не удаляет фиксированные записи для показа.
 
-`down` keeps the dedicated demo volumes. `reset` deletes **only** the `pulse109-demo` Compose project's volumes, including demo PostgreSQL rows and local synthetic blobs. It does not touch the default `pulse109` Compose project. Start again with `up` for the same initial state. Check readiness at `http://localhost:8080/v1/health/ready`, the landing at `http://localhost:3000` and the operator workspace at `http://localhost:3000/demo`.
+## Сценарий для жюри: 5–8 минут
 
-## One deterministic walkthrough (5–8 minutes)
+1. **Лендинг → «Открыть демо».** Покажите метку `DEMO · SYNTHETIC`. Скажите: «Данные вымышленные, но проходят через настоящие API, PostgreSQL и worker. Региональная CRM не подключена».
+2. **Операционный центр.** Покажите показатели и график. Запустите **«Поиск возникающих проблем»**. Радар рассматривает близость обращений по месту и времени, но не объявляет причину происходящего.
+3. **Возникающая группа.** Откройте запись `EMERGING_PATTERN`: покажите сообщения, карту, временную динамику и сигналы объединения. Создайте инцидент из кластера **решением оператора**. Исходные обращения сохраняют свои ID и историю.
+4. **Ситуационная карточка.** Покажите карту поступивших сообщений, ответственного, похожие подтверждённые случаи и рекомендации с reason codes. Охват точек на карте — **не зона пострадавших людей**. Если блок отказался из-за нехватки данных, покажите причину отказа, а не маскируйте её.
+5. **Очередь оператора.** Откройте обращение, получите рекомендованный маршрут, сохраните ручное решение и назначение. Различайте состояние «поставлено в очередь» и результат доставки. Outbox и worker настоящие; внешний receipt в демо синтетический.
+6. **Ask Pulse.** Выберите вопрос о динамике за последние 7 дней. Покажите числовой ответ, график, **«Как рассчитано»**, обращения под метрикой и PDF/XLSX того же среза. Числа зависят от текущей БД; не произносите фиксированный total.
+7. **Лаборатория данных.** Откройте качество данных и точные значения. Переходите от агрегата к обращениям. Разные текущие статусы не являются последовательными когортами, поэтому не называйте их процентом конверсии.
 
-1. Open `http://localhost:3000` and select **Open Interactive Demo**, or go directly to `http://localhost:3000/demo`. Point to `DEMO · SYNTHETIC` and the four `ALA` queue rows. The two `water` rows are fictional reports of one problem. Say: “These records entered through the normal API and PostgreSQL; no live regional CRM is connected.” The lighting appeal deliberately retains missing business time.
-2. Select `demo-109-water-001`. Show its UUID, source ID, version and timeline. Click **Get recommendation**; explain that it is advisory with a real fallback version. Enter `topic:water`, `service:water`, `urgent` and click **Save manual decision**. Refresh to demonstrate persistence. The **Ownership/Handoff** panel can show an assessment, but any missing approved catalog remains explicit.
-3. Click **Queue assignment**. Show the queued receipt, then **Refresh** until synchronization shows the worker's replay result. Say: “The outbox and worker are real; this external ID is synthetic.”
-4. In **Incident: human decision**, choose `demo-109-water-004`. Click **Propose incident**, confirm both members separately, then **Confirm incident (supervisor)**. Show the stored incident ID, version and two confirmed members. Paste its ID into the load field and reload it to demonstrate durable topology. Both appeals keep independent IDs.
-5. Record `in_progress`, then `resolved`, refreshing the selected appeal after each step. Show timeline events and the seeded `synthetic-repair-evidence.txt` SHA-256 reference. This text file contains no citizen information.
-6. In **Closure evidence**, enter the current appeal version, `REPAIR_VERIFIED`, the displayed `sha256:...` reference and evidence type `repair_note`. Run preflight, check the human-confirmation box, enter reason `OPERATOR_CONFIRMED`, then confirm. Show the closed state and audit receipt. Refresh the appeal and request **Recurrence assessment**; its result is advisory, not an automatic reopen.
-7. Open **Platform status** and click **Load ALA API slice**. The result is explicitly a synthetic analytics read model, with quality, cutoff and provenance. Explain that production identity, source API, taxonomy/SLA, vault/retention and real model-quality evidence remain blocked; the [feature matrix](FEATURE_STATUS.md) lists the exact limits. The **Citizen intake** tab accepts only fictional text in this profile.
+Если нужен повторяемый начальный вид после репетиции, выполните `uv run python scripts/demo_runtime.py reset`, затем `up`. Фиксированные source ID и тексты сохранятся, PostgreSQL UUID могут измениться.
 
-For a clean repeat, run `reset` then `up`. The seeded source IDs, texts, times and evidence hash are fixed; PostgreSQL-generated UUIDs may differ after reset. CI runs `scripts/verify_demo_flow.py` against separate synthetic appeals to prove the same command path without altering these four walkthrough records.
+## Дополнительный путь: одно обращение
 
-If asked about future ML, distinguish the **running lexical CPU advisory** from [conservative model candidates and PulseDM research](ml/MODEL_STRATEGY.md). No XLM-R, Qwen embedding/reranker, Jev or PulseDM weights run in this demo; every consequential action remains human governed.
+В очереди можно выбрать фиксированное `demo-109-water-001`, показать UUID, source ID, версию и историю; запросить рекомендацию и сохранить решение `topic:water` → `service:water` с приоритетом `urgent`. После назначения обновите карточку и покажите квитанцию worker. Связанное `demo-109-water-004` можно включить в инцидент только с подтверждением человека. Для закрытия нужны текущая версия, доказательство и проверка условий закрытия; не обходите preflight ради показа. Пошаговые поля для этого более длинного пути описаны в исходных контролах демо и проверяются `scripts/verify_demo_flow.py`.
 
-## The emerging water problem (about 4 minutes)
+## Ask Pulse на RU и KK
 
-This is the walkthrough that shows what the platform is for. The seed creates
-six synthetic reports of one developing water problem along a single street,
-arriving over about forty minutes before the moment of seeding.
+В **Операционном центре** выберите «Динамика обращений за последние 7 дней». Ответ строится по разрешённым метрикам и данным demo-PostgreSQL; записи с неизвестным временем не становятся вымышленными точками графика. Откройте **«Как рассчитано»** для версии метрики, исключений и происхождения источника. Затем попробуйте сравнение с предыдущим периодом и кнопку **«Показать обращения»**.
 
-1. Open `http://localhost:3000` and select **Open Interactive Demo**, or open
-   `http://localhost:3000/demo` directly. The **Operations center** opens first. The
-   counters are records, not estimates.
-2. Press **Поиск возникающих проблем**. The radar scans a six-hour window. It
-   states its own result: `available` with the number of reports scanned, and
-   the note that the semantic signal is not in use because no citizen text
-   exists.
-3. An `EMERGING_PATTERN` row appears. Open it. The inspector shows the six
-   reports on a map, their spread in metres, how the arrivals built up in
-   five-minute buckets, which signals linked them and which languages they came
-   in. Say plainly: the radar reports that a group of similar reports appeared.
-   It does not claim a cause.
-4. Press **Создать инцидент из кластера**. The incident is created through the
-   normal incident endpoint and the cluster records that a human promoted it.
-5. The **war room** opens. Every section states whether it ran. Ownership
-   abstains until a member is confirmed, outcome memory abstains for want of
-   verified closures, the footprint is available with a real spread.
-6. Read one suggestion aloud from **Что можно сделать дальше** together with its
-   reason codes. Point out `advisory_only`: the system proposes, the operator
-   decides.
-7. Switch to the **operator queue** and finish the case through decision,
-   assignment, status and closure as in the walkthrough above.
+Переключитесь на **KK** и спросите: «Соңғы 7 күнде өтініштер саны қалай өзгерді?». Для демонстрации честного отказа спросите о причине аварии или персональных данных граждан: Ask Pulse не должен превращать такой вопрос в произвольный SQL. Прогноз на следующий месяц при недостаточной непрерывной истории тоже должен отказать, а не выдавать выдуманную точность.
 
-If asked what happens without ML, stop the inference container. The manual path
-keeps working, which is the invariant the whole design is built on.
+## Если сервис недоступен
 
-## Ask Pulse (about 30 seconds)
+| Сбой                              | Ожидаемое поведение                                                                                              |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| ML/inference                      | Ручной приём, маршрутизация, назначение и история продолжают работать.                                           |
+| Региональный адаптер              | Принятое обращение остаётся в PostgreSQL, исходящая доставка видимо ожидает или повторяется.                     |
+| PostgreSQL                        | Readiness не проходит; demo seed прекращается. In-memory подмена запрещена.                                      |
+| Хранилище / сканирование вложений | Рабочая загрузка недоступна до утверждения реального хранилища и сканера; demo mock нельзя называть антивирусом. |
 
-Use the normal `demo.ps1 up` PostgreSQL environment and open **Операционный
-центр**. A local in-memory test fixture is not the demo profile.
-
-1. In **Ask Pulse**, select **Динамика обращений за последние 7 дней**. The
-   response shows actual aggregates over the synthetic appeals stored in demo
-   PostgreSQL, a chart, source coverage and cutoff. Counts depend on the current
-   demo database; do not narrate the example numbers from the product brief.
-2. Open **Как рассчитано**. Show the metric version, trusted-time exclusions and
-   source provenance. Missing regions remain missing; no national coverage is
-   inferred from the ALA demo.
-3. Select **Сравни с предыдущим периодом**. The context carries the same scope
-   into an equal preceding period. An undefined percentage or partial comparison
-   remains visible rather than becoming a fabricated growth figure.
-4. Use **Показать обращения** to inspect the underlying metadata. Select
-   **Скачать PDF** or **Скачать Excel** to download the signed snapshot of the
-   displayed result, preserving the same rows and cutoff.
-5. Switch to **KK** and ask **Соңғы 7 күнде өтініштер саны қалай өзгерді?**.
-   The same governed query path runs with localized interaction and answer.
-
-For clarification, start a **Новый вопрос** and enter **Покажи обращения**;
-select an offered period. For an honest refusal, ask why a problem happened or
-request citizen names. For a forecast, ask for next month's load: a fresh demo
-usually lacks the required history, so insufficient history is the expected
-result. Do not invent a forecast interval or staffing recommendation.
-
-The deterministic CPU parser works with inference stopped. Configuring an
-optional local LLM changes intent parsing only; it does not make model quality
-validated or give the model access to citizen records. PostgreSQL query audit
-stores structured queries and question hashes, not raw questions or appeal text.
-
-## Failure boundaries
-
-- If PostgreSQL is unavailable, core readiness fails and seeding stops. Do not substitute the in-memory repository for the demo.
-- If the replay adapter is unavailable, accepted appeals and queued assignments remain in PostgreSQL; delivery retries or fails visibly.
-- `pilot` and `production` reject replay delivery, demo profiles and local identity substitution. Their regional integration, identity, retention and object-storage decisions remain external blockers.
-- Attachment bytes in demo/local are retained on a dedicated local volume after deterministic scanning. Operational attachment upload returns `attachment_storage_unavailable` until approved immutable storage and malware scanning are integrated.
+В `pilot` и `production` replay-доставка и demo-идентичности запрещены. Внешние условия запуска перечислены в [матрице функций](FEATURE_STATUS.md) и [списке блокеров](../DECISIONS_AND_BLOCKERS.md).
