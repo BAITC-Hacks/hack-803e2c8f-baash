@@ -82,6 +82,7 @@ const labels = {
     submitted: "Обращение принято",
     number: "Номер обращения",
     newAppeal: "Подать ещё одно обращение",
+    openInQueue: "Открыть в очереди оператора",
   },
   kk: {
     eyebrow: "Азамат арнасы",
@@ -134,6 +135,7 @@ const labels = {
     submitted: "Өтініш қабылданды",
     number: "Өтініш нөмірі",
     newAppeal: "Тағы өтініш беру",
+    openInQueue: "Оператор кезегінде ашу",
   },
 } as const;
 
@@ -147,11 +149,13 @@ export function Intake({
   regionId,
   demoEnabled,
   presenterPreset,
+  onOpenSubmitted,
 }: {
   locale: Locale;
   regionId: string;
   demoEnabled: boolean;
   presenterPreset?: PresenterPreset | null;
+  onOpenSubmitted?: (requestId: string) => void;
 }) {
   const syntheticAssistEnabled = demoEnabled;
   const copy = labels[locale];
@@ -377,6 +381,15 @@ export function Intake({
           <h1 id="intake-complete-title">{copy.submitted}</h1>
           <p>{copy.number}</p>
           <strong className="appeal-number">{submittedNumber}</strong>
+          {onOpenSubmitted ? (
+            <button
+              className="secondary-action"
+              type="button"
+              onClick={() => onOpenSubmitted(submittedNumber)}
+            >
+              {copy.openInQueue}
+            </button>
+          ) : null}
           <button
             className="primary-action"
             type="button"

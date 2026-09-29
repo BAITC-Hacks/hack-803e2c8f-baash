@@ -118,6 +118,13 @@ const labels = {
     status: "Записать статус",
     advisoryEmpty: "Получите подсказку модели или сохраните ручное решение.",
     advisoryTitle: "Маршрутизация: решение оператора",
+    advisoryOnly: "Рекомендация · подтверждение человеком обязательно",
+    rankingLabel: "Темы по оценке модели",
+    rankingScore: "Оценка ранжирования",
+    suggestedService: "Предложенная служба",
+    suggestedPriority: "Предложенный приоритет",
+    modelNote:
+      "Локальный лексический baseline. Оценки ранжирования не являются измеренной точностью модели.",
     topicLabel: "Тема",
     serviceLabel: "Служба",
     priorityLabel: "Приоритет",
@@ -167,6 +174,13 @@ const labels = {
     status: "Мәртебені жазу",
     advisoryEmpty: "Модель ұсынысын алыңыз немесе қолмен шешім сақтаңыз.",
     advisoryTitle: "Бағыттау: оператор шешімі",
+    advisoryOnly: "Ұсыныс · адам растауы қажет",
+    rankingLabel: "Модель бағалаған тақырыптар",
+    rankingScore: "Ранжирлеу бағасы",
+    suggestedService: "Ұсынылған қызмет",
+    suggestedPriority: "Ұсынылған басымдық",
+    modelNote:
+      "Жергілікті лексикалық baseline. Ранжирлеу бағасы модельдің өлшенген дәлдігі емес.",
     topicLabel: "Тақырып",
     serviceLabel: "Қызмет",
     priorityLabel: "Басымдық",
@@ -299,16 +313,17 @@ export default function OperatorWorkspace() {
     return () => window.removeEventListener("keydown", togglePresenter);
   }, []);
 
-  const refreshQueue = useCallback(async () => {
+  const refreshQueue = useCallback(async (preferredId?: string) => {
     try {
       const rows = await api<Appeal[]>("/requests?limit=50", region);
       setAppeals(rows);
       if (rows.length === 0) setDetail(null);
-      setSelectedId((previous) =>
-        previous && rows.some((row) => row.request_id === previous)
+      setSelectedId((previous) => {
+        if (preferredId) return preferredId;
+        return previous && rows.some((row) => row.request_id === previous)
           ? previous
-          : (rows[0]?.request_id ?? null),
-      );
+          : (rows[0]?.request_id ?? null);
+      });
       setError(null);
     } catch (failure) {
       setError(
@@ -395,7 +410,7 @@ export default function OperatorWorkspace() {
     api<{ profile: string }>("/health/ready", region)
       .then((health) => setProfile(health.profile))
       .catch(() => setProfile("unavailable"));
-    void Promise.resolve().then(refreshQueue);
+    void Promise.resolve().then(() => refreshQueue());
   }, [refreshQueue, region]);
 
   useEffect(() => {
@@ -447,8 +462,8 @@ export default function OperatorWorkspace() {
           },
         );
         setRecommendation(result);
-        setTopic(result.top_topics[0].id);
-        setService(result.top_services[0].id);
+        if (result.top_topics[0]) setTopic(result.top_topics[0].id);
+        if (result.top_services[0]) setService(result.top_services[0].id);
         setPriority(result.priority);
         setNotice(`${result.model_version} · ${result.confidence_band}`);
       },
@@ -555,6 +570,14 @@ export default function OperatorWorkspace() {
     "replay",
   ] as const;
   const secondaryViews = ["intake", "situation"] as const;
+
+  function openSubmittedAppeal(requestId: string) {
+    setRecommendation(null);
+    setDetail(null);
+    setSelectedId(requestId);
+    setView("queue");
+    void refreshQueue(requestId);
+  }
 
   return (
     <div className="shell" lang={locale}>
@@ -731,6 +754,7 @@ export default function OperatorWorkspace() {
             regionId={region}
             demoEnabled={profile === "demo"}
             presenterPreset={presenterPreset}
+            onOpenSubmitted={openSubmittedAppeal}
           />
         ) : null}
         {view === "situation" ? (
@@ -882,14 +906,36 @@ export default function OperatorWorkspace() {
                       {copy.classify}
                     </button>
                     {recommendation ? (
-                      <p role="status">
-                        Local {recommendation.model_version} ·{" "}
-                        {recommendation.confidence_band} · topic{" "}
-                        {recommendation.top_topics[0].id} (
-                        {Math.round(recommendation.top_topics[0].score * 100)}%)
-                        · service {recommendation.top_services[0].id} · human
-                        confirmation required
-                      </p>
+                      <div className="recommendation-result" role="status">
+                        <p className="advisory-chip">{copy.advisoryOnly}</p>
+                        <div className="recommendation-grid">
+                          <section className="recommendation-panel">
+                            <span className="panel-label">{copy.rankingLabel}</span>
+                            <ol>
+                              {recommendation.top_topics.slice(0, 3).map((item) => (
+                                <li key={item.id}>
+                                  <span>
+                                    <b>{item.id}</b>
+                                    <small>{copy.rankingScore}</small>
+                                  </span>
+                                  <strong>{item.score.toFixed(2)}</strong>
+                                </li>
+                              ))}
+                            </ol>
+                          </section>
+                          <section className="recommendation-panel">
+                            <span className="panel-label">{copy.suggestedService}</span>
+                            <p><strong>{recommendation.top_services[0]?.id ?? "—"}</strong></p>
+                            <span className="panel-label">{copy.suggestedPriority}</span>
+                            <p><strong>{recommendation.priority}</strong></p>
+                          </section>
+                          <section className="model-panel">
+                            <span className="panel-label">{recommendation.model_version}</span>
+                            <p><strong>{recommendation.confidence_band}</strong></p>
+                            <p>{copy.modelNote}</p>
+                          </section>
+                        </div>
+                      </div>
                     ) : (
                       <p>{copy.advisoryEmpty}</p>
                     )}

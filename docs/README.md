@@ -5,7 +5,7 @@ Read in this order to understand the repository in roughly thirty minutes.
 | #   | Document                                          | Purpose                                                                                     | Status     |
 | --- | ------------------------------------------------- | ------------------------------------------------------------------------------------------- | ---------- |
 | 01  | [Product capabilities](features/README.md)        | What the product does end to end, and the three states every algorithmic capability reports | Current    |
-| 02  | [Presenter card](DEMO_SCRIPT.md)                  | One scenario, four to five minutes, what to click and what to say                           | Current    |
+| 02  | [Golden Demo](GOLDEN_DEMO.md)                     | Preparation command and the current presenter click path                                    | Current    |
 | 03  | [Demo runbook](DEMO_RUNBOOK.md)                   | Startup, reset, verify, and the exact click path for a walkthrough                          | Current    |
 | 03a | [Golden Demo](GOLDEN_DEMO.md)                    | Русский маршрут ведущего, команда prepare и честные границы синтетического сценария          | Current    |
 | 04  | [Architecture](architecture/README.md)            | Runtime, data, human decision, incident, failure and privacy diagrams in RU and EN          | Current    |
