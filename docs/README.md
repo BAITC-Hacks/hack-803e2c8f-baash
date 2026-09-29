@@ -14,6 +14,7 @@ Read in this order to understand the repository in roughly thirty minutes.
 | 07  | [ML research](ml/README.md)                       | Candidates, PulseDM design, shared evaluation protocol, governance boundaries               | Current    |
 | 08  | [Security notes](security/README.md)              | Attachment validation, privacy boundary, access checks                                      | Current    |
 | 09  | [Decision log](DECISION_LOG.md)                   | Architecture and product decisions with their rationale                                     | Current    |
+| 09a | [Development and verification](DEVELOPMENT.md)   | Local checks, integration runner and CI context                                             | Current    |
 | 10  | [External blockers](../DECISIONS_AND_BLOCKERS.md) | The ten things owned by the customer and the organizers                                     | Current    |
 | 11  | [Development history](DEVELOPMENT_HISTORY.md)     | Chronology derived from Git                                                                 | Historical |
 

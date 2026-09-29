@@ -1,209 +1,137 @@
 # Pulse 109
 
-Pulse 109 turns scattered citizen appeals into detected city problems,
-coordinates who resolves them, verifies the result and learns from confirmed
-outcomes.
+> Платформа для работы с обращениями граждан: от отдельного сигнала до выявления городской проблемы, координации служб и проверяемой аналитики.
 
-## Why it exists
+[English version](README.en.md) · [Открыть локальное демо](http://localhost:3000/demo) · [Golden Demo](docs/GOLDEN_DEMO.md) · [Архитектура](docs/architecture/README.md)
 
-A 109 hotline routes against a taxonomy that already exists. A city problem can
-appear before a category for it does. Six people report that the water smells
-odd, tastes metallic and looks cloudy after repairs, a classifier scatters them
-across four categories, and nobody sees that they are one thing.
+![Операционный центр Pulse 109 на демонстрационных данных](apps/web/public/product/operations-center.jpg)
 
-Pulse 109 sits beside the existing regional systems rather than replacing them.
-An accepted appeal keeps its own identifier, timeline and version even when it
-joins an incident. Routing, priority, incident membership and closure stay human
-decisions.
+Pulse 109 работает рядом с действующими региональными системами 109. Каждое обращение сохраняет собственный идентификатор, историю и срок исполнения, даже если оператор связывает его с инцидентом. Маршрутизация и обработка обращения продолжают работать при недоступности ML.
 
-## The product flow
+## Что решает продукт
 
-```
-Citizen signals
-      ↓
-DETECT      Emerging Issues Radar, Data Lab anomalies
-      ↓
-UNDERSTAND  Incident War Room, Data Lab
-      ↓
-DECIDE      Ownership, Next Best Action, human confirmation
-      ↓
-ACT         Transactional outbox, worker, regional adapter
-      ↓
-VERIFY      Closure integrity, evidence, recurrence
-      ↓
-LEARN       Outcome Memory, Replay Lab
-```
+Несколько граждан могут сообщать об одной городской проблеме разными словами и через разные каналы. При обработке каждого обращения по отдельности общий паттерн легко упустить. Pulse 109 связывает три задачи целевого кейса:
 
-## Architecture
+| Модуль | Помощь оператору и руководителю |
+| --- | --- |
+| **Smart Intake** | Принимает обращение, подсказывает тему, службу и приоритет. Рекомендация остаётся советом; решение сохраняет оператор. |
+| **Operator Assistant** | Показывает кандидатов на похожие обращения, возможные дубликаты, историю подтверждённых исходов и следующий шаг с обоснованием. |
+| **Situation Center** | Показывает операционную картину, обнаруживает группы близких обращений и даёт проверяемые ответы на вопросы к данным через Ask Pulse. |
+
+## Golden Demo: одна история от обращения до решения
+
+1. Выполните `prepare`, откройте [демо](http://localhost:3000/demo) и покажите заполненный поток обращений. В [помощнике ведущего](http://localhost:3000/demo?presenter=1) есть пресет «качество воды»: он заполняет вымышленное обращение, а отправку оставляет человеку. До отправки видны кандидаты на похожие проблемы; автоматического объединения нет.
+2. В **Операционном центре** запустите Radar. Шесть близких сообщений о воде уже составляют свежий кластер; после отправки пресета их станет семь. Откройте карту, временную динамику и признаки связи.
+3. Создайте инцидент из кластера. В **Incident War Room** покажите участников, ответственность и **Next Best Action** с кодами причин. Человек подтверждает связь и дальнейшие действия.
+4. В очереди откройте обращение, запросите рекомендацию по маршруту и сохраните ручное решение. Покажите его идентификатор, историю и доставку назначения через worker.
+5. В **Ask Pulse** спросите о динамике обращений за семь дней в Алматы. Покажите число, график, покрытие источников и «Как рассчитано», затем откройте обращения за цифрой и скачайте PDF или Excel. Прогноз на 1–3 месяца доступен в подготовленном мире на синтетической истории.
+
+Для короткого показа начните с уже заполненного мира и шагов 2, 3 и 5. Подробный маршрут, действия ведущего и границы демонстрации — в [Golden Demo](docs/GOLDEN_DEMO.md). Числа зависят от состояния базы; статистика реальных регионов не подразумевается.
+
+## Соответствие целевому кейсу
+
+| Задача | Что доступно сейчас |
+| --- | --- |
+| Приём и классификация | Адаптивный приём и рекомендация по теме/службе; работающий CPU lexical fallback. Финальная модель на тексте граждан не валидирована. |
+| Русский и казахский | Интерфейс приёма и вопросы Ask Pulse на RU/KK. |
+| Ответственная служба и приоритет | Подсказка, Decision Gateway и ручное подтверждение; утверждённые справочник и SLA ожидаются. |
+| Похожие обращения и дубликаты | Кандидаты до подачи обращения и управление участниками инцидента с подтверждением человека. |
+| Предыдущие решения | Outcome Memory по проверенным исходам; в демо этот корпус синтетический. |
+| Операционная картина и всплески | Operations Center и Emerging Issues Radar по географии, времени и таксономии. Семантический сигнал ждёт исходный текст обращений. |
+| Прогноз на 1–3 месяца | Сезонный базовый прогноз в Ask Pulse при достаточной непрерывной истории; `prepare` создаёт 120 синтетических дней для показа горизонтов 30/60/90 дней. Это не валидированный прогноз реальной нагрузки. |
+| Вопросы к данным | Ask Pulse: управляемые запросы, числа, графики, происхождение расчёта и переход к исходным обращениям. |
+| PDF и Excel | Экспорт подписанного среза показанного результата при разрешённой цели экспорта. |
+| Тематическое покрытие | В текущем демо пять семейств тем для городского фона и четыре синтетические темы маршрутизации. Порог ТЗ «не менее десяти» ещё не подтверждён. |
+
+Актуальный статус каждой возможности и внешние зависимости — в [матрице функций](docs/FEATURE_STATUS.md).
+
+## Ключевые возможности
+
+- **[Operations Center](docs/features/OPERATIONS_CENTER.md)** — обращения, инциденты и сигналы, которые требуют внимания сейчас.
+- **[Emerging Issues Radar](docs/features/EMERGING_ISSUES.md)** — группы обращений, близких по месту, времени и теме. Radar показывает паттерн, а не устанавливает причину.
+- **[Incident War Room](docs/features/INCIDENT_WAR_ROOM.md)** — единое рабочее место по городской проблеме с обращениями, историей, ответственностью и следующими действиями.
+- **[Next Best Action](docs/features/NEXT_BEST_ACTION.md)** — предложения с причинами и проверяемыми основаниями.
+- **[Outcome Memory](docs/features/OUTCOME_MEMORY.md)** — поиск подтверждённых похожих исходов.
+- **[Ask Pulse](docs/features/ASK_PULSE.md)** — вопросы на русском и казахском, вычисленные PostgreSQL ответы, графики, покрытие, переход к записям и экспорт. Языковой компонент не пишет SQL и не рассчитывает итоговые числа.
+- **[Data Lab](docs/features/DATA_LAB.md)** — качество данных и операционная аналитика с переходом от показателя к обращениям.
+- **[Replay Lab](docs/features/REPLAY_LAB.md)** — проверка изменений политики на одобренной истории до применения; в демо синтетические записи исключены из оценки качества модели.
+
+Каждая алгоритмическая возможность сообщает состояние `available`, `abstained` или `unavailable` с причиной. Оператор видит разницу между «ничего не найдено» и «расчёт не выполнялся».
+
+## AI предлагает. Человек подтверждает.
+
+Система может предложить тему, службу, приоритет, похожее обращение, участника инцидента и следующий шаг. Маршрутизацию, изменение приоритета, связывание обращений и операционные действия подтверждает человек. При недоступности ML сохраняются приём обращения, ручной маршрут, смена статуса и аудит.
+
+## Как устроена платформа
 
 ```mermaid
-flowchart TD
-    C[Citizen, 109 hotline, regional import] --> I[Intake and privacy boundary]
-    I --> A[(Appeal in PostgreSQL)]
-    A --> G[Decision Gateway]
-    G --> O[Ownership and Handoff Guard]
-    O --> N[Incident]
-    N --> W[Transactional outbox and worker]
-    W --> X[Regional adapter]
-    X --> E[External municipal system]
-
-    A -.-> R[Emerging Issues Radar]
-    R -.-> N
-    N -.-> M[Outcome Memory]
-    E -.-> V[Closure integrity and evidence]
-    V --> M
-    A -.-> D[Data Lab]
-    N -.-> P[Operations Center]
-    G -.-> L[Replay Lab]
+flowchart LR
+    A[Гражданин / 109 / API] --> B[Приём обращения]
+    B --> C[(PostgreSQL)]
+    C --> D[Decision Gateway]
+    D --> E[Оператор]
+    C --> R[Emerging Issues Radar]
+    R --> I[Инцидент]
+    E --> I
+    I --> W[Incident War Room]
+    I --> O[Outbox + worker]
+    O --> X[Региональный адаптер]
+    C --> L[Data Lab]
+    C --> P[Ask Pulse]
 ```
 
-Detailed diagrams live in the [architecture notes](docs/architecture/README.md).
+Ядро — модульное FastAPI-приложение. Веб, API, worker, inference и адаптеры запускаются отдельно; PostgreSQL остаётся источником истины. Подробные схемы — в [архитектуре](docs/architecture/README.md), стабильные границы — в [контрактах](contracts/).
 
-## Flagship capabilities
+## Демо-режим
 
-| Capability                                                | What it does                                                                      |
-| --------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| [Emerging Issues Radar](docs/features/EMERGING_ISSUES.md) | Groups reports that arrive close in space and time and fit the taxonomy poorly    |
-| [Incident War Room](docs/features/INCIDENT_WAR_ROOM.md)   | One incident as one city problem, assembled in a single read                      |
-| [Next Best Action](docs/features/NEXT_BEST_ACTION.md)     | Evidence-backed suggestions with the reason codes that produced them              |
-| [Outcome Memory](docs/features/OUTCOME_MEMORY.md)         | What was actually done about comparable problems, human-confirmed closures only   |
-| [Operations Center](docs/features/OPERATIONS_CENTER.md)   | Where the city needs attention now, every row opening the thing it describes      |
-| [Replay Lab](docs/features/REPLAY_LAB.md)                 | Test a routing change against approved history before it ships                    |
-| [Data Lab](docs/features/DATA_LAB.md)                     | Reproducible exploration and live analytics that drill down to individual appeals |
+Муниципальные записи, личности, каталог услуг и внешние квитанции в демо вымышлены. Для их обработки используются реальные FastAPI, PostgreSQL, миграции, транзакции, аудит, incident workflow, transactional outbox, worker и аналитика. Внешнюю муниципальную CRM заменяет детерминированный replay adapter. Демо не подтверждает качество моделей на реальных данных.
 
-Each capability reports one of three states: `available`, `abstained` or
-`unavailable`, with a controlled reason code. An operator can always tell
-"nothing found" from "nothing ran".
+## Запуск демо
 
-## What is real and what is synthetic
-
-| Real                                         | Synthetic in the demo                   |
-| -------------------------------------------- | --------------------------------------- |
-| FastAPI business logic and validation        | The municipal records themselves        |
-| PostgreSQL schema, migrations, transactions  | Coordinates placed on the map           |
-| Transactional outbox, worker leases, retries | The external system that receives them  |
-| Audit trail, provenance, idempotency         | The service catalog and intake policies |
-| Incident merge, split, membership decisions  | Historical outcomes                     |
-| Closure integrity and evidence checks        |                                         |
-
-The malware scanner is a mock and must never be described as production
-antivirus. No model quality number in this repository is validated.
-
-## Quick start
-
-Requires Docker with a working Linux engine, Python 3.10 to 3.13, `uv`, and free
-ports 3000, 5432 and 8080 to 8084.
+Нужны Docker с работающим Linux engine, Python 3.10–3.13, `uv` и свободные порты 3000, 5432, 8080–8084. Выполняйте из корня репозитория:
 
 ```bash
 uv sync --all-groups --frozen
-uv run python scripts/demo_runtime.py up
+uv run python scripts/demo_runtime.py prepare
 ```
 
-Open **http://localhost:3000**. The command applies migrations, loads the
-synthetic catalog and builds a deterministic city of roughly 130 appeals through
-the same endpoints an operator uses. On Windows use `.\demo.ps1 up`.
-The landing uses static captures from this working synthetic demo; its controls
-are on `/demo`, not inside the captures.
+Команда поднимет отдельный demo-проект, пройдёт полный API-сценарий, создаст чистый мир и проверит Radar, Ask Pulse, прогнозы и экспорт. Готовность подтверждает строка `PULSE 109 DEMO READY`. Откройте [главную страницу](http://localhost:3000) или [рабочее демо](http://localhost:3000/demo). В Windows доступна команда `.\demo.ps1 prepare` из PowerShell.
 
 ```bash
-uv run python scripts/demo_runtime.py verify   # checks, end-to-end flow, then reseeds
-uv run python scripts/demo_runtime.py reset    # removes only the demo volumes
+uv run python scripts/demo_runtime.py verify  # базовая проверка пути через API
+uv run python scripts/demo_runtime.py reset   # удаляет только тома проекта pulse109-demo
 ```
 
-### The 60 second walkthrough
+После `reset` снова выполните `prepare`. Подробности и путь по интерфейсу — в [runbook](docs/DEMO_RUNBOOK.md).
 
-1. **Operations center** opens first. Press **Run scan**.
-2. An emerging pattern appears. Open it: the reports on a map, how the arrivals
-   built up, the signals that linked them.
-3. **Create an incident** from the cluster. The war room opens.
-4. Read one suggestion with its reason codes, then confirm the assignment.
-5. Watch the outbox deliver, attach evidence, close with verification.
-6. **Data lab**: press any figure to reach the appeals behind it.
+## Технологии и проверка
 
-The full path is in the [demo runbook](docs/DEMO_RUNBOOK.md).
-
-## Repository map
-
-| Path                                    | Responsibility                                                        |
-| --------------------------------------- | --------------------------------------------------------------------- |
-| `apps/web`                              | Next.js operator workspace and citizen intake                         |
-| `services/core`                         | FastAPI business modules, PostgreSQL repositories, Alembic migrations |
-| `services/worker`, `services/inference` | Outbox delivery and the optional inference process                    |
-| `adapters`                              | Replay and Open311 implementations, and the adapter SDK               |
-| `analytics`                             | Reproducible offline exploration of approved canonical datasets       |
-| `ml`                                    | Candidate evaluation harness and offline comparison protocol          |
-| `contracts`                             | OpenAPI, canonical schemas, event catalog, ADRs                       |
-| `data`                                  | Schemas, manifests and synthetic fixtures. Never real records         |
-| `infra/compose`, `scripts`              | Runtime topology, demo commands, verification and release tooling     |
-| `docs`                                  | Product, capability, architecture and status documentation            |
-| `tests`                                 | Contract, integration and end-to-end suites                           |
-
-## Engineering
-
-FastAPI · Next.js · PostgreSQL with PostGIS and pgvector · Alembic forward-only
-migrations · Docker Compose · transactional outbox with `FOR UPDATE SKIP LOCKED`
-· idempotency keys · append-only audit and provenance · human-in-the-loop
-decision model · Ed25519 signed configuration bundles.
-
-## Verification
+Next.js · React · TypeScript · FastAPI · Python · PostgreSQL · PostGIS · pgvector · Docker Compose · transactional outbox · audit trail · CPU fallback.
 
 ```bash
 make lint typecheck test contract-test e2e
-make eda                                       # reproducible exploration report
-uv run python scripts/demo_runtime.py verify   # the demo, end to end
+uv run python scripts/demo_runtime.py prepare
 ```
 
-PostgreSQL integration tests need `PULSE109_TEST_DATABASE_URL`. Without it
-pytest reports them as skipped, which is not the same as passing. Run them with
-the isolated runner; it creates, migrates and removes a UUID-named database for
-each pass, without modifying the configured base or demo database:
+Для PostgreSQL integration tests нужен `PULSE109_TEST_DATABASE_URL`; пропуск этих тестов не равен успешному прохождению. Команды, изолированный test runner и сведения о CI — в [инструкции для разработчиков](docs/DEVELOPMENT.md).
 
-```bash
-PULSE109_TEST_DATABASE_URL=postgresql://<role>:<password>@<host>:5432/<any-existing-db> \
-  uv run python scripts/run_integration_tests.py --runs 2
-```
+## Структура репозитория
 
-The database role must be allowed to create and drop the runner's own isolated
-databases. CI runs two passes as a second-run regression check. CI runs four
-jobs: quality, a containerised smoke with a restore drill, a demo profile smoke
-and a supply chain audit.
+| Путь | Назначение |
+| --- | --- |
+| `apps/web` | Интерфейс оператора и приём обращения |
+| `services/core` | FastAPI, бизнес-модули, репозитории и миграции |
+| `services/worker`, `services/inference` | Доставка из outbox и необязательный inference-процесс |
+| `adapters` | Изолированные региональные адаптеры и SDK |
+| `analytics`, `ml` | Исследование данных и протокол сравнения моделей |
+| `contracts` | OpenAPI, схемы, события и архитектурные решения |
+| `infra/compose`, `scripts`, `tests` | Запуск, проверка и тесты |
+| `docs` | Продуктовая и техническая документация |
 
-**CI status note.** If you are reading this on the BAITC-Hacks mirror, its
-Actions checks show red. The jobs never start there: GitHub reports
-`The job was not started because your account is locked due to a billing issue`,
-which is an organization billing lock, not a failure of this code. The same four
-jobs pass on the development repository, for example
-[this run](https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/36299408363).
+## Текущие границы
 
-## Current state and limitations
+Демо не является внедрением в акимате. Для производственной интеграции нужны региональный API и доступы, провайдер идентификации, утверждённые таксономия и SLA, правовые основания и сроки хранения, одобренные данные и валидация моделей. Эти решения остаются за заказчиком и организаторами; список — в [DECISIONS_AND_BLOCKERS.md](DECISIONS_AND_BLOCKERS.md). Точный статус функций, включая частично готовые, — в [docs/FEATURE_STATUS.md](docs/FEATURE_STATUS.md).
 
-The [feature matrix](docs/FEATURE_STATUS.md) is the authority on what is
-implemented, what is partial and what is blocked. In short:
+## Документация
 
-- No live regional integration. Delivery goes to a deterministic replay adapter.
-- No production identity provider. The demo actor is labelled as development.
-- No approved taxonomy or SLA, so intake policies in the demo are synthetic.
-- Object storage is selected by configuration. Attachments and replay snapshots
-  use a local volume by default and S3 or a compatible endpoint when a
-  deployment sets one. Credentials never pass through application settings.
-- A public deployment overlay exists, with TLS at the edge and no internal port
-  published. Whether an instance is running is a question about that instance,
-  not about this repository.
-- Replay Lab has an inspection-only report list and policy-level metric diff.
-  It has no per-case decision trace because the persisted report does not retain
-  per-case outputs, confidence, reason codes, status or action.
-
-The ten external blockers are recorded in
-[DECISIONS_AND_BLOCKERS.md](DECISIONS_AND_BLOCKERS.md). They belong to the
-customer and the organizers. Writing a plausible value for any of them would
-turn an honest gap into a false claim.
-
-## Documentation
-
-[Index](docs/README.md) · [Capabilities](docs/features/README.md) ·
-[Demo runbook](docs/DEMO_RUNBOOK.md) · [Feature status](docs/FEATURE_STATUS.md) ·
-[Architecture](docs/architecture/README.md) ·
-[Decision log](docs/DECISION_LOG.md) ·
-[Development history](docs/DEVELOPMENT_HISTORY.md) ·
-[ML research](docs/ml/README.md) ·
-[Questions for organizers](docs/GOVTECH_BUSINESS_QUESTIONS.md)
+[Индекс](docs/README.md) · [Golden Demo](docs/GOLDEN_DEMO.md) · [Runbook](docs/DEMO_RUNBOOK.md) · [Архитектура](docs/architecture/README.md) · [Контракты](contracts/) · [ML research](docs/ml/README.md)
