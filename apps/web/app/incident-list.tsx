@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   incidentReportCount,
   incidentServiceLabel,
+  incidentStateLabel,
   incidentTopicLabel,
 } from "./incident-display";
 
@@ -146,7 +147,8 @@ export function IncidentList({
             <li key={row.incident_id}>
               <div>
                 <p className="eyebrow">
-                  {row.state} · v{row.version} · {t.age} {age(row.created_at)}
+                  {incidentStateLabel(row.state, locale)} · v{row.version} ·{" "}
+                  {t.age} {age(row.created_at)}
                 </p>
                 <strong title={row.topic_id}>
                   {incidentTopicLabel(row.topic_id, locale)}

@@ -93,6 +93,11 @@ type ClusterDetail = {
   members: ClusterMember[];
 };
 
+type RequestLocation = {
+  source_request_id?: string;
+  point?: { longitude?: number | null; latitude?: number | null } | null;
+};
+
 const copy = {
   ru: {
     title: "Операционный центр",
@@ -112,6 +117,7 @@ const copy = {
     queued: "В очереди на доставку",
     failed: "Доставка не удалась",
     activity: "Обращения за сутки",
+    mapOverview: "География обращений",
     activityChartDescription:
       "Динамика обращений за сутки по достоверному времени поступления",
     activityNote:
@@ -156,6 +162,7 @@ const copy = {
     queued: "Жеткізу кезегінде",
     failed: "Жеткізілмеді",
     activity: "Өтініштер тәулік ішінде",
+    mapOverview: "Өтініштердің географиясы",
     activityChartDescription:
       "Сенімді қабылдау уақыты бар өтініштердің тәуліктік динамикасы",
     activityNote: "Тек сенімді түсу уақыты бар өтініштер есептеледі.",
@@ -253,6 +260,7 @@ export function OperationsCenter({
   const [feed, setFeed] = useState<Feed | null>(null);
   const [arrivals, setArrivals] = useState<Arrivals | null>(null);
   const [cluster, setCluster] = useState<ClusterDetail | null>(null);
+  const [overviewPoints, setOverviewPoints] = useState<ReportPoint[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -299,6 +307,34 @@ export function OperationsCenter({
     // operator queue loads its own data.
     void Promise.resolve().then(loadFeed);
   }, [loadFeed]);
+
+  useEffect(() => {
+    let active = true;
+    void request<RequestLocation[]>("/requests?limit=100&offset=0")
+      .then((rows) => {
+        if (!active) return;
+        setOverviewPoints(
+          rows.flatMap((row) =>
+            typeof row.point?.longitude === "number" &&
+            typeof row.point.latitude === "number"
+              ? [
+                  {
+                    longitude: row.point.longitude,
+                    latitude: row.point.latitude,
+                    label: row.source_request_id,
+                  },
+                ]
+              : [],
+          ),
+        );
+      })
+      .catch(() => {
+        if (active) setOverviewPoints([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, [request]);
 
   async function scan() {
     setBusy(true);
@@ -594,6 +630,18 @@ export function OperationsCenter({
         </section>
       </div>
 
+      <article className="lab-card operations-map-card">
+        <h2>{t.mapOverview}</h2>
+        <ReportMap
+          points={overviewPoints}
+          emptyLabel={t.noGeo}
+          mode="overview"
+          locale={locale}
+          countLabel={appealCount(overviewPoints.length, locale)}
+          ariaLabel={t.mapOverview}
+        />
+      </article>
+
       <AskPulse key={regionId} locale={locale} regionId={regionId} />
 
       {cluster ? (
@@ -658,6 +706,10 @@ export function OperationsCenter({
             }
             spreadMetres={cluster.radius_m}
             emptyLabel={t.noGeo}
+            mode="cluster"
+            locale={locale}
+            countLabel={appealCount(cluster.appeal_count, locale)}
+            ariaLabel={t.cluster}
           />
 
           <h3>{t.timeline}</h3>

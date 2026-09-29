@@ -184,6 +184,10 @@ function workspace(s: State, inc: Incident) {
   const members = inc.member_request_ids
     .map((id) => s.appeals.find((a) => a.request_id === id))
     .filter((a): a is Appeal => !!a);
+  const receivedTimes = members
+    .map((member) => member.received_at)
+    .filter((value): value is string => value !== null)
+    .sort();
   return {
     incident_id: inc.incident_id,
     region_id: inc.region_id,
@@ -196,6 +200,9 @@ function workspace(s: State, inc: Incident) {
     candidate_count: inc.confirmed ? 0 : members.length,
     created_at: inc.created_at,
     updated_at: inc.created_at,
+    first_reported_at: receivedTimes[0] ?? null,
+    last_reported_at: receivedTimes[receivedTimes.length - 1] ?? null,
+    active_minutes: inc.confirmed ? 1 : null,
     members: members.map((a) => ({
       request_id: a.request_id,
       source_request_id: a.source_request_id,
@@ -208,34 +215,44 @@ function workspace(s: State, inc: Incident) {
       point: a.point ?? null,
     })),
     geo: {
-      status: "available",
-      located_count: members.filter((a) => a.point).length,
-      total_count: members.length,
+      status: { state: "available", reason_code: null },
+      located_member_count: members.filter((a) => a.point).length,
+      total_member_count: members.length,
       centroid: { latitude: 43.245, longitude: 76.897 },
-      spread_km: 1.2,
+      report_spread_m: 1200,
     },
     ownership: {
-      status: "advisory",
+      status: { state: "available", reason_code: null },
       candidates: [],
       ambiguous: false,
       loop_risk: false,
       reason_codes: ["mock_only"],
     },
     similar_outcomes: {
-      status: "insufficient",
+      status: { state: "abstained", reason_code: "INSUFFICIENT_HISTORY" },
       comparable_count: 0,
       median_resolution_hours: null,
       without_recurrence_30d: null,
     },
-    next_actions: { status: "advisory", items: [] },
+    next_actions: {
+      status: { state: "abstained", reason_code: "NO_SUPPORTED_ACTION" },
+      items: [],
+    },
     synchronization: {
-      status: "simulated",
+      status: { state: "abstained", reason_code: "LOCAL_MOCK_ONLY" },
       queued: 0,
       delivered: 0,
       retrying: 0,
       failed_permanent: 0,
     },
-    timeline: [{ type: "created", at: inc.created_at, synthetic: true }],
+    timeline: [
+      {
+        occurred_at: inc.created_at,
+        event_type: "incident_created",
+        actor_type: "operator",
+        synthetic: true,
+      },
+    ],
     evidence: [],
     synthetic: true,
   };

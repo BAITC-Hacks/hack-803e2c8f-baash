@@ -26,6 +26,21 @@ export function incidentServiceLabel(
   return services[serviceId]?.[locale] ?? serviceId;
 }
 
+export function incidentStateLabel(state: string, locale: Locale): string {
+  const labels: Record<string, Record<Locale, string>> = {
+    open: { ru: "Открыт", kk: "Ашық" },
+    active: { ru: "В работе", kk: "Жұмыста" },
+    proposed: { ru: "Предложен", kk: "Ұсынылған" },
+    confirmed: { ru: "Подтверждён", kk: "Расталған" },
+    monitoring: { ru: "Наблюдение", kk: "Бақылауда" },
+    resolved: { ru: "Решён", kk: "Шешілген" },
+  };
+  return (
+    labels[state.toLowerCase()]?.[locale] ??
+    (locale === "ru" ? "Статус обновлён" : "Күй жаңартылды")
+  );
+}
+
 export function incidentReportCount(count: number, locale: Locale): string {
   if (locale === "kk") return `${count} өтініш`;
   const lastTwo = count % 100;

@@ -416,12 +416,6 @@ export function ReplayLab({
                     </dd>
                   </div>
                 </dl>
-                {selected.baseline.synthetic_count > 0 ||
-                selected.candidate.synthetic_count > 0 ? (
-                  <p className="capability capability-abstained">
-                    {t.syntheticNote}
-                  </p>
-                ) : null}
               </div>
               <div className="replay-table-wrap">
                 <table className="replay-table">

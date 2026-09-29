@@ -294,16 +294,23 @@ export default function OperatorWorkspace() {
   );
   const [profile, setProfile] = useState<string | null>(null);
   const isDemoProfile = profile === "demo" || profile === "demo-mock";
+  const [demoDisclosureOpen, setDemoDisclosureOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [presenterMode, setPresenterMode] = useState(
     () =>
       typeof window !== "undefined" &&
-      (window.location.pathname === "/demo" ||
-        new URLSearchParams(window.location.search).get("presenter") === "1"),
+      new URLSearchParams(window.location.search).get("presenter") === "1",
   );
   const [presenterPreset, setPresenterPreset] =
     useState<PresenterPreset | null>(null);
+  useEffect(() => {
+    function closeDemoDisclosure(event: KeyboardEvent) {
+      if (event.key === "Escape") setDemoDisclosureOpen(false);
+    }
+    window.addEventListener("keydown", closeDemoDisclosure);
+    return () => window.removeEventListener("keydown", closeDemoDisclosure);
+  }, []);
   const [appeals, setAppeals] = useState<Appeal[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [detail, setDetail] = useState<Detail | null>(null);
@@ -777,22 +784,36 @@ export default function OperatorWorkspace() {
             )}
           </div>
           <div className="topbar-actions">
-            <span
-              className="profile"
-              title={
-                isDemoProfile
-                  ? profile === "demo-mock"
-                    ? "Полностью локальная симуляция: все данные, действия, аналитика и доставка синтетические; внешние сервисы не подключены."
-                    : "Вымышленные муниципальные обращения. Сервисы приложения, PostgreSQL, worker и аналитика работают в обычном режиме."
-                  : undefined
-              }
-            >
-              {isDemoProfile
-                ? profile === "demo-mock"
-                  ? "MOCK DEMO · СИМУЛЯЦИЯ"
-                  : "DEMO DATA"
-                : `${copy.profile}: ${profile ?? copy.profileLoading}`}
-            </span>
+            {isDemoProfile ? (
+              <div className="demo-disclosure-wrap">
+                <button
+                  type="button"
+                  className="profile demo-data-badge"
+                  title="Используются вымышленные муниципальные записи. Интерфейс и сценарии работают через локальный mock API; база данных и внешняя доставка не подключены."
+                  aria-label="DEMO DATA: информация о данных"
+                  aria-expanded={demoDisclosureOpen}
+                  aria-controls="demo-data-tooltip"
+                  onClick={() => setDemoDisclosureOpen((open) => !open)}
+                >
+                  DEMO DATA
+                </button>
+                {demoDisclosureOpen ? (
+                  <div
+                    id="demo-data-tooltip"
+                    className="demo-data-tooltip"
+                    role="tooltip"
+                  >
+                    Используются вымышленные муниципальные записи. Интерфейс и
+                    сценарии работают через локальный mock API; база данных и
+                    внешняя доставка не подключены.
+                  </div>
+                ) : null}
+              </div>
+            ) : (
+              <span className="profile">
+                {`${copy.profile}: ${profile ?? copy.profileLoading}`}
+              </span>
+            )}
             <div
               className="locale-switch"
               role="group"
@@ -873,13 +894,7 @@ export default function OperatorWorkspace() {
             aria-labelledby="platform-status"
           >
             <div className="content">
-              <p className="eyebrow">
-                {isDemoProfile
-                  ? profile === "demo-mock"
-                    ? "MOCK DEMO · СИМУЛЯЦИЯ"
-                    : "DEMO DATA"
-                  : `Profile: ${profile}`}
-              </p>
+              <p className="eyebrow">{copy.situation}</p>
               <h1 id="platform-status">{copy.situation}</h1>
               <p>{copy.statusImplemented}</p>
               <p>{copy.statusBlocked}</p>
@@ -893,13 +908,7 @@ export default function OperatorWorkspace() {
             <section className="content" id="queue">
               <div className="section-heading">
                 <div>
-                  <p className="eyebrow">
-                    {isDemoProfile
-                      ? locale === "ru"
-                        ? "МОК-ДЕМО · СИМУЛЯЦИЯ"
-                        : "МОК-ДЕМО · СИМУЛЯЦИЯ"
-                      : profile}
-                  </p>
+                  <p className="eyebrow">{copy.queue}</p>
                   <h1>{copy.queue}</h1>
                 </div>
                 <button
@@ -1237,7 +1246,7 @@ export default function OperatorWorkspace() {
           </div>
         ) : null}
       </main>
-      {isDemoProfile && presenterMode ? (
+      {profile === "demo" && presenterMode ? (
         <PresenterPanel
           regionId={region}
           onNavigate={(target) => setView(target)}

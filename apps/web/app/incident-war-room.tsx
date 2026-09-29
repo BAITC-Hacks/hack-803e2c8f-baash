@@ -13,6 +13,7 @@ import { ReportMap, type ReportPoint } from "./report-map";
 import {
   incidentDuration,
   incidentServiceLabel,
+  incidentStateLabel,
   incidentTopicLabel,
 } from "./incident-display";
 
@@ -186,7 +187,6 @@ function StateBadge({
       title={status.reason_code ?? undefined}
     >
       {label}
-      {status.reason_code ? ` · ${status.reason_code}` : ""}
     </span>
   );
 }
@@ -526,8 +526,8 @@ export function IncidentWarRoom({
       <div className="war-room-head">
         <div>
           <p className="eyebrow">
-            {workspace.region_id} · {workspace.state} · v{workspace.version}
-            {workspace.synthetic ? " · SYNTHETIC" : ""}
+            {workspace.region_id} ·{" "}
+            {incidentStateLabel(workspace.state, locale)} · v{workspace.version}
           </p>
           <h2 id="war-room-title">{t.title}</h2>
           <p>{t.intro}</p>
@@ -600,6 +600,14 @@ export function IncidentWarRoom({
             centroid={workspace.geo.centroid}
             spreadMetres={workspace.geo.report_spread_m}
             emptyLabel={t.noGeo}
+            mode={
+              workspace.state === "active" || workspace.state === "open"
+                ? "incident"
+                : "cluster"
+            }
+            locale={locale}
+            countLabel={`${points.length} ${locale === "ru" ? "обращений с координатами" : "координаты бар өтініш"}`}
+            ariaLabel={t.map}
           />
           {workspace.geo.report_spread_m !== null ? (
             <p className="war-room-note">
@@ -635,7 +643,11 @@ export function IncidentWarRoom({
             </ul>
           ) : null}
           {workspace.ownership.loop_risk ? (
-            <p className="attention">HANDOFF_LOOP_RISK</p>
+            <p className="attention">
+              {locale === "ru"
+                ? "Есть риск повторной передачи между службами. Проверьте ответственного."
+                : "Қызметтер арасында қайта жіберу қаупі бар. Жауаптыны тексеріңіз."}
+            </p>
           ) : null}
         </article>
 

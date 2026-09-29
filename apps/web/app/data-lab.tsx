@@ -113,7 +113,6 @@ const copy = {
     excluded: "Исключено",
     loading: "Загрузка…",
     empty: "Нет данных для этого среза",
-    synthetic: "Синтетические данные",
     stageName: "Этап",
     countShort: "Обращений",
     source: "Источник",
@@ -154,7 +153,6 @@ const copy = {
     excluded: "Алынып тасталды",
     loading: "Жүктелуде…",
     empty: "Бұл кесінді үшін дерек жоқ",
-    synthetic: "Синтетикалық деректер",
     stageName: "Кезең",
     countShort: "Өтініш",
     source: "Дереккөз",
@@ -276,7 +274,6 @@ export function DataLab({
         <div>
           <p className="eyebrow">
             {regionId}
-            {quality?.provenance.synthetic ? ` · ${t.synthetic}` : ""}
             {quality ? ` · ${quality.provenance.metric_version}` : ""}
           </p>
           <h1 id="data-lab-title">{t.title}</h1>

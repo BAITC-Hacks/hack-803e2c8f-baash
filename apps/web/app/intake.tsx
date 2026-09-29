@@ -422,9 +422,11 @@ export function Intake({
             {progress}
           </span>
         </div>
-        <p className="form-error" role="status">
-          {syntheticAssistEnabled ? copy.demoNotice : copy.demoOnly}
-        </p>
+        {!syntheticAssistEnabled ? (
+          <p className="form-error" role="status">
+            {copy.demoOnly}
+          </p>
+        ) : null}
         <div className="progress-track" aria-hidden="true">
           <span style={{ width: `${((step + 1) / 5) * 100}%` }} />
         </div>

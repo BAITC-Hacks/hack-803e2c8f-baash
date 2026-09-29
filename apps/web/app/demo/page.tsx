@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
-import OperatorWorkspace from "../operator-workspace";
+import DemoEntry from "./demo-entry";
 
 export const metadata: Metadata = {
   title: "Interactive Demo",
-  description:
-    "Pulse 109 operations workspace with synthetic municipal demo data.",
+  description: "Pulse 109 interactive local demo workspace.",
 };
 
 export default function DemoPage() {
-  return <OperatorWorkspace />;
+  return <DemoEntry />;
 }

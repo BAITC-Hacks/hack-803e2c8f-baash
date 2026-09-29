@@ -49,7 +49,6 @@ const copy = {
     parser: "Разбор вопроса",
     fallback: "Резервный CPU-парсер",
     evaluation: "Кандидат для оценки; качество не подтверждено",
-    synthetic: "Синтетические данные",
     cutoff: "Данные до",
     period: "Период",
     metric: "Метрика",
@@ -120,7 +119,6 @@ const copy = {
     parser: "Сұрақты талдау",
     fallback: "Резервтік CPU талдағышы",
     evaluation: "Бағалау кандидаты; сапасы расталмаған",
-    synthetic: "Синтетикалық деректер",
     cutoff: "Деректердің шегі",
     period: "Кезең",
     metric: "Метрика",
@@ -474,9 +472,6 @@ export function AskPulse({
           <section className={styles.result} aria-label={asked}>
             <div className={styles.resultHeading}>
               <p className={styles.question}>{asked}</p>
-              {result.synthetic ? (
-                <span className={styles.synthetic}>{t.synthetic}</span>
-              ) : null}
             </div>
             {result.inference ? (
               <p className={styles.note}>
