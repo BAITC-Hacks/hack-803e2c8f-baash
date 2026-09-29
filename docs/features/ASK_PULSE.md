@@ -120,9 +120,10 @@ regional integration.
 
 ## Verification note
 
-The new migration chain renders successfully with Alembic offline SQL mode.
-Runtime migration and PostgreSQL integration checks were not available in the
-implementation environment: `PULSE109_TEST_DATABASE_URL` is unset, and
-`docker info` cannot open `//./pipe/dockerDesktopLinuxEngine`. The next check is
-to configure an isolated test database at the migration head and run
-`uv run pytest tests/integration/test_ask_analytics_postgres.py -q`.
+The migration chain through `0024_ask_analytics_read_model` was applied from an
+empty database in two independent PostgreSQL integration passes; all 23 tests
+passed in both disposable databases. The Docker demo verification also rebuilt
+the images, migrated and seeded the real PostgreSQL topology, completed the
+end-to-end API walkthrough and restored a clean 134-appeal synthetic world.
+Re-running the seed was verified to be idempotent, including the immutable
+Replay Lab snapshot.

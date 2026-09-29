@@ -102,6 +102,10 @@ def canonical_snapshot_bytes(dataset: ReplayDataset) -> bytes:
     Dataset metadata and cases are included, with cases ordered by pseudonymous key.
     """
     record = dataset.model_dump(mode="json", exclude={"snapshot_sha256", "cases"})
+    # Pydantic serializes a frozenset as a list in process-dependent hash order.
+    # Sort it explicitly so identical datasets stay content-addressable across
+    # interpreter processes and PYTHONHASHSEED values.
+    record["allowed_features"] = sorted(dataset.allowed_features)
     cases = [case.model_dump(mode="json") for case in dataset.cases]
     payload = {"manifest": record, "cases": sorted(cases, key=lambda row: row["case_key"])}
     return json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode()

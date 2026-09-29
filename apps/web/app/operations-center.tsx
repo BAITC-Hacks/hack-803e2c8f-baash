@@ -367,8 +367,6 @@ export function OperationsCenter({
         </button>
       </div>
 
-      <AskPulse key={regionId} locale={locale} regionId={regionId} />
-
       {error ? (
         <p role="alert" className="attention">
           {error}
@@ -541,6 +539,8 @@ export function OperationsCenter({
           </ul>
         </section>
       </div>
+
+      <AskPulse key={regionId} locale={locale} regionId={regionId} />
 
       {cluster ? (
         <article className="cluster-inspector">

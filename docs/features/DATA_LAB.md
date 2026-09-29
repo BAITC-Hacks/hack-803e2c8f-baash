@@ -67,6 +67,12 @@ actually had.
 
 ## Drill-down is the point
 
+The process panel is a snapshot of independently defined stages, not a
+single-cohort conversion funnel. In particular, resolved appeals are not
+currently `in_progress`; dividing those counts would produce misleading
+percentages above 100%. The API leaves `share_of_previous` and `largest_drop`
+unset for this snapshot, and the UI displays the exact counts and definitions.
+
 Every aggregate carries a key. `GET /v1/datalab/drilldown?key=...` returns the
 appeals behind it.
 

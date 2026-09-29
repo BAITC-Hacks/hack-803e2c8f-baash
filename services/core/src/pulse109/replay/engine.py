@@ -152,6 +152,7 @@ class ReplayDataset(BaseModel):
     def manifest_digest(self) -> str:
         """Hash canonical metadata and pseudonymous snapshots, never raw appeal content."""
         canonical = self.model_dump(mode="json", exclude={"cases"})
+        canonical["allowed_features"] = sorted(self.allowed_features)
         case_records = [case.model_dump(mode="json") for case in self.cases]
         payload = json.dumps(
             {

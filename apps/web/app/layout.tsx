@@ -6,11 +6,11 @@ import "maplibre-gl/dist/maplibre-gl.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "Pulse 109 — City Intelligence",
+    default: "Pulse 109 — городские обращения",
     template: "%s | Pulse 109",
   },
   description:
-    "A governed operations layer that connects citizen appeals, operator decisions and city response.",
+    "Pulse 109 связывает обращения жителей, решения оператора и реакцию городских служб.",
 };
 
 export default function RootLayout({

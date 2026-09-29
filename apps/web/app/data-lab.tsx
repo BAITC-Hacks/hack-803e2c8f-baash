@@ -94,8 +94,8 @@ const copy = {
     qualityNote:
       "Шесть измерений вместо одной оценки: одно число не говорит, что именно чинить.",
     process: "Процесс",
-    processNote: "Где обращения застревают.",
-    largestDrop: "Наибольшая потеря",
+    processNote:
+      "Срез текущих состояний и достигнутых этапов. Это не конверсия одной когорты.",
     timings: "Сроки",
     timingsNote:
       "Перцентили, а не среднее. Среднее прячет именно те случаи, ради которых это смотрят.",
@@ -123,8 +123,8 @@ const copy = {
     qualityNote:
       "Бір баға емес, алты өлшем: бір сан нені түзету керегін айтпайды.",
     process: "Процесс",
-    processNote: "Өтініштер қайда тұрып қалады.",
-    largestDrop: "Ең үлкен шығын",
+    processNote:
+      "Ағымдағы күйлер мен жеткен кезеңдердің көрінісі. Бұл бір топтың конверсиясы емес.",
     timings: "Мерзімдер",
     timingsNote: "Орташа емес, перцентильдер.",
     handoffs: "Қызметтер арасындағы берулер",
@@ -317,11 +317,6 @@ export function DataLab({
         <article className="lab-card">
           <h2>{t.process}</h2>
           <p className="war-room-note">{t.processNote}</p>
-          {funnel.largest_drop ? (
-            <p className="attention">
-              {t.largestDrop}: {funnel.largest_drop}
-            </p>
-          ) : null}
           <ol className="funnel">
             {funnel.stages.map((stage) => {
               const first = funnel.stages[0]?.count || 1;
@@ -329,12 +324,7 @@ export function DataLab({
                 <li key={stage.stage}>
                   <div className="funnel-head">
                     <strong>{stage.stage}</strong>
-                    <span className="codes">
-                      {stage.count}
-                      {stage.share_of_previous !== null
-                        ? ` · ${pct(stage.share_of_previous)}`
-                        : ""}
-                    </span>
+                    <span className="codes">{stage.count}</span>
                   </div>
                   <span
                     className="funnel-bar"

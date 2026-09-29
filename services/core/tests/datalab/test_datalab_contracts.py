@@ -5,6 +5,8 @@ analytics filter, so the mapping is closed and anything outside it is refused
 rather than interpolated.
 """
 
+from unittest.mock import MagicMock
+
 import pytest
 from pulse109.datalab.router import DEFINITIONS
 from pulse109.datalab.service import PostgresDataLabService, percentiles
@@ -73,3 +75,25 @@ def test_every_definition_states_what_it_excludes() -> None:
         assert definition.denominator
         assert definition.excluded, f"{definition.key} must say what it leaves out"
         assert definition.metric_version
+
+
+def test_process_snapshot_does_not_invent_cohort_conversion() -> None:
+    service = PostgresDataLabService("postgresql://unused", synthetic=True)
+    connection = MagicMock()
+    connection.__enter__.return_value = connection
+    cursor = connection.cursor.return_value.__enter__.return_value
+    cursor.fetchone.return_value = {
+        "received": 100,
+        "decided": 90,
+        "assigned": 80,
+        "in_progress": 30,
+        "resolved": 40,
+        "verified_closed": 10,
+    }
+    service._connection = lambda: connection  # type: ignore[method-assign]
+
+    result = service.funnel(region_id="ALA")
+
+    assert [stage.count for stage in result.stages] == [100, 90, 80, 30, 40, 10]
+    assert all(stage.share_of_previous is None for stage in result.stages)
+    assert result.largest_drop is None

@@ -1,5 +1,9 @@
 # Implementation Plan: Pulse 109 Hex Visual Style Landing Page Rework
 
+Historical proposal from a parallel design pass. The current landing takes
+visual cues from this plan, but its product panels are captures of the real
+working demo; unchecked items below are not the current task backlog.
+
 ## Goal
 Refactor the Pulse 109 landing page (`apps/web/app/landing.tsx` and `apps/web/app/landing.module.css`) to embody the visual style of **Hex** (AI Analytics Platform for Your Whole Team) extracted via InspoMCP: Bento Grid macrostructure, light editorial aesthetic, precise Hex color palette (#d49e46, #ecc484, #080720, #5c9c4c, #bcb4d4), type weight + scale driven hierarchy, sharp 1px border radii, subtle technical grids, and delightful micro-interactions.
 

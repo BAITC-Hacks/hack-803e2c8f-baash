@@ -60,7 +60,7 @@ services:
       dockerfile: infra/docker/python-process.Dockerfile
     command: ["alembic", "-c", "services/core/alembic.ini", "upgrade", "head"]
     environment:
-      DATABASE_URL: postgresql+psycopg://pulse109:pulse109-local@postgres:5432/pulse109
+      DATABASE_URL: postgresql+psycopg://pulse109:${POSTGRES_PASSWORD:-pulse109-local}@postgres:5432/pulse109
     depends_on:
       postgres:
         condition: service_healthy
@@ -73,7 +73,7 @@ services:
     command:
       ["uvicorn", "pulse109.main:app", "--host", "0.0.0.0", "--port", "8080"]
     environment:
-      PULSE109_DATABASE_URL: postgresql+psycopg://pulse109:pulse109-local@postgres:5432/pulse109
+      PULSE109_DATABASE_URL: postgresql+psycopg://pulse109:${POSTGRES_PASSWORD:-pulse109-local}@postgres:5432/pulse109
       PULSE109_ENVIRONMENT: local
       PULSE109_MANUAL_REPOSITORY_MODE: postgres
       PULSE109_READINESS_DATABASE_REQUIRED: "true"
@@ -111,7 +111,7 @@ services:
       migrate:
         condition: service_completed_successfully
     environment:
-      PULSE109_DATABASE_URL: postgresql+psycopg://pulse109:pulse109-local@postgres:5432/pulse109
+      PULSE109_DATABASE_URL: postgresql+psycopg://pulse109:${POSTGRES_PASSWORD:-pulse109-local}@postgres:5432/pulse109
       PULSE109_WORKER_ENABLED: "true"
       PULSE109_WORKER_ADAPTER_MODE: replay
     ports:

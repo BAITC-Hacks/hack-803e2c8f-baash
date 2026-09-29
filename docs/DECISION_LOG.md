@@ -767,6 +767,28 @@ Record implementation decisions here when the repository, contracts or available
 - **Evidence:** `apps/web/app/replay-lab.tsx`, `apps/web/app/incident-war-room.tsx`, `scripts/run_integration_tests.py`, `services/core/src/pulse109/security/object_storage.py`, `tests/architecture/test_integration_isolation.py`, `infra/runbooks/PILOT_DEPLOYMENT_REQUIREMENTS.md`.
 - **Revisit when:** B02/B03 supply decision-time trace semantics, and B07/B08/B10 supply approved service, identity, storage, privacy, and recovery requirements.
 
+### D-072 — Use captured working demo screens as landing proof
+
+- **Date:** 2026-09-29
+- **Status:** accepted for synthetic demo
+- **Context:** the first landing used independently drawn interface imitations whose counts and controls could diverge from the application.
+- **Decision:** frame screenshots captured from the running PostgreSQL-backed demo for Operations Center, Smart Intake, operator queue, War Room, Ask Pulse and Data Lab. Label them as static captures of synthetic data. Keep the CTA connected to the actual workspace; improve weak operational layouts in the app before capturing them.
+- **Alternatives:** maintain parallel mock UI components; use proprietary reference imagery; embed an interactive demo inside the landing.
+- **Consequences:** landing proof corresponds to available screens and does not imply live regional data. Screenshots must be refreshed after material app-UI changes. No API or migration changes.
+- **Evidence:** `apps/web/app/landing.tsx`, `apps/web/public/product/`, `infra/docker/web.Dockerfile`.
+- **Revisit when:** the application UI changes enough that the static captures no longer represent it.
+
+### D-073 — Treat process stages as independent snapshot counts
+
+- **Date:** 2026-09-29
+- **Status:** accepted
+- **Context:** a resolved appeal is not simultaneously in the current `in_progress` state; the Data Lab displayed a 125% conversion and a fictitious largest drop between independent counts.
+- **Decision:** preserve the existing stage counts and drill-down keys, but leave cohort-conversion and largest-drop fields unset and explain the snapshot semantics in the UI. Make VPS Compose database URLs use the configured URL-safe PostgreSQL password across migrate, API and worker; public overlays require a nonempty value.
+- **Alternatives:** infer historical transitions from current statuses; keep the misleading percentage; change the API schema; retain a hard-coded local password in public containers.
+- **Consequences:** exact counts remain inspectable without fabricated conversion. Public deploys need an explicit database secret; existing PostgreSQL role passwords require deliberate rotation rather than only changing Compose environment.
+- **Evidence:** `services/core/tests/datalab/test_datalab_contracts.py`, `docs/features/DATA_LAB.md`, `infra/compose/`, `infra/runbooks/PUBLIC_DEPLOYMENT.md`.
+- **Revisit when:** a true event-cohort funnel is specified and tested against append-only lifecycle data.
+
 ### D-XXX — Short title
 
 - **Date:** YYYY-MM-DD

@@ -19,7 +19,7 @@ def test_durable_analytics_filters_scope_time_quality_and_drilldown() -> None:
     database_url = os.getenv("PULSE109_TEST_DATABASE_URL")
     if not database_url:
         pytest.skip("PULSE109_TEST_DATABASE_URL is not configured; requires migration head")
-    key = uuid4().hex[:12]
+    key = uuid4().hex[:12].upper()
     region, missing = f"T{key[:6]}", f"M{key[:6]}"
     now = datetime.now(timezone.utc)
     manual = PostgresManualPathService(PostgresManualRepository(database_url))
@@ -58,6 +58,7 @@ def test_durable_analytics_filters_scope_time_quality_and_drilldown() -> None:
             source_system=f"synthetic-ask-{key}",
             source_request_id=f"missing-{key}",
             region_id=region,
+            received_at=None,
             received_at_quality="missing",
             channel="web",
             language="kk",
@@ -72,6 +73,7 @@ def test_durable_analytics_filters_scope_time_quality_and_drilldown() -> None:
     service = AnalyticsService(repository=PostgresAnalyticsRepository(database_url, synthetic=True))
     query = AnalyticsQuery(
         metric_id="appeals_volume",
+        metric_version="2.0.0",
         dimensions=["language"],
         filters=[MetricFilter(field="region_id", operator="in", value=[region, missing])],
         time_from=now - timedelta(days=1),
@@ -139,7 +141,7 @@ def test_one_query_supports_twenty_configured_synthetic_regions_without_fake_cov
     database_url = os.getenv("PULSE109_TEST_DATABASE_URL")
     if not database_url:
         pytest.skip("PULSE109_TEST_DATABASE_URL is not configured; requires migration head")
-    key = uuid4().hex[:6]
+    key = uuid4().hex[:6].upper()
     now = datetime.now(timezone.utc)
     manual = PostgresManualPathService(PostgresManualRepository(database_url))
     regions = [f"T{key}_{i:02d}" for i in range(20)]

@@ -35,6 +35,7 @@ as what it does.
 [Questions for the organizers](GOVTECH_BUSINESS_QUESTIONS.md) and its
 [PDF](../output/pdf/govtech_business_questions.pdf) ·
 [Contracts](../contracts/) ·
+[Competition audit, 2026-09-29](review/COMPETITION_AUDIT_2026-09-29.md) ·
 [Repository cleanup review](review/REPOSITORY_CLEANUP.md)
 
 ## Historical

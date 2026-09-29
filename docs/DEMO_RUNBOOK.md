@@ -2,6 +2,10 @@
 
 This is the real Pulse 109 application in a dedicated `PULSE109_PROFILE=demo` runtime. It uses the same API, PostgreSQL migrations, business services, audit, outbox, worker and Next.js frontend as the local topology. Data and delivery are explicitly synthetic. No regional CRM is contacted.
 
+The landing's product images are static captures of this running synthetic
+workspace. They are not live counters or substitute controls; use **Open demo**
+to interact with the real application.
+
 ## Start and reset
 
 Requirements: Docker Desktop with a working Linux engine, Python 3.10-3.13 and locked Python dependencies (`uv sync --all-groups --frozen`). Ports 3000, 5432 and 8080-8084 must be free. On Apple Silicon the PostgreSQL image runs under emulation, because `postgis/postgis` publishes amd64 only; the Compose file pins that one service to `linux/amd64` and the rest build natively. From the repository root:

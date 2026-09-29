@@ -49,6 +49,7 @@ REGION = "ALA"
 SEED_ACTOR = "demo-seed"
 DATASET_ID = "demo-synthetic-ala-2026-09"
 CASE_COUNT = 48
+DATASET_AS_OF = datetime(2026, 9, 28, 12, 0, tzinfo=timezone.utc)
 ROUTES = ("service:water", "service:roads", "service:utilities", "service:waste")
 LANGUAGES = ("ru", "kk", "mixed")
 CHANNELS = ("phone", "web", "mobile", "import")
@@ -71,8 +72,8 @@ class StaticPolicy:
         return ROUTES[index]
 
 
-def build_dataset(now: datetime) -> ReplayDataset:
-    cutoff = now - timedelta(minutes=5)
+def build_dataset() -> ReplayDataset:
+    cutoff = DATASET_AS_OF - timedelta(minutes=5)
     cases: list[ReplayCase] = []
     for index in range(CASE_COUNT):
         decided_at = cutoff - timedelta(hours=index + 1)
@@ -133,7 +134,9 @@ def main() -> int:
         ObjectStorageSnapshotStore(LocalImmutableObjectStorage(settings.replay_snapshot_dir)),
     )
 
-    dataset = build_dataset(datetime.now(timezone.utc))
+    # Replay datasets are immutable. A fixed timestamp makes repeated seeds
+    # byte-for-byte identical instead of rebinding one dataset id to new content.
+    dataset = build_dataset()
     repository.persist_dataset(dataset)
 
     baseline = StaticPolicy("routing-lexical", "1.0.0", offset=0)

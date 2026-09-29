@@ -74,7 +74,7 @@ Edit `.env` on the server. It is in `.gitignore` and must stay there.
 
 ```bash
 PULSE109_PUBLIC_DOMAIN=your.domain
-POSTGRES_PASSWORD=<generate one, do not reuse the local value>
+POSTGRES_PASSWORD=<unique URL-safe value, for example 32 random hex bytes>
 
 # Object storage. Leave local to keep using a volume.
 PULSE109_OBJECT_STORAGE_MODE=s3
@@ -95,6 +95,13 @@ chmod 600 .env
 Two rules worth stating plainly. Credentials are not settings, so nothing in
 `services/core/src/pulse109/config.py` can carry one. And `.env` never goes into
 Git, no matter how convenient it looks during a demo.
+
+Generate the database secret with `openssl rand -hex 32`. Use the same value in
+the host-side `PULSE109_DATABASE_URL` line if you run database tooling outside
+Compose. The Compose services derive their database URLs from
+`POSTGRES_PASSWORD`; the public overlay refuses an empty value. If this is an
+existing database, changing its environment variable alone does not rotate the
+stored PostgreSQL role password: rotate that role deliberately before deploy.
 
 ## 2. Build
 

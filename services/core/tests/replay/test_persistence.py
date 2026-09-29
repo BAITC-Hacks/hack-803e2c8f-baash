@@ -1,3 +1,4 @@
+import json
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -8,6 +9,7 @@ from pulse109.replay import (
     ReplayDataset,
     ReplayEngine,
     ReplayLabel,
+    canonical_snapshot_bytes,
     snapshot_sha256,
 )
 
@@ -160,6 +162,16 @@ def test_dataset_persistence_is_content_addressed_immutable_and_idempotent() -> 
     rebound = rebound.model_copy(update={"snapshot_sha256": snapshot_sha256(rebound)})
     with pytest.raises(ValueError, match="already bound"):
         repo.persist_dataset(rebound)
+
+
+def test_snapshot_canonicalizes_the_feature_allowlist() -> None:
+    dataset = _dataset().model_copy(
+        update={"allowed_features": frozenset({"language", "time_quality", "channel"})}
+    )
+
+    payload = json.loads(canonical_snapshot_bytes(dataset))
+
+    assert payload["manifest"]["allowed_features"] == ["channel", "language", "time_quality"]
 
 
 def test_report_persistence_binds_region_excludes_synthetic_and_is_idempotent() -> None:

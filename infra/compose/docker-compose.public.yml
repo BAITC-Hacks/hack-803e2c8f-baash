@@ -19,6 +19,8 @@
 services:
   postgres:
     ports: !override []
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set a unique URL-safe database password}
 
   core-api:
     ports: !override []

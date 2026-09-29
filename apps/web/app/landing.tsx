@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { ReactNode } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   ArrowDown,
   ArrowRight,
@@ -16,20 +17,9 @@ import {
   ShieldCheck,
   Workflow,
 } from "lucide-react";
-import { ArrivalChart, type Bucket } from "./arrival-chart";
 import styles from "./landing.module.css";
 
 type Locale = "ru" | "kk";
-
-const arrivals: Bucket[] = [
-  { start: "2026-09-26T08:00:00Z", count: 2, by_topic: { water: 2 } },
-  { start: "2026-09-26T09:00:00Z", count: 3, by_topic: { water: 2, roads: 1 } },
-  { start: "2026-09-26T10:00:00Z", count: 4, by_topic: { water: 3, roads: 1 } },
-  { start: "2026-09-26T11:00:00Z", count: 3, by_topic: { water: 2, roads: 1 } },
-  { start: "2026-09-26T12:00:00Z", count: 7, by_topic: { water: 5, roads: 2 } },
-  { start: "2026-09-26T13:00:00Z", count: 5, by_topic: { water: 3, roads: 2 } },
-  { start: "2026-09-26T14:00:00Z", count: 9, by_topic: { water: 6, roads: 3 } },
-];
 
 const copy = {
   ru: {
@@ -38,15 +28,16 @@ const copy = {
     navDemo: "Демо",
     heroKicker: "Pulse 109 · городские операции",
     language: "Язык страницы",
-    heroTitleEditorial: "Intelligence for",
-    heroTitleSystem: "every city signal.",
+    heroTitleEditorial: "Город говорит.",
+    heroTitleSystem: "Услышьте главное.",
     heroText:
       "Превращайте обращения жителей в понятные действия, связанные инциденты и ранние операционные сигналы.",
-    openDemo: "Open Interactive Demo",
+    openDemo: "Открыть демо",
     howItWorks: "Как это работает",
     synthetic: "Синтетический пример",
+    realScreen: "Снимок работающего демо",
     opsTitle: "Операционный центр",
-    arrivals: "Обращения за сутки",
+    arrivals: "Обращения за 7 дней",
     attention: "Требует внимания",
     emerging: "Похожие обращения растут",
     reports: "обращений",
@@ -56,7 +47,7 @@ const copy = {
       "Собирайте контекст обращения и показывайте оператору прозрачную подсказку для проверки.",
     assistant: "Помощник оператора",
     assistantText:
-      "Связывайте похожие сигналы и подсказывайте следующий шаг. Решение остаётся у человека.",
+      "Проверяйте обращение, получайте подсказку по маршруту и сохраняйте решение оператора.",
     situation: "Ситуационный центр",
     situationText:
       "Следите за обращениями, инцидентами и операционными изменениями в одном рабочем пространстве.",
@@ -78,7 +69,8 @@ const copy = {
       "Ask Pulse отвечает на вопросы по разрешённым метрикам, показывает источник и ограничения, а затем открывает путь к данным.",
     askQuestion: "Как менялось число обращений за последние 7 дней?",
     result: "Фактическая динамика",
-    resultTotal: "142 обращения",
+    resultTotal: "33 обращения",
+    resultScope: "7 дней",
     sampleTotal: "Обращений в синтетическом примере",
     provenance: "Как рассчитано",
     trustedTime: "Использовано достоверное время поступления",
@@ -145,15 +137,16 @@ const copy = {
     navDemo: "Демо",
     heroKicker: "Pulse 109 · қалалық операциялар",
     language: "Бет тілі",
-    heroTitleEditorial: "Intelligence for",
-    heroTitleSystem: "every city signal.",
+    heroTitleEditorial: "Қала сөйлейді.",
+    heroTitleSystem: "Маңыздысын естіңіз.",
     heroText:
       "Тұрғындардың өтініштерін түсінікті әрекеттерге, байланысқан оқиғаларға және ерте операциялық белгілерге айналдырыңыз.",
-    openDemo: "Open Interactive Demo",
+    openDemo: "Демоны ашу",
     howItWorks: "Қалай жұмыс істейді",
     synthetic: "Синтетикалық мысал",
+    realScreen: "Жұмыс істейтін демоның көрінісі",
     opsTitle: "Операциялық орталық",
-    arrivals: "Тәуліктегі өтініштер",
+    arrivals: "7 күндегі өтініштер",
     attention: "Назар аудару керек",
     emerging: "Ұқсас өтініштер көбейді",
     reports: "өтініш",
@@ -163,7 +156,7 @@ const copy = {
       "Өтініш мәнмәтінін жинап, операторға тексеруге болатын түсінікті ұсыныс беріңіз.",
     assistant: "Оператор көмекшісі",
     assistantText:
-      "Ұқсас белгілерді байланыстырып, келесі қадамды ұсыныңыз. Шешімді адам қабылдайды.",
+      "Өтінішті тексеріп, бағыттау туралы ұсынысты қарап, оператор шешімін сақтаңыз.",
     situation: "Ситуациялық орталық",
     situationText:
       "Өтініштерді, оқиғаларды және операциялық өзгерістерді бір жұмыс кеңістігінде бақылаңыз.",
@@ -185,7 +178,8 @@ const copy = {
       "Ask Pulse рұқсат етілген метрикалар бойынша жауап беріп, дереккөз бен шектеулерді көрсетеді және дерекке өтуге мүмкіндік береді.",
     askQuestion: "Соңғы 7 күндегі өтініштер саны қалай өзгерді?",
     result: "Нақты динамика",
-    resultTotal: "142 өтініш",
+    resultTotal: "33 өтініш",
+    resultScope: "7 күн",
     sampleTotal: "Синтетикалық мысалдағы өтініштер",
     provenance: "Қалай есептелді",
     trustedTime: "Түсу уақыты сенімді жазбалар пайдаланылды",
@@ -252,7 +246,7 @@ export function LandingPage() {
   const t = copy[locale];
 
   return (
-    <div className={styles.landing}>
+    <div className={styles.landing} lang={locale}>
       <a className={styles.skipLink} href="#main">
         {t.skip}
       </a>
@@ -260,7 +254,9 @@ export function LandingPage() {
         <div className={styles.headerInner}>
           <a className={styles.brand} href="#top" aria-label="Pulse 109">
             <span className={styles.brandMark} aria-hidden="true">
-              <span className={styles.brandMarkHex}>P</span>
+              <i />
+              <i />
+              <i />
             </span>
             <span>Pulse 109</span>
           </a>
@@ -295,37 +291,42 @@ export function LandingPage() {
       </header>
 
       <main id="main">
-        <section className={styles.hero} id="top">
-          <div className={styles.heroCopy}>
-            <div className={styles.kickerBadge}>
-              <span className={styles.kickerBadgeDot} aria-hidden="true" />
-              {t.heroKicker}
+        <div className={styles.heroBackdrop}>
+          <section className={styles.hero} id="top">
+            <div className={styles.heroCopy}>
+              <div>
+                <p className={styles.kicker}>{t.heroKicker}</p>
+                <h1>
+                  <span className={styles.editorialHeadline}>
+                    {t.heroTitleEditorial}
+                  </span>
+                  <span className={styles.systemHeadline}>
+                    {t.heroTitleSystem}
+                  </span>
+                </h1>
+              </div>
+              <div className={styles.heroSupporting}>
+                <p className={styles.heroText}>{t.heroText}</p>
+                <div className={styles.heroActions}>
+                  <Link className={styles.primaryButton} href="/demo">
+                    {t.openDemo}
+                    <ArrowRight aria-hidden="true" size={17} />
+                  </Link>
+                  <a className={styles.textButton} href="#product">
+                    {t.howItWorks}
+                    <ArrowDown aria-hidden="true" size={15} />
+                  </a>
+                </div>
+                <p className={styles.heroNote}>
+                  <span className={styles.signalDot} aria-hidden="true" />
+                  {t.footerNote}
+                </p>
+              </div>
             </div>
-            <h1>
-              <span className={styles.editorialHeadline}>
-                {t.heroTitleEditorial}
-              </span>
-              <span className={styles.systemHeadline}>{t.heroTitleSystem}</span>
-            </h1>
-            <p className={styles.heroText}>{t.heroText}</p>
-            <div className={styles.heroActions}>
-              <Link className={styles.primaryButton} href="/demo">
-                {t.openDemo}
-                <ArrowRight aria-hidden="true" size={16} />
-              </Link>
-              <a className={styles.textButton} href="#product">
-                {t.howItWorks}
-                <ArrowDown aria-hidden="true" size={14} />
-              </a>
-            </div>
-            <div className={styles.heroNote}>
-              <span className={styles.kickerBadgeDot} aria-hidden="true" />
-              <span>{t.footerNote}</span>
-            </div>
-          </div>
 
-          <ProductStage t={t} />
-        </section>
+            <ProductStage t={t} />
+          </section>
+        </div>
 
         <section className={styles.factsBar} aria-label={t.factsTitle}>
           <Fact
@@ -500,13 +501,15 @@ export function LandingPage() {
       <footer className={styles.footer}>
         <a className={styles.brand} href="#top">
           <span className={styles.brandMark} aria-hidden="true">
-            <span className={styles.brandMarkHex}>P</span>
+            <i />
+            <i />
+            <i />
           </span>
           <span>Pulse 109</span>
         </a>
         <p>{t.footerNote}</p>
         <a href="#top" className={styles.backTop}>
-          Back to top ↑
+          {locale === "ru" ? "Наверх ↑" : "Жоғары ↑"}
         </a>
       </footer>
     </div>
@@ -518,142 +521,46 @@ type Copy = (typeof copy)[Locale];
 function ProductStage({ t }: { t: Copy }) {
   return (
     <div className={styles.productStage} aria-label={t.synthetic}>
-      <article className={styles.operationsWindow}>
-        <span className={`${styles.bentoCross} ${styles.bentoCrossTopLeft}`} aria-hidden="true">+</span>
-        <span className={`${styles.bentoCross} ${styles.bentoCrossTopRight}`} aria-hidden="true">+</span>
-        <span className={`${styles.bentoCross} ${styles.bentoCrossBottomLeft}`} aria-hidden="true">+</span>
-        <span className={`${styles.bentoCross} ${styles.bentoCrossBottomRight}`} aria-hidden="true">+</span>
-        
-        <header className={styles.windowTopbar}>
-          <div className={styles.windowBrand}>
-            <span className={styles.brandMarkSmall}>P</span> Pulse 109 · Core
-          </div>
-          <div className={styles.windowPills}>
-            <span>ALA</span>
-            <span className={styles.syntheticTag}>{t.synthetic}</span>
-          </div>
-        </header>
-        <div className={styles.windowLayout}>
-          <nav className={styles.previewNav} aria-label={t.opsTitle}>
-            <span className={styles.navActive}>
-              <i />
-              {t.opsTitle}
-            </span>
-            <span>
-              <i />
-              {t.incident}
-            </span>
-            <span>
-              <i />
-              {t.intake}
-            </span>
-            <span>
-              <i />
-              Data Lab
-            </span>
-          </nav>
-          <div className={styles.previewContent}>
-            <div className={styles.previewHeading}>
-              <div>
-                <span className={styles.previewKicker}>City pulse · Operations</span>
-                <h3>{t.opsTitle}</h3>
-              </div>
-              <span className={styles.liveDot}>DEMO PIPELINE</span>
-            </div>
-            <div className={styles.previewMetrics}>
-              <Metric label={t.reports} value="148" />
-              <Metric label={t.incidents} value="06" />
-              <Metric label={t.attention} value="03" />
-            </div>
-            <div className={styles.previewChartCard}>
-              <div className={styles.previewCardHeading}>
-                <strong>{t.arrivals}</strong>
-                <span>{t.synthetic} · 24h</span>
-              </div>
-              <ArrivalChart
-                buckets={arrivals}
-                baseline={4}
-                peakStart={arrivals[arrivals.length - 1].start}
-                excluded={0}
-                excludedLabel={t.excluded}
-                emptyLabel="—"
-                description={t.arrivals}
-              />
-            </div>
-            <div className={styles.previewAttention}>
-              <strong>{t.attention}</strong>
-              <div>
-                <span className={styles.severityMarker} />
-                {t.emerging}
-                <span className={styles.rowCount}>06</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </article>
-
-      <div className={styles.heroBentoCol}>
-        <article className={styles.bentoCard}>
-          <span className={`${styles.bentoCross} ${styles.bentoCrossTopLeft}`} aria-hidden="true">+</span>
-          <span className={`${styles.bentoCross} ${styles.bentoCrossTopRight}`} aria-hidden="true">+</span>
-          <div className={styles.floatingHeading}>
-            <span>Ask Pulse · Studio</span>
-            <span className={styles.syntheticTag}>{t.synthetic}</span>
-          </div>
-          <div className={styles.askPrompt}>
-            <span>⌕</span>
-            {t.askQuestion}
-          </div>
-          <div className={styles.askMiniResult}>
-            <strong>142</strong>
-            <span>{t.result}</span>
-            <MiniLine />
-          </div>
-        </article>
-
-        <article className={styles.bentoCard}>
-          <span className={`${styles.bentoCross} ${styles.bentoCrossBottomLeft}`} aria-hidden="true">+</span>
-          <span className={`${styles.bentoCross} ${styles.bentoCrossBottomRight}`} aria-hidden="true">+</span>
-          <div className={styles.warRoomLabel}>
-            <span className={styles.severityMarker} />
-            {t.incident} · elevated signal
-          </div>
-          <h3>{t.emerging}</h3>
-          <div className={styles.memberDots} aria-hidden="true">
-            <i />
-            <i />
-            <i />
-            <i />
-            <i />
-            <i />
-          </div>
-          <div className={styles.warRoomFooter}>
-            <span>06 {t.reports}</span>
-            <span className={styles.operatorCheck}>
-              <ShieldCheck size={14} aria-hidden="true" />
-              {t.confirmed}
-            </span>
-          </div>
-        </article>
+      <div className={styles.stageGrid} aria-hidden="true" />
+      <div className={styles.stageEyebrow}>
+        <span>{t.opsTitle}</span>
+        <span>
+          {t.realScreen} · {t.synthetic}
+        </span>
+      </div>
+      <div className={styles.stageMain}>
+        <Image
+          src="/product/operations-center.jpg"
+          width={1440}
+          height={900}
+          alt={`${t.opsTitle} — ${t.synthetic}`}
+          priority
+          sizes="(max-width: 760px) 100vw, 1080px"
+        />
+      </div>
+      <div className={`${styles.stageInset} ${styles.stageAsk}`}>
+        <span>Ask Pulse · {t.realScreen}</span>
+        <Image
+          src="/product/ask-pulse.jpg"
+          width={1108}
+          height={700}
+          alt=""
+          sizes="340px"
+        />
+      </div>
+      <div className={`${styles.stageInset} ${styles.stageWarRoom}`}>
+        <span>
+          {t.incident} · {t.realScreen}
+        </span>
+        <Image
+          src="/product/incident-war-room.jpg"
+          width={1108}
+          height={790}
+          alt=""
+          sizes="340px"
+        />
       </div>
     </div>
-  );
-}
-
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className={styles.metric}>
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </div>
-  );
-}
-
-function MiniLine() {
-  return (
-    <svg className={styles.miniLine} viewBox="0 0 120 34" aria-hidden="true">
-      <path d="M2 27 20 24 37 26 56 16 74 20 92 9 118 5" />
-    </svg>
   );
 }
 
@@ -693,82 +600,30 @@ function ModuleCard({
   t: Copy;
   kind: "intake" | "assistant" | "situation";
 }) {
+  const image = {
+    intake: "/product/smart-intake.jpg",
+    assistant: "/product/operator-queue.jpg",
+    situation: "/product/data-lab.jpg",
+  }[kind];
   return (
     <article className={styles.moduleCard}>
       <div className={styles.modulePreview} data-kind={kind}>
-        <div className={styles.moduleToolbar}>
-          <span className={styles.moduleDot} />
-          <span />
-          <span />
-        </div>
-        {kind === "intake" ? (
-          <div className={styles.intakePreview}>
-            <span className={styles.previewKicker}>{t.synthetic}</span>
-            <div className={styles.intakeField}>
-              <small>{t.appeal}</small>
-              <strong>{t.emerging}</strong>
-            </div>
-            <div className={styles.proposalRow}>
-              <span className={styles.proposalIcon}>
-                <Workflow size={15} aria-hidden="true" />
-              </span>
-              <span>
-                {t.proposed}
-                <small>water_service · routine</small>
-              </span>
-            </div>
-            <div className={styles.confirmRow}>
-              <Check size={14} aria-hidden="true" />
-              {t.confirmed}
-            </div>
-          </div>
-        ) : null}
-        {kind === "assistant" ? (
-          <div className={styles.assistantPreview}>
-            <div className={styles.relatedAppeals}>
-              <span />
-              <span />
-              <span />
-              <span />
-              <span />
-            </div>
-            <div className={styles.actionSurface}>
-              <small>{t.nextAction}</small>
-              <strong>{t.inspect}</strong>
-              <span>
-                <ShieldCheck size={13} aria-hidden="true" />
-                {t.advisory}
-              </span>
-            </div>
-          </div>
-        ) : null}
-        {kind === "situation" ? (
-          <div className={styles.situationPreview}>
-            <div className={styles.situationMetric}>
-              <span>{t.incidents}</span>
-              <strong>06</strong>
-              <i />
-            </div>
-            <div className={styles.situationMetric}>
-              <span>{t.attention}</span>
-              <strong>03</strong>
-              <i />
-            </div>
-            <div className={styles.situationTimeline}>
-              <span />
-              <span />
-              <span />
-              <span />
-            </div>
-            <div className={styles.situationCaption}>{t.noAuto}</div>
-          </div>
-        ) : null}
+        <Image
+          src={image}
+          width={1440}
+          height={900}
+          alt={`${title} — ${t.synthetic}`}
+          sizes="(max-width: 760px) 100vw, 600px"
+        />
       </div>
       <div className={styles.moduleText}>
         <span className={styles.moduleIndex}>{index}</span>
         <div>
           <h3>{title}</h3>
           <p>{description}</p>
+          <small>
+            {t.realScreen} · {t.synthetic}
+          </small>
         </div>
       </div>
     </article>
@@ -778,56 +633,19 @@ function ModuleCard({
 function AskPreview({ t }: { t: Copy }) {
   return (
     <article className={styles.askPreview}>
-      <div className={styles.askPreviewTop}>
-        <div className={styles.askPreviewBrand}>
-          <span className={styles.brandMarkSmall}>P</span>
-          <strong>Ask Pulse</strong>
-        </div>
-        <span className={styles.syntheticTag}>{t.synthetic}</span>
-      </div>
-      <div className={styles.queryBar}>
-        <span className={styles.searchIcon}>⌕</span>
-        <span>{t.askQuestion}</span>
-        <span className={styles.submitQuery}>
-          <ArrowRight aria-hidden="true" />
+      <div className={styles.realScreenHeading}>
+        Ask Pulse{" "}
+        <span>
+          {t.realScreen} · {t.synthetic}
         </span>
       </div>
-      <div className={styles.queryResult}>
-        <div className={styles.resultHeader}>
-          <div>
-            <small>{t.result}</small>
-            <strong>{t.resultTotal}</strong>
-          </div>
-          <span className={styles.resultScope}>ALA · 7 days</span>
-        </div>
-        <ArrivalChart
-          buckets={arrivals}
-          baseline={4}
-          peakStart={arrivals[arrivals.length - 1].start}
-          excluded={3}
-          excludedLabel={t.excluded}
-          emptyLabel="—"
-          description={t.askTitle}
-        />
-        <div className={styles.provenancePanel}>
-          <div>
-            <ShieldCheck aria-hidden="true" />
-            <strong>{t.provenance}</strong>
-            <span>appeals_volume / 2.0.0</span>
-          </div>
-          <p>
-            {t.trustedTime}. {t.excluded}.
-          </p>
-        </div>
-        <div className={styles.resultActions}>
-          <button type="button" disabled>
-            {t.drilldown}
-          </button>
-          <button type="button" disabled>
-            {t.export}
-          </button>
-        </div>
-      </div>
+      <Image
+        src="/product/ask-pulse.jpg"
+        width={1108}
+        height={700}
+        alt={`${t.askTitle} — ${t.synthetic}`}
+        sizes="(max-width: 760px) 100vw, 600px"
+      />
     </article>
   );
 }

@@ -29,6 +29,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import httpx
+from demo_pagination import existing_source_ids
 
 REGION = "ALA"
 SEED = 109
@@ -178,11 +179,7 @@ class World:
         return appeal.version
 
     def _existing_source_ids(self) -> set[str]:
-        response = self.client.get(
-            "/v1/requests", params={"limit": 100}, headers={"X-Region-Id": REGION}
-        )
-        response.raise_for_status()
-        return {row["source_request_id"] for row in response.json()}
+        return existing_source_ids(self.client, region_id=REGION)
 
     # ------------------------------------------------------------------
 

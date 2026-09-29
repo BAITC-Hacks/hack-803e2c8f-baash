@@ -12,10 +12,7 @@
         },
         "locale": {
           "default": "ru-KZ",
-          "enum": [
-            "ru-KZ",
-            "kk-KZ"
-          ],
+          "enum": ["ru-KZ", "kk-KZ"],
           "title": "Locale",
           "type": "string"
         },
@@ -33,9 +30,7 @@
           "title": "Context Token"
         }
       },
-      "required": [
-        "question"
-      ],
+      "required": ["question"],
       "title": "AskRequest",
       "type": "object"
     },
@@ -63,22 +58,12 @@
           "type": "string"
         },
         "severity": {
-          "enum": [
-            "info",
-            "warning",
-            "high",
-            "critical"
-          ],
+          "enum": ["info", "warning", "high", "critical"],
           "title": "Severity",
           "type": "string"
         },
         "status": {
-          "enum": [
-            "new",
-            "acknowledged",
-            "resolved",
-            "dismissed"
-          ],
+          "enum": ["new", "acknowledged", "resolved", "dismissed"],
           "title": "Status",
           "type": "string"
         },
@@ -239,21 +224,13 @@
         },
         "granularity": {
           "default": "day",
-          "enum": [
-            "hour",
-            "day",
-            "week",
-            "month"
-          ],
+          "enum": ["hour", "day", "week", "month"],
           "title": "Granularity",
           "type": "string"
         },
         "comparison": {
           "default": "none",
-          "enum": [
-            "none",
-            "previous_period"
-          ],
+          "enum": ["none", "previous_period"],
           "title": "Comparison",
           "type": "string"
         },
@@ -286,11 +263,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "intent_type",
-        "time_from",
-        "time_to"
-      ],
+      "required": ["intent_type", "time_from", "time_to"],
       "title": "AnalyticsIntent",
       "type": "object"
     },
@@ -343,12 +316,7 @@
         },
         "granularity": {
           "default": "day",
-          "enum": [
-            "hour",
-            "day",
-            "week",
-            "month"
-          ],
+          "enum": ["hour", "day", "week", "month"],
           "title": "Granularity",
           "type": "string"
         },
@@ -360,11 +328,7 @@
           "type": "integer"
         }
       },
-      "required": [
-        "metric_id",
-        "time_from",
-        "time_to"
-      ],
+      "required": ["metric_id", "time_from", "time_to"],
       "title": "AnalyticsQuery",
       "type": "object"
     },
@@ -411,22 +375,13 @@
           "type": "string"
         },
         "quality": {
-          "enum": [
-            "complete",
-            "partial",
-            "stale",
-            "missing"
-          ],
+          "enum": ["complete", "partial", "stale", "missing"],
           "title": "Quality",
           "type": "string"
         },
         "coverage": {
           "additionalProperties": {
-            "enum": [
-              "present",
-              "missing",
-              "stale"
-            ],
+            "enum": ["present", "missing", "stale"],
             "type": "string"
           },
           "title": "Coverage",
@@ -521,10 +476,7 @@
         },
         "export_formats": {
           "items": {
-            "enum": [
-              "pdf",
-              "xlsx"
-            ],
+            "enum": ["pdf", "xlsx"],
             "type": "string"
           },
           "title": "Export Formats",
@@ -601,9 +553,7 @@
           "default": null
         }
       },
-      "required": [
-        "text"
-      ],
+      "required": ["text"],
       "title": "AskAnswer",
       "type": "object"
     },
@@ -611,14 +561,7 @@
       "additionalProperties": false,
       "properties": {
         "type": {
-          "enum": [
-            "kpi",
-            "line",
-            "bar",
-            "forecast",
-            "surge",
-            "ranked_edges"
-          ],
+          "enum": ["kpi", "line", "bar", "forecast", "surge", "ranked_edges"],
           "title": "Type",
           "type": "string"
         },
@@ -658,13 +601,7 @@
           "type": "array"
         }
       },
-      "required": [
-        "type",
-        "x",
-        "y",
-        "columns",
-        "rows"
-      ],
+      "required": ["type", "x", "y", "columns", "rows"],
       "title": "AskChart",
       "type": "object"
     },
@@ -687,10 +624,7 @@
           "type": "array"
         }
       },
-      "required": [
-        "field",
-        "prompt"
-      ],
+      "required": ["field", "prompt"],
       "title": "AskClarification",
       "type": "object"
     },
@@ -698,20 +632,12 @@
       "additionalProperties": false,
       "properties": {
         "requested_alias": {
-          "enum": [
-            "champion",
-            "challenger",
-            "baseline"
-          ],
+          "enum": ["champion", "challenger", "baseline"],
           "title": "Requested Alias",
           "type": "string"
         },
         "model_alias": {
-          "enum": [
-            "champion",
-            "challenger",
-            "baseline"
-          ],
+          "enum": ["champion", "challenger", "baseline"],
           "title": "Model Alias",
           "type": "string"
         },
@@ -857,11 +783,7 @@
           "type": "integer"
         },
         "approval_state": {
-          "enum": [
-            "deterministic_baseline",
-            "evaluation",
-            "approved"
-          ],
+          "enum": ["deterministic_baseline", "evaluation", "approved"],
           "title": "Approval State",
           "type": "string"
         }
@@ -891,10 +813,7 @@
           "type": "number"
         }
       },
-      "required": [
-        "period",
-        "value"
-      ],
+      "required": ["period", "value"],
       "title": "AskPeak",
       "type": "object"
     },
@@ -941,11 +860,7 @@
         },
         "coverage": {
           "additionalProperties": {
-            "enum": [
-              "present",
-              "missing",
-              "stale"
-            ],
+            "enum": ["present", "missing", "stale"],
             "type": "string"
           },
           "title": "Coverage",
@@ -1072,10 +987,7 @@
           "title": "Upper Bound"
         },
         "method": {
-          "enum": [
-            "seasonal_naive",
-            "unavailable"
-          ],
+          "enum": ["seasonal_naive", "unavailable"],
           "title": "Method",
           "type": "string"
         },
@@ -1107,21 +1019,12 @@
           "type": "string"
         },
         "type": {
-          "enum": [
-            "string",
-            "integer",
-            "number",
-            "datetime",
-            "boolean"
-          ],
+          "enum": ["string", "integer", "number", "datetime", "boolean"],
           "title": "Type",
           "type": "string"
         }
       },
-      "required": [
-        "name",
-        "type"
-      ],
+      "required": ["name", "type"],
       "title": "MetricColumn",
       "type": "object"
     },
@@ -1134,12 +1037,7 @@
           "type": "string"
         },
         "operator": {
-          "enum": [
-            "eq",
-            "in",
-            "gte",
-            "lte"
-          ],
+          "enum": ["eq", "in", "gte", "lte"],
           "title": "Operator",
           "type": "string"
         },
@@ -1164,11 +1062,7 @@
           "title": "Value"
         }
       },
-      "required": [
-        "field",
-        "operator",
-        "value"
-      ],
+      "required": ["field", "operator", "value"],
       "title": "MetricFilter",
       "type": "object"
     },
@@ -1333,10 +1227,7 @@
           "default": null
         }
       },
-      "required": [
-        "status",
-        "answer"
-      ],
+      "required": ["status", "answer"],
       "title": "AskResponse",
       "type": "object"
     },
@@ -1350,18 +1241,12 @@
           "type": "string"
         },
         "format": {
-          "enum": [
-            "pdf",
-            "xlsx"
-          ],
+          "enum": ["pdf", "xlsx"],
           "title": "Format",
           "type": "string"
         }
       },
-      "required": [
-        "result_token",
-        "format"
-      ],
+      "required": ["result_token", "format"],
       "title": "AskExportRequest",
       "type": "object"
     },
@@ -1382,19 +1267,13 @@
           "type": "integer"
         }
       },
-      "required": [
-        "context_token"
-      ],
+      "required": ["context_token"],
       "title": "AskDrilldownRequest",
       "type": "object"
     },
     "CapabilityState": {
       "description": "Why a capability's payload looks the way it does.",
-      "enum": [
-        "available",
-        "abstained",
-        "unavailable"
-      ],
+      "enum": ["available", "abstained", "unavailable"],
       "title": "CapabilityState",
       "type": "string"
     },
@@ -1419,9 +1298,7 @@
           "title": "Reason Code"
         }
       },
-      "required": [
-        "state"
-      ],
+      "required": ["state"],
       "title": "CapabilityStatus",
       "type": "object"
     },
@@ -1604,12 +1481,7 @@
           "type": "array"
         }
       },
-      "required": [
-        "status",
-        "provenance",
-        "key",
-        "total"
-      ],
+      "required": ["status", "provenance", "key", "total"],
       "title": "Drilldown",
       "type": "object"
     }

@@ -19,7 +19,7 @@ RUN addgroup --system --gid 10001 pulse109 \
 WORKDIR /app
 COPY --from=builder --chown=pulse109:pulse109 /workspace/apps/web/.next/standalone ./
 COPY --from=builder --chown=pulse109:pulse109 /workspace/apps/web/.next/static ./apps/web/.next/static
+COPY --from=builder --chown=pulse109:pulse109 /workspace/apps/web/public ./apps/web/public
 USER pulse109
 EXPOSE 3000
 CMD ["node", "apps/web/server.js"]
-

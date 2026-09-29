@@ -327,35 +327,18 @@ class PostgresDataLabService:
             ),
         ]
 
-        stages: list[FunnelStage] = []
-        previous: int = 0
-        first = True
-        worst_drop = 0.0
-        worst_label: str | None = None
-        for name, definition, count, key in raw:
-            share = None if first or previous == 0 else round(count / previous, 4)
-            if not first and previous:
-                drop = previous - count
-                if drop > worst_drop:
-                    worst_drop = drop
-                    worst_label = f"{stages[-1].stage} → {name}"
-            stages.append(
-                FunnelStage(
-                    stage=name,
-                    definition=definition,
-                    count=count,
-                    share_of_previous=share,
-                    drilldown=key,
-                )
-            )
-            previous = count
-            first = False
+        # These are independent snapshot counts, not a single cohort moving
+        # through strictly nested stages. A resolved appeal is no longer in
+        # the in_progress status, so dividing the two can exceed 100%.
+        stages = [
+            FunnelStage(stage=name, definition=definition, count=count, drilldown=key)
+            for name, definition, count, key in raw
+        ]
 
         return ProcessFunnel(
             status=CapabilityStatus.available(),
             provenance=self._provenance(region_id, received),
             stages=stages,
-            largest_drop=worst_label,
         )
 
     def status_flow(self, *, region_id: str) -> StatusFlow:

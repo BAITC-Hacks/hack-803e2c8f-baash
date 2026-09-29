@@ -102,6 +102,8 @@ uv run python scripts/demo_runtime.py up
 Open **http://localhost:3000**. The command applies migrations, loads the
 synthetic catalog and builds a deterministic city of roughly 130 appeals through
 the same endpoints an operator uses. On Windows use `.\demo.ps1 up`.
+The landing uses static captures from this working synthetic demo; its controls
+are on `/demo`, not inside the captures.
 
 ```bash
 uv run python scripts/demo_runtime.py verify   # checks, end-to-end flow, then reseeds

@@ -1,4 +1,9 @@
-# AI Analytics Platform for Your Whole Team | Hex design system
+# Hex visual reference for Pulse 109
+
+This is a reference palette and layout vocabulary, not a claim that Pulse 109
+copies or fully implements Hex. The current landing blends a dark editorial
+hero with light technical sections and uses static captures of the actual
+synthetic demo rather than independent marketing UI.
 
 > Extracted by [Inspo](https://github.com/Nutlope/inspo) from https://www.hex.tech / https://inspomcp.dev/api/design/hex-tech
 

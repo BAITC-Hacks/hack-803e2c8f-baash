@@ -1,7 +1,9 @@
 /* Core Typefaces: PP Formula SemiExtended + IBM Plex Sans + Cinetype */
 @font-face {
   font-family: "PP Formula SemiExtended";
-  src: local("PP Formula SemiExtended"), local("PP Formula"), local("Space Grotesk");
+  src:
+    local("PP Formula SemiExtended"), local("PP Formula"),
+    local("Space Grotesk");
   font-weight: 400 800;
   font-display: swap;
 }
@@ -62,8 +64,10 @@
   --hex-line-subtle: rgba(8, 7, 32, 0.06);
   --hex-line-strong: rgba(8, 7, 32, 0.22);
   --hex-radius: 1px;
-  --hex-font-display: "PP Formula SemiExtended", "PP Formula", "Space Grotesk", sans-serif;
-  --hex-font-sans: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --hex-font-display:
+    "PP Formula SemiExtended", "PP Formula", "Space Grotesk", sans-serif;
+  --hex-font-sans:
+    "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --hex-font-mono: "Cinetype", "IBM Plex Mono", monospace;
   --radius-control: 1px;
   --radius-card: 1px;
@@ -2212,7 +2216,9 @@ textarea:focus-visible {
   border-radius: var(--hex-radius);
   padding: 14px 18px;
   position: relative;
-  transition: border-color var(--motion-fast) ease, box-shadow var(--motion-fast) ease;
+  transition:
+    border-color var(--motion-fast) ease,
+    box-shadow var(--motion-fast) ease;
 }
 
 .city-pulse > div:hover {
@@ -3454,6 +3460,71 @@ textarea:focus-visible {
   margin-top: 0;
 }
 
+/* Queue and selected appeal are one operator task, not two long pages. */
+#queue.content {
+  display: grid;
+  grid-template-columns: minmax(290px, 0.36fr) minmax(0, 0.64fr);
+  align-items: start;
+  column-gap: 16px;
+}
+
+#queue > :not(.queue, .appeal-card) {
+  grid-column: 1 / -1;
+}
+
+#queue > .queue {
+  grid-column: 1;
+  position: sticky;
+  top: 78px;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+}
+
+#queue > .queue .queue-head,
+#queue > .queue .queue-row span:not(:last-child) {
+  display: none;
+}
+
+#queue > .queue .queue-row {
+  width: 100%;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  padding: 13px 14px;
+}
+
+#queue > .queue .queue-row strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#queue > .queue .queue-row span:last-child {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+#queue > .appeal-card {
+  grid-column: 2;
+  min-width: 0;
+  margin-top: 0;
+}
+
+@media (max-width: 1080px) {
+  #queue.content {
+    display: block;
+  }
+
+  #queue > .queue {
+    position: static;
+    max-height: 340px;
+  }
+
+  #queue > .appeal-card {
+    margin-top: 16px;
+  }
+}
+
 .shell .cluster-inspector {
   margin-top: 16px;
 }
@@ -4059,7 +4130,6 @@ svg[data-chart-motion] [data-chart-bar] {
   font-size: 11px;
 }
 
-
 /* Hex Bento Grid Shell Enhancements */
 .sidebar-footer {
   margin-top: auto;
@@ -4133,7 +4203,9 @@ svg[data-chart-motion] [data-chart-bar] {
   border-top: 2px solid var(--hex-gold);
   border-radius: var(--hex-radius);
   box-shadow: 0 1px 3px rgba(8, 7, 32, 0.03);
-  transition: border-color var(--motion-fast) ease, box-shadow var(--motion-fast) ease;
+  transition:
+    border-color var(--motion-fast) ease,
+    box-shadow var(--motion-fast) ease;
 }
 
 .lab-card:hover,

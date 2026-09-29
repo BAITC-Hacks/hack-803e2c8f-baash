@@ -45,6 +45,13 @@ export function ArrivalChart({
   }
 
   const peak = Math.max(...buckets.map((bucket) => bucket.count), 1);
+  const spansMultipleDays =
+    buckets[0].start.slice(0, 10) !==
+    buckets[buckets.length - 1].start.slice(0, 10);
+  const bucketLabel = (start: string) =>
+    spansMultipleDays
+      ? `${start.slice(8, 10)}.${start.slice(5, 7)}`
+      : start.slice(11, 16);
   const stepX = (WIDTH - PAD_X * 2) / (buckets.length - 1);
   const y = (value: number) =>
     HEIGHT - PAD_Y - (value / peak) * (HEIGHT - PAD_Y * 2);
@@ -86,7 +93,7 @@ export function ArrivalChart({
               style={{ animationDelay: `${Math.min(index * 18, 360)}ms` }}
             >
               <title>
-                {`${bucket.start.slice(11, 16)} · ${bucket.count}\n` +
+                {`${bucketLabel(bucket.start)} · ${bucket.count}\n` +
                   Object.entries(bucket.by_topic)
                     .sort((left, right) => right[1] - left[1])
                     .map(([topic, count]) => `${topic}: ${count}`)
@@ -96,7 +103,7 @@ export function ArrivalChart({
           );
         })}
         <text x={PAD_X} y={HEIGHT - 2} className="arrival-axis">
-          {buckets[0].start.slice(11, 16)}
+          {bucketLabel(buckets[0].start)}
         </text>
         <text
           x={WIDTH - PAD_X}
@@ -104,7 +111,7 @@ export function ArrivalChart({
           textAnchor="end"
           className="arrival-axis"
         >
-          {buckets[buckets.length - 1].start.slice(11, 16)}
+          {bucketLabel(buckets[buckets.length - 1].start)}
         </text>
         <text x={PAD_X} y={PAD_Y} className="arrival-axis">
           {peak}

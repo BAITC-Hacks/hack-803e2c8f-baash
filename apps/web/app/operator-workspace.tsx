@@ -115,7 +115,21 @@ const labels = {
     accept: "Подтвердить рекомендацию",
     assign: "Поставить назначение в очередь",
     status: "Записать статус",
-    unavailable: "Рекомендация недоступна; ручной путь остаётся доступным.",
+    advisoryEmpty: "Получите подсказку модели или сохраните ручное решение.",
+    advisoryTitle: "Маршрутизация: решение оператора",
+    topicLabel: "Тема",
+    serviceLabel: "Служба",
+    priorityLabel: "Приоритет",
+    createdLabel: "Создано",
+    syncLabel: "Доставка",
+    recordedLabel: "Записано",
+    assignmentTitle: "Назначение и статус",
+    nextStatusLabel: "Следующий статус",
+    timelineTitle: "История обращения",
+    deliveryTitle: "Внешняя доставка",
+    noText: "Текст обращения недоступен",
+    notRequired: "не требуется",
+    noExternalId: "Внешнего ID нет",
     empty:
       "В этом регионе пока нет обращений. Создайте синтетическое обращение через форму или запустите seed.",
   },
@@ -150,7 +164,21 @@ const labels = {
     accept: "Ұсынысты растау",
     assign: "Тағайындауды кезекке қою",
     status: "Мәртебені жазу",
-    unavailable: "Ұсыныс қолжетімсіз; қолмен жұмыс істеуге болады.",
+    advisoryEmpty: "Модель ұсынысын алыңыз немесе қолмен шешім сақтаңыз.",
+    advisoryTitle: "Бағыттау: оператор шешімі",
+    topicLabel: "Тақырып",
+    serviceLabel: "Қызмет",
+    priorityLabel: "Басымдық",
+    createdLabel: "Құрылды",
+    syncLabel: "Жеткізу",
+    recordedLabel: "Жазылды",
+    assignmentTitle: "Тағайындау және мәртебе",
+    nextStatusLabel: "Келесі мәртебе",
+    timelineTitle: "Өтініш тарихы",
+    deliveryTitle: "Сыртқы жеткізу",
+    noText: "Өтініш мәтіні қолжетімсіз",
+    notRequired: "қажет емес",
+    noExternalId: "Сыртқы ID жоқ",
     empty:
       "Бұл аймақта өтініш жоқ. Синтетикалық өтініш жасаңыз немесе seed іске қосыңыз.",
   },
@@ -506,7 +534,7 @@ export default function OperatorWorkspace() {
   const secondaryViews = ["intake", "situation"] as const;
 
   return (
-    <div className="shell">
+    <div className="shell" lang={locale}>
       <a className="skip-link" href="#workspace-main">
         {copy.skipContent}
       </a>
@@ -561,7 +589,11 @@ export default function OperatorWorkspace() {
           })}
         </nav>
         <div className="sidebar-footer">
-          <Link href="/" className="sidebar-portal-link" aria-label="Вернуться на главную">
+          <Link
+            href="/"
+            className="sidebar-portal-link"
+            aria-label="Вернуться на главную"
+          >
             <span>← {locale === "ru" ? "Главная страница" : "Басты бет"}</span>
           </Link>
           <span className="sidebar-version-badge">v1.4.0 · BENTO</span>
@@ -572,7 +604,9 @@ export default function OperatorWorkspace() {
         <header className="topbar">
           <div className="topbar-context" aria-label={copy.region}>
             <span className="topbar-module-badge">{copy[view]}</span>
-            <span className="topbar-context-divider" aria-hidden="true">/</span>
+            <span className="topbar-context-divider" aria-hidden="true">
+              /
+            </span>
             {regions.length > 1 ? (
               <select
                 aria-label={copy.region}
@@ -778,35 +812,44 @@ export default function OperatorWorkspace() {
                       <p className="eyebrow">
                         {detail.source_system} · v{detail.version}
                       </p>
-                      <h2 id="appeal-title">{detail.request_id}</h2>
+                      <h2 id="appeal-title">{detail.source_request_id}</h2>
                       <p className="appeal-summary">
-                        {detail.text ?? "No operational text recorded"}
+                        {detail.text ?? copy.noText}
                       </p>
                     </div>
                     <span className="status-chip">{detail.status}</span>
                   </div>
                   <div className="meta-grid">
                     <div>
-                      <span>Region</span>
+                      <span>{copy.region}</span>
                       <strong>{detail.region_id}</strong>
                     </div>
                     <div>
-                      <span>Business time quality</span>
+                      <span>{copy.timeQuality}</span>
                       <strong>{detail.received_at_quality}</strong>
                     </div>
                     <div>
-                      <span>Created</span>
-                      <strong>{detail.created_at}</strong>
+                      <span>{copy.createdLabel}</span>
+                      <strong>
+                        {new Intl.DateTimeFormat(
+                          locale === "ru" ? "ru-RU" : "kk-KZ",
+                          {
+                            dateStyle: "short",
+                            timeStyle: "short",
+                            timeZone: "Asia/Almaty",
+                          },
+                        ).format(new Date(detail.created_at))}
+                      </strong>
                     </div>
                     <div>
-                      <span>Sync</span>
+                      <span>{copy.syncLabel}</span>
                       <strong>
-                        {detail.synchronization?.status ?? "not required"}
+                        {detail.synchronization?.status ?? copy.notRequired}
                       </strong>
                     </div>
                   </div>
                   <div className="decision-area">
-                    <h3>Human governed routing</h3>
+                    <h3>{copy.advisoryTitle}</h3>
                     <button
                       className="secondary-action"
                       type="button"
@@ -825,25 +868,25 @@ export default function OperatorWorkspace() {
                         confirmation required
                       </p>
                     ) : (
-                      <p>{copy.unavailable}</p>
+                      <p>{copy.advisoryEmpty}</p>
                     )}
                     <div className="manual-fields">
                       <label>
-                        Topic ID
+                        {copy.topicLabel}
                         <input
                           value={topic}
                           onChange={(event) => setTopic(event.target.value)}
                         />
                       </label>
                       <label>
-                        Service ID
+                        {copy.serviceLabel}
                         <input
                           value={service}
                           onChange={(event) => setService(event.target.value)}
                         />
                       </label>
                       <label>
-                        Priority
+                        {copy.priorityLabel}
                         <select
                           value={priority}
                           onChange={(event) => setPriority(event.target.value)}
@@ -877,13 +920,13 @@ export default function OperatorWorkspace() {
                     </div>
                     {detail.current_decision ? (
                       <p role="status">
-                        Recorded: {detail.current_decision.action} ·{" "}
+                        {copy.recordedLabel}: {detail.current_decision.action} ·{" "}
                         {detail.current_decision.service_id}
                       </p>
                     ) : null}
                   </div>
                   <div className="decision-area">
-                    <h3>Assignment and status</h3>
+                    <h3>{copy.assignmentTitle}</h3>
                     <button
                       className="primary-action"
                       type="button"
@@ -893,7 +936,7 @@ export default function OperatorWorkspace() {
                       {copy.assign}
                     </button>
                     <label>
-                      Next status
+                      {copy.nextStatusLabel}
                       <select
                         value={nextStatus}
                         onChange={(event) => setNextStatus(event.target.value)}
@@ -916,7 +959,7 @@ export default function OperatorWorkspace() {
                   </div>
                   <div className="activity-grid">
                     <div>
-                      <h3>Durable timeline</h3>
+                      <h3>{copy.timelineTitle}</h3>
                       <ol className="timeline">
                         {detail.timeline.map((event) => (
                           <li key={event.event_id}>
@@ -926,11 +969,13 @@ export default function OperatorWorkspace() {
                       </ol>
                     </div>
                     <div>
-                      <h3>External delivery</h3>
-                      <p>{detail.synchronization?.status ?? "not required"}</p>
+                      <h3>{copy.deliveryTitle}</h3>
+                      <p>
+                        {detail.synchronization?.status ?? copy.notRequired}
+                      </p>
                       <p>
                         {detail.synchronization?.external_id ??
-                          "No external ID"}
+                          copy.noExternalId}
                       </p>
                     </div>
                     <div>

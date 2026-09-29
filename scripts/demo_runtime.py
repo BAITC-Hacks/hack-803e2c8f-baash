@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 import httpx
+from demo_pagination import existing_source_ids
 
 ROOT = Path(__file__).resolve().parents[1]
 COMPOSE = [
@@ -377,9 +378,7 @@ def seed_emerging(client: httpx.Client) -> None:
     # seed would send a different body under the same idempotency key and the
     # server would rightly refuse it. Existing reports are left alone, which
     # keeps the scenario stable across repeated seeds.
-    listing = client.get("/v1/requests", params={"limit": 100}, headers={"X-Region-Id": "ALA"})
-    listing.raise_for_status()
-    existing = {appeal["source_request_id"] for appeal in listing.json()}
+    existing = existing_source_ids(client, region_id="ALA")
     created = 0
     for source_id, minutes_ago, latitude, longitude, channel, language, text in EMERGING:
         if source_id in existing:
