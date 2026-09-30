@@ -304,6 +304,10 @@ export default function OperatorWorkspace() {
   );
   const [profile, setProfile] = useState<string | null>(null);
   const isDemoProfile = profile === "demo" || profile === "demo-mock";
+  const demoDataDisclosure =
+    profile === "demo-mock"
+      ? "Используются вымышленные муниципальные записи. Интерфейс и сценарии работают через локальный mock API; база данных и внешняя доставка не подключены."
+      : "Используются синтетические муниципальные записи. Демо работает через API, PostgreSQL, аудит и worker. Региональная CRM не подключена; доставка воспроизводится demo adapter-ом.";
   const [demoDisclosureOpen, setDemoDisclosureOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -813,7 +817,7 @@ export default function OperatorWorkspace() {
                 <button
                   type="button"
                   className="profile demo-data-badge"
-                  title="Используются вымышленные муниципальные записи. Интерфейс и сценарии работают через локальный mock API; база данных и внешняя доставка не подключены."
+                  title={demoDataDisclosure}
                   aria-label="DEMO DATA: информация о данных"
                   aria-expanded={demoDisclosureOpen}
                   aria-controls="demo-data-tooltip"
@@ -827,9 +831,7 @@ export default function OperatorWorkspace() {
                     className="demo-data-tooltip"
                     role="tooltip"
                   >
-                    Используются вымышленные муниципальные записи. Интерфейс и
-                    сценарии работают через локальный mock API; база данных и
-                    внешняя доставка не подключены.
+                    {demoDataDisclosure}
                   </div>
                 ) : null}
               </div>

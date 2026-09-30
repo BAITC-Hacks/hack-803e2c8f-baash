@@ -4,9 +4,11 @@ import { useState, useSyncExternalStore } from "react";
 import { ArrowRight, Activity, ShieldCheck } from "lucide-react";
 import OperatorWorkspace from "../operator-workspace";
 
-const ENTRY_KEY = "pulse109-demo-disclosure-v1";
-const DISCLOSURE =
+const ENTRY_KEY = "pulse109-demo-disclosure-v2";
+const MOCK_DISCLOSURE =
   "Используются вымышленные муниципальные записи. Интерфейс и сценарии работают через локальный mock API; база данных и внешняя доставка не подключены.";
+const CONNECTED_DISCLOSURE =
+  "Используются синтетические муниципальные записи. Демо работает через API, PostgreSQL, аудит и worker. Региональная CRM не подключена; доставка воспроизводится demo adapter-ом.";
 
 function subscribe(onChange: () => void) {
   window.addEventListener("storage", onChange);
@@ -25,7 +27,7 @@ function getEntered() {
   }
 }
 
-export default function DemoEntry() {
+export default function DemoEntry({ mockMode }: { mockMode: boolean }) {
   const persistedEntry = useSyncExternalStore(
     subscribe,
     getEntered,
@@ -63,7 +65,9 @@ export default function DemoEntry() {
           </span>
           <p className="demo-entry-eyebrow">Operations workspace</p>
           <h1 id="demo-entry-title">Перед началом</h1>
-          <p className="demo-entry-disclosure">{DISCLOSURE}</p>
+          <p className="demo-entry-disclosure">
+            {mockMode ? MOCK_DISCLOSURE : CONNECTED_DISCLOSURE}
+          </p>
           <button type="button" className="demo-entry-cta" onClick={enter}>
             Войти в Operations Center{" "}
             <ArrowRight size={16} aria-hidden="true" />
