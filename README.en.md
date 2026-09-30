@@ -1,6 +1,11 @@
 # Pulse 109
 
-[Русская версия](README.md) · [Golden Demo](docs/GOLDEN_DEMO.md)
+[Русская версия](README.md) · [Open hosted demo](https://baash.govtech-kz.com/demo) · [Landing page](https://baash.govtech-kz.com/) · [Golden Demo](docs/GOLDEN_DEMO.md)
+
+The hosted link runs the demo profile with synthetic ALA data. It is not a
+production pilot and is not connected to a regional CRM. Deployment was
+verified on 2026-09-30; see the [public deployment runbook](infra/runbooks/PUBLIC_DEPLOYMENT.md)
+for the deployment path and its limits.
 
 Pulse 109 turns scattered citizen appeals into detected city problems,
 coordinates who resolves them, verifies the result and learns from confirmed

@@ -46,7 +46,7 @@ Legend: ✅ implemented · 🟡 partial · 🔬 research · 🚫 blocked externa
 | Object storage                     | ✅    | Filesystem volume by default, S3 selected by configuration                                           | Credentials come from the host environment, never from settings                                      | `pulse109.security.object_storage`                 |
 | Offline exploration                | ✅    | `make eda` over the committed synthetic fixture                                                      | Point `INPUT` at an approved dataset outside the repository                                          | `analytics/offline`                                |
 | Operator web                       | ✅    | Sidebar shell, region from session context, operations, appeals, incidents, data lab, intake, status; landing frames static captures of those real demo screens | 🚫 production OIDC session (B08)                                                                     | `apps/web/app`                                     |
-| Live deployment                    | 🟡    | Local Docker Compose, plus a public overlay with TLS and no internal port published                  | Whether an instance runs is a fact about that instance, not this repository                          | `infra/compose/docker-compose.public.yml`          |
+| Live deployment                    | 🟡    | Verified 2026-09-30 at [baash.govtech-kz.com](https://baash.govtech-kz.com), behind the organizer HTTPS proxy; web is loopback-only on 8009, API on 8080 | Demo profile, synthetic ALA data, local-volume object storage; no production identity or regional CRM | `infra/runbooks/PUBLIC_DEPLOYMENT.md`              |
 
 ## ML and research
 

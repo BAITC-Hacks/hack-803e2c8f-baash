@@ -7,6 +7,23 @@ application, PostgreSQL, outbox, worker and audit trail are real. Do not present
 this as a pilot: a pilot needs an approved regional adapter, a real identity
 provider and approved retention, which are external blockers B07, B08 and B10.
 
+## Verified shared-host instance
+
+The Demo Day instance is available at [baash.govtech-kz.com](https://baash.govtech-kz.com/)
+and its workspace at [/demo](https://baash.govtech-kz.com/demo). It was verified
+on 2026-09-30 with the 120-day synthetic ALA Golden World. The host is shared
+and an organizer HTTPS proxy already owns ports 80 and 443, so this instance
+uses `docker-compose.behind-proxy.yml`; it does not start another Caddy.
+
+The web image was built by the `publish-web` GitHub Actions workflow and pulled
+from GHCR, avoiding a memory-heavy Next.js build on the VPS. The pinned web tag
+is `ghcr.io/baitc-hacks/pulse109-web:c2effc5`. The existing proxy forwards to
+`127.0.0.1:8009`; the API is bound to `127.0.0.1:8080` for host-side demo
+operations. PostgreSQL and the other services remain internal to Compose.
+Object storage is configured as `local` on this demo instance; the S3 adapter
+is not claimed as verified here. The demo actor remains a development identity,
+and all citizen records and delivery receipts are synthetic.
+
 ## What reaches the internet
 
 Only the proxy, on 80 and 443. PostgreSQL, the API, the worker, the inference

@@ -2,7 +2,9 @@
 
 > Платформа для работы с обращениями граждан: от отдельного сигнала до выявления городской проблемы, координации служб и проверяемой аналитики.
 
-[English version](README.en.md) · [Открыть локальное демо](http://localhost:3000/demo) · [Golden Demo](docs/GOLDEN_DEMO.md) · [Архитектура](docs/architecture/README.md)
+[English version](README.en.md) · [Открыть демо на сервере](https://baash.govtech-kz.com/demo) · [Лендинг](https://baash.govtech-kz.com/) · [Локальное демо](http://localhost:3000/demo) · [Golden Demo](docs/GOLDEN_DEMO.md) · [Архитектура](docs/architecture/README.md)
+
+Публичная ссылка ведёт на demo profile с синтетическими данными АLA; это не production pilot и не подключение к региональной CRM. Деплой проверен 30 сентября 2026 года. Детали и ограничения — в [runbook](infra/runbooks/PUBLIC_DEPLOYMENT.md).
 
 ![Операционный центр Pulse 109 на демонстрационных данных](apps/web/public/product/operations-center.jpg)
 
