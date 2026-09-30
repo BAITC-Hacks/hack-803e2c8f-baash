@@ -32,7 +32,7 @@ type Metrics = {
   language_slice_agreement: Record<string, number>;
 };
 
-type ReplayReport = ReplayReportSummary & {
+type ReplayReport = Omit<ReplayReportSummary, "created_at"> & {
   dataset_digest: string;
   baseline: Metrics;
   candidate: Metrics;
@@ -141,6 +141,19 @@ function formatValue(value: number | null): string {
   return Number.isInteger(value)
     ? String(value)
     : `${Math.round(value * 10_000) / 100}%`;
+}
+
+function formatDateTime(
+  value: string | null | undefined,
+  locale: Locale,
+): string {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return new Intl.DateTimeFormat(locale === "ru" ? "ru-RU" : "kk-KZ", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
 }
 
 function diffKind(baseline: number | null, candidate: number | null): DiffKind {
@@ -355,15 +368,7 @@ export function ReplayLab({
                 <span>
                   {report.candidate_policy_id}@{report.candidate_version}
                 </span>
-                <small>
-                  {new Intl.DateTimeFormat(
-                    locale === "ru" ? "ru-RU" : "kk-KZ",
-                    {
-                      dateStyle: "medium",
-                      timeStyle: "short",
-                    },
-                  ).format(new Date(report.created_at))}
-                </small>
+                <small>{formatDateTime(report.created_at, locale)}</small>
               </button>
             ))}
           </aside>
@@ -399,20 +404,17 @@ export function ReplayLab({
                   </div>
                   <div>
                     <dt>{t.cutoff}</dt>
-                    <dd>
-                      {new Intl.DateTimeFormat(
-                        locale === "ru" ? "ru-RU" : "kk-KZ",
-                        { dateStyle: "medium", timeStyle: "short" },
-                      ).format(new Date(selected.cutoff_at))}
-                    </dd>
+                    <dd>{formatDateTime(selected.cutoff_at, locale)}</dd>
                   </div>
                   <div>
                     <dt>{t.created}</dt>
                     <dd>
-                      {new Intl.DateTimeFormat(
-                        locale === "ru" ? "ru-RU" : "kk-KZ",
-                        { dateStyle: "medium", timeStyle: "short" },
-                      ).format(new Date(selected.created_at))}
+                      {formatDateTime(
+                        reports.find(
+                          (report) => report.report_id === selected.report_id,
+                        )?.created_at,
+                        locale,
+                      )}
                     </dd>
                   </div>
                 </dl>
