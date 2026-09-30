@@ -17,9 +17,10 @@ uses `docker-compose.behind-proxy.yml`; it does not start another Caddy.
 
 The web image was built by the `publish-web` GitHub Actions workflow and pulled
 from GHCR, avoiding a memory-heavy Next.js build on the VPS. The pinned web tag
-is `ghcr.io/baitc-hacks/pulse109-web:c2effc5`. The existing proxy forwards to
-`127.0.0.1:8009`; the API is bound to `127.0.0.1:8080` for host-side demo
-operations. PostgreSQL and the other services remain internal to Compose.
+is `ghcr.io/baitc-hacks/pulse109-web:324d74d` (`sha256:51988f7d20f6895318a8cbc5995c9643ec26f1e48fdba3923f42d20a96035cc9`).
+The existing proxy forwards to `127.0.0.1:8009`; the API is bound to
+`127.0.0.1:8080` for host-side demo operations. PostgreSQL and the other
+services remain internal to Compose.
 Object storage is configured as `local` on this demo instance; the S3 adapter
 is not claimed as verified here. The demo actor remains a development identity,
 and all citizen records and delivery receipts are synthetic.
