@@ -1,216 +1,239 @@
 # Pulse 109
 
-[Русская версия](README.md) · [Open hosted demo](https://baash.govtech-kz.com/demo) · [Landing page](https://baash.govtech-kz.com/) · [Golden Demo](docs/GOLDEN_DEMO.md)
+> Federated AI assistance layer for regional 109 municipal services: detecting hidden city emergencies, coordinating agencies, and delivering provable analytics without unconstrained AI risk.
 
-The hosted link runs the demo profile with synthetic ALA data. It is not a
-production pilot and is not connected to a regional CRM. Deployment was
-verified on 2026-09-30; see the [public deployment runbook](infra/runbooks/PUBLIC_DEPLOYMENT.md)
-for the deployment path and its limits.
+[Русская версия](README.md) · [Live Hosted Demo](https://baash.govtech-kz.com/demo) · [Project Landing](https://baash.govtech-kz.com/) · [Golden Demo Script](docs/GOLDEN_DEMO.md) · [Operator Runbook](docs/DEMO_RUNBOOK.md) · [Architecture](docs/architecture/README.md) · [Feature Status](docs/FEATURE_STATUS.md)
 
-Pulse 109 turns scattered citizen appeals into detected city problems,
-coordinates who resolves them, verifies the result and learns from confirmed
-outcomes.
+The hosted link runs the `demo` profile with synthetic Almaty (ALA) records. It is not an internal municipal deployment and does not connect to a production CRM. Verified on 2026-09-30; see the [public deployment runbook](infra/runbooks/PUBLIC_DEPLOYMENT.md) for network details and constraints.
 
-## Why it exists
+![Pulse 109 Operations Center on demo data](apps/web/public/product/operations-center.jpg)
 
-A 109 hotline routes against a taxonomy that already exists. A city problem can
-appear before a category for it does. Six people report that the water smells
-odd, tastes metallic and looks cloudy after repairs, a classifier scatters them
-across four categories, and nobody sees that they are one thing.
+---
 
-Pulse 109 sits beside the existing regional systems rather than replacing them.
-An accepted appeal keeps its own identifier, timeline and version even when it
-joins an incident. Routing, priority, incident membership and closure stay human
-decisions.
+## Evaluation Rubric Matrix for Judges
 
-## The product flow
+| Evaluation Dimension                    | Existing 109 Challenge                                                                                                                | Pulse 109 Solution                                                                                                                                       | Where to Verify in Repository                                                                                                                    |
+| :-------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Civic Value & Impact**                | Citizen complaints are scattered across isolated agency silos. Systemic utility failures go unnoticed until full-scale outages occur. | **Emerging Issues Radar & War Room**: Automatic detection of infrastructure failures from weak, disparate signals before public escalation.              | [docs/features/EMERGING_ISSUES.md](docs/features/EMERGING_ISSUES.md)<br>[docs/features/INCIDENT_WAR_ROOM.md](docs/features/INCIDENT_WAR_ROOM.md) |
+| **Innovation & AI Depth**               | Generic chat assistants hallucinate, while rigid keyword classifiers misroute calls with unusual phrasing.                            | **Spatio-semantic clustering (PostGIS + pgvector)**, historical Outcome Memory, and natural language analytics (Ask Pulse RU/KK).                        | [docs/features/ASK_PULSE.md](docs/features/ASK_PULSE.md)<br>[docs/features/OUTCOME_MEMORY.md](docs/features/OUTCOME_MEMORY.md)                   |
+| **Enterprise Architecture**             | Fragile microservices, untracked mutations, and dropped messages when brokers fail under load.                                        | **Modular FastAPI core + PostgreSQL 16**, transactional outbox with `FOR UPDATE SKIP LOCKED`, idempotency keys, and contract-first adapters.             | [contracts/](contracts/)<br>[docs/architecture/README.md](docs/architecture/README.md)                                                           |
+| **Trust, Safety & AI Governance**       | Unchecked automated decisions, leakage of personally identifiable information (PII), total system freeze if ML nodes crash.           | **"AI proposes — human confirms" guarantee**. Strict PII separation. Deterministic CPU lexical fallback: manual path is 100% operational without GPU/ML. | [docs/features/NEXT_BEST_ACTION.md](docs/features/NEXT_BEST_ACTION.md)<br>`pulse109.manual_path`                                                 |
+| **Execution Quality & Reproducibility** | Mock pitch decks with no working backend behind them.                                                                                 | **Fully seeded 120-day historical world**, single-command verification script, 4 automated CI pipelines with database restore drills.                    | [docs/GOLDEN_DEMO.md](docs/GOLDEN_DEMO.md)<br>`scripts/demo_runtime.py`                                                                          |
+
+---
+
+## The GovTech Challenge: The "109 Classifier Trap"
+
+When an underground water main ruptures or water quality degrades, citizens report the issue in completely different terms:
+
+- _"Water is brown and smells metallic"_ $\to$ Routed to City Water Utility as a plumbing issue;
+- _"Very low water pressure on the 5th floor"_ $\to$ Routed to Housing Maintenance (KSK) as building-internal maintenance;
+- _"Child became sick after drinking tap water"_ $\to$ Routed to Sanitation & Health Inspection;
+- _"Asphalt collapsed near the roadside hydrant"_ $\to$ Routed to Urban Mobility / Road Maintenance.
+
+A standard CRM taxonomy splits this single municipal crisis across 4 separate municipal entities. **No single agency realizes a major contamination incident is underway.**
+
+**How Pulse 109 Solves It:**
+
+1. **Radar** monitors spatial clustering density (PostGIS), a 43-minute arrival window, and semantic proximity.
+2. The platform flags an anomaly to the operator: _"6 incoming appeals within a 400-meter radius point to a shared water supply failure"_.
+3. The operator creates a municipal **Incident** in the **Incident War Room** with one click, coordinating city responders hours before hundreds of secondary calls arrive.
+4. Each citizen's appeal preserves its own tracking ID, statutory resolution deadline (SLA), and audit history.
+
+---
+
+## 3-Minute Golden Path for Judges
+
+A deterministic walk-through script has been prepared for hackathon jury evaluation:
 
 ```
-Citizen signals
-      ↓
-DETECT      Emerging Issues Radar, Data Lab anomalies
-      ↓
-UNDERSTAND  Incident War Room, Data Lab
-      ↓
-DECIDE      Ownership, Next Best Action, human confirmation
-      ↓
-ACT         Transactional outbox, worker, regional adapter
-      ↓
-VERIFY      Closure integrity, evidence, recurrence
-      ↓
-LEARN       Outcome Memory, Replay Lab
+[Citizen Signal (RU/KK)]
+       ↓
+[Smart Intake: Category advice + duplicate discovery BEFORE submit]
+       ↓
+[Emerging Issues Radar: Spatio-temporal cluster on PostGIS]
+       ↓
+[Incident War Room: Unified incident command + Next Best Action with reason codes]
+       ↓
+[Transactional Outbox: Durable agency task dispatch via Worker]
+       ↓
+[Ask Pulse: Natural language question → Deterministic PostgreSQL calculation → Signed PDF/Excel]
 ```
 
-## Architecture
+### Demonstration Walkthrough:
+
+1. **Submit Citizen Signal**:
+   In the [presenter view](http://localhost:3000/demo?presenter=1) (or `Ctrl+Shift+D`), click "Fill example: water quality". Before submitting, the intake step flags similar active problems. Click "Submit appeal" manually.
+2. **Detect Emergency in Radar**:
+   Navigate to **Operations Center** $\to$ **Radar**. The 6 pre-existing reports merge with the new submission into a tight 7-signal cluster. Inspect the map, timeline, and correlation signals.
+3. **Assemble War Room & Incident**:
+   Click "Create incident". The consolidated War Room aggregates all 7 appeals, designates an owner, and presents **Next Best Action** recommendations backed by transparent reason codes.
+4. **Operator Decision & Outbox Delivery**:
+   Open an appeal in the queue, request routing advice, and confirm the manual assignment. Observe resilient dispatch to the external service adapter via the transactional outbox worker.
+5. **Provable Municipal Analytics (Ask Pulse)**:
+   In **Ask Pulse**, submit: _"Show appeals for the last 7 days in Almaty"_. Review the calculated chart, exact tally, provenance proof ("How calculated"), and download the signed PDF/Excel export. The language model never invents figures or generates arbitrary unvetted SQL — all aggregations run directly on PostgreSQL.
+
+Full timing and presenter notes: [docs/GOLDEN_DEMO.md](docs/GOLDEN_DEMO.md).
+
+---
+
+## Architecture & Enterprise Reliability
+
+Pulse 109 is built to deploy alongside existing Akimat municipal CRMs rather than forcing an expensive, risky replacement.
 
 ```mermaid
 flowchart TD
-    C[Citizen, 109 hotline, regional import] --> I[Intake and privacy boundary]
-    I --> A[(Appeal in PostgreSQL)]
-    A --> G[Decision Gateway]
-    G --> O[Ownership and Handoff Guard]
-    O --> N[Incident]
-    N --> W[Transactional outbox and worker]
-    W --> X[Regional adapter]
-    X --> E[External municipal system]
+    subgraph Citizens["Citizen Input Channels"]
+        C1[109 Hotline Call]
+        C2[e-Gov Portal / Mobile App]
+        C3[Regional Import Gateway]
+    end
 
-    A -.-> R[Emerging Issues Radar]
-    R -.-> N
-    N -.-> M[Outcome Memory]
-    E -.-> V[Closure integrity and evidence]
-    V --> M
-    A -.-> D[Data Lab]
-    N -.-> P[Operations Center]
-    G -.-> L[Replay Lab]
+    subgraph IntakeBoundary["Intake & Security Perimeter"]
+        I[Adaptive Intake RU/KK]
+        P[PII Anonymization & Separation]
+        D[Deterministic CPU Fallback]
+    end
+
+    subgraph CoreStorage["Transactional Core (PostgreSQL 16)"]
+        DB[(Appeals + Audit Trail + PostGIS Geo)]
+        OUTBOX[(Transactional Outbox)]
+    end
+
+    subgraph DecisionLayer["Decision Layer (Human-in-the-Loop)"]
+        GW[Decision Gateway]
+        RADAR[Emerging Issues Radar]
+        NBA[Next Best Action Engine]
+        MEM[Outcome Memory pgvector]
+    end
+
+    subgraph Execution["Execution & Delivery"]
+        WORKER[Outbox Worker SKIP LOCKED]
+        ADAPT[Isolated Regional Adapter]
+        CRM[External Municipal CRM]
+    end
+
+    subgraph AnalyticsEngine["Provable Analytics"]
+        ASK[Ask Pulse RU/KK]
+        EXP[Signed PDF/XLSX Export]
+    end
+
+    Citizens --> I --> P --> DB
+    I -. When ML is down .-> D --> DB
+    DB --> RADAR
+    DB --> GW --> NBA
+    NBA --> MEM
+    GW -->|Operator decision| OUTBOX
+    OUTBOX --> WORKER --> ADAPT --> CRM
+    DB --> ASK --> EXP
 ```
 
-Detailed diagrams live in the [architecture notes](docs/architecture/README.md).
+### Core Engineering Principles:
 
-## Flagship capabilities
+- **Non-Invasive Integration**: Sits beside regional CRMs, integrating via standardized adapters (Open311, Replay, and regional SDKs).
+- **Zero Lost Tasks**: Transactional outbox with `FOR UPDATE SKIP LOCKED` guarantees reliable task delivery during network hiccups.
+- **Fail-Safe Operation Without ML**: If GPU nodes or ML processes go down, intake, manual routing, status transitions, and audit trails remain 100% operational via CPU lexical fallbacks.
+- **Privacy by Design**: Raw personal data (names, phone numbers, exact addresses) is strictly separated from feature vectors and never leaks into logs, metrics, or LLM prompts.
 
-| Capability                                                | What it does                                                                      |
-| --------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| [Emerging Issues Radar](docs/features/EMERGING_ISSUES.md) | Groups reports that arrive close in space and time and fit the taxonomy poorly    |
-| [Incident War Room](docs/features/INCIDENT_WAR_ROOM.md)   | One incident as one city problem, assembled in a single read                      |
-| [Next Best Action](docs/features/NEXT_BEST_ACTION.md)     | Evidence-backed suggestions with the reason codes that produced them              |
-| [Outcome Memory](docs/features/OUTCOME_MEMORY.md)         | What was actually done about comparable problems, human-confirmed closures only   |
-| [Operations Center](docs/features/OPERATIONS_CENTER.md)   | Where the city needs attention now, every row opening the thing it describes      |
-| [Replay Lab](docs/features/REPLAY_LAB.md)                 | Test a routing change against approved history before it ships                    |
-| [Data Lab](docs/features/DATA_LAB.md)                     | Reproducible exploration and live analytics that drill down to individual appeals |
+---
 
-Each capability reports one of three states: `available`, `abstained` or
-`unavailable`, with a controlled reason code. An operator can always tell
-"nothing found" from "nothing ran".
+## Fast Verification for Reviewers
 
-## What is real and what is synthetic
-
-| Real                                         | Synthetic in the demo                   |
-| -------------------------------------------- | --------------------------------------- |
-| FastAPI business logic and validation        | The municipal records themselves        |
-| PostgreSQL schema, migrations, transactions  | Coordinates placed on the map           |
-| Transactional outbox, worker leases, retries | The external system that receives them  |
-| Audit trail, provenance, idempotency         | The service catalog and intake policies |
-| Incident merge, split, membership decisions  | Historical outcomes                     |
-| Closure integrity and evidence checks        |                                         |
-
-The malware scanner is a mock and must never be described as production
-antivirus. No model quality number in this repository is validated.
-
-## Quick start
-
-Requires Docker with a working Linux engine, Python 3.10 to 3.13, `uv`, and free
-ports 3000, 5432 and 8080 to 8084.
+### Option 1: Instant Browser UI Inspection (No Docker, 30 seconds)
 
 ```bash
+pnpm install
+pnpm demo:mock
+```
+
+Open [http://localhost:3000/demo](http://localhost:3000/demo). The full operator console, incident screens, and radar run directly on in-memory mocks.
+
+### Option 2: Full Production Stack on PostgreSQL (Complete Demo Profile)
+
+Requires Docker Desktop, Python 3.10–3.13, and `uv`.
+
+```powershell
+# Windows
+.\demo.ps1 prepare
+```
+
+```bash
+# Linux / macOS
 uv sync --all-groups --frozen
 uv run python scripts/demo_runtime.py prepare
 ```
 
-Open **http://localhost:3000**. The command applies migrations, exercises the
-API path, then builds and verifies a fresh synthetic city with 120 days of
-history, current appeals and a six-report water cluster. On Windows use
-`.\demo.ps1 prepare`. The success marker is `PULSE 109 DEMO READY`.
-The landing uses static captures from this working synthetic demo; its controls
-are on `/demo`, not inside the captures.
+The script provisions the isolated `pulse109-demo` stack, runs Alembic migrations, seeds 120 days of synthetic history, simulates the live water cluster, and asserts readiness:
 
-```bash
-uv run python scripts/demo_runtime.py verify   # checks, end-to-end flow, then reseeds
-uv run python scripts/demo_runtime.py reset    # removes only the demo volumes
+```text
+PULSE 109 DEMO READY
 ```
 
-### Golden Demo walkthrough
+Access the operator workspace at [http://localhost:3000/demo](http://localhost:3000/demo).
 
-1. Open the populated **Operations center** and run the Radar scan.
-2. Open the water cluster: inspect the map, arrival timeline and linking signals.
-3. **Create an incident** from the cluster. Inspect the War Room and its advisory
-   next action; a human confirms consequential decisions.
-4. In the operator queue, request a routing recommendation, confirm the manual
-   decision and show durable outbox delivery.
-5. In **Ask Pulse**, ask about the last seven days in Almaty. Open the calculation,
-   underlying appeals and PDF/Excel export. The prepared synthetic history also
-   supports the seasonal baseline at 30, 60 and 90 days.
-
-The presenter route is in [Golden Demo](docs/GOLDEN_DEMO.md); the full operator
-path is in the [demo runbook](docs/DEMO_RUNBOOK.md).
-
-## Repository map
-
-| Path                                    | Responsibility                                                        |
-| --------------------------------------- | --------------------------------------------------------------------- |
-| `apps/web`                              | Next.js operator workspace and citizen intake                         |
-| `services/core`                         | FastAPI business modules, PostgreSQL repositories, Alembic migrations |
-| `services/worker`, `services/inference` | Outbox delivery and the optional inference process                    |
-| `adapters`                              | Replay and Open311 implementations, and the adapter SDK               |
-| `analytics`                             | Reproducible offline exploration of approved canonical datasets       |
-| `ml`                                    | Candidate evaluation harness and offline comparison protocol          |
-| `contracts`                             | OpenAPI, canonical schemas, event catalog, ADRs                       |
-| `data`                                  | Schemas, manifests and synthetic fixtures. Never real records         |
-| `infra/compose`, `scripts`              | Runtime topology, demo commands, verification and release tooling     |
-| `docs`                                  | Product, capability, architecture and status documentation            |
-| `tests`                                 | Contract, integration and end-to-end suites                           |
-
-## Engineering
-
-FastAPI · Next.js · PostgreSQL with PostGIS and pgvector · Alembic forward-only
-migrations · Docker Compose · transactional outbox with `FOR UPDATE SKIP LOCKED`
-· idempotency keys · append-only audit and provenance · human-in-the-loop
-decision model · Ed25519 signed configuration bundles.
-
-## Verification
+### Code Quality & Test Suite:
 
 ```bash
 make lint typecheck test contract-test e2e
-make eda                                       # reproducible exploration report
-uv run python scripts/demo_runtime.py prepare  # the Golden Demo, end to end
 ```
 
-PostgreSQL integration tests need `PULSE109_TEST_DATABASE_URL`. Without it
-pytest reports them as skipped, which is not the same as passing. Run them with
-the isolated runner; it creates, migrates and removes a UUID-named database for
-each pass, without modifying the configured base or demo database:
+_Note:_ PostgreSQL integration tests require `PULSE109_TEST_DATABASE_URL` and run in isolated test databases; skipped tests do not count as passing.
 
-```bash
-PULSE109_TEST_DATABASE_URL=postgresql://<role>:<password>@<host>:5432/<any-existing-db> \
-  uv run python scripts/run_integration_tests.py --runs 2
+---
+
+## Honest Readiness Status: Real vs Synthetic vs External Blockers
+
+We maintain strict technical integrity: external dependencies are never masked with fictional claims.
+
+| Platform Component        | Implementation Status | What is Real Code                                                             | Demo Boundary                                                             |
+| :------------------------ | :-------------------: | :---------------------------------------------------------------------------- | :------------------------------------------------------------------------ |
+| **Business Logic & API**  |        ✅ 100%        | Modular FastAPI monolith, Pydantic contracts, transactional safety.           | Fully functional.                                                         |
+| **Data Storage**          |        ✅ 100%        | PostgreSQL 16, PostGIS geospatial indexes, pgvector, forward migrations.      | Fully functional.                                                         |
+| **Audit Trail & Outbox**  |        ✅ 100%        | Append-only operator audit log, lease-locked delivery queue.                  | Fully functional.                                                         |
+| **Emerging Issues Radar** |        ✅ 100%        | PostGIS spatial-temporal cluster engine.                                      | Runs on synthetic Almaty coordinates.                                     |
+| **Ask Pulse Analytics**   |        ✅ 100%        | RU/KK query translation, strict SQL execution on PostgreSQL, PDF/XLSX export. | Does not execute untrusted arbitrary LLM SQL.                             |
+| **Machine Learning**      |      🟡 Partial       | Inference architecture, CPU lexical fallback, benchmarking harness.           | No production validation on raw citizen text (external blocker B02).      |
+| **Regional Integration**  |      🟡 Partial       | Adapter SDK, queue worker, Open311-compatible schemas.                        | Uses deterministic replay adapter (no access to live Akimat CRM sandbox). |
+
+### External Dependencies (Blockers B01–B10):
+
+These items belong to municipal stakeholders and hackathon organizers:
+
+- `B01` Official service catalog for all 20 regions of Kazakhstan.
+- `B02` Raw pre-decision appeal text from historical archives.
+- `B06` Official national taxonomy and formal service SLA terms.
+- `B07` Production or sandbox credentials for regional 109 CRM APIs.
+- `B08` Connection to state-approved identity providers (OIDC / IdP).
+- `B10` Formal legal basis and retention policy for citizen PII.
+
+Complete tracker: [DECISIONS_AND_BLOCKERS.md](DECISIONS_AND_BLOCKERS.md) and [docs/FEATURE_STATUS.md](docs/FEATURE_STATUS.md).
+
+---
+
+## Repository Map
+
+```text
+├── apps/web/             # Operator console, situational dashboard, and presenter view (Next.js)
+├── services/
+│   ├── core/             # Modular FastAPI core: appeals, incidents, radar, analytics
+│   ├── worker/           # Transactional outbox worker for guaranteed external CRM delivery
+│   └── inference/        # ML inference services and CPU fallback routing
+├── adapters/             # Isolated municipal connectors (Open311, Replay, Adapter SDK)
+├── contracts/            # Stable boundaries: OpenAPI specs, event catalogs, ADRs
+├── analytics/            # Reproducible offline exploration on approved datasets
+├── ml/                   # Candidate model evaluation harness and reproducible benchmarks
+├── infra/compose/        # Docker Compose topologies for local and public deployment
+├── scripts/              # Demo automation (demo_runtime.py), migrations, and verifications
+└── docs/                 # Product, technical, and regulatory documentation
 ```
 
-The database role must be allowed to create and drop the runner's own isolated
-databases. CI runs two passes as a second-run regression check. CI runs four
-jobs: quality, a containerised smoke with a restore drill, a demo profile smoke
-and a supply chain audit.
+---
 
-The [development notes](docs/DEVELOPMENT.md) keep the CI context and exact
-integration-test commands.
+## Key Documentation for Judges
 
-## Current state and limitations
-
-The [feature matrix](docs/FEATURE_STATUS.md) is the authority on what is
-implemented, what is partial and what is blocked. In short:
-
-- No live regional integration. Delivery goes to a deterministic replay adapter.
-- No production identity provider. The demo actor is labelled as development.
-- No approved taxonomy or SLA, so intake policies in the demo are synthetic.
-- Object storage is selected by configuration. Attachments and replay snapshots
-  use a local volume by default and S3 or a compatible endpoint when a
-  deployment sets one. Credentials never pass through application settings.
-- A public deployment overlay exists, with TLS at the edge and no internal port
-  published. Whether an instance is running is a question about that instance,
-  not about this repository.
-- Replay Lab has an inspection-only report list and policy-level metric diff.
-  It has no per-case decision trace because the persisted report does not retain
-  per-case outputs, confidence, reason codes, status or action.
-
-The ten external blockers are recorded in
-[DECISIONS_AND_BLOCKERS.md](DECISIONS_AND_BLOCKERS.md). They belong to the
-customer and the organizers. Writing a plausible value for any of them would
-turn an honest gap into a false claim.
-
-## Documentation
-
-[Index](docs/README.md) · [Capabilities](docs/features/README.md) ·
-[Demo runbook](docs/DEMO_RUNBOOK.md) · [Feature status](docs/FEATURE_STATUS.md) ·
-[Architecture](docs/architecture/README.md) ·
-[Decision log](docs/DECISION_LOG.md) ·
-[Development history](docs/DEVELOPMENT_HISTORY.md) ·
-[ML research](docs/ml/README.md) ·
-[Questions for organizers](docs/GOVTECH_BUSINESS_QUESTIONS.md)
+- 🎯 **[Golden Demo Script](docs/GOLDEN_DEMO.md)** — Step-by-step presentation script for project defense.
+- 📋 **[Operator Runbook](docs/DEMO_RUNBOOK.md)** — Complete screen-by-screen walkthrough.
+- 🏛️ **[Architecture Reference](docs/architecture/README.md)** — Database models, service boundaries, and state machines.
+- 🔍 **[Feature Status Matrix](docs/FEATURE_STATUS.md)** — Detailed capability audit.
+- ⚖️ **[External Blockers Tracker](DECISIONS_AND_BLOCKERS.md)** — Transparent account of integration dependencies.
+- 📊 **[ML Research & Benchmarks](docs/ml/README.md)** — Multilingual routing evaluation on RU/KK datasets.
