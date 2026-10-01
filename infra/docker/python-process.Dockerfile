@@ -2,6 +2,13 @@ FROM ghcr.io/astral-sh/uv:0.11.28 AS uv
 
 FROM python:3.12.14-slim-trixie@sha256:2f17fc044b579bab302c2e8054d3a686e2cb9a83de48e70534b94cd8ebbe06a9
 
+# Apply available fixes for the OpenSSL/PCRE packages in the pinned base image.
+# Keep the image vulnerability gate enabled; do not suppress its findings.
+RUN apt-get update \
+    && apt-get install --yes --no-install-recommends --only-upgrade \
+      libpcre2-8-0 libssl3t64 openssl openssl-provider-legacy \
+    && rm -rf /var/lib/apt/lists/*
+
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PATH="/app/.venv/bin:${PATH}"
