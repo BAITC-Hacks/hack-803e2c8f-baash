@@ -1,5 +1,12 @@
 # Pulse 109 Decision Log
 
+Chronological internal decisions; early target choices and evidence refer to
+their recorded dates. Current runtime/status is [FEATURE_STATUS](FEATURE_STATUS.md).
+D-036 withholds the historical prose corpus and supersedes D-018/D-019/D-023
+quality/reproducibility claims; S3 runtime wiring in `5c9d044` supersedes the
+storage-wiring deferral in D-071. Neither named models nor archived scores
+establish current mandatory citizen-text fine-tuning compliance.
+
 Record implementation decisions here when the repository, contracts or available integrations require a concrete choice that is not already locked by `AGENTS.md`, the executable contracts or `DECISIONS_AND_BLOCKERS.md`.
 
 ## Initial accepted decisions
@@ -180,7 +187,7 @@ Record implementation decisions here when the repository, contracts or available
 - **Context:** a full pass over all eight exports confirms that no field holds citizen text. The only free text is written by the executor after closure, giving 14 397 unique documents, of which 72 percent exceed 40 characters and 3 150 exceed 150 characters.
 - **Decision:** train embeddings for similar resolved case retrieval on that corpus. Keep the intake classifier on categorical features with a linear baseline until raw text arrives.
 - **Alternatives:** wait for B02, train the classifier on weak service L1-L3 labels, or claim no fine-tuning at all.
-- **Consequences:** the fine-tuning requirement is met on a corpus that actually exists. The absence of an intake classifier becomes a documented data request rather than an unexplained gap. This supersedes the routing model line in `DECISIONS_AND_BLOCKERS.md`.
+- **Consequences (assessment corrected 2026-10-01):** this records an executor-text research direction, not compliance with the required citizen-text runtime fine-tuning. The intake classifier remains blocked on B02 and implementation/validation. D-036 later withheld this corpus pending privacy approval.
 - **Evidence:** corpus statistics in `data/reports/regional-csv-dq-report.json`, with a language split of 96.9 percent ru, 3.0 percent mixed and 0 percent kk.
 - **Revisit when:** B02 delivers raw appeal text before 20 September.
 
@@ -235,7 +242,7 @@ Record implementation decisions here when the repository, contracts or available
 - **Context:** a frozen `multilingual-e5-small` loses to a character TF-IDF baseline on this corpus, scoring nDCG@10 of 0.3791 against 0.3932. Off-the-shelf multilingual semantics adds nothing to short clerical Russian text, which is what gives fine-tuning a measurable job.
 - **Decision:** fine-tune the base model with MultipleNegativesRankingLoss on 7 466 pairs mined only from the training period, and report the gain against the lexical baseline rather than against the frozen model.
 - **Alternatives:** ship the frozen model, ship lexical only, or claim the fine-tuning requirement without measuring it.
-- **Consequences:** the ТЗ fine-tuning requirement is met with a number that survives scrutiny. nDCG@10 reaches 0.4086, which is 1.54 points above lexical and 2.95 above frozen. The honest headline is the smaller number, because the larger one compares the model to itself.
+- **Consequences (assessment corrected 2026-10-01):** the historical report records nDCG@10 0.4086 against lexical 0.3932 and frozen 0.3791 on executor-text proxy data. This does not close the mandatory citizen-text fine-tuned embedding runtime requirement. D-036 blocks quality claims and corpus reuse pending privacy/split approval.
 - **Evidence:** `ml/evaluation/retrieval_ft_v1/retrieval_finetune_report.json`, `ml/model_cards/retrieval_e5_small_ft_v1.json`.
 - **Revisit when:** raw citizen text arrives, since queries in production are citizen texts while every query here is an executor text.
 
@@ -810,3 +817,13 @@ Record implementation decisions here when the repository, contracts or available
 - **Consequences:** existing consumers keep their current interpretation. Ask Pulse excludes ambiguous business times and identifies its metric version. Sparse results remain sparse until source freshness policy establishes completeness.
 - **Evidence:** `services/core/src/pulse109/analytics/catalog.py`, `services/core/src/pulse109/analytics/repository.py`, `services/core/tests/analytics/test_repository_boundary.py`, `docs/features/ASK_PULSE.md`.
 - **Revisit when:** metric versioning becomes a shared contract with external analytics consumers or approved freshness completeness rules are supplied.
+
+### D-074 — Reconcile submission documentation with verified evidence
+
+- **Date:** 2026-10-01
+- **Status:** accepted for documentation
+- **Context:** judge READMEs and journals mixed historic counts, future models, stale storage/deployment facts and unsupported current claims.
+- **Decision:** use Russian as canonical judge language, equivalent English/Kazakh READMEs, weekly Git/document evidence with explicit provenance, and dated CI/deployment records. Keep research, synthetic demo and external blockers distinct.
+- **Consequences:** no product/runtime/executable contracts changed. Security CI failures and stale public water fixtures remain visible rather than being declared fixed.
+- **Evidence:** [documentation review](review/DOCUMENTATION_REVIEW_2026-10-01.md), [current status](FEATURE_STATUS.md), [deployment](../infra/runbooks/PUBLIC_DEPLOYMENT.md).
+- **Revisit when:** source code, CI, deployment or team evidence changes.

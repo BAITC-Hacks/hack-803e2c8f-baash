@@ -1,34 +1,46 @@
-# Development and verification
+# Разработка и проверка
 
-The [product README](../README.md) contains the judge-facing route. This page keeps the local checks and CI details.
+[README](../README.md) — обзор для жюри. Здесь команды разработчика и датированные результаты CI; технические имена сохраняются без перевода.
 
-## Local checks
+## Локальные проверки
 
-From the repository root:
-
-```bash
-make lint typecheck test contract-test e2e
+```sh
+make lint typecheck test contract-test e2e build
 make eda
 uv run python scripts/demo_runtime.py prepare
 ```
 
-`prepare` builds the real demo profile, exercises the API path, resets only the `pulse109-demo` volumes, seeds a fresh synthetic world and verifies the Golden Demo checks. Its success marker is `PULSE 109 DEMO READY`. See the [runbook](DEMO_RUNBOOK.md) for ports, operating-system commands and failure boundaries.
+`prepare` строит локальный PostgreSQL demo, выполняет сквозной API-сценарий, удаляет только тома проекта `pulse109-demo`, заполняет свежий мир и проверяет Golden Demo. Успех — `PULSE 109 DEMO READY`. Порты и границы: [runbook](DEMO_RUNBOOK.md). Эта команда не обслуживает публичный VPS-проект `pulse109-final`.
 
-PostgreSQL integration tests require `PULSE109_TEST_DATABASE_URL`. A pytest skip without that variable is not a passing integration test. Use the isolated runner for repeated verification:
+Интеграционные тесты PostgreSQL требуют `PULSE109_TEST_DATABASE_URL`. Skipped без этой переменной — не passed. Для двух независимых прогонов:
 
-```bash
-PULSE109_TEST_DATABASE_URL=postgresql://<role>:<password>@<host>:5432/<any-existing-db> \
+```sh
+PULSE109_TEST_DATABASE_URL=postgresql://<role>:<password>@<host>:5432/<existing-db> \
   uv run python scripts/run_integration_tests.py --runs 2
 ```
 
-The database role needs permission to create and drop the runner's UUID-named test databases. The runner leaves the configured base database and demo database untouched.
+Роль должна создавать и удалять тестовые БД с UUID в имени. Runner не изменяет указанную исходную БД и БД демо.
 
-## CI
+## CI на проверенном main
 
-The workflow has four jobs: quality, a containerised stack smoke with a restore drill, a demo-profile smoke and a supply-chain audit. The second integration pass checks repeatability. See the [workflow](../.github/workflows/ci.yml) for exact commands and gates.
+[Workflow](../.github/workflows/ci.yml) содержит четыре задания. Датированный прогон [36876998829](https://github.com/BAITC-Hacks/hack-803e2c8f-baash/actions/runs/36876998829) на `e494390`, 1 октября 2026 года:
 
-As observed on the BAITC-Hacks mirror when the previous English README was written, GitHub Actions reported `The job was not started because your account is locked due to a billing issue`. Those jobs did not execute, so a red badge there is not a test result. A development-repository [passing run](https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/36299408363) is historical evidence for that revision, not proof that the current checkout has passed CI.
+| Job / шаг                                           | Результат                                                                |
+| --------------------------------------------------- | ------------------------------------------------------------------------ |
+| quality: lint, typecheck, build, Compose validation | passed                                                                   |
+| quality: pytest                                     | 429 passed, 23 skipped без integration DB                                |
+| quality: contract / e2e                             | 26 passed / 18 passed                                                    |
+| container-smoke                                     | passed, health, extensions, migrations, restore drill                    |
+| isolated integration runner                         | 23 passed в каждой из двух одноразовых PostgreSQL БД                     |
+| demo-profile-smoke                                  | passed, seed и полный сквозной API-сценарий                              |
+| security-supply-chain                               | failed на pip-audit: четыре предупреждения об уязвимостях в двух пакетах |
 
-## Runtime boundaries
+Найденные уязвимости: `urllib3 2.7.0` — `GHSA-8988-9cw3-xx77`, `GHSA-gh4c-6fx4-qh6g`, `GHSA-vxq7-64xx-v4gw` (CI указывает исправленную версию `2.8.0`); `PyJWT 2.14.0` — `GHSA-42vr-xj54-vc7v` (исправление `2.15.0`). Это сведения из зафиксированного журнала CI, а не утверждение, что обновление уже проверено. Последующие Node/secret/image/SBOM шаги этого задания были пропущены. Исправление зависимостей и новый security gate остаются отдельной задачей; в документационном проходе lockfiles не менялись.
 
-The demo runs FastAPI, PostgreSQL, migrations, worker, outbox, audit and Next.js with synthetic municipal records. The external replay adapter is deterministic. `PULSE109_PROFILE=demo` must report a ready PostgreSQL database before seeding; the in-memory repository is for tests, not a fallback demo. The [feature matrix](FEATURE_STATUS.md) records the remaining production dependencies.
+Историческая блокировка из-за оплаты BAITC-Hacks в сентябре не объясняет эти ошибки: на этом SHA задания действительно запустились. Старые успешные прогоны не являются доказательством текущего HEAD.
+
+## Работающий контур и документация
+
+Демо исполняет FastAPI/PostgreSQL/migrations/audit/outbox/worker/Next.js; записи и внешние квитанции синтетические. Фикстура в памяти служит тестам и локальной симуляции, но не заменяет публичный PostgreSQL demo. [FEATURE_STATUS](FEATURE_STATUS.md) — источник текущего состояния.
+
+Документационный проход 1 октября: сверка всех активных Markdown, истории Git и ссылок, prettier и `git diff --check`. Тесты backend заново не запускались: исполняемый код, контракты и конфигурация этим проходом не изменяются. Результаты перечислены в [отчёте документации](review/DOCUMENTATION_REVIEW_2026-10-01.md).

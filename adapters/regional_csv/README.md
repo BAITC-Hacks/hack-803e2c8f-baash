@@ -13,18 +13,21 @@ python adapters/regional_csv/src/pulse109_regional_csv/ingest.py \
   --out build/ingest
 ```
 
-A full pass takes about 24 seconds on 1 036 858 input rows and produces:
+The historical 2026-09-13 pass took about 24 seconds on its recorded environment
+for 1 036 858 rows. This is not a current throughput guarantee. Its outputs:
 
-| Output                   | Versioned | Note                                                |
-| ------------------------ | --------- | --------------------------------------------------- |
-| `canonical.jsonl`        | no        | 990 000 records, about 1.7 GB, regenerate on demand |
-| `retrieval_corpus.jsonl` | yes       | 14 397 redacted executor texts, see D-019           |
-| `quarantine.jsonl`       | yes       | 32 column-shift rows, scanned clean of PII          |
-| `dq_report.json`         | yes       | aggregate counters only, no row content, no PII     |
+| Output                   | Versioned | Note                                                            |
+| ------------------------ | --------- | --------------------------------------------------------------- |
+| `canonical.jsonl`        | no        | 990 000 records, about 1.7 GB, regenerate on demand             |
+| `retrieval_corpus.jsonl` | yes       | historical 14 397-document artifact; prose now withheld (D-036) |
+| `quarantine.jsonl`       | yes       | 32 historical quarantined rows; source values now withheld      |
+| `dq_report.json`         | yes       | aggregate counters only, no row content, no PII                 |
 
-The redacted corpus, the quarantine rows and the aggregate report are
-versioned under `ml/datasets` and `data/reports`. Only the 1.7 GB canonical
-stream stays out of git, for size rather than privacy. See D-019.
+The corpus and quarantine files retained in Git are withheld placeholders;
+aggregate historical DQ counters remain inspectable. D-036 supersedes D-019
+for source prose and privacy. The raw source and canonical stream belong in
+approved access-controlled storage. A clone cannot reproduce historical
+training from the withheld corpus.
 
 ## Observed result
 
@@ -34,8 +37,9 @@ input 1 036 858  ->  canonical 990 000
   Akmola column-shift rows quarantined          32
 ```
 
-The independent count of 990 000 differs from the 990 032 recorded in
-`DECISIONS_AND_BLOCKERS.md` by exactly the 32 quarantined Akmola rows.
+The current accepted total is 990 000. The earlier reconciliation total
+990 032 included the 32 rows later quarantined; the blocker document now uses
+the accepted total and preserves this distinction.
 
 ## Source families
 

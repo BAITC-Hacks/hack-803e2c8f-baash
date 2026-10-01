@@ -35,13 +35,15 @@ The radius describes the spread of the reports this incident received. Calling
 it an impact area would assert something about people who never reported
 anything. The UI text says so next to the figure.
 
-There is no tile layer and no mapping library. A tile request would send the
-location of citizen reports to a third party every time somebody opened an
-incident. The projection is equirectangular with a cosine correction on
-longitude, which is accurate over the few kilometres an incident covers.
+The current demo web uses MapLibre/OSM tiles and synthetic coordinates. The
+backend footprint computes centroid/spread; it does not establish impact or
+cause. Before real citizen locations are displayed, the external tile-provider
+network/privacy boundary requires approval.
 
 ## Absent geography is the normal case
 
-No regional export in this programme carries coordinates. The footprint reports
+Coordinates are extremely sparse in the supplied regional exports; they are not
+absent from every row. Synthetic Golden World coordinates do not prove real
+geographic coverage. The footprint reports
 `unavailable, COORDINATES_ABSENT` rather than drawing an empty canvas, and a
 single located report abstains, because spread across one point means nothing.

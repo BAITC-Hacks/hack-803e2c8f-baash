@@ -1,81 +1,53 @@
-# Pulse 109 Decisions and Blockers
+# Решения и внешние блокеры Pulse 109
 
-## Locked decisions
+Текущее состояние — [FEATURE_STATUS](docs/FEATURE_STATUS.md); здесь фиксируются границы и ответы, которые должен дать заказчик или организатор. Публичный synthetic demo не закрывает производственные согласования.
 
-| Area | Decision | Change rule |
-| --- | --- | --- |
-| Product boundary | Federated assistance layer over existing regional systems | Requires product owner approval to replace a source system |
-| Business backend | Modular FastAPI core | Split only after measured scaling, ownership or release-cadence evidence |
-| Operational database | PostgreSQL with module-owned schemas | Remains source of truth |
-| Geo and retrieval | PostGIS and pgvector plus PostgreSQL full-text search | Add another engine only after a representative benchmark |
-| Reliability | Transactional outbox and idempotent adapters | Broker is optional after the pilot |
-| Human control | Human confirmation for routing, priority, duplicates and replies | No automatic expansion without approved policy and evidence |
-| Routing model | Linear baseline on categorical features. Text fine-tuning is not possible, see D-018 | Revisit if B02 delivers raw appeal text |
-| Retrieval | BGE-M3 plus lexical retrieval and BGE reranker v2 m3 | Lexical fallback always remains available |
-| Generation | Out of scope for the pilot, see D-018. Drafts use templates over confirmed facts | Revisit after the pilot |
-| Forecast | Seasonal naive baseline plus CatBoost or LightGBM candidate | Better validated model wins |
-| Deployment | OCI containers, Compose locally and Helm for target cluster | Same images and contracts across environments |
-| Hardware | Maximum two GPUs with CPU fallback | No requirement may depend on both GPUs being healthy |
+## Зафиксированные решения
 
-## Known data facts
+| Область          | Решение                                                                                    | Основание пересмотра                                                       |
+| ---------------- | ------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------- |
+| Граница продукта | Федеративный слой помощи поверх региональных систем                                        | Замена исходной ИС требует решения владельца продукта                      |
+| Backend          | Модульный FastAPI core                                                                     | Выделение сервиса только по измеренной потребности                         |
+| Данные           | PostgreSQL, module-owned schemas, PostGIS, pgvector и PostgreSQL FTS                       | Другая authoritative database требует обоснования                          |
+| Надёжность       | Transactional outbox и идемпотентные адаптеры                                              | Broker только после измеренного ограничения                                |
+| Решения          | ИИ предлагает — человек подтверждает                                                       | Нет автоматического расширения полномочий без утверждённой политики        |
+| Routing          | Runtime: лексическая CPU fallback; категориальные linear baselines — research              | Fine-tuned citizen-text classifier требует B02/B03/B06 и оценки            |
+| Retrieval        | Runtime: обозначенный lexical/hash-vector fallback; E5 исследовался офлайн; BGE — кандидат | Одобренный корпус, пары и reproducible evaluation до подключения артефакта |
+| Генерация        | Подтверждённые факты/шаблоны; Ask Pulse вычисляет числа в core                             | Произвольный SQL и автономная отправка ответа запрещены                    |
+| Прогноз          | Runtime: seasonal-naive; learned candidates оцениваются отдельно                           | Валидированный benchmark, coverage и trusted time                          |
+| Deployment       | OCI/Compose, verified публичное демо за существующим HTTPS proxy                           | Helm — заготовка, не свидетельство работающего кластера                    |
+| Storage          | Local/S3 конфигурация подключена к attachments/replay                                      | Private provider требует отдельной write/read/restore проверки             |
+| Hardware         | Не более двух GPU, CPU/manual fallback                                                     | Capacity claims только после проверки B09                                  |
 
-- Twelve provided files contain 1,063,216 physical rows.
-- Canonical CSV processing produced 1,036,858 rows.
-- Identifier reconciliation produced 990,032 records.
-- Data currently covers seven of twenty regions.
-- Pavlodar contributes about 67.3 percent of the observed volume.
-- Some exports are different snapshots or levels of detail and cannot simply be concatenated.
-- Thirty-seven canonical records have no valid business date.
-- Raw citizen text or call transcript is absent from every one of the eight exports, confirmed by a full pass on 2026-09-13.
-- Status names, column families and time semantics drift between sources.
+## Проверенные факты о данных
 
-These facts guide data-quality behavior. Recalculate them from the actual supplied dataset before using them in a release report.
+[Исторический DQ-отчёт](data/reports/regional-csv-dq-report.json) от 13 сентября 2026 года: 1 036 858 входных строк, **990 000 accepted/accepted_with_warnings**, 46 826 дедуплицированных и 32 в карантине. Старое 990 032 описывало reconciliation до исключения карантина; текущий принятый объём — 990 000.
 
-## External blockers
+Данные относятся к **7 из 20 регионов**, а не к публичному demo ALA. В восьми логических CSV-экспортах нет сырого текста гражданина до операторского решения. Свободный текст написан исполнителем после решения; схемы, статусы и временная семантика различаются. Координаты почти отсутствуют, но встречаются в отдельных строках. Исследовательский текстовый корпус сейчас скрыт до B10 review. Полная повторная оценка требует исходных данных из одобренного внешнего хранилища.
 
-| ID | Needed answer or artifact | Blocks | Safe implementation before answer |
-| --- | --- | --- | --- |
-| B01 | Authoritative manifest and remaining thirteen regions | National coverage | Show explicit coverage and missing sources; never synthesize regions |
-| B02 | Raw pre-decision appeal text or transcripts | Classifier and embedding fine-tuning | Build pipeline, baseline interfaces and labelled test fixtures |
-| B03 | Field-availability and lifecycle documentation | Leakage-free features | Maintain an allowlist; exclude uncertain post-decision fields |
-| B04 | Confirmed duplicate pairs or incident groups | Duplicate training and evaluation | Suggest only high-precision rule candidates for human review |
-| B05 | Reassignment history and correction reasons | Misroute labels | Capture feedback prospectively in Pulse 109 |
-| B06 | Authoritative taxonomy, dangerous topics and SLA policies | Priority and due date | Use versioned temporary catalog; never auto-escalate from an unapproved rule |
-| B07 | First regional system, owner, API and sandbox | Live adapter | Implement the stable adapter interface and replayable mock adapter |
-| B08 | Identity, network and target hosting profile | Production security | Use local OIDC-compatible development identity and documented deployment values |
-| B09 | Exact GPU type, VRAM and serving policy | Capacity numbers | Keep CPU baseline and benchmark scripts; avoid hard-coded capacity claims |
-| B10 | Legal basis, retention and data-controller decisions | Production data processing | Use synthetic or approved anonymized fixtures only |
+## Внешние блокеры
 
-## Decisions Codex may make autonomously
+| ID  | Нужный ответ / артефакт                                    | Что блокирует                              | Допустимая работа до ответа                                                              |
+| --- | ---------------------------------------------------------- | ------------------------------------------ | ---------------------------------------------------------------------------------------- |
+| B01 | Полный authoritative manifest и оставшиеся 13 регионов     | Национальное покрытие                      | Показать фактическое покрытие и missing sources                                          |
+| B02 | Сырой дооператорский текст / транскрипты                   | Citizen-text classifier и embeddings       | Pipeline, baseline boundaries, synthetic contract fixtures                               |
+| B03 | Lifecycle и доступность полей в момент решения             | Оценку без утечки                          | Allowlist, исключение post-decision/неясных полей                                        |
+| B04 | Подтверждённые пары дублей / группы                        | Обучение и оценку поиска/дублей            | Кандидаты правил только для проверки человеком                                           |
+| B05 | История переназначений и исправлений                       | Реальные misroute labels                   | Проспективно сохранять feedback                                                          |
+| B06 | Официальная taxonomy, опасные темы и SLA                   | Business routing/priority/deadlines        | Versioned synthetic catalog; не выдумывать SLA                                           |
+| B07 | Владелец первой ИС, API, sandbox, credentials              | Live adapter                               | Stable adapter interface и явно synthetic replay                                         |
+| B08 | Production identity, claims, network и target hosting      | Производственную безопасность              | Development identity в demo и отдельно проверенный public hosting; OIDC ещё не подключён |
+| B09 | GPU, VRAM и serving policy                                 | Измеренную производительность моделей      | CPU baseline и benchmark harness                                                         |
+| B10 | Legal basis, controller, сроки хранения, privacy approvals | Обработку реальных PII и historical corpus | Synthetic или approved anonymized fixtures                                               |
 
-- Internal package names, code organization within the prescribed module boundaries and reversible refactors.
-- Test libraries, formatting tools and development-only dependencies when they fit the existing stack.
-- Cache sizes, batch sizes and timeouts in development configuration when production values remain configurable.
-- UI component composition when it preserves required states, accessibility and operator workflow.
-- Whether an internal call is direct Python or HTTP inside the same deployable boundary, provided stable external contracts remain unchanged.
+Наличие API и исследования не закрывает разрыв автоматически: подключение ML-артефактов, оценка и security release gate также требуют внутренней работы. [Аудит кейса](docs/review/COMPETITION_AUDIT_2026-09-29.md) перечисляет её отдельно.
 
-## Decisions that require confirmation
+## Самостоятельные инженерные решения
 
-- Changing a public API field, canonical identifier, status meaning or event compatibility rule.
-- Storing or transmitting PII outside the approved boundary.
-- Introducing another authoritative database or replacing PostgreSQL.
-- Automatically routing, merging incidents, changing priority or sending generated text.
-- Selecting a real regional integration or inventing its protocol.
-- Setting binding SLA, RPO, RTO, retention or legal-policy values.
-- Running irreversible migrations or deleting source data.
+Допустимы обратимые внутренние refactors, тестовые инструменты, development cache/timeouts, UI composition и internal calls в установленной архитектуре, если сохраняются контракты и пользовательские состояния.
 
-## Decision log format
+Подтверждение необходимо для несовместимого public API/ID/status/event, передачи PII за согласованные границы, новой authoritative database, автономных consequential действий, настоящей regional integration, binding SLA/RPO/RTO/сроки хранения/legal values, irreversible migrations и удаления исходных данных. Уже выданная явная авторизация пользователя учитывается по правилам [AGENTS](AGENTS.md).
 
-For every material decision, append to `docs/DECISION_LOG.md`:
+## Запись решений
 
-```text
-Date:
-Decision:
-Context:
-Alternatives considered:
-Reason:
-Affected contracts or migrations:
-Rollback path:
-Owner or approval state:
-```
-
+Для существенного решения дополняйте [DECISION_LOG](docs/DECISION_LOG.md): дата, статус, причина, альтернативы, consequences, затронутые contracts/migrations, rollback и evidence. Исторический выбор модели не означает, что её weights работают в текущем runtime.

@@ -6,6 +6,5 @@ storage outside this repository.
 
 - `fixtures/synthetic/` exercises contracts and failure states only.
 - `manifests/` records generator version, seed, purpose, and synthetic status.
-- `reports/` contains reproducible synthetic DQ evidence, never model-quality claims.
+- `reports/` contains synthetic DQ evidence, historical aggregate regional DQ counters and withheld quarantine placeholders; none establishes model quality.
 - `schemas/` is reserved for approved source mappings; unknown fields remain quarantined until review.
-

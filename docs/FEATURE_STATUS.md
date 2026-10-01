@@ -1,89 +1,66 @@
-# Feature status
+# Текущий статус Pulse 109
 
-What is implemented, what is a demo substitute and what is waiting on somebody
-outside this repository. Read this before believing anything else.
+Источник истины о продукте, сверенный 1 октября 2026 года с `main` (`e494390`), контрактами и исполняемым кодом. «Работает» означает реализованный путь с проверками, а не сертификацию для промышленной эксплуатации. Публичный [demo](https://baash.govtech-kz.com/demo) использует синтетические данные ALA; API, PostgreSQL, миграции, audit, outbox и worker настоящие.
 
-`Implemented` means code and tests exist in this checkout. It does not certify a
-production deployment. `Demo` describes what a reviewer sees in the
-`PULSE109_PROFILE=demo` environment, where the municipal data is synthetic and
-the application, PostgreSQL, outbox, worker and audit are real.
+Словарь: **✅ Работает в исполняемом контуре** · **🟡 Частично / базовый алгоритм / демо** · **🔬 Исследовательский результат** · **⛔ Внешний блокер**. Статус может отличаться для механики и её бизнес-валидации.
 
-The current [Golden Demo](GOLDEN_DEMO.md) seeds a 120-day synthetic ALA history,
-six fresh water reports and a presenter-only form preset. Ask Pulse can produce
-30/60/90-day seasonal-naive forecasts from this fictional history. This does
-not establish 20-region coverage or validate any fine-tuned runtime model.
+## Продуктовые возможности
 
-Legend: ✅ implemented · 🟡 partial · 🔬 research · 🚫 blocked externally · `none` not started
+| Возможность                                          | Исполняемый контур / интерфейс                                                                        | Что показывает демо                                                                                | Граница и доказательство                                                                                                        |
+| ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Smart Intake и маршрутизация                         | ✅ вопросы, предварительная проверка приёма, ручное решение; 🟡 лексическая CPU рекомендация          | Четыре синтетические темы, ввод на RU/KK и смешанный ввод                                          | Не дообученный классификатор; B02/B06. `pulse109.intake`, `pulse109.decisions`, `pulse109_inference.engine`                     |
+| [Emerging Issues Radar](features/EMERGING_ISSUES.md) | ✅ поиск групп по месту, времени и теме, просмотр кластера; 🟡 семантический сигнал недоступен        | Шесть водных записей свежи при создании мира, MapLibre/OSM карта                                   | Семантическая модель не подключена, пороги не откалиброваны на реальном объёме обращений; B02                                   |
+| [Incident War Room](features/INCIDENT_WAR_ROOM.md)   | ✅ рабочее пространство, история и управление связями                                                 | Состав, карта на синтетических координатах, владение, доказательства, merge/split с подтверждением | ID и история каждого обращения сохраняются; утверждённые правила работы — B06                                                   |
+| [Next Best Action](features/NEXT_BEST_ACTION.md)     | ✅ предложения с кодами причин; 🟡 правила                                                            | Совет внутри War Room, решение человека                                                            | Это набор правил, а не обученный оптимизатор                                                                                    |
+| [Outcome Memory](features/OUTCOME_MEMORY.md)         | ✅ поиск с контролем допуска и карточка; 🟡 демонстрационный корпус                                   | Сопоставимые синтетические закрытия, подтверждённые человеком                                      | Для рабочего поиска нужны одобренные исторические исходы и B10                                                                  |
+| [Operations Center](features/OPERATIONS_CENTER.md)   | ✅ счётчики, график активности и лента внимания                                                       | Нагрузка, возникающие паттерны, ссылки на исходные сущности                                        | Лента не доказывает причину события и не обещает email/SMS/push                                                                 |
+| [Ask Pulse](features/ASK_PULSE.md)                   | ✅ RU/KK вопросы, агрегаты PostgreSQL, графики, происхождение и раскрытие исходных записей и PDF/XLSX | Разрешённые вопросы и seasonal-naive прогноз на 30/60/90 дней по 120 дням истории                  | Не произвольный SQL и не измеренная точность модели или прогноза; B01/B06/B08/B10                                               |
+| [Data Lab](features/DATA_LAB.md)                     | ✅ качество, текущие состояния, передачи, сроки, определения и исходные записи                        | Настоящие агрегаты по вымышленным записям                                                          | Счётчики текущих состояний не являются конверсией одной когорты                                                                 |
+| [Replay Lab](features/REPLAY_LAB.md)                 | 🟡 список сохранённых отчётов и сводное сравнение текущей и новой политики                            | 48 синтетических случаев исключены из оценки качества; отсутствие метрик объяснено                 | Решения по отдельным случаям не записаны: `REPLAY_DECISION_TRACE_NOT_RECORDED`. Дата отчёта в интерфейсе исправлена в `22d89e7` |
 
-## Flagship capabilities
+## Платформа
 
-| Capability                                           | Backend                                                                            | UI                                                               | Demo                                    | Production                                                | External dependency                                                                                     |
-| ---------------------------------------------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------- | --------------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| [Emerging Issues Radar](features/EMERGING_ISSUES.md) | ✅ geo, time, taxonomy                                                             | ✅ scan and cluster inspector                                    | ✅ deterministic scenario               | 🟡 thresholds need real volume                            | 🚫 semantic signal needs raw appeal text (B02)                                                          |
-| [Incident War Room](features/INCIDENT_WAR_ROOM.md)   | ✅ one-read workspace                                                              | ✅ full screen                                                   | ✅ populated                            | 🟡                                                        | `none`                                                                                                  |
-| [Next Best Action](features/NEXT_BEST_ACTION.md)     | ✅ rule engine and decision preview                                                | ✅ inside the war room                                           | ✅                                      | 🟡 a baseline for a learned scorer                        | 🚫 labelled corpus of operator moves                                                                    |
-| [Outcome Memory](features/OUTCOME_MEMORY.md)         | ✅ governed retrieval                                                              | ✅ war room card                                                 | ✅ synthetic corpus from demo closures  | 🟡                                                        | 🚫 verified historical outcomes                                                                         |
-| [Operations Center](features/OPERATIONS_CENTER.md)   | ✅ attention feed                                                                  | ✅ city pulse and feed                                           | ✅                                      | 🟡 thresholds need calibration                            | `none`                                                                                                  |
-| [Ask Pulse](features/ASK_PULSE.md)                   | ✅ governed intent, PostgreSQL aggregates, signed context and exact-result exports | ✅ RU/KK questions, charts, provenance, drill-down and downloads | ✅ synthetic records on real PostgreSQL | 🟡 catalog, source coverage and forecast history required | 🚫 authoritative manifest (B01), taxonomy/SLA (B06), identity/legal basis (B08/B10), optional GPU (B09) |
-| [Replay Lab](features/REPLAY_LAB.md)                 | ✅ snapshots, persistence, CI reconciliation                                       | 🟡 report list and policy-level diff; case trace unavailable     | 🟡 requires stored report               | 🟡                                                        | 🚫 approved historical decisions                                                                        |
-| [Data Lab](features/DATA_LAB.md)                     | ✅ quality, funnel, flow, timings, handoffs, drill-down                            | ✅ full screen                                                   | ✅                                      | 🟡                                                        | `none`                                                                                                  |
+| Возможность                                  | Сейчас                                                                   | Граница эксплуатации / доказательство                                                                                                                                                                        |
+| -------------------------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Создание обращения, решения, статусы         | ✅ транзакции, idempotency, неизменяемая история и аудит                 | Ручной путь доступен при отказе ML; `pulse109.manual_path`                                                                                                                                                   |
+| Назначение и синхронизация                   | ✅ сохраняемая команда, transactional outbox, worker и повторные попытки | 🟡 внешняя доставка синтетическим replay; реальный адаптер — ⛔ B07                                                                                                                                          |
+| Состав, состояния и связи инцидента          | ✅ команды с проверкой версии и подтверждения человека                   | Проверки доказательств, блокировки и история; `pulse109.incidents`                                                                                                                                           |
+| Ownership / Handoff Guard / Decision Gateway | ✅ рекомендации и сохраняемые результаты выполнения                      | ⛔ утверждённые справочники, полномочия и правила                                                                                                                                                            |
+| Подписанные региональные конфигурации        | ✅ проверка Ed25519, последовательная активация и откат                  | ⛔ распределение ключей и утверждённый процесс выпуска                                                                                                                                                       |
+| Доступ по приватным ссылкам                  | ✅ проверки региона, роли и цели доступа, аудит чтения                   | ⛔ хранилище PII, правовые основания, сроки хранения: B10                                                                                                                                                    |
+| Идентификация                                | 🟡 демонстрационная учётная запись; граница OIDC в коде                  | ⛔ рабочий провайдер и браузерная сессия: B08                                                                                                                                                                |
+| Вложения и доказательства закрытия           | ✅ проверки, метаданные карантина и контроль целостности; 🟡 mock-сканер | Сканер не является антивирусом; допуск к эксплуатации — B10                                                                                                                                                  |
+| Объектное хранилище                          | ✅ выбор local/S3 подключён к attachments и replay snapshots             | Публичный VPS — локальные тома. Запись, чтение, перезапуск и восстановление частного bucket здесь не проверены; `pulse109.security.object_storage`                                                           |
+| Web и география                              | ✅ рабочее пространство Next.js с боковым меню, MapLibre/OSM в demo      | Реальные экспорты почти не содержат координат; синтетическая карта не подтверждает реальное покрытие. Внешние поставщики картографических тайлов требуют проверки приватности и сети перед реальными данными |
+| Публичное размещение                         | 🟡 публичный PostgreSQL-backed demo; доступность проверена 1 октября     | Web `22d89e7`, HTTPS proxy организаторов, loopback 8009/8080, PostgreSQL во внутренней сети; [runbook](../infra/runbooks/PUBLIC_DEPLOYMENT.md)                                                               |
 
-## Platform
+## Проверки и условия выпуска
 
-| Capability                         | State | Demo behaviour                                                                                                                                                  | Production boundary                                                                                   | Evidence                                           |
-| ---------------------------------- | ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| Appeal intake and manual decisions | ✅    | PostgreSQL transaction, idempotency, timeline, audit, outbox                                                                                                    | Approved source reference, legal basis and retention required                                         | `pulse109.manual_path`                             |
-| Adaptive intake                    | ✅    | Synthetic approved policies for four services, conditional questions, evidence requirements                                                                     | 🚫 approved taxonomy and question policy (B06)                                                        | `pulse109.intake`, `scripts/demo_catalog.sql`      |
-| Recommendation                     | ✅    | Deterministic CPU lexical fallback, real version and confidence shown, human action required                                                                    | 🚫 approved taxonomy and measured model quality                                                       | `pulse109.decisions`                               |
-| Assignments and status             | ✅    | Durable command, queued outbox, deterministic replay delivery                                                                                                   | 🚫 approved live regional adapter (B07)                                                               | `pulse109_worker`, adapter SDK                     |
-| Incident membership and lifecycle  | ✅    | Region-bound versioned decisions, reversible member history, list and workspace                                                                                 | Merge and split exist in the API, operator controls do not                                            | `pulse109.incidents`                               |
-| Incident merge and split           | ✅    | Versioned API with locking, cycle detection, evidence checks and War Room confirmation controls                                                                 | Operator selects members, target, reason and evidence; server refresh follows commit                  | `pulse109.incidents.postgres`                      |
-| Handoff Guard and Decision Gateway | ✅    | Advisory assessment, version-bound durable receipts                                                                                                             | 🚫 approved unit directory                                                                            | `pulse109.ownership`, `pulse109.decisions.gateway` |
-| Signed regional configuration      | ✅    | Ed25519 verification, monotonic activation, rollback tooling                                                                                                    | 🚫 approved key distribution and release process                                                      | `pulse109.control_plane`                           |
-| Privacy reference access           | ✅    | Region and role checked, access audited, legacy unowned rows inaccessible                                                                                       | 🚫 vault, lawful basis and retention (B10)                                                            | `pulse109.privacy`                                 |
-| Identity                           | 🟡    | Local development actor, clearly labelled `authentication_source: development`                                                                                  | 🚫 real identity provider and browser session (B08)                                                   | `pulse109.security.identity`                       |
-| Attachments and closure evidence   | 🟡    | Validated synthetic bytes in a local volume, closure checks metadata and quarantine                                                                             | The scanner is a mock and must not be called antivirus. Storage follows the object storage row below  | `pulse109.security.attachments`                    |
-| Object storage                     | ✅    | Filesystem volume by default, S3 selected by configuration                                                                                                      | Credentials come from the host environment, never from settings                                       | `pulse109.security.object_storage`                 |
-| Offline exploration                | ✅    | `make eda` over the committed synthetic fixture                                                                                                                 | Point `INPUT` at an approved dataset outside the repository                                           | `analytics/offline`                                |
-| Operator web                       | ✅    | Sidebar shell, region from session context, operations, appeals, incidents, data lab, intake, status; landing frames static captures of those real demo screens | 🚫 production OIDC session (B08)                                                                      | `apps/web/app`                                     |
-| Live deployment                    | 🟡    | Verified 2026-09-30 at [baash.govtech-kz.com](https://baash.govtech-kz.com), behind the organizer HTTPS proxy; web is loopback-only on 8009, API on 8080        | Demo profile, synthetic ALA data, local-volume object storage; no production identity or regional CRM | `infra/runbooks/PUBLIC_DEPLOYMENT.md`              |
+Датированный результат для `e494390`: [CI 36876998829](https://github.com/BAITC-Hacks/hack-803e2c8f-baash/actions/runs/36876998829).
 
-## ML and research
+- Quality: lint/typecheck/build прошли, **429 passed / 23 skipped** без `PULSE109_TEST_DATABASE_URL`; contract 26 passed, e2e 18 passed.
+- Container-smoke: **23 integration passed дважды** в изолированных PostgreSQL БД, миграции и restore drill прошли.
+- Demo-profile-smoke прошёл: реальные процессы, seed и API walkthrough.
+- **Security-supply-chain failed:** четыре предупреждения об уязвимостях в `urllib3 2.7.0` и `PyJWT 2.14.0`. Следующие проверки безопасности этого задания не выполнены. CI в целом красный; прежняя блокировка из-за оплаты не объясняет этот прогон.
 
-| Track                                   | State | Note                                                                          |
-| --------------------------------------- | ----- | ----------------------------------------------------------------------------- |
-| Candidate comparison harness            | ✅    | Pinned dataset, time and group splits, exact test cohort, RU/KK/mixed metrics |
-| XLM-R, Qwen, BGE, E5 routing candidates | 🔬    | `NOT_VALIDATED`. No approved labels, no privacy review, no measured latency   |
-| PulseDM                                 | 🔬    | Design only                                                                   |
-| Retrieval fine-tuning                   | 🔬    | Measured against a lexical baseline on executor text, not citizen text        |
+Этот документационный проход не повторяет набор тестов backend. [DEVELOPMENT](DEVELOPMENT.md) содержит команды и ссылки на проверяемые результаты.
 
-## External blockers
+## Исследования и обязательные требования кейса
 
-These belong to the customer and the organizers. Writing a plausible value for
-any of them would turn an honest gap into a false claim.
+| Область                                                   | Статус  | Что можно утверждать                                                                                                |
+| --------------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------- |
+| Routing/retrieval/forecast отчёты                         | 🔬      | Исторические офлайн-эксперименты; не доказательство качества рабочего контура                                       |
+| Fine-tuned citizen-text classifier / embeddings           | 🔬 / ⛔ | Исполняемые утверждённые артефакты и RU/KK holdout не подтверждены; нужны данные и разметка и работа по подключению |
+| XLM-R, Qwen, BGE, E5 кандидаты / PulseDM                  | 🔬      | `NOT_VALIDATED`; PulseDM — только проект                                                                            |
+| 20 регионов / минимум 10 тем                              | ⛔ / 🟡 | Исторические данные: 7 регионов; demo ALA: 5 семейств фона / 4 темы маршрутизации. Полное требование не закрыто     |
+| Региональная CRM и рабочая идентификация и сроки хранения | ⛔      | B07/B08/B10; публичный demo не является промышленной эксплуатацией                                                  |
 
-`B01` remaining regions and an authoritative service manifest ·
-`B02` raw pre-decision appeal text ·
-`B03` field lifecycle and leakage semantics ·
-`B04` duplicate labels ·
-`B05` reassignment and correction history ·
-`B06` official taxonomy and SLA ·
-`B07` real regional API, sandbox and credentials ·
-`B08` identity provider, network and hosting ·
-`B09` GPU hardware ·
-`B10` privacy, legal basis and retention.
+## Свежесть Golden World
 
-Details in [DECISIONS_AND_BLOCKERS.md](../DECISIONS_AND_BLOCKERS.md).
+120 дней исторических записей в VPS подтверждены чтением API 1 октября. Шесть сообщений о воде созданы 30 сентября и уже не удовлетворяют проверке свежести водного сценария; существующий кластер можно изучать как сохранённый результат, но нельзя обещать новый всплеск в текущем шестичасовом окне. `seed` сохраняет уже созданные записи. Для свежего показа нужна согласованная подготовка мира; локальный `prepare` и VPS обслуживаются разными Compose-проектами.
 
-## What the demo does not claim
+## Внешние блокеры
 
-- The municipal records are synthetic. The application logic, PostgreSQL
-  workflows, outbox, worker and audit trail are real.
-- External delivery goes to a deterministic replay adapter, not a live
-  municipal CRM.
-- The malware scanner is a mock. It must never be presented as production
-  antivirus.
-- No model quality number here is validated. The routing recommendation in the
-  demo is a lexical baseline, and it says so on screen.
-- The radar reports that a group of similar reports appeared. It never names a
-  cause.
+`B01` манифест и остальные регионы · `B02` сырой текст до решения · `B03` смысл полей и времени · `B04` разметка дублей · `B05` история исправлений · `B06` таксономия/SLA · `B07` региональный API · `B08` идентификация и сеть · `B09` GPU · `B10` приватность, правовые основания и сроки хранения. Подробности: [DECISIONS_AND_BLOCKERS](../DECISIONS_AND_BLOCKERS.md).
+
+Полный перечень разрывов с ТЗ, включая внутреннюю работу по ML, — [competition audit](review/COMPETITION_AUDIT_2026-09-29.md). Ни синтетический мир, ни внешний блокер не превращаются в закрытое требование.

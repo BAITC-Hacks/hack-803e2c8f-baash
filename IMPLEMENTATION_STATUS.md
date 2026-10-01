@@ -1,3 +1,5 @@
+> Historical milestone record through September 2026. Current status: [FEATURE_STATUS](docs/FEATURE_STATUS.md); current checks: [DEVELOPMENT](docs/DEVELOPMENT.md). Old branch names, counts and “Current” headings below belong to the recorded revision.
+
 # Pulse 109 Implementation Status
 
 > Current review source: [feature-status matrix](docs/FEATURE_STATUS.md) and
@@ -304,8 +306,9 @@ The milestone notes below document earlier development and CI evidence. They sho
 The `make` executable is unavailable in this Windows shell. The equivalent root commands were
 run directly with `uv` and `pnpm`; CI uses the root task runner and performs the database tests.
 
-Earlier M4-M6 clean-run CI evidence:
-<https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/34685618121>.
+Earlier M4-M6 clean-run CI was recorded as run `34685618121`.
+This historical run is no longer accessible even with repository authentication
+as of 2026-10-01; it is not current verification evidence.
 
 CI run <https://github.com/Arseniiiii-ai/baash-109-pulse/actions/runs/35899340246> passed
 the quality job and all four earlier database checks. Its two new M7 database tests failed on

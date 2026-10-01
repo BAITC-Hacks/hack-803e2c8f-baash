@@ -1,31 +1,29 @@
-# 2-minute demo recording script
+# Запись двухминутного демо
 
-Use the local mock demo at `http://127.0.0.1:3000/demo`. The video helper drives
-the app in a headless Chromium tab and records only that page at 1920×1080. It
-does not capture the desktop. The timed path lasts 117 seconds. Python Playwright
-and its Chromium browser must be installed; the local demo app and mock API must
-already be running:
+Основной источник для финального видео — публичный PostgreSQL-backed [demo](https://baash.govtech-kz.com/demo). Путь совпадает с [Golden Demo](GOLDEN_DEMO.md). Нужны здоровые API/БД, подготовленный мир и свежий водный сценарий; доступность landing сама по себе этого не доказывает. Перед записью сверьте [deployment runbook](../infra/runbooks/PUBLIC_DEPLOYMENT.md).
+
+Записывайте браузер вручную после репетиции. Показ содержит реальные процессы и синтетические записи ALA; он не представляет статистику Алматы или подключённую региональную CRM. Не обещайте точное время автоматического прохождения публичного стенда.
+
+| Время       | Экран и действие                                                | Текст ведущего                                                                                        |
+| ----------- | --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| 00:00–00:08 | Operations Center: показатели, график и карта                   | «Разные обращения в 109 могут описывать одну городскую проблему».                                     |
+| 00:08–00:24 | Приём: water preset, похожие открытые проблемы, ручная отправка | «После ремонта вода стала мутной. Pulse показывает похожие сигналы, а отправку подтверждает человек». |
+| 00:24–00:45 | Созданный ID в очереди: запросить и подтвердить рекомендацию    | «Система предлагает тему, службу и приоритет. Маршрут утверждает оператор».                           |
+| 00:45–00:58 | Operations → Radar → свежий water cluster                       | «Radar связывает близкие по времени, месту и теме сообщения».                                         |
+| 00:58–01:16 | Создать Incident, показать War Room и footprint                 | «Каждое обращение сохраняет номер и историю; инцидент даёт общий рабочий контекст».                   |
+| 01:16–01:41 | Ask Pulse: `Покажи обращения за последние 7 дней в Алматы`      | «Ответ рассчитывается в PostgreSQL; видны динамика и исходные записи».                                |
+| 01:41–01:57 | Прогноз на три месяца, затем финальный кадр                     | «Это базовый прогноз на синтетической истории. ИИ предлагает — человек подтверждает».                 |
+
+Удерживайте результат Ask Pulse, KPI и график в одном кадре. На медленном ответе продлите сцену; не выдавайте монтаж за гарантию задержки. Для свежего Radar нужны новые fixture timestamps: повторный `seed` их не передвигает. Можно отдельно показать сохранённый кластер, прямо назвав его сохранённым результатом.
+
+## Локальный автоматический helper: отдельный mock-сценарий
+
+`scripts/record_demo.py` сейчас содержит ожидания фиксированных mock-подписей, в том числе «Похожее обращение 1». Его 117-секундный путь проверялся для [локальной симуляции](MOCK_DEMO.md); совместимость с публичным PostgreSQL demo не подтверждена. Наличие `--base-url` не делает этот сценарий автоматически проверенным на VPS.
+
+Только для подготовленной локальной симуляции, при установленных Python Playwright/Chromium:
 
 ```powershell
 python scripts/record_demo.py --output "$env:USERPROFILE\Videos\Pulse109-demo.webm" --duration 117
 ```
 
-The script preloads the water report and collapses the sidebar before the take.
-It runs the UI path and records the browser viewport directly to WebM. At Ask
-Pulse, it scrolls down until the answer, KPI row, and chart are visible together;
-the result must remain in frame through the end of the answer segment. Use these
-timecodes for the voiceover:
-
-| Time | Screen and action | Narration |
-| --- | --- | --- |
-| 0:00–0:08 | Operations Center. Hold on KPIs, chart, and map. | «В 109 отдельные обращения могут описывать одну городскую проблему.» |
-| 0:08–0:24 | Intake. Show the prefilled water report, then jump directly to “Похожие открытые проблемы” and submit. | «После ремонта вода стала мутной. Pulse заранее находит похожие обращения, но ничего не объединяет автоматически.» |
-| 0:24–0:45 | Open the new appeal in the operator queue. Request and confirm the recommendation. | «Система предлагает тему, службу и приоритет. Маршрут подтверждает оператор.» |
-| 0:45–0:58 | Operations Center → Radar scan → select the water cluster. Hold on the fixed map. | «Radar замечает близкие по времени, месту и теме сообщения.» |
-| 0:58–1:16 | Create the incident and hold on its War Room map footprint. | «Решение создать инцидент остаётся за человеком. Обращения сохраняют свои номера и историю, а команда получает общий рабочий контекст.» |
-| 1:16–1:41 | Ask Pulse: `Покажи обращения за последние 7 дней в Алматы`. Keep the answer, KPI row, and chart visible. | «Руководитель задаёт вопрос обычным языком и видит расчёт, динамику и исходные данные.» |
-| 1:41–1:57 | Jump to the three-month forecast and finish on its answer and KPIs. | «Pulse превращает обращения в понятную городскую ситуацию. AI предлагает — человек подтверждает.» |
-
-The records shown in this recording are mock demo data. Do not describe the
-Almaty seed as real city statistics or the lexical recommendations as measured
-model accuracy.
+Helper записывает страницу в headless Chromium 1920×1080, не рабочий стол. Видео этого helper должно быть подписано как браузерная симуляция и не заменяет доказательство публичного PostgreSQL demo. Перед финальной сдачей предпочтительна запись реального публичного пути.

@@ -1,22 +1,28 @@
-# Pulse 109 Pilot Model Stack
+# Pulse 109 Target Pilot Model Stack
+
+This is a candidate/design document, not a record of deployed model weights.
+Current runtime uses a disclosed CPU lexical/hash-vector fallback and a
+seasonal-naive forecast. Fine-tuned classifier/embedding and named GPU models
+are not validated for citizen-text RU/KK runtime. See
+[FEATURE_STATUS](../docs/FEATURE_STATUS.md) and [MODEL_STRATEGY](../docs/ml/MODEL_STRATEGY.md).
 
 ## Decision
 
-The pilot uses task-specific compact models behind versioned inference contracts. No model may write a final route, priority, duplicate membership or citizen response without an operator decision.
+The target pilot would use approved task-specific compact models behind versioned inference contracts. No model may write a final route, priority, duplicate membership or citizen response without an operator decision.
 
 ## Components
 
-| Capability | Pilot model | Serving | Required fallback |
-| --- | --- | --- | --- |
-| Topic and service routing | XLM-RoBERTa base fine-tuned with hierarchical multi-label heads | ONNX Runtime or Transformers on GPU 0 | Character TF-IDF linear baseline and manual catalog |
-| Language and mixed-language signal | Rules plus a compact classifier; joint XLM-R head only if slices improve | CPU or GPU 0 | Explicit unknown or mixed label |
-| Similar resolutions | BGE-M3 embeddings with hybrid BM25 and vector retrieval | GPU 0, pgvector and PostgreSQL FTS | Lexical retrieval and exact filters |
-| Reranking | BGE reranker v2 m3 | GPU 0 with bounded batches | Use first-stage ranking |
-| Duplicate candidates | Calibrated pair model over text, geo, time and service | GPU 0 or CPU | High-precision rules; human confirmation always required |
-| Draft and explanation | Qwen3 8B in four-bit mode with approved retrieval and templates | GPU 1 | Approved templates or disabled |
-| Call transcription | Whisper large v3 turbo after audio approval | GPU 1, asynchronous | Human transcript or no transcription |
-| PII detection | Regex and approved dictionaries plus fine-tuned XLM-R NER | CPU or GPU 0 | Block uncertain export and send to review |
-| Demand forecast | Seasonal naive baseline and CatBoost or LightGBM candidate | CPU batch | Last approved baseline forecast |
+| Capability                         | Pilot model                                                              | Serving                               | Required fallback                                        |
+| ---------------------------------- | ------------------------------------------------------------------------ | ------------------------------------- | -------------------------------------------------------- |
+| Topic and service routing          | XLM-RoBERTa base fine-tuned with hierarchical multi-label heads          | ONNX Runtime or Transformers on GPU 0 | Character TF-IDF linear baseline and manual catalog      |
+| Language and mixed-language signal | Rules plus a compact classifier; joint XLM-R head only if slices improve | CPU or GPU 0                          | Explicit unknown or mixed label                          |
+| Similar resolutions                | BGE-M3 embeddings with hybrid BM25 and vector retrieval                  | GPU 0, pgvector and PostgreSQL FTS    | Lexical retrieval and exact filters                      |
+| Reranking                          | BGE reranker v2 m3                                                       | GPU 0 with bounded batches            | Use first-stage ranking                                  |
+| Duplicate candidates               | Calibrated pair model over text, geo, time and service                   | GPU 0 or CPU                          | High-precision rules; human confirmation always required |
+| Draft and explanation              | Qwen3 8B in four-bit mode with approved retrieval and templates          | GPU 1                                 | Approved templates or disabled                           |
+| Call transcription                 | Whisper large v3 turbo after audio approval                              | GPU 1, asynchronous                   | Human transcript or no transcription                     |
+| PII detection                      | Regex and approved dictionaries plus fine-tuned XLM-R NER                | CPU or GPU 0                          | Block uncertain export and send to review                |
+| Demand forecast                    | Seasonal naive baseline and CatBoost or LightGBM candidate               | CPU batch                             | Last approved baseline forecast                          |
 
 ## GPU Placement
 

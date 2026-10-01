@@ -1,65 +1,55 @@
-# Pulse 109 Acceptance Matrix
+# Матрица приёмки Pulse 109
 
-## Milestone gates
+Это критерии и индекс доказательств, а не утверждение о закрытии всех этапов. Текущее состояние — [FEATURE_STATUS](docs/FEATURE_STATUS.md); соответствие обязательному ТЗ — [аудит](docs/review/COMPETITION_AUDIT_2026-09-29.md).
 
-| Milestone | Required behavior | Required evidence | Must not be claimed |
-| --- | --- | --- | --- |
-| M0 Repository foundation | All services build; local environment starts; stable root commands exist | Lockfiles, CI run, health checks, architecture test | Production readiness |
-| M1 Contracts and data foundation | Canonical validation, provenance, quarantine, explicit time quality and idempotent import work | Contract tests, migrations, anonymized fixtures, DQ report | Coverage of missing regions |
-| M2 Manual critical path | Appeal creation, operator card, manual decision, status history, audit and outbox work without ML | API integration tests and one browser E2E trace | AI quality |
-| M3 Routing assistance | Baseline and candidate interface return top three, confidence, OOD and version; human correction is captured | Dataset manifest, leakage test, slice metrics, calibration report | Autonomous routing |
-| M4 Retrieval and duplicates | Hybrid search works; duplicate candidates include evidence; appeal identities are preserved | Judged-set report, pair test, latency test, duplicate E2E | Automatic merge |
-| M5 Incident and adapter | Confirmed incident membership, idempotent external delivery, retry, dead letter and reconciliation work | Adapter contract test, outage test, replay trace | National integration |
-| M6 Situation center | Coverage, freshness, trends, SLA views, reports and approved NL queries share metric definitions | Metric IDs, reconciliation test, export comparison | Arbitrary SQL or invented missing-region zeros |
-| M7 Release hardening | Access controls, load, resilience, restore, rollback, observability and runbooks pass | Signed release report and recorded demo | Full production until external approvals exist |
+## Условия этапов
 
-## Required automated checks
+| Этап                   | Требуемое поведение                                                                     | Текущие доказательства                                                             | Открытая граница                                                                                                |
+| ---------------------- | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| M0 Основа              | Сборка, запуск, стабильные команды из корня                                             | Lockfiles, quality/build, проверки Compose                                         | Security gate не пройден; промышленная готовность не заявляется                                                 |
+| M1 Контракты и данные  | Каноническая проверка, происхождение, карантин, качество времени и идемпотентный импорт | Контракты, миграции, синтетические фикстуры, исторический DQ-отчёт                 | Нет полного покрытия 20 регионов                                                                                |
+| M2 Ручной путь         | Приём, карточка, решение, статус, аудит и outbox без ML                                 | PostgreSQL integration, сквозной API-сценарий, публичное демо                      | Это не доказательство качества ИИ                                                                               |
+| M3 Маршрутизация       | Версия рекомендации, ранжирование, уверенность/OOD и история исправлений                | Лексический CPU-алгоритм и отдельные исследования                                  | Дообученный RU/KK классификатор текстов граждан по 10 темам не подтверждён; решения подтверждает человек        |
+| M4 Поиск и дубли       | Подтверждаемые кандидаты с доказательствами и сохранением ID обращений                  | Лексический/hash fallback, синтетические проверки, предварительная проверка приёма | Дообученные embeddings и экспертная разметка реальных пар не подтверждены; автоматическое объединение запрещено |
+| M5 Инциденты и адаптер | Состав, повторные попытки, разбор ошибок, сверка и идемпотентная доставка               | API/UI инцидентов, outbox/worker, синтетический replay                             | Реальная региональная CRM не подключена                                                                         |
+| M6 Ситуационный центр  | Покрытие, свежесть, динамика, разрешённые вопросы и согласованный экспорт               | Operations, Radar, Data Lab, Ask Pulse, PDF/XLSX и синтетические прогнозы          | Таксономия/SLA/покрытие не согласованы; точность реального прогноза не доказана                                 |
+| M7 Выпуск              | Доступ, устойчивость, восстановление, откат, мониторинг и инструкции                    | Проверки региона/роли, restore drill, публичное демо и runbooks                    | Уязвимости зависимостей, рабочая идентификация, правовые основания и пилотные согласования открыты              |
 
-| Check | Minimum scope |
-| --- | --- |
-| Formatting and lint | Python, TypeScript, YAML, JSON and Markdown changed by the milestone |
-| Type checking | Backend application boundary and frontend production build |
-| Unit tests | Parsers, state machines, policy rules, ranking fusion and metric definitions |
-| Property or fuzz tests | Date parsing, encodings, malformed payloads, idempotency and status mapping |
-| Contract tests | OpenAPI, canonical schema, event envelope and every adapter fixture |
-| Integration tests | PostgreSQL transactions, outbox, object storage references and inference client failures |
-| E2E tests | Intake to operator decision to adapter status and situation-center update |
-| Model tests | Time-aware and region-aware splits, leakage, calibration, language slices and OOD |
-| Security tests | Authentication, authorization by region, prompt injection, exports and secret handling |
-| Load tests | Critical API, operator card, retrieval and adapter backlog under the documented envelope |
-| Resilience tests | GPU loss, all-ML loss, external outage, bad schema and replay |
-| Restore tests | Database, objects, model aliases and configuration |
+## Проверяемые критерии
 
-## Critical acceptance scenarios
+| Проверка               | Область                                                                                               |
+| ---------------------- | ----------------------------------------------------------------------------------------------------- |
+| Formatting/lint        | Python, TypeScript, YAML, JSON и изменённый Markdown                                                  |
+| Typecheck/build        | Границы backend и сборка web                                                                          |
+| Unit/property tests    | Парсеры, даты, состояния, идемпотентность, ранжирование и определения метрик                          |
+| Contracts              | OpenAPI, каноническая схема, события и фикстуры адаптеров                                             |
+| PostgreSQL integration | Транзакции, outbox, региональный доступ, объекты и отказ inference; отдельная БД обязательна          |
+| API e2e / браузер      | Приём → решение → назначение/доставка → аналитика                                                     |
+| Оценка ML              | Разбиение по времени/группе/региону/языку, утечки, калибровка и OOD; синтетика не доказывает качество |
+| Безопасность           | Идентификация, роль/регион, экспорт, входные запросы, зависимости, секреты и образы                   |
+| Нагрузка/устойчивость  | Измеренные условия, отказ ML/адаптера и неизвестная схема                                             |
+| Восстановление/откат   | Согласованность и хеши; RPO/RTO только после внешнего согласования                                    |
 
-1. Repeating the same create request with the same idempotency key produces one appeal.
-2. A Kazakh or mixed-language appeal can be routed manually even when ML is unavailable.
-3. Low confidence or OOD never triggers automatic assignment.
-4. A missing business date remains null with a visible quality state and stays out of temporal evaluation.
-5. A shifted or unknown source column is quarantined or reviewed, not silently mapped.
-6. An external outage preserves the operator decision and shows synchronization as pending.
-7. Two appeals linked to one incident keep separate IDs, histories and SLA clocks.
-8. Appeal text cannot instruct the model to access SQL, secrets or another region.
-9. Dashboard, PDF and spreadsheet output use the same Metric ID and data cutoff.
-10. The approved prior model can be restored without a database migration.
-11. Loss of both GPUs leaves intake, manual routing, status and audit functional.
-12. A user scoped to one region cannot access another region by changing a URL or API parameter.
-13. Reassignment records previous service, next service, actor, reason and time.
-14. Missing or stale source data is marked missing or stale rather than displayed as zero.
-15. A restore drill meets the agreed target and passes consistency checks.
+Датированный результат CI с точными SHA, числами и ошибкой security-job — [DEVELOPMENT](docs/DEVELOPMENT.md). Наличие теста или инструкции не означает, что текущий выпуск прошёл проверку.
 
-## Release evidence index
+## Критические сценарии приёмки
 
-Before a demo or release, create `release/evidence-index.md` with links to:
+1. Повтор с тем же idempotency key создаёт одно обращение.
+2. Ввод на RU/KK и смешанный ввод маршрутизируется вручную при недоступном ML.
+3. Низкая уверенность/OOD не вызывает автоматического назначения.
+4. Неизвестная дата события остаётся неизвестной и исключается из оценки по времени.
+5. Новая схема/статус направляется на проверку или в карантин.
+6. Внешний отказ сохраняет решение и показывает ожидание/повторную попытку.
+7. Инцидент сохраняет ID, историю и индивидуальные обязательства обращений.
+8. Ввод гражданина не даёт доступа к SQL, секретам или другому региону.
+9. Dashboard/PDF/XLSX используют одно определение метрики и момент среза данных.
+10. Одобренный откат модели/политики не требует обратной миграции БД.
+11. Отказ всех ML/GPU не блокирует ручной приём, статусы и аудит.
+12. Подмена URL/региона не расширяет полномочия субъекта.
+13. Переназначение сохраняет прежнюю/новую службу, субъекта, причину и время.
+14. Отсутствующий/устаревший источник не изображается успешным нулём.
+15. Восстановление проходит проверки согласованности и явно согласованную цель.
 
-- commit and container image digests;
-- API and schema versions;
-- migration head;
-- dataset manifest and model cards;
-- automated test reports;
-- load and resilience reports;
-- security findings and closure state;
-- backup and restore result;
-- known limitations and external blockers;
-- exact commands for the offline demo and rollback.
+## Индекс доказательств выпуска
 
+Перед пилотным выпуском нужен индекс: SHA/digest образов, версии API/схем, актуальная вершина миграций, паспорта данных/моделей, результаты проверок качества, интеграции, ML, безопасности, нагрузки и устойчивости, резервное копирование/восстановление, ограничения и команды отката. `release/evidence-index.md` — рекомендуемый путь, а не заявление о существовании подписанного отчёта. Публичное размещение описано в [PUBLIC_DEPLOYMENT](infra/runbooks/PUBLIC_DEPLOYMENT.md).

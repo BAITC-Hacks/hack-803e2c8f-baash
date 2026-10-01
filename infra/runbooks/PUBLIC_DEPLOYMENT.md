@@ -1,218 +1,119 @@
-# Public deployment
+# Публичное демо: размещение и эксплуатация
 
-How to put the demo profile behind a domain over HTTPS, on an Ubuntu VPS.
+Текущая запись о развёртывании [лендинга](https://baash.govtech-kz.com/) и [рабочего пространства](https://baash.govtech-kz.com/demo), проверенная **1 октября 2026 года**. Стенд — `PULSE109_PROFILE=demo`: реальные FastAPI/PostgreSQL/migrations/audit/outbox/worker, синтетические записи ALA, демонстрационные учётные записи и синтетические квитанции replay-доставки. Региональная CRM и IdP не подключены; правовые основания и сроки хранения не согласованы. Это демонстрационный стенд.
 
-This deploys the **demo profile**. The municipal records are synthetic. The
-application, PostgreSQL, outbox, worker and audit trail are real. Do not present
-this as a pilot: a pilot needs an approved regional adapter, a real identity
-provider and approved retention, which are external blockers B07, B08 and B10.
+## Проверенный стенд на общем сервере
 
-## Verified shared-host instance
+| Параметр                                   | Проверенное состояние                                                                                                               |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| HTTPS                                      | Существующий proxy организаторов; свои Caddy/80/443 не запускаются                                                                  |
+| Compose project / каталог                  | `pulse109-final` / `~/pulse109-final`                                                                                               |
+| Overlay                                    | base + demo + behind-proxy + VPS-local `docker-compose.vps.yml`                                                                     |
+| Web                                        | GHCR image `ghcr.io/baitc-hacks/pulse109-web:22d89e7`                                                                               |
+| Web digest                                 | `sha256:60b1f83d318a0df90af5fecf403217bab171295760ac1ec22f4d6d8d863af8e2`                                                           |
+| Proxy upstream                             | `127.0.0.1:8009` → Next.js 3000; порт хоста 3000 занят другим приложением                                                           |
+| API                                        | `127.0.0.1:8080` → API 8080; доступ нужен для наполнения/проверок с хоста                                                           |
+| PostgreSQL / worker / inference / adapters | Внутренняя сеть Docker; порты хоста не публикуются                                                                                  |
+| Объектное хранилище                        | Тома `local`; S3 подключён в коде, частный bucket на этом VPS не проверен                                                           |
+| Проверка                                   | Лендинг HTTP 200; web/API/БД готовы; семь постоянных сервисов здоровы                                                               |
+| Restart                                    | Постоянные контейнеры `unless-stopped`; rootless Docker enabled, systemd Restart=always, Linger=yes; migrate — one-shot, restart=no |
 
-The Demo Day instance is available at [baash.govtech-kz.com](https://baash.govtech-kz.com/)
-and its workspace at [/demo](https://baash.govtech-kz.com/demo). It was verified
-on 2026-09-30 with the 120-day synthetic ALA Golden World. The host is shared
-and an organizer HTTPS proxy already owns ports 80 and 443, so this instance
-uses `docker-compose.behind-proxy.yml`; it does not start another Caddy.
+Web собран через [publish-web workflow](../../.github/workflows/publish-web.yml), [успешный прогон](https://github.com/BAITC-Hacks/hack-803e2c8f-baash/actions/runs/36741389474). Поздние `41b6a1f`/`e494390` меняют документацию, поэтому README HEAD и тег web-образа различаются. Каждый новый main не развёртывается автоматически.
 
-The web image was built by the `publish-web` GitHub Actions workflow and pulled
-from GHCR, avoiding a memory-heavy Next.js build on the VPS. The pinned web tag
-is `ghcr.io/baitc-hacks/pulse109-web:324d74d` (`sha256:51988f7d20f6895318a8cbc5995c9643ec26f1e48fdba3923f42d20a96035cc9`).
-The existing proxy forwards to `127.0.0.1:8009`; the API is bound to
-`127.0.0.1:8080` for host-side demo operations. PostgreSQL and the other
-services remain internal to Compose.
-Object storage is configured as `local` on this demo instance; the S3 adapter
-is not claimed as verified here. The demo actor remains a development identity,
-and all citizen records and delivery receipts are synthetic.
+1 октября сайт давал 502: пользовательская служба Docker была штатно остановлена, контейнеры имели `restart=no`. Docker и стек восстановлены; политики перезапуска сохранены в VPS override. `OOMKilled=false`: нехватка RAM как причина этого сбоя не подтверждена. Неиспользуемый BuildKit cache и логи четырёх старых остановленных демо-контейнеров очищены, образы с тегами и тома сохранены. Квота при проверке — 4095M / soft 4096M / hard 5120M: запас до мягкого лимита почти отсутствует. Перед показом/обновлением нужен повторный контроль. Перезапуск не исправляет исчерпание диска или остановку внешнего proxy.
 
-## What reaches the internet
+## Команды именно для этого стенда
 
-Only the proxy, on 80 and 443. PostgreSQL, the API, the worker, the inference
-process and the adapters publish no ports in this overlay. Ports that are
-convenient locally become an open database on a public IP, which is how demo
-servers get found.
-
-## Before you start
-
-- A domain with an `A` record pointing at the VPS. Caddy requests the
-  certificate itself, and that fails until DNS resolves.
-- Ports 80 and 443 reachable. Caddy needs 80 for the ACME challenge even though
-  it serves on 443.
-- Docker Engine and the Compose plugin on the host.
-
-## 0. Find out who already owns 80 and 443
-
-Do this before anything else. On a shared server there is often an edge already
-running, and starting a second one either fails to bind or takes over a name
-somebody else is serving.
+Выполняйте команды в VPS-сессии владельца rootless Docker. Всегда передавайте `--env-file .env`: без него Compose при вложенной конфигурации может не найти обязательный пароль. Секреты не выводятся в журналы и не попадают в Git.
 
 ```bash
-sudo ss -ltnp '( sport = :80 or sport = :443 )'
-docker ps --format '{{.Names}}\t{{.Ports}}'
+cd ~/pulse109-final
+export DOCKER_HOST="unix:///run/user/$(id -u)/docker.sock"
+compose=(docker compose --env-file .env -p pulse109-final
+  -f infra/compose/docker-compose.yml
+  -f infra/compose/docker-compose.demo.yml
+  -f infra/compose/docker-compose.behind-proxy.yml
+  -f docker-compose.vps.yml)
+
+systemctl --user is-active docker
+"${compose[@]}" ps -a
+df -h
+quota -s || true
+docker system df
 ```
 
-**Nothing is listening.** Use this overlay as written. Caddy takes the ports and
-obtains the certificate.
+VPS override текущего стенда:
 
-**Something is already listening**, for example an organizer proxy that already
-serves the domain. Do not start a second one. Use the other overlay, which runs
-no edge of its own and binds the web container to loopback:
+```yaml
+services:
+  web:
+    restart: unless-stopped
+    image: ghcr.io/baitc-hacks/pulse109-web:22d89e7
+    ports: !override
+      - "127.0.0.1:8009:3000"
+  core-api:
+    restart: unless-stopped
+    image: pulse109-final-adapter-runtime:latest
+    ports: !override
+      - "127.0.0.1:8080:8080"
+  worker:
+    restart: unless-stopped
+    image: pulse109-final-adapter-runtime:latest
+  inference:
+    restart: unless-stopped
+    image: pulse109-final-adapter-runtime:latest
+  open311-sandbox:
+    restart: unless-stopped
+    image: pulse109-final-adapter-runtime:latest
+    environment:
+      PYTHONPATH: /app/adapters/open311/src
+  postgres:
+    restart: unless-stopped
+  adapter-runtime:
+    restart: unless-stopped
+```
+
+Если daemon не запущен, восстановление без сборки:
 
 ```bash
-docker compose \
-  -f infra/compose/docker-compose.yml \
-  -f infra/compose/docker-compose.demo.yml \
-  -f infra/compose/docker-compose.behind-proxy.yml \
-  up -d
-curl -fsS http://127.0.0.1:3000/api/health
+systemctl --user start docker
+"${compose[@]}" config --quiet
+"${compose[@]}" up -d --no-build
+curl -fsS http://127.0.0.1:8009/api/health
+curl -fsS -H 'X-Region-Id: ALA' http://127.0.0.1:8080/v1/health/ready
 ```
 
-Then add one entry to the existing proxy, for example in nginx:
-
-```nginx
-location / {
-    proxy_pass http://127.0.0.1:3000;
-    proxy_set_header Host $host;
-    proxy_set_header X-Forwarded-Proto $scheme;
-}
-```
-
-Taking down a neighbour's configuration to put up your own demo is a worse
-outcome than not deploying.
-
-## 1. Get the code and the secrets in place
+С другого компьютера:
 
 ```bash
-git clone https://github.com/BAITC-Hacks/hack-803e2c8f-baash.git pulse109
-cd pulse109
-cp .env.example .env
+curl -fsS https://baash.govtech-kz.com/api/health
+curl -fsS -H 'X-Region-Id: ALA' https://baash.govtech-kz.com/api/core/health/ready
 ```
 
-Edit `.env` on the server. It is in `.gitignore` and must stay there.
+Откройте лендинг и `/demo`, обновите страницу, проверьте сохранённое обращение, War Room и Replay Lab. Проверки доступности выше не доказывают свежесть Radar или работу частного S3.
 
-```bash
-PULSE109_PUBLIC_DOMAIN=your.domain
-POSTGRES_PASSWORD=<unique URL-safe value, for example 32 random hex bytes>
+## Golden World перед записью
 
-# Object storage. Leave local to keep using a volume.
-PULSE109_OBJECT_STORAGE_MODE=s3
-PULSE109_OBJECT_STORAGE_BUCKET=<bucket>
-PULSE109_OBJECT_STORAGE_ENDPOINT=<endpoint, if not AWS>
-PULSE109_OBJECT_STORAGE_REGION=<region>
+На проверенном VPS есть **120 дней / 266 исторических обращений** на момент чтения 1 октября; общий объём меняется после действий. Шесть водных записей имеют `received_at` от 30 сентября и уже устарели для проверки свежести. Сохранённый кластер доступен как прошлый результат. Новое сканирование за шесть часов не обязано найти тот же кластер.
 
-AWS_ACCESS_KEY_ID=<key>
-AWS_SECRET_ACCESS_KEY=<secret>
-```
+`seed` идемпотентен и сохраняет существующие даты. Локальные `scripts/demo_runtime.py prepare/verify/reset` управляют `pulse109-demo` и не обновляют `pulse109-final`. Обновление мира на VPS требует отдельного согласованного окна: резервная копия БД/выпуска и подготовка свежей фикстуры в правильном проекте. Не публикуйте endpoint сброса и не удаляйте тома ради обычной проверки доступности. В этом документационном проходе мир не обновлялся.
 
-Lock it down. Anyone who can read this file can read the bucket.
+## Обновление и откат
 
-```bash
-chmod 600 .env
-```
+Перед переключением: проверить квоту, создать резервную копию БД/манифеста объектов, записать digest текущих образов и проверить совместимость схемы. Web строится в GitHub Actions, публикуется с неизменяемым SHA-тегом и скачивается после успешного workflow. Для закрытого GHCR используйте токен с `read:packages` через `password-stdin` и временную конфигурацию авторизации Docker. Секрет не должен попасть в историю команд или репозиторий.
 
-Two rules worth stating plainly. Credentials are not settings, so nothing in
-`services/core/src/pulse109/config.py` can carry one. And `.env` never goes into
-Git, no matter how convenient it looks during a demo.
+После скачивания кандидата замените тег web в VPS override, проверьте Compose и выполните `up -d --no-build web`. Затем проверьте доступность и браузерный сценарий. Образы backend обновляются отдельно с проверенными миграциями и контрактами. Откат сохраняет прежние образы и совместимую схему; применённые миграции не редактируются.
 
-Generate the database secret with `openssl rand -hex 32`. Use the same value in
-the host-side `PULSE109_DATABASE_URL` line if you run database tooling outside
-Compose. The Compose services derive their database URLs from
-`POSTGRES_PASSWORD`; the public overlay refuses an empty value. If this is an
-existing database, changing its environment variable alone does not rotate the
-stored PostgreSQL role password: rotate that role deliberately before deploy.
+При нехватке квоты сначала изучите `docker system df` и именованные ресурсы. Неиспользуемый кэш сборки можно удалить командой `docker builder prune --all --force` внутри собственного rootless Docker. Не применяйте `docker system prune -a` на общем сервере; тома, чужие ресурсы и образы отката не относятся к кэшу сборки. Следите за ростом логов: политика перезапуска не задаёт их ротацию.
 
-## 2. Build
+## Развёртывание на другом хосте
 
-The SDK is an optional dependency, and the public overlay already builds the API
-and the worker with the `s3` extra, so there is nothing to remember on the
-command line. If the extra were missing while `PULSE109_OBJECT_STORAGE_MODE=s3`,
-the application would refuse at startup with a clear message rather than writing
-evidence to a container filesystem that disappears on the next deploy.
+Эта секция описывает варианты, не состояние текущего VPS. Для нового хоста нужны DNS/TLS, Docker/Compose, квота/ёмкость, закрытое хранение секретов и заранее проверенные порты 80/443 и loopback.
 
-```bash
-docker compose \
-  -f infra/compose/docker-compose.yml \
-  -f infra/compose/docker-compose.demo.yml \
-  -f infra/compose/docker-compose.public.yml \
-  build
-```
+- **Существующий HTTPS proxy:** base + demo + `docker-compose.behind-proxy.yml`, своё переопределение loopback-порта и соответствующий upstream. По умолчанию web-порт этого overlay — 3000; текущий стенд переопределяет его на 8009.
+- **Отдельный хост без proxy:** base + demo + `docker-compose.public.yml` запускает Caddy. Только здесь занимают 80/443. Не используйте этот overlay на проверенном общем VPS.
+- **Storage:** `PULSE109_OBJECT_STORAGE_MODE=local` сохраняет тома файловой системы; `s3` требует bucket/endpoint/region и учётные данные вне Git. Public overlay собирает S3 extra. Перед заявлением о частном S3 проверить запись → SHA/чтение → перезапуск → чтение → запрет анонимного доступа → восстановление.
+- **Database:** `POSTGRES_PASSWORD` должен быть уникальным URL-safe секретом; migration/API/worker URLs выводятся из него. Для существующей БД изменение environment не меняет пароль роли само по себе.
+- **Seed:** запускать против готового API соответствующего демонстрационного проекта; behind-proxy API обычно не публикуется, поэтому использовать внутренний процесс либо временную привязку к loopback. Не открывать API наружу ради seed.
 
-## 3. Start
-
-```bash
-docker compose \
-  -f infra/compose/docker-compose.yml \
-  -f infra/compose/docker-compose.demo.yml \
-  -f infra/compose/docker-compose.public.yml \
-  up -d
-```
-
-Migrations run before the API starts, as they do locally. Watch the first
-certificate being issued:
-
-```bash
-docker compose -f infra/compose/docker-compose.yml \
-  -f infra/compose/docker-compose.demo.yml \
-  -f infra/compose/docker-compose.public.yml logs -f proxy
-```
-
-## 4. Seed the city
-
-The demo world is built through the same HTTP endpoints an operator uses, so it
-has to run against the running API:
-
-```bash
-uv run python scripts/demo_runtime.py seed
-```
-
-## 5. Verify from somewhere else
-
-Not from the server. A deployment that only works from the machine it runs on
-has not been tested.
-
-```bash
-curl -fsS https://your.domain/api/health
-curl -fsS -H "X-Region-Id: ALA" https://your.domain/api/core/health/ready
-```
-
-Then open `https://your.domain` on a phone, on mobile data rather than the
-office network, and walk the demo. Refresh the page and confirm the state
-survived, which proves PostgreSQL rather than a browser session.
-
-## 6. Confirm the database is not exposed
-
-From your laptop, not the server:
-
-```bash
-nc -vz your.domain 5432
-```
-
-A refused connection is the correct result. A successful one means the overlay
-is not in the command line.
-
-## Updating
-
-```bash
-git pull
-docker compose -f infra/compose/docker-compose.yml \
-  -f infra/compose/docker-compose.demo.yml \
-  -f infra/compose/docker-compose.public.yml \
-  up -d --build
-```
-
-The demo volumes survive. To return to a clean city, run
-`uv run python scripts/demo_runtime.py reset` and then start again.
-
-## Resetting in public
-
-`reset` destroys the demo data. Do not expose it. Nothing in the web interface
-calls it, and it should stay that way: a public reset button is a public delete
-button.
-
-## What this deployment still is not
-
-- No identity provider. The actor is labelled `development` and the interface
-  says so.
-- No live regional integration. Delivery goes to the replay adapter.
-- The malware scanner is a mock. It must never be described as antivirus.
-- No approved taxonomy or retention. The intake policies are synthetic.
+Условия производственного пилота — [PILOT_DEPLOYMENT_REQUIREMENTS](PILOT_DEPLOYMENT_REQUIREMENTS.md). [BACKUP_RESTORE](BACKUP_RESTORE.md) задаёт процедуру, но не утверждённые RPO/RTO. [Golden Demo](../../docs/GOLDEN_DEMO.md) задаёт маршрут показа, [FEATURE_STATUS](../../docs/FEATURE_STATUS.md) — текущие границы. Демонстрационный scanner остаётся mock, B07/B08/B10 открыты.

@@ -15,7 +15,7 @@ The questions below identify decisions that cannot be inferred from sample data 
 9. **Идентификация и границы региона.** Какая система идентификации и какие claims задают роли, регион, цель доступа и действия аудитора? Может ли оператор работать с несколькими регионами?
 10. **Качество и запуск.** Какие реальные размеченные данные и критерии допуска нужны для оценки рекомендаций, ложных дубликатов и рисков? Кто принимает решение о включении модели?
 11. **Доступность.** Каковы целевые RPO/RTO, процедура восстановления после сбоя региональной системы, допустимая очередь ожидания и условия перехода в ручной режим?
-12. **Mock Demo Day.** Подтвердите, что синтетические обращения, replay-адаптер и отсутствие презентации будут явно обозначены. Какие действия и ответы организаторы хотят увидеть в работающем интерфейсе?
+12. **Финальная защита.** Подтвердите формат записи/живого показа и какие действия жюри должно видеть. Синтетические обращения и replay-доставка явно обозначены; публичный demo использует настоящие API/PostgreSQL.
 13. **Исходные записи.** Какой идентификатор и неизменяемый источник должны сопровождать каждое обращение? Как исправлять ошибку в региональном источнике, не переписывая историю?
 14. **Границы юрисдикции.** Кто утверждает карту территорий и полномочий между районом, городом и областью? Что делать, если адрес неполный или граница спорная?
 15. **Подтверждение доставки.** Какой ответ региональной системы означает принятие, временный сбой или окончательный отказ? В течение какого времени допустимы повторы и кто разбирает dead letter?
@@ -38,7 +38,7 @@ The questions below identify decisions that cannot be inferred from sample data 
 9. **Identity and region scope.** Which identity provider and claims define roles, regions, access purpose and auditor actions? May one operator work across regions?
 10. **Quality and release.** Which real labeled data and acceptance criteria govern recommendations, false duplicate proposals and safety? Who authorizes model activation?
 11. **Resilience.** What RPO/RTO, regional outage recovery procedure, queue wait and manual-mode triggers are required?
-12. **Mock Demo Day.** Please confirm that synthetic appeals, replay delivery and the no-presentation format should be visibly labelled. Which live UI actions and responses should organizers inspect?
+12. **Final defence.** Confirm the recording/live-demo format and required actions. Synthetic appeals and replay delivery are visibly labelled; the public demo runs the real API/PostgreSQL stack.
 13. **Source records.** Which immutable source identifier and record must accompany each appeal? How are source corrections represented without rewriting history?
 14. **Jurisdiction.** Who approves territorial and authority boundaries between district, city and region? What happens when an address is incomplete or disputed?
 15. **Delivery confirmation.** Which regional response means accepted, transient failure or final rejection? How long may retries continue, and who handles dead letters?

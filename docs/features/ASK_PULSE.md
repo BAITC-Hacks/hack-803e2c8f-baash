@@ -89,12 +89,12 @@ approve a legal basis or bypass the server's verified-identity purpose check.
 
 ## Interfaces
 
-| Endpoint | Purpose |
-| --- | --- |
-| `POST /v1/analytics/ask` | Question, locale and optional signed context; returns `ask-pulse-v1` |
-| `POST /v1/analytics/ask/drilldown` | Signed context and bounded limit; appeal metadata |
-| `POST /v1/analytics/ask/export` | Signed result token and PDF/XLSX format; binary attachment |
-| `POST /v1/inference/analytics-intent` | Optional private inference gateway; strict intent only |
+| Endpoint                              | Purpose                                                              |
+| ------------------------------------- | -------------------------------------------------------------------- |
+| `POST /v1/analytics/ask`              | Question, locale and optional signed context; returns `ask-pulse-v1` |
+| `POST /v1/analytics/ask/drilldown`    | Signed context and bounded limit; appeal metadata                    |
+| `POST /v1/analytics/ask/export`       | Signed result token and PDF/XLSX format; binary attachment           |
+| `POST /v1/inference/analytics-intent` | Optional private inference gateway; strict intent only               |
 
 The application uses the deterministic CPU parser when no local LLM is configured
 or when the gateway fails. A local model is optional and replaceable through the
@@ -113,12 +113,14 @@ version, validated structured intent/query, scope, result state and cutoff.
 
 ## Demo click path
 
-See [the demo runbook](../DEMO_RUNBOOK.md#ask-pulse-about-30-seconds). The normal
+See [the demo runbook](../GOLDEN_DEMO.md#короткий-маршрут-для-жюри). The normal
 manual appeal path stays available with inference stopped. The feature does not
 close B01–B10 or certify production identity, legal basis, retention or a live
 regional integration.
 
-## Verification note
+## Historical verification note
+
+The figures below describe the initial Ask Pulse verification, before the 120-day Golden World. They are not current seed counts or current HEAD test totals; see [current checks](../DEVELOPMENT.md) and [deployment](../../infra/runbooks/PUBLIC_DEPLOYMENT.md).
 
 The migration chain through `0024_ask_analytics_read_model` was applied from an
 empty database in two independent PostgreSQL integration passes; all 23 tests

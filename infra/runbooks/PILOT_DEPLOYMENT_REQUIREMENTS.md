@@ -1,9 +1,10 @@
 # Pilot deployment requirements
 
-This is a requirements and verification runbook, not a deployment record. No
-VPS, domain, certificate, identity provider, bucket, regional credential, RPO,
-RTO, retention value, or production performance claim is supplied by this
-repository. Those inputs remain blockers B07, B08 and B10.
+This is a production-pilot requirements runbook. The separate
+[public demo record](PUBLIC_DEPLOYMENT.md) documents the verified VPS/domain/HTTPS
+instance with synthetic data. It does not supply an operational identity
+provider, approved bucket, regional credential, RPO/RTO, retention or measured
+production performance. Those pilot inputs remain B07/B08/B10.
 
 ## Preconditions owned outside this repository
 
@@ -41,9 +42,10 @@ demo profiles. Missing OIDC configuration fails closed with
 
 ## Object storage boundary
 
-Current attachment and replay-snapshot storage is filesystem-backed. S3 or an
-S3-compatible implementation is **not integrated** and must not be represented
-as available. Attachments already retain immutable object references, SHA-256,
+Attachments and replay snapshots select local filesystem or S3-compatible
+storage through `PULSE109_OBJECT_STORAGE_MODE`. The runtime wiring and adapters
+exist. The verified public demo uses local volumes; a private S3 provider and
+its durability/access properties are not verified on that instance. Attachments already retain immutable object references, SHA-256,
 media metadata and owner appeal references in PostgreSQL. Before a storage
 adapter is accepted, it must verify write/read/restore hashes, preserve object
 immutability, never log object contents, and have integration coverage against
@@ -68,6 +70,6 @@ the approved provider. The existing scanner is a mock, not antivirus.
 
 ## Exit criteria
 
-The local Compose and demo profile remain the only executable runtime proof in
-this checkout. A pilot deployment needs external owner approval and evidence
+Local Compose and the verified public PostgreSQL demo demonstrate runtime
+mechanics with synthetic records. Neither is proof of a production pilot. A pilot deployment needs external owner approval and evidence
 for every precondition above.
