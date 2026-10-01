@@ -6,7 +6,7 @@
 
 The hosted link runs the `demo` profile with synthetic Almaty (ALA) records. It is not an internal municipal deployment and does not connect to a production CRM. Verified on 2026-09-30; see the [public deployment runbook](infra/runbooks/PUBLIC_DEPLOYMENT.md) for network details and constraints.
 
-![Pulse 109 Operations Center on demo data](apps/web/public/product/operations-center.jpg)
+![Pulse 109 Operations Center on live demo data](docs/screenshots/operations-center.png)
 
 ---
 
@@ -68,8 +68,16 @@ A deterministic walk-through script has been prepared for hackathon jury evaluat
    Navigate to **Operations Center** $\to$ **Radar**. The 6 pre-existing reports merge with the new submission into a tight 7-signal cluster. Inspect the map, timeline, and correlation signals.
 3. **Assemble War Room & Incident**:
    Click "Create incident". The consolidated War Room aggregates all 7 appeals, designates an owner, and presents **Next Best Action** recommendations backed by transparent reason codes.
+
+   ![Incident Registry: multi-appeal problem grouping](docs/screenshots/incidents-list.png)
+   _Incident Registry: citizen reports across waste management, road repair, and water supply are grouped into singular city incidents while retaining individual tracking IDs and SLAs._
+
 4. **Operator Decision & Outbox Delivery**:
    Open an appeal in the queue, request routing advice, and confirm the manual assignment. Observe resilient dispatch to the external service adapter via the transactional outbox worker.
+
+   ![Operator queue and Decision Gateway interface](docs/screenshots/operator-queue.png)
+   _Operator workspace: water quality appeal with AI recommendation. Consequential routing remains a human decision; task dispatch is guaranteed by the transactional outbox._
+
 5. **Provable Municipal Analytics (Ask Pulse)**:
    In **Ask Pulse**, submit: _"Show appeals for the last 7 days in Almaty"_. Review the calculated chart, exact tally, provenance proof ("How calculated"), and download the signed PDF/Excel export. The language model never invents figures or generates arbitrary unvetted SQL — all aggregations run directly on PostgreSQL.
 
@@ -134,6 +142,16 @@ flowchart TD
 - **Zero Lost Tasks**: Transactional outbox with `FOR UPDATE SKIP LOCKED` guarantees reliable task delivery during network hiccups.
 - **Fail-Safe Operation Without ML**: If GPU nodes or ML processes go down, intake, manual routing, status transitions, and audit trails remain 100% operational via CPU lexical fallbacks.
 - **Privacy by Design**: Raw personal data (names, phone numbers, exact addresses) is strictly separated from feature vectors and never leaks into logs, metrics, or LLM prompts.
+
+#### Data Quality Governance & Traceability (Data Lab)
+
+![Data Lab: data quality audit and drill-down](docs/screenshots/data-lab.png)
+_Data Lab: monitoring completeness, timeliness, uniqueness, and geolocation coverage with full drill-down to underlying appeals._
+
+#### Safe Policy Modernization (Replay Lab)
+
+![Replay Lab: retrospective routing policy comparison](docs/screenshots/replay-lab.png)
+_Replay Lab: side-by-side comparison of baseline (1.0.0) and candidate (1.1.0) policies on approved historical snapshots before deployment._
 
 ---
 
