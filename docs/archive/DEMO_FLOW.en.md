@@ -1,4 +1,4 @@
-[Русский](DEMO_FLOW.md) · [English](DEMO_FLOW.en.md) · [Қазақша](DEMO_FLOW.kk.md)
+﻿[Русский](DEMO_FLOW.md) · [English](DEMO_FLOW.en.md) · [Қазақша](DEMO_FLOW.kk.md)
 
 > Historical document. This is not a source of truth for the current project state.
 
@@ -7,7 +7,7 @@
 > **Superseded planning draft — not a runnable walkthrough.** This document
 > describes proposed panels, a demo-state selector and regional-data claims that
 > are not present in the current running application. Use the verified
-> [demo runbook](../DEMO_RUNBOOK.en.md) and [feature-status matrix](../FEATURE_STATUS.en.md)
+> [demo runbook](../demo/DEMO_RUNBOOK.en.md) and [feature-status matrix](../submission/FEATURE_STATUS.en.md)
 > for Mock Demo Day. Do not present this draft's claims as live behavior.
 
 Format requested by the organisers: no slides. Show the working MVP live, say

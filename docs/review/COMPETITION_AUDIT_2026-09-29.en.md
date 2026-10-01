@@ -1,8 +1,8 @@
-[Русский](COMPETITION_AUDIT_2026-09-29.md) · [English](COMPETITION_AUDIT_2026-09-29.en.md) · [Қазақша](COMPETITION_AUDIT_2026-09-29.kk.md)
+﻿[Русский](COMPETITION_AUDIT_2026-09-29.md) · [English](COMPETITION_AUDIT_2026-09-29.en.md) · [Қазақша](COMPETITION_AUDIT_2026-09-29.kk.md)
 
 # Pulse 109: honest audit before the defence
 
-Original audit date: 2026-09-29. Results of 418/419 tests and the unverified VPS at the time below are **historical**, not the current HEAD. October 1 update: official `main` `e494390`; public HTTPS/API/DB verified, web `22d89e7`, local storage. This early pass predates stabilization: the final CI on `135680a` passed all four jobs, and a fresh Golden World was verified on the VPS. Exact results are in [DEVELOPMENT](../DEVELOPMENT.en.md). Mandatory P0 ML/data gaps remain open.
+Original audit date: 2026-09-29. Results of 418/419 tests and the unverified VPS at the time below are **historical**, not the current HEAD. October 1 update: official `main` `e494390`; public HTTPS/API/DB verified, web `22d89e7`, local storage. This early pass predates stabilization: the final CI on `135680a` passed all four jobs, and a fresh Golden World was verified on the VPS. Exact results are in [DEVELOPMENT](../development/DEVELOPMENT.en.md). Mandatory P0 ML/data gaps remain open.
 
 Date: 2026-09-29. Initial review baseline: `bf04d7f36ca4e53990ee8a10884ca97e4db38a75`; a second pass on the current branch is included below. Reconciled against the GovTech Camp Terms of Reference (ToR) provided for the Pulse 109 case, code, contracts, evaluation reports, and local checks. This is a compliance and defect audit, not a certificate of production readiness.
 

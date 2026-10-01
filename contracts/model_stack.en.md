@@ -1,4 +1,4 @@
-[Русский](model_stack.md) · [English](model_stack.en.md) · [Қазақша](model_stack.kk.md)
+﻿[Русский](model_stack.md) · [English](model_stack.en.md) · [Қазақша](model_stack.kk.md)
 
 # Pulse 109 Target Pilot Model Stack
 
@@ -6,7 +6,7 @@ This is a candidate/design document, not a record of deployed model weights.
 Current runtime uses a disclosed CPU lexical/hash-vector fallback and a
 seasonal-naive forecast. Fine-tuned classifier/embedding and named GPU models
 are not validated for citizen-text RU/KK runtime. See
-[FEATURE_STATUS](../docs/FEATURE_STATUS.en.md) and [MODEL_STRATEGY](../docs/ml/MODEL_STRATEGY.en.md).
+[FEATURE_STATUS](../docs/submission/FEATURE_STATUS.en.md) and [MODEL_STRATEGY](../docs/ml/MODEL_STRATEGY.en.md).
 
 ## Decision
 

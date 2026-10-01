@@ -1,4 +1,4 @@
-[Русский](README.md) · [English](README.en.md) · [Қазақша](README.kk.md)
+﻿[Русский](README.md) · [English](README.en.md) · [Қазақша](README.kk.md)
 
 # Pulse 109
 
@@ -6,7 +6,7 @@
 
 109 қызметтеріне арналған зияткерлік қабат: өтініштерді қалалық оқиғаларға байланыстырады, операторға шешім қабылдауға көмектеседі және басшыға тексеруге болатын талдау ұсынады.
 
-[Демоны ашу](https://baash.govtech-kz.com/demo) · [Басты бет](https://baash.govtech-kz.com/) · [Golden Demo](docs/GOLDEN_DEMO.kk.md) · [Архитектура](docs/architecture/README.kk.md)
+[Демоны ашу](https://baash.govtech-kz.com/demo) · [Басты бет](https://baash.govtech-kz.com/) · [Golden Demo](docs/demo/GOLDEN_DEMO.kk.md) · [Архитектура](docs/architecture/README.kk.md)
 
 ![Pulse 109 Operations Center: демонстрациялық деректердегі интерфейс](docs/screenshots/operations-center.png)
 
@@ -41,7 +41,7 @@
 3. **Назарды қалалық жағдайға кеңейттік.** Жеке өтініштерді Radar, Incident және War Room байланыстырды. Жауапкершілік, адам растауы және тапсырманы беру бақылауы мәселені анықтаудан орындауға дейінгі жолды біріктірді; Outcome Memory, Replay Lab және Data Lab кері байланыс қосты.
 4. **Өнімді зерттеуге қолайлы еттік.** Ask Pulse, жаңа интерфейс, карта, 120 күндік Golden World және жалпыға қолжетімді VPS API-ді тұтас демо сценарийіне айналдырды. Соңғы кезең — тұрақтандыру, тексеру және қорғауға дайындық.
 
-Шешімдер мен коммиттер: [даму тарихы](docs/DEVELOPMENT_HISTORY.kk.md) · [Camp журналы](docs/PROJECT_JOURNAL.kk.md) · [Decision Log](docs/DECISION_LOG.kk.md).
+Шешімдер мен коммиттер: [даму тарихы](docs/development/DEVELOPMENT_HISTORY.kk.md) · [Camp журналы](docs/submission/PROJECT_JOURNAL.kk.md) · [Decision Log](docs/governance/DECISION_LOG.kk.md).
 
 ## Команда және апталар бойынша жұмыс
 
@@ -59,7 +59,7 @@
 | **Baktiyar Ablaikhan (@sronters)**       | Durable workflows, governance, ownership/Decision Gateway, Incident, Ask Pulse, UI/UX, Golden Demo, карталар және VPS deployment      |
 | **Sagyt Shyngyskhan (@Shyngyskhan-333)** | Replay/War Room/storage, Hex UI және жюриге арналған қорытынды құжаттар                                                               |
 
-Кезеңдер мен рөлдер командалық журнал және жоба тарихы бойынша берілген; үлес пен дереккөздердің толық сипаттамасы [PROJECT_JOURNAL](docs/PROJECT_JOURNAL.kk.md) құжатында.
+Кезеңдер мен рөлдер командалық журнал және жоба тарихы бойынша берілген; үлес пен дереккөздердің толық сипаттамасы [PROJECT_JOURNAL](docs/submission/PROJECT_JOURNAL.kk.md) құжатында.
 
 ## Қазір не жұмыс істейді
 
@@ -74,7 +74,7 @@
 | Data Lab және Replay Lab   | Сапа мен drill-down; сақталған есептер және саясаттарды жиынтық салыстыру | Data Lab / Replay Lab                                                                  |
 | Платформа                  | PostgreSQL, аудит, outbox, worker, адаптерлер және қолмен өңдеу           | Timeline, health, [архитектура](docs/architecture/README.kk.md)                           |
 
-Мүмкіндіктердің толық матрицасы — [FEATURE_STATUS](docs/FEATURE_STATUS.kk.md); тексерулердің қазіргі нәтижелері — [DEVELOPMENT](docs/DEVELOPMENT.kk.md).
+Мүмкіндіктердің толық матрицасы — [FEATURE_STATUS](docs/submission/FEATURE_STATUS.kk.md); тексерулердің қазіргі нәтижелері — [DEVELOPMENT](docs/development/DEVELOPMENT.kk.md).
 
 ## Неліктен Pulse 109: «жіктеуіш тұзағы»
 
@@ -121,7 +121,7 @@ Ask Pulse: сұрақ → есептеу → бастапқы жазбалар �
 4. **Әрекетті растау:** кезектегі өтінішті тағайындау және outbox/worker арқылы сақталатын жеткізуді көрсету.
 5. **Ask Pulse сұрағы:** «Алматыдағы соңғы 7 күннің өтініштерін көрсет» → сан, график, есептеу түсіндірмесі, бастапқы жазбалар және экспорт.
 
-[Толық сценарий](docs/GOLDEN_DEMO.kk.md) · [Жүргізуші нұсқаулығы](docs/DEMO_RUNBOOK.kk.md) · [Демоны жазу](docs/DEMO_RECORDING_SCRIPT.kk.md). Көрсетілім алдында runbook бойынша Golden World уақыт терезесін өзекті етіп дайындаңыз.
+[Толық сценарий](docs/demo/GOLDEN_DEMO.kk.md) · [Жүргізуші нұсқаулығы](docs/demo/DEMO_RUNBOOK.kk.md) · [Демоны жазу](docs/demo/DEMO_RECORDING_SCRIPT.kk.md). Көрсетілім алдында runbook бойынша Golden World уақыт терезесін өзекті етіп дайындаңыз.
 
 [Оператор кезегі](docs/screenshots/operator-queue.png) · [Оқиғалар тізілімі](docs/screenshots/incidents-list.png) · [Data Lab](docs/screenshots/data-lab.png) · [Replay Lab](docs/screenshots/replay-lab.png).
 
@@ -162,7 +162,7 @@ uv run python scripts/demo_runtime.py prepare
 make lint typecheck test contract-test e2e build
 ```
 
-PostgreSQL integration `PULSE109_TEST_DATABASE_URL` арқылы [оқшауланған runner](docs/DEVELOPMENT.kk.md) ішінде орындалады. Қазіргі CI нәтижелері [тексеру құжатында](docs/DEVELOPMENT.kk.md) және [GitHub Actions](https://github.com/BAITC-Hacks/hack-803e2c8f-baash/actions) бетінде берілген.
+PostgreSQL integration `PULSE109_TEST_DATABASE_URL` арқылы [оқшауланған runner](docs/development/DEVELOPMENT.kk.md) ішінде орындалады. Қазіргі CI нәтижелері [тексеру құжатында](docs/development/DEVELOPMENT.kk.md) және [GitHub Actions](https://github.com/BAITC-Hacks/hack-803e2c8f-baash/actions) бетінде берілген.
 
 **GovTech Camp формасына — baash / Pulse 109:**
 
@@ -176,4 +176,4 @@ PostgreSQL integration `PULSE109_TEST_DATABASE_URL` арқылы [оқшаула
 | Модельдер мен болжам    | Runtime детерминирленген lexical fallback және seasonal-naive болжам қолданады. Fine-tuned үміткерлер рұқсат етілген шешімге дейінгі корпус пен таксономия алынғанша бөлек зерттеу бағытында қалады. Демо каталогында төрт routing тақырыбы мен бес фондық топ бар; 10 тақырыпты, 20 өңірді және нақты өтініштердегі модель сапасын бағалау — келесі кезең. |
 | Replay және пайдалану   | Replay Lab саясаттарды есеп деңгейінде салыстырады; жеке шешімдердің трассасы әзірге жазылмайды. S3 конфигурация арқылы қосылады, VPS жергілікті томдарды қолданады. Production identity, құқықтық негіз, сақтау мерзімі және жұмыс scanner-і пилот үшін келісуді қажет етеді; қазіргі scanner — mock.                                                      |
 
-[Қазіргі күй](docs/FEATURE_STATUS.kk.md) · [Зерттеулер мен кейс талаптары](docs/review/COMPETITION_AUDIT_2026-09-29.kk.md) · [Сыртқы тәуелділіктер](DECISIONS_AND_BLOCKERS.kk.md) · [Құжаттар индексі](docs/README.kk.md).
+[Қазіргі күй](docs/submission/FEATURE_STATUS.kk.md) · [Зерттеулер мен кейс талаптары](docs/review/COMPETITION_AUDIT_2026-09-29.kk.md) · [Сыртқы тәуелділіктер](docs/governance/DECISIONS_AND_BLOCKERS.kk.md) · [Құжаттар индексі](docs/README.kk.md).

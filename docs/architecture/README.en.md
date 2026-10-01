@@ -1,8 +1,8 @@
-[Русский](README.md) · [English](README.en.md) · [Қазақша](README.kk.md)
+﻿[Русский](README.md) · [English](README.en.md) · [Қазақша](README.kk.md)
 
 # Pulse 109 Architecture
 
-The current executable topology and trust boundaries. [FEATURE_STATUS](../FEATURE_STATUS.en.md) defines capability readiness; [contracts](../../contracts/README.en.md) define stable API, schema and event boundaries. This description does not certify production readiness.
+The current executable topology and trust boundaries. [FEATURE_STATUS](../submission/FEATURE_STATUS.en.md) defines capability readiness; [contracts](../../contracts/README.en.md) define stable API, schema and event boundaries. This description does not certify production readiness.
 
 ## Processes and sources of truth
 
@@ -114,4 +114,4 @@ The demo identity is explicitly labelled. A real identity provider, PII vault, l
 
 ## Where to verify
 
-[OpenAPI](../../contracts/openapi.yaml) · [canonical schema](../../contracts/canonical_request.schema.json) · [event catalog](../../contracts/event_catalog.en.md) · [ADR](../../contracts/adr/) · [CI and commands](../DEVELOPMENT.en.md) · [Golden Demo](../GOLDEN_DEMO.en.md). Specifications and internal technical notes are indexed in [docs/README](../README.en.md); the product overview is [README](../../README.en.md).
+[OpenAPI](../../contracts/openapi.yaml) · [canonical schema](../../contracts/canonical_request.schema.json) · [event catalog](../../contracts/event_catalog.en.md) · [ADR](../../contracts/adr) · [CI and commands](../development/DEVELOPMENT.en.md) · [Golden Demo](../demo/GOLDEN_DEMO.en.md). Specifications and internal technical notes are indexed in [docs/README](../README.en.md); the product overview is [README](../../README.en.md).

@@ -1,6 +1,6 @@
-[Русский](REPOSITORY_CLEANUP.md) · [English](REPOSITORY_CLEANUP.en.md) · [Қазақша](REPOSITORY_CLEANUP.kk.md)
+﻿[Русский](REPOSITORY_CLEANUP.md) · [English](REPOSITORY_CLEANUP.en.md) · [Қазақша](REPOSITORY_CLEANUP.kk.md)
 
-> Исторический аудит от 2026-09-27. Его ветка/SHA и проверки описывают ту ревизию, а не текущий main. Текущий статус: [FEATURE_STATUS](../FEATURE_STATUS.md).
+> Исторический аудит от 2026-09-27. Его ветка/SHA и проверки описывают ту ревизию, а не текущий main. Текущий статус: [FEATURE_STATUS](../submission/FEATURE_STATUS.md).
 
 # Аудит чистоты репозитория
 

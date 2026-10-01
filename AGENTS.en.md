@@ -12,22 +12,22 @@ This repository is past the scaffolding stage. The PostgreSQL manual path, audit
 
 Do not rebuild what is already here. Before proposing work, read in this order:
 
-1. `docs/FEATURE_STATUS.md`: what is implemented, what is synthetic, what is blocked. This is the current-state source of truth.
+1. `docs/submission/FEATURE_STATUS.md`: what is implemented, what is synthetic, what is blocked. This is the current-state source of truth.
 2. `docs/README.md`: the documentation index.
-3. `DECISIONS_AND_BLOCKERS.md`: the external blockers listed below.
+3. `docs/governance/DECISIONS_AND_BLOCKERS.md`: the external blockers listed below.
 4. `contracts/`: OpenAPI, the canonical request schema and the event catalog, which are the stable boundaries.
 
-`IMPLEMENTATION_STATUS.md` and `docs/archive/` hold historical milestone records. They describe how the repository got here, not what it is now. Do not treat an old milestone as unfinished work.
+`docs/archive/IMPLEMENTATION_STATUS.md` and `docs/archive/` hold historical milestone records. They describe how the repository got here, not what it is now. Do not treat an old milestone as unfinished work.
 
 ## Source precedence
 
 1. The current explicit user request.
 2. This `AGENTS.md`.
 3. Executable contracts in `contracts/`.
-4. `docs/FEATURE_STATUS.md` and `DECISIONS_AND_BLOCKERS.md`.
+4. `docs/submission/FEATURE_STATUS.md` and `docs/governance/DECISIONS_AND_BLOCKERS.md`.
 5. The rest of `docs/` for rationale and target state.
 
-If sources conflict, stop only when the conflict changes data ownership, API compatibility, security, irreversible storage or user-visible behavior. Otherwise choose the safest reversible interpretation, record it in `docs/DECISION_LOG.md`, update affected contracts and continue.
+If sources conflict, stop only when the conflict changes data ownership, API compatibility, security, irreversible storage or user-visible behavior. Otherwise choose the safest reversible interpretation, record it in `docs/governance/DECISION_LOG.md`, update affected contracts and continue.
 
 ## External blockers: never close these with invented answers
 
@@ -70,7 +70,7 @@ Concretely: do not invent an SLA, a retention period, an RPO or RTO, a taxonomy,
 - Use S3-compatible object storage for attachments and immutable artifacts. Redis is optional and never authoritative.
 - Keep module-owned PostgreSQL schemas and repository interfaces. Cross-module writes go through application services.
 - Stable boundaries are OpenAPI, JSON Schema and event envelopes. Internal Python imports are not public contracts.
-- Do not add Kafka, Neo4j, Elasticsearch, ClickHouse or a Kubernetes cluster without a measured need recorded in `docs/DECISION_LOG.md`. PostgreSQL covers pilot scale.
+- Do not add Kafka, Neo4j, Elasticsearch, ClickHouse or a Kubernetes cluster without a measured need recorded in `docs/governance/DECISION_LOG.md`. PostgreSQL covers pilot scale.
 
 ## The demo profile
 
@@ -80,7 +80,7 @@ Concretely: do not invent an SLA, a retention period, an RPO or RTO, a taxonomy,
 - `prepare` exercises the API workflow, resets only demo volumes, reseeds and verifies Radar, Ask Pulse, forecasts and exports. Its pinned fixture clock must be near wall time for the live Radar.
 - `reset` removes only the `pulse109-demo` project volumes. `down` keeps them.
 - `verify` runs the environment checks and the end-to-end API walkthrough in `scripts/verify_demo_flow.py`.
-- `docs/DEMO_RUNBOOK.md` holds the click path.
+- `docs/demo/DEMO_RUNBOOK.md` holds the click path.
 
 Never make a demo path work by substituting the in-memory repository, faking a delivery receipt or relabelling synthetic output as real.
 

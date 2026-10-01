@@ -1,4 +1,4 @@
-[Русский](PRODUCTION_ROADMAP.md) · [English](PRODUCTION_ROADMAP.en.md) · [Қазақша](PRODUCTION_ROADMAP.kk.md)
+﻿[Русский](PRODUCTION_ROADMAP.md) · [English](PRODUCTION_ROADMAP.en.md) · [Қазақша](PRODUCTION_ROADMAP.kk.md)
 
 > Historical document. This is not a source of truth for the current project state.
 
@@ -6,8 +6,8 @@
 
 > **Historical planning assessment (26 September 2026).** The percentages and
 > completion claims below are qualitative estimates from that date, not a
-> deployment certification. The current [feature-status matrix](../FEATURE_STATUS.en.md)
-> and [demo runbook](../DEMO_RUNBOOK.en.md) describe verified behavior and blockers.
+> deployment certification. The current [feature-status matrix](../submission/FEATURE_STATUS.en.md)
+> and [demo runbook](../demo/DEMO_RUNBOOK.en.md) describe verified behavior and blockers.
 
 Where the platform stands and what closes the remaining engineering work that
 does not depend on documents the state has not given us yet.

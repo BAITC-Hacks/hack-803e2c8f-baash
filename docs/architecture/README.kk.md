@@ -1,8 +1,8 @@
-[Русский](README.md) · [English](README.en.md) · [Қазақша](README.kk.md)
+﻿[Русский](README.md) · [English](README.en.md) · [Қазақша](README.kk.md)
 
 # Pulse 109 архитектурасы
 
-Қазіргі орындалу ортасы мен сенім шекараларының сипаттамасы. [FEATURE_STATUS](../FEATURE_STATUS.kk.md) мүмкіндіктердің дайындығын анықтайды; [контрактілер](../../contracts/README.kk.md) API, схема және оқиғалардың тұрақты шекараларын береді. Сипаттама өндірістік пайдалануға дайындықты куәландырмайды.
+Қазіргі орындалу ортасы мен сенім шекараларының сипаттамасы. [FEATURE_STATUS](../submission/FEATURE_STATUS.kk.md) мүмкіндіктердің дайындығын анықтайды; [контрактілер](../../contracts/README.kk.md) API, схема және оқиғалардың тұрақты шекараларын береді. Сипаттама өндірістік пайдалануға дайындықты куәландырмайды.
 
 ## Процестер және негізгі дереккөздер
 
@@ -114,4 +114,4 @@ flowchart LR
 
 ## Қайда тексеруге болады
 
-[OpenAPI](../../contracts/openapi.yaml) · [canonical schema](../../contracts/canonical_request.schema.json) · [event catalog](../../contracts/event_catalog.kk.md) · [ADR](../../contracts/adr/) · [CI және командалар](../DEVELOPMENT.kk.md) · [Golden Demo](../GOLDEN_DEMO.kk.md). Спецификациялар мен ішкі техникалық жазбалар [docs/README](../README.kk.md) ішінде; өнім шолуы — [README](../../README.kk.md).
+[OpenAPI](../../contracts/openapi.yaml) · [canonical schema](../../contracts/canonical_request.schema.json) · [event catalog](../../contracts/event_catalog.kk.md) · [ADR](../../contracts/adr) · [CI және командалар](../development/DEVELOPMENT.kk.md) · [Golden Demo](../demo/GOLDEN_DEMO.kk.md). Спецификациялар мен ішкі техникалық жазбалар [docs/README](../README.kk.md) ішінде; өнім шолуы — [README](../../README.kk.md).

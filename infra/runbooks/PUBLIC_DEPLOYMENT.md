@@ -1,4 +1,4 @@
-[Русский](PUBLIC_DEPLOYMENT.md) · [English](PUBLIC_DEPLOYMENT.en.md) · [Қазақша](PUBLIC_DEPLOYMENT.kk.md)
+﻿[Русский](PUBLIC_DEPLOYMENT.md) · [English](PUBLIC_DEPLOYMENT.en.md) · [Қазақша](PUBLIC_DEPLOYMENT.kk.md)
 
 # Публичное демо: размещение и эксплуатация
 
@@ -144,4 +144,4 @@ python3 scripts/demo_refresh.py \
 - **Database:** `POSTGRES_PASSWORD` должен быть уникальным URL-safe секретом; migration/API/worker URLs выводятся из него. Для существующей БД изменение environment не меняет пароль роли само по себе.
 - **Seed:** запускать против готового API соответствующего демонстрационного проекта; behind-proxy API обычно не публикуется, поэтому использовать внутренний процесс либо временную привязку к loopback. Не открывать API наружу ради seed.
 
-Условия производственного пилота — [PILOT_DEPLOYMENT_REQUIREMENTS](PILOT_DEPLOYMENT_REQUIREMENTS.md). [BACKUP_RESTORE](BACKUP_RESTORE.md) задаёт процедуру, но не утверждённые RPO/RTO. [Golden Demo](../../docs/GOLDEN_DEMO.md) задаёт маршрут показа, [FEATURE_STATUS](../../docs/FEATURE_STATUS.md) — текущие границы. Демонстрационный scanner остаётся mock, B07/B08/B10 открыты.
+Условия производственного пилота — [PILOT_DEPLOYMENT_REQUIREMENTS](PILOT_DEPLOYMENT_REQUIREMENTS.md). [BACKUP_RESTORE](BACKUP_RESTORE.md) задаёт процедуру, но не утверждённые RPO/RTO. [Golden Demo](../../docs/demo/GOLDEN_DEMO.md) задаёт маршрут показа, [FEATURE_STATUS](../../docs/submission/FEATURE_STATUS.md) — текущие границы. Демонстрационный scanner остаётся mock, B07/B08/B10 открыты.

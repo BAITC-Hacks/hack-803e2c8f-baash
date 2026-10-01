@@ -162,9 +162,7 @@ def validate(root: Path, paths: list[Path]) -> list[str]:
         if len(blocks) == 3:
             for language in ("en", "kk"):
                 ru_code = [
-                    (lang, body)
-                    for lang, body in blocks["ru"]
-                    if lang not in ("text", "mermaid")
+                    (lang, body) for lang, body in blocks["ru"] if lang not in ("text", "mermaid")
                 ]
                 lang_code = [
                     (lang, body)

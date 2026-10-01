@@ -1,8 +1,8 @@
-[Русский](DOCUMENTATION_REVIEW_2026-10-01.md) · [English](DOCUMENTATION_REVIEW_2026-10-01.en.md) · [Қазақша](DOCUMENTATION_REVIEW_2026-10-01.kk.md)
+﻿[Русский](DOCUMENTATION_REVIEW_2026-10-01.md) · [English](DOCUMENTATION_REVIEW_2026-10-01.en.md) · [Қазақша](DOCUMENTATION_REVIEW_2026-10-01.kk.md)
 
 # GovTech Camp тапсыру алдындағы құжаттаманы тексеру
 
-> Stabilization-ге дейінгі `91fd220` құжаттамалық тексеруінің тарихи есебі. Security CI-ді кейінгі түзету және Golden World-ты жаңарту [DEVELOPMENT](../DEVELOPMENT.kk.md) және [PUBLIC_DEPLOYMENT](../../infra/runbooks/PUBLIC_DEPLOYMENT.kk.md) құжаттарында сипатталған. Төмендегі ашық әрекеттер осы есеп дайындалған кездегі күйді көрсетеді.
+> Stabilization-ге дейінгі `91fd220` құжаттамалық тексеруінің тарихи есебі. Security CI-ді кейінгі түзету және Golden World-ты жаңарту [DEVELOPMENT](../development/DEVELOPMENT.kk.md) және [PUBLIC_DEPLOYMENT](../../infra/runbooks/PUBLIC_DEPLOYMENT.kk.md) құжаттарында сипатталған. Төмендегі ашық әрекеттер осы есеп дайындалған кездегі күйді көрсетеді.
 
 Күні: **2026 жылғы 1 қазан**. Тексеру базасы: ресми `main`, `e494390`; 12 қыркүйектегі алғашқы `d199e16` коммитінен бастап Git ауқымы. Орыс тіліндегі README — негізгі тапсыру құжаты, EN/KK — баламалары. Бұл өту арқылы өнімдік код, орындалатын келісім-шарттар, миграциялар, тәуелділіктер және орналастыру конфигурациясы өзгертілген жоқ.
 
@@ -17,7 +17,7 @@
 - Орындалатын шекаралар: [OpenAPI](../../contracts/openapi.yaml), канондық схема және оқиғалар; intake/manual_path/incidents/discovery/analytics/replay/security модульдері, inference engine және retrieval provider.
 - Деректер: [DQ report](../../data/reports/regional-csv-dq-report.json), жасырын корпус манифесі және зерттеу есептері; өңделмеген деректер тарихтан қалпына келтірілген жоқ.
 - Авторлық: толық Git тарихы/shortlog, merge-коммиттер және файл өзгерістері; GitHub API Arseniiiii-ai және Shyngyskhan-333 аккаунттарын растады. Толық есімдер/капитан рөлі коммиттер санынан емес, бастапқы журналдан алынды.
-- `e494390` нұсқасындағы CI: [36876998829](https://github.com/BAITC-Hacks/hack-803e2c8f-baash/actions/runs/36876998829): quality/container/demo сәтті өтті; қауіпсіздік аудиті қатемен аяқталды. Нақты нәтижелер — [DEVELOPMENT](../DEVELOPMENT.kk.md).
+- `e494390` нұсқасындағы CI: [36876998829](https://github.com/BAITC-Hacks/hack-803e2c8f-baash/actions/runs/36876998829): quality/container/demo сәтті өтті; қауіпсіздік аудиті қатемен аяқталды. Нақты нәтижелер — [DEVELOPMENT](../development/DEVELOPMENT.kk.md).
 - Орналастыру: 1 қазандағы Compose, образдар, қайта іске қосу саясаты, порттар және HTTP GET тексерісі; web `22d89e7`, ұйымдастырушылардың HTTPS, жергілікті нысандар, PostgreSQL ready. API оқу 120 күндік тарихты және су хабарламаларының күні 30 қыркүйек екенін көрсетті.
 
 ## Түзетілген сәйкессіздіктер

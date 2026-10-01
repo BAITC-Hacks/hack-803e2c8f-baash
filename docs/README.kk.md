@@ -1,4 +1,4 @@
-[Русский](README.md) · [English](README.en.md) · [Қазақша](README.kk.md)
+﻿[Русский](README.md) · [English](README.en.md) · [Қазақша](README.kk.md)
 
 # Pulse 109 құжаттамасы
 
@@ -9,42 +9,42 @@
 | Сұрақ | Негізгі құжат |
 | --- | --- |
 | Қазыларға арналған шолу | [README](../README.kk.md) |
-| Өнімнің ағымдағы күйі | [FEATURE_STATUS](FEATURE_STATUS.kk.md) |
-| Көрсетілім жолы және деректерді дайындау | [GOLDEN_DEMO](GOLDEN_DEMO.kk.md) |
+| Өнімнің ағымдағы күйі | [FEATURE_STATUS](submission/FEATURE_STATUS.kk.md) |
+| Көрсетілім жолы және деректерді дайындау | [GOLDEN_DEMO](demo/GOLDEN_DEMO.kk.md) |
 | Тексерілген жария стенд | [PUBLIC_DEPLOYMENT](../infra/runbooks/PUBLIC_DEPLOYMENT.kk.md): тексеру күні мен image Git HEAD-тен бөлек көрсетіледі |
-| Сыртқы жауаптар мен шектеулер | [DECISIONS_AND_BLOCKERS](../DECISIONS_AND_BLOCKERS.kk.md) |
+| Сыртқы жауаптар мен шектеулер | [DECISIONS_AND_BLOCKERS](governance/DECISIONS_AND_BLOCKERS.kk.md) |
 | API/schema/events | [contracts](../contracts/README.kk.md) және орындалатын схемалар |
-| Даму және команда үлесі | [PROJECT_JOURNAL](PROJECT_JOURNAL.kk.md) / [DEVELOPMENT_HISTORY](DEVELOPMENT_HISTORY.kk.md); бұлар қазіргі мүмкіндіктер матрицасын алмастырмайды |
+| Даму және команда үлесі | [PROJECT_JOURNAL](submission/PROJECT_JOURNAL.kk.md) / [DEVELOPMENT_HISTORY](development/DEVELOPMENT_HISTORY.kk.md); бұлар қазіргі мүмкіндіктер матрицасын алмастырмайды |
 
 ## Қазылар алқасына
 
 | Құжат | Мақсаты |
 | --- | --- |
 | [Жоба шолуы](../README.kk.md) | Міндет, өнім, даму, команда және жұмыс істейтін стенд |
-| [PROJECT_JOURNAL](PROJECT_JOURNAL.kk.md) | Төрт апта, расталған үлес және команда журналындағы рөлдер |
-| [GOLDEN_DEMO](GOLDEN_DEMO.kk.md) | Негізгі жол және сценарий шекаралары |
-| [DEMO_RUNBOOK](DEMO_RUNBOOK.kk.md) / [DEMO_SCRIPT](DEMO_SCRIPT.kk.md) | Дайындау, жария кіру және жүргізуші карточкасы |
-| [DEMO_RECORDING_SCRIPT](DEMO_RECORDING_SCRIPT.kk.md) | Жария жолды жазу; симуляция жазу бөлек сипатталған |
-| [FEATURE_STATUS](FEATURE_STATUS.kk.md) / [ACCEPTANCE_MATRIX](../ACCEPTANCE_MATRIX.kk.md) | Орындалу ортасы, базалық алгоритмдер, зерттеу, кедергілер және қабылдау критерийлері |
-| [Жария стенд](../infra/runbooks/PUBLIC_DEPLOYMENT.kk.md) / [DEMO_DAY_CHECKLIST](DEMO_DAY_CHECKLIST.kk.md) | Тексерілген конфигурация және көрсетілімге дайындық |
+| [PROJECT_JOURNAL](submission/PROJECT_JOURNAL.kk.md) | Төрт апта, расталған үлес және команда журналындағы рөлдер |
+| [GOLDEN_DEMO](demo/GOLDEN_DEMO.kk.md) | Негізгі жол және сценарий шекаралары |
+| [DEMO_RUNBOOK](demo/DEMO_RUNBOOK.kk.md) / [DEMO_SCRIPT](demo/DEMO_SCRIPT.kk.md) | Дайындау, жария кіру және жүргізуші карточкасы |
+| [DEMO_RECORDING_SCRIPT](demo/DEMO_RECORDING_SCRIPT.kk.md) | Жария жолды жазу; симуляция жазу бөлек сипатталған |
+| [FEATURE_STATUS](submission/FEATURE_STATUS.kk.md) / [ACCEPTANCE_MATRIX](submission/ACCEPTANCE_MATRIX.kk.md) | Орындалу ортасы, базалық алгоритмдер, зерттеу, кедергілер және қабылдау критерийлері |
+| [Жария стенд](../infra/runbooks/PUBLIC_DEPLOYMENT.kk.md) / [DEMO_DAY_CHECKLIST](demo/DEMO_DAY_CHECKLIST.kk.md) | Тексерілген конфигурация және көрсетілімге дайындық |
 | [Кейс аудиті](review/COMPETITION_AUDIT_2026-09-29.kk.md) | Міндетті ТЗ-мен салыстыру; 29 қыркүйек аудиті және 1 қазан жаңартуы |
 | [Құжаттаманы тексеру](review/DOCUMENTATION_REVIEW_2026-10-01.kk.md) | Дереккөздер, қайшылықтар, сілтемелер және қалған әрекеттер |
 
 ## Өнім
 
-[Мүмкіндіктер индексі](features/README.kk.md) интерфейсті тетіктермен, API және метрика мағынасымен байланыстырады.
+[Мүмкіндіктер индексі](product/features/README.kk.md) интерфейсті тетіктермен, API және метрика мағынасымен байланыстырады.
 
-- [Operations Center](features/OPERATIONS_CENTER.kk.md)
-- [Smart Intake және бағыттау](FEATURE_STATUS.kk.md)
-- [Emerging Issues Radar](features/EMERGING_ISSUES.kk.md)
-- [Incident War Room](features/INCIDENT_WAR_ROOM.kk.md)
-- [Ask Pulse](features/ASK_PULSE.kk.md)
-- [Data Lab](features/DATA_LAB.kk.md)
-- [Replay Lab](features/REPLAY_LAB.kk.md)
-- [Outcome Memory](features/OUTCOME_MEMORY.kk.md)
-- [Next Best Action](features/NEXT_BEST_ACTION.kk.md)
+- [Operations Center](product/features/OPERATIONS_CENTER.kk.md)
+- [Smart Intake және бағыттау](submission/FEATURE_STATUS.kk.md)
+- [Emerging Issues Radar](product/features/EMERGING_ISSUES.kk.md)
+- [Incident War Room](product/features/INCIDENT_WAR_ROOM.kk.md)
+- [Ask Pulse](product/features/ASK_PULSE.kk.md)
+- [Data Lab](product/features/DATA_LAB.kk.md)
+- [Replay Lab](product/features/REPLAY_LAB.kk.md)
+- [Outcome Memory](product/features/OUTCOME_MEMORY.kk.md)
+- [Next Best Action](product/features/NEXT_BEST_ACTION.kk.md)
 
-[MOCK_DEMO](MOCK_DEMO.kk.md) — UI тексеруге арналған жергілікті браузер симуляциясы; жария PostgreSQL демосынан бөлек. [DESIGN](../DESIGN.kk.md) визуалдық ережелерді, [web README](../apps/web/README.kk.md) web процесінің техникалық шекарасын сипаттайды.
+[MOCK_DEMO](demo/MOCK_DEMO.kk.md) — UI тексеруге арналған жергілікті браузер симуляциясы; жария PostgreSQL демосынан бөлек. [DESIGN](product/DESIGN.kk.md) визуалдық ережелерді, [web README](../apps/web/README.kk.md) web процесінің техникалық шекарасын сипаттайды.
 
 ## Архитектура
 
@@ -85,17 +85,17 @@
 | [SECURITY_PRIVACY](../infra/runbooks/SECURITY_PRIVACY.kk.md), [CALL_RECORDING_GATE](../infra/runbooks/CALL_RECORDING_GATE.kk.md), [security notes](security/README.kk.md) | Қолжетімділік, құпиялық, аудио рұқсаттары және scanner шекаралары |
 | [Dashboards](../infra/dashboards/README.kk.md) / [Helm](../infra/helm/README.kk.md) | Мониторинг пен кластер дайындамалары; жұмыс істейтін инфрақұрылым дәлелі емес |
 | [Load tests](../tests/load/README.kk.md) / [resilience tests](../tests/resilience/README.kk.md) | Жүктеме сынақтарының шарттары және ақауларды тексеру |
-| [DEVELOPMENT](DEVELOPMENT.kk.md) | Командалар және күні көрсетілген ағымдағы CI |
+| [DEVELOPMENT](development/DEVELOPMENT.kk.md) | Командалар және күні көрсетілген ағымдағы CI |
 | [AGENTS](../AGENTS.kk.md), [web AGENTS](../apps/web/AGENTS.kk.md), [CLAUDE](../apps/web/CLAUDE.kk.md) | Репозиторийдегі жұмыс нұсқаулары |
 
 ## Тарих
 
-- [DEVELOPMENT_HISTORY](DEVELOPMENT_HISTORY.kk.md) және [PROJECT_JOURNAL](PROJECT_JOURNAL.kk.md) — жоба мен команданың дамуы.
-- [DECISION_LOG](DECISION_LOG.kk.md) — уақыт ретімен шешімдер және қайта қарау.
-- [GOVTECH_BUSINESS_QUESTIONS](GOVTECH_BUSINESS_QUESTIONS.kk.md) және тарихи [PDF](../output/pdf/govtech_business_questions.pdf) — тапсырыс берушіге сұрақтар.
-- [IMPLEMENTATION_STATUS](../IMPLEMENTATION_STATUS.kk.md) — ағымдағы матрицаға дейінгі кезеңдер.
+- [DEVELOPMENT_HISTORY](development/DEVELOPMENT_HISTORY.kk.md) және [PROJECT_JOURNAL](submission/PROJECT_JOURNAL.kk.md) — жоба мен команданың дамуы.
+- [DECISION_LOG](governance/DECISION_LOG.kk.md) — уақыт ретімен шешімдер және қайта қарау.
+- [GOVTECH_BUSINESS_QUESTIONS](submission/GOVTECH_BUSINESS_QUESTIONS.kk.md) және тарихи [PDF](../output/pdf/govtech_business_questions.pdf) — тапсырыс берушіге сұрақтар.
+- [IMPLEMENTATION_STATUS](archive/IMPLEMENTATION_STATUS.kk.md) — ағымдағы матрицаға дейінгі кезеңдер.
 - [REPOSITORY_CLEANUP](review/REPOSITORY_CLEANUP.kk.md) — 27 қыркүйек аудиті.
-- [hex-landing-rework](../hex-landing-rework.kk.md) — тарихи дизайн жоспары.
+- [hex-landing-rework](archive/design/hex-landing-rework.kk.md) — тарихи дизайн жоспары.
 - [Архив](archive/README.kk.md) — алмастырылған сипаттамалар, жоспарлар және экспорттар; **өнімнің немесе орналастырудың ағымдағы күйіне негізгі дереккөзі емес**.
 
 Барлық тілдік нұсқалар [DOCUMENTATION_MAP](DOCUMENTATION_MAP.kk.md) ішінде. Ортақ сөздік — [TERMINOLOGY](TERMINOLOGY.kk.md).

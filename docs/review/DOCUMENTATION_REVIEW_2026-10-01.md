@@ -1,8 +1,8 @@
-[Русский](DOCUMENTATION_REVIEW_2026-10-01.md) · [English](DOCUMENTATION_REVIEW_2026-10-01.en.md) · [Қазақша](DOCUMENTATION_REVIEW_2026-10-01.kk.md)
+﻿[Русский](DOCUMENTATION_REVIEW_2026-10-01.md) · [English](DOCUMENTATION_REVIEW_2026-10-01.en.md) · [Қазақша](DOCUMENTATION_REVIEW_2026-10-01.kk.md)
 
 # Проверка документации перед сдачей GovTech Camp
 
-> Исторический отчёт документационного прохода `91fd220`, до stabilization. Последующее исправление security CI и обновление Golden World описаны в [DEVELOPMENT](../DEVELOPMENT.md) и [PUBLIC_DEPLOYMENT](../../infra/runbooks/PUBLIC_DEPLOYMENT.md). Открытые действия ниже отражают состояние на момент этого отчёта.
+> Исторический отчёт документационного прохода `91fd220`, до stabilization. Последующее исправление security CI и обновление Golden World описаны в [DEVELOPMENT](../development/DEVELOPMENT.md) и [PUBLIC_DEPLOYMENT](../../infra/runbooks/PUBLIC_DEPLOYMENT.md). Открытые действия ниже отражают состояние на момент этого отчёта.
 
 Дата: **1 октября 2026 года**. База проверки: официальный `main`, `e494390`; диапазон Git от первого `d199e16` 12 сентября. Русский README — основной документ сдачи, EN/KK — эквиваленты. Продуктовый код, исполняемые контракты, миграции, зависимости и конфигурация размещения этим проходом не менялись.
 
@@ -17,7 +17,7 @@
 - Исполняемые границы: [OpenAPI](../../contracts/openapi.yaml), каноническая схема и события; модули intake/manual_path/incidents/discovery/analytics/replay/security, inference engine и retrieval provider.
 - Данные: [DQ report](../../data/reports/regional-csv-dq-report.json), манифест скрытого корпуса и исследовательские отчёты; сырые данные не восстанавливались из истории.
 - Авторство: полная история Git/shortlog, merge-коммиты и изменения файлов; GitHub API подтвердил учётные записи Arseniiiii-ai и Shyngyskhan-333. Полные имена/роль капитана взяты из исходного журнала, а не выведены из числа коммитов.
-- CI на `e494390`: [36876998829](https://github.com/BAITC-Hacks/hack-803e2c8f-baash/actions/runs/36876998829): quality/container/demo успешны; аудит безопасности завершился ошибкой. Точные результаты — [DEVELOPMENT](../DEVELOPMENT.md).
+- CI на `e494390`: [36876998829](https://github.com/BAITC-Hacks/hack-803e2c8f-baash/actions/runs/36876998829): quality/container/demo успешны; аудит безопасности завершился ошибкой. Точные результаты — [DEVELOPMENT](../development/DEVELOPMENT.md).
 - Развёртывание: чтение Compose, образов, политик перезапуска и портов и HTTP GET 1 октября; web `22d89e7`, HTTPS организаторов, локальные объекты, PostgreSQL ready. Чтение API показало 120 дней истории и даты водных сообщений 30 сентября.
 
 ## Исправленные расхождения

@@ -1,4 +1,4 @@
-[Русский](README.md) · [English](README.en.md) · [Қазақша](README.kk.md)
+﻿[Русский](README.md) · [English](README.en.md) · [Қазақша](README.kk.md)
 
 # Pulse 109
 
@@ -6,7 +6,7 @@
 
 Интеллектуальный слой для служб 109: связывает обращения в городские инциденты, помогает оператору принять решение и даёт руководителю проверяемую аналитику.
 
-[Открыть демо](https://baash.govtech-kz.com/demo) · [Лендинг](https://baash.govtech-kz.com/) · [Golden Demo](docs/GOLDEN_DEMO.md) · [Архитектура](docs/architecture/README.md)
+[Открыть демо](https://baash.govtech-kz.com/demo) · [Лендинг](https://baash.govtech-kz.com/) · [Golden Demo](docs/demo/GOLDEN_DEMO.md) · [Архитектура](docs/architecture/README.md)
 
 ![Операционный центр Pulse 109: интерфейс на демонстрационных данных](docs/screenshots/operations-center.png)
 
@@ -41,7 +41,7 @@
 3. **Расширили фокус до городской ситуации.** Вместо изолированной обработки тикетов появились Radar, Incident и War Room. Ownership, подтверждение решений и контроль передачи связали обнаружение проблемы с её исполнением; Outcome Memory, Replay Lab и Data Lab добавили обратную связь.
 4. **Сделали продукт исследуемым.** Ask Pulse, новый интерфейс, карта, Golden World со 120 днями истории и публичный VPS превратили API в сквозной демонстрационный сценарий. Финальный этап — стабилизация, проверка и подготовка защиты.
 
-Причины решений и коммиты: [история разработки](docs/DEVELOPMENT_HISTORY.md) · [журнал Camp](docs/PROJECT_JOURNAL.md) · [Decision Log](docs/DECISION_LOG.md).
+Причины решений и коммиты: [история разработки](docs/development/DEVELOPMENT_HISTORY.md) · [журнал Camp](docs/submission/PROJECT_JOURNAL.md) · [Decision Log](docs/governance/DECISION_LOG.md).
 
 ## Команда и работа по неделям
 
@@ -59,7 +59,7 @@
 | **Baktiyar Ablaikhan (@sronters)**       | Durable workflows, governance, ownership/Decision Gateway, Incident, Ask Pulse, UI/UX, Golden Demo, карты и VPS deployment         |
 | **Sagyt Shyngyskhan (@Shyngyskhan-333)** | Replay/War Room/storage, Hex UI и итоговые документы для жюри                                                                      |
 
-Периоды и роли сведены по командному журналу и истории проекта; подробный вклад и источники — в [PROJECT_JOURNAL](docs/PROJECT_JOURNAL.md).
+Периоды и роли сведены по командному журналу и истории проекта; подробный вклад и источники — в [PROJECT_JOURNAL](docs/submission/PROJECT_JOURNAL.md).
 
 ## Что работает сейчас
 
@@ -74,7 +74,7 @@
 | Data Lab и Replay Lab        | Качество и drill-down; сохранённые отчёты и сводное сравнение политик | Data Lab / Replay Lab                                                                |
 | Платформа                    | PostgreSQL, audit, outbox, worker, адаптеры и ручной fallback         | Timeline, health, [архитектура](docs/architecture/README.md)                         |
 
-Полная матрица возможностей — [FEATURE_STATUS](docs/FEATURE_STATUS.md); текущие результаты проверок — [DEVELOPMENT](docs/DEVELOPMENT.md).
+Полная матрица возможностей — [FEATURE_STATUS](docs/submission/FEATURE_STATUS.md); текущие результаты проверок — [DEVELOPMENT](docs/development/DEVELOPMENT.md).
 
 ## Почему Pulse 109: «ловушка классификатора»
 
@@ -121,7 +121,7 @@ Ask Pulse: вопрос → расчёт → исходные записи → P
 4. **Подтвердить действие:** назначить обращение в очереди и показать сохраняемую доставку через outbox/worker.
 5. **Спросить Ask Pulse:** «Покажи обращения за последние 7 дней в Алматы» → число, график, «Как рассчитано», исходные записи и экспорт.
 
-[Полный сценарий](docs/GOLDEN_DEMO.md) · [Инструкция ведущего](docs/DEMO_RUNBOOK.md) · [Запись демо](docs/DEMO_RECORDING_SCRIPT.md). Перед показом подготовьте актуальное временное окно Golden World по runbook.
+[Полный сценарий](docs/demo/GOLDEN_DEMO.md) · [Инструкция ведущего](docs/demo/DEMO_RUNBOOK.md) · [Запись демо](docs/demo/DEMO_RECORDING_SCRIPT.md). Перед показом подготовьте актуальное временное окно Golden World по runbook.
 
 [Очередь оператора](docs/screenshots/operator-queue.png) · [Реестр инцидентов](docs/screenshots/incidents-list.png) · [Data Lab](docs/screenshots/data-lab.png) · [Replay Lab](docs/screenshots/replay-lab.png).
 
@@ -162,7 +162,7 @@ uv run python scripts/demo_runtime.py prepare
 make lint typecheck test contract-test e2e build
 ```
 
-PostgreSQL integration запускается через [изолированный runner](docs/DEVELOPMENT.md) с `PULSE109_TEST_DATABASE_URL`. Текущие CI-прогоны и результаты собраны в [разделе проверки](docs/DEVELOPMENT.md) и [GitHub Actions](https://github.com/BAITC-Hacks/hack-803e2c8f-baash/actions).
+PostgreSQL integration запускается через [изолированный runner](docs/development/DEVELOPMENT.md) с `PULSE109_TEST_DATABASE_URL`. Текущие CI-прогоны и результаты собраны в [разделе проверки](docs/development/DEVELOPMENT.md) и [GitHub Actions](https://github.com/BAITC-Hacks/hack-803e2c8f-baash/actions).
 
 **Для формы GovTech Camp — baash / Pulse 109:**
 
@@ -176,4 +176,4 @@ PostgreSQL integration запускается через [изолированн
 | Модели и прогноз      | Runtime использует детерминированный lexical fallback и seasonal-naive прогноз. Fine-tuned кандидаты — отдельный research track до появления разрешённого дооператорского корпуса и таксономии. Каталог демо: четыре routing-темы и пять фоновых семейств; валидация 10 тем, 20 регионов и качества моделей на реальных обращениях — следующий этап. |
 | Replay и эксплуатация | Replay Lab сравнивает политики на уровне отчёта; трасса отдельных решений пока не записывается. S3 подключён конфигурацией, VPS использует локальные тома. Production identity, правовые основания, retention и рабочий scanner требуют согласования для пилота; текущий scanner — mock.                                                             |
 
-[Текущий статус](docs/FEATURE_STATUS.md) · [Исследования и соответствие кейсу](docs/review/COMPETITION_AUDIT_2026-09-29.md) · [Внешние зависимости](DECISIONS_AND_BLOCKERS.md) · [Индекс документации](docs/README.md).
+[Текущий статус](docs/submission/FEATURE_STATUS.md) · [Исследования и соответствие кейсу](docs/review/COMPETITION_AUDIT_2026-09-29.md) · [Внешние зависимости](docs/governance/DECISIONS_AND_BLOCKERS.md) · [Индекс документации](docs/README.md).

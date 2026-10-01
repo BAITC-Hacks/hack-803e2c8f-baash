@@ -1,8 +1,8 @@
-[Русский](DOCUMENTATION_REVIEW_2026-10-01.md) · [English](DOCUMENTATION_REVIEW_2026-10-01.en.md) · [Қазақша](DOCUMENTATION_REVIEW_2026-10-01.kk.md)
+﻿[Русский](DOCUMENTATION_REVIEW_2026-10-01.md) · [English](DOCUMENTATION_REVIEW_2026-10-01.en.md) · [Қазақша](DOCUMENTATION_REVIEW_2026-10-01.kk.md)
 
 # Documentation review before GovTech Camp submission
 
-> Historical audit of documentation pass `91fd220`, prior to stabilization. Subsequent security CI remediation and Golden World refresh are described in [DEVELOPMENT](../DEVELOPMENT.en.md) and [PUBLIC_DEPLOYMENT](../../infra/runbooks/PUBLIC_DEPLOYMENT.en.md). Open actions below reflect the state at the time of this report.
+> Historical audit of documentation pass `91fd220`, prior to stabilization. Subsequent security CI remediation and Golden World refresh are described in [DEVELOPMENT](../development/DEVELOPMENT.en.md) and [PUBLIC_DEPLOYMENT](../../infra/runbooks/PUBLIC_DEPLOYMENT.en.md). Open actions below reflect the state at the time of this report.
 
 Date: **October 1, 2026**. Review baseline: official `main`, `e494390`; Git range from initial `d199e16` on September 12. Russian README is the primary submission document; EN/KK are equivalents. Product code, executable contracts, migrations, dependencies, and deployment configuration were not modified in this pass.
 
@@ -17,7 +17,7 @@ Full reproducible list of files: `git ls-files '*.md'`. Categories, purpose, and
 - Executable boundaries: [OpenAPI](../../contracts/openapi.yaml), canonical schema, and events; modules intake/manual_path/incidents/discovery/analytics/replay/security, inference engine, and retrieval provider.
 - Data: [DQ report](../../data/reports/regional-csv-dq-report.json), withheld corpus manifest, and research reports; raw data was not recovered from history.
 - Authorship: full Git history/shortlog, merge commits, and file diffs; GitHub API confirmed accounts Arseniiiii-ai and Shyngyskhan-333. Full names and captain role were drawn from the original journal, not inferred from commit counts.
-- CI on `e494390`: [36876998829](https://github.com/BAITC-Hacks/hack-803e2c8f-baash/actions/runs/36876998829): quality/container/demo succeeded; security audit failed. Exact results — [DEVELOPMENT](../DEVELOPMENT.en.md).
+- CI on `e494390`: [36876998829](https://github.com/BAITC-Hacks/hack-803e2c8f-baash/actions/runs/36876998829): quality/container/demo succeeded; security audit failed. Exact results — [DEVELOPMENT](../development/DEVELOPMENT.en.md).
 - Deployment: Compose inspection, images, restart policies, ports, and HTTP GET on October 1; web `22d89e7`, organizers' HTTPS, local objects, PostgreSQL ready. API inspection showed 120 days of history and water report dates of September 30.
 
 ## Resolved discrepancies

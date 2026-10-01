@@ -1,4 +1,4 @@
-[Русский](model_stack.md) · [English](model_stack.en.md) · [Қазақша](model_stack.kk.md)
+﻿[Русский](model_stack.md) · [English](model_stack.en.md) · [Қазақша](model_stack.kk.md)
 
 # Pulse 109 пилотының мақсатты модельдер стегі
 
@@ -6,7 +6,7 @@
 Ағымдағы орындалу ортасы ашық CPU лексикалық/хэш-векторлық резервтік жолын және
 seasonal-naive болжамын пайдаланады. Бапталған классификатор/эмбеддингтер мен аталған GPU модельдері
 азаматтардың RU/KK мәтіндерінің орындалу ортасы үшін валидацияланбаған. Қараңыз:
-[FEATURE_STATUS](../docs/FEATURE_STATUS.kk.md) және [MODEL_STRATEGY](../docs/ml/MODEL_STRATEGY.kk.md).
+[FEATURE_STATUS](../docs/submission/FEATURE_STATUS.kk.md) және [MODEL_STRATEGY](../docs/ml/MODEL_STRATEGY.kk.md).
 
 ## Шешім
 

@@ -1,4 +1,4 @@
-[Русский](README.md) · [English](README.en.md) · [Қазақша](README.kk.md)
+﻿[Русский](README.md) · [English](README.en.md) · [Қазақша](README.kk.md)
 
 # Pulse 109 documentation
 
@@ -9,42 +9,42 @@ Russian is canonical. Every page is available in RU / EN / KK: the selector is a
 | Question | Primary document |
 | --- | --- |
 | Judge overview | [README](../README.en.md) |
-| Current product state | [FEATURE_STATUS](FEATURE_STATUS.en.md) |
-| Demo route and data preparation | [GOLDEN_DEMO](GOLDEN_DEMO.en.md) |
+| Current product state | [FEATURE_STATUS](submission/FEATURE_STATUS.en.md) |
+| Demo route and data preparation | [GOLDEN_DEMO](demo/GOLDEN_DEMO.en.md) |
 | Verified public instance | [PUBLIC_DEPLOYMENT](../infra/runbooks/PUBLIC_DEPLOYMENT.en.md): verification date and image are separate from Git HEAD |
-| External answers and constraints | [DECISIONS_AND_BLOCKERS](../DECISIONS_AND_BLOCKERS.en.md) |
+| External answers and constraints | [DECISIONS_AND_BLOCKERS](governance/DECISIONS_AND_BLOCKERS.en.md) |
 | API/schema/events | [contracts](../contracts/README.en.md) and executable schemas |
-| Evolution and team contribution | [PROJECT_JOURNAL](PROJECT_JOURNAL.en.md) / [DEVELOPMENT_HISTORY](DEVELOPMENT_HISTORY.en.md); these do not replace the current capability matrix |
+| Evolution and team contribution | [PROJECT_JOURNAL](submission/PROJECT_JOURNAL.en.md) / [DEVELOPMENT_HISTORY](development/DEVELOPMENT_HISTORY.en.md); these do not replace the current capability matrix |
 
 ## For judges
 
 | Document | Purpose |
 | --- | --- |
 | [Project overview](../README.en.md) | Problem, product, evolution, team, and working instance |
-| [PROJECT_JOURNAL](PROJECT_JOURNAL.en.md) | Four weeks, evidenced contributions, and roles reported in the team journal |
-| [GOLDEN_DEMO](GOLDEN_DEMO.en.md) | Main route and scenario boundaries |
-| [DEMO_RUNBOOK](DEMO_RUNBOOK.en.md) / [DEMO_SCRIPT](DEMO_SCRIPT.en.md) | Preparation, public entry, and presenter cue card |
-| [DEMO_RECORDING_SCRIPT](DEMO_RECORDING_SCRIPT.en.md) | Recording the public path; simulation recording is documented separately |
-| [FEATURE_STATUS](FEATURE_STATUS.en.md) / [ACCEPTANCE_MATRIX](../ACCEPTANCE_MATRIX.en.md) | Runtime, baselines, research, blockers, and acceptance criteria |
-| [Public instance](../infra/runbooks/PUBLIC_DEPLOYMENT.en.md) / [DEMO_DAY_CHECKLIST](DEMO_DAY_CHECKLIST.en.md) | Verified configuration and presentation preparation |
+| [PROJECT_JOURNAL](submission/PROJECT_JOURNAL.en.md) | Four weeks, evidenced contributions, and roles reported in the team journal |
+| [GOLDEN_DEMO](demo/GOLDEN_DEMO.en.md) | Main route and scenario boundaries |
+| [DEMO_RUNBOOK](demo/DEMO_RUNBOOK.en.md) / [DEMO_SCRIPT](demo/DEMO_SCRIPT.en.md) | Preparation, public entry, and presenter cue card |
+| [DEMO_RECORDING_SCRIPT](demo/DEMO_RECORDING_SCRIPT.en.md) | Recording the public path; simulation recording is documented separately |
+| [FEATURE_STATUS](submission/FEATURE_STATUS.en.md) / [ACCEPTANCE_MATRIX](submission/ACCEPTANCE_MATRIX.en.md) | Runtime, baselines, research, blockers, and acceptance criteria |
+| [Public instance](../infra/runbooks/PUBLIC_DEPLOYMENT.en.md) / [DEMO_DAY_CHECKLIST](demo/DEMO_DAY_CHECKLIST.en.md) | Verified configuration and presentation preparation |
 | [Case audit](review/COMPETITION_AUDIT_2026-09-29.en.md) | Comparison with mandatory requirements; September 29 audit updated on October 1 |
 | [Documentation review](review/DOCUMENTATION_REVIEW_2026-10-01.en.md) | Sources, discrepancies, links, and remaining actions |
 
 ## Product
 
-The [feature index](features/README.en.md) connects the UI with mechanisms, APIs, and metric definitions.
+The [feature index](product/features/README.en.md) connects the UI with mechanisms, APIs, and metric definitions.
 
-- [Operations Center](features/OPERATIONS_CENTER.en.md)
-- [Smart Intake and routing](FEATURE_STATUS.en.md)
-- [Emerging Issues Radar](features/EMERGING_ISSUES.en.md)
-- [Incident War Room](features/INCIDENT_WAR_ROOM.en.md)
-- [Ask Pulse](features/ASK_PULSE.en.md)
-- [Data Lab](features/DATA_LAB.en.md)
-- [Replay Lab](features/REPLAY_LAB.en.md)
-- [Outcome Memory](features/OUTCOME_MEMORY.en.md)
-- [Next Best Action](features/NEXT_BEST_ACTION.en.md)
+- [Operations Center](product/features/OPERATIONS_CENTER.en.md)
+- [Smart Intake and routing](submission/FEATURE_STATUS.en.md)
+- [Emerging Issues Radar](product/features/EMERGING_ISSUES.en.md)
+- [Incident War Room](product/features/INCIDENT_WAR_ROOM.en.md)
+- [Ask Pulse](product/features/ASK_PULSE.en.md)
+- [Data Lab](product/features/DATA_LAB.en.md)
+- [Replay Lab](product/features/REPLAY_LAB.en.md)
+- [Outcome Memory](product/features/OUTCOME_MEMORY.en.md)
+- [Next Best Action](product/features/NEXT_BEST_ACTION.en.md)
 
-[MOCK_DEMO](MOCK_DEMO.en.md) is a local browser simulation for UI checks, separate from the public PostgreSQL demo. [DESIGN](../DESIGN.en.md) describes visual rules; the [web README](../apps/web/README.en.md) describes the web process boundary.
+[MOCK_DEMO](demo/MOCK_DEMO.en.md) is a local browser simulation for UI checks, separate from the public PostgreSQL demo. [DESIGN](product/DESIGN.en.md) describes visual rules; the [web README](../apps/web/README.en.md) describes the web process boundary.
 
 ## Architecture
 
@@ -85,17 +85,17 @@ The [ML index](ml/README.en.md) is the research entry point. Model names and his
 | [SECURITY_PRIVACY](../infra/runbooks/SECURITY_PRIVACY.en.md), [CALL_RECORDING_GATE](../infra/runbooks/CALL_RECORDING_GATE.en.md), [security notes](security/README.en.md) | Access, privacy, audio approvals, and scanner boundaries |
 | [Dashboards](../infra/dashboards/README.en.md) / [Helm](../infra/helm/README.en.md) | Monitoring and cluster stubs, not evidence of working infrastructure |
 | [Load tests](../tests/load/README.en.md) / [resilience tests](../tests/resilience/README.en.md) | Load-test prerequisites and failure checks |
-| [DEVELOPMENT](DEVELOPMENT.en.md) | Commands and current dated CI evidence |
+| [DEVELOPMENT](development/DEVELOPMENT.en.md) | Commands and current dated CI evidence |
 | [AGENTS](../AGENTS.en.md), [web AGENTS](../apps/web/AGENTS.en.md), [CLAUDE](../apps/web/CLAUDE.en.md) | Repository working instructions |
 
 ## History
 
-- [DEVELOPMENT_HISTORY](DEVELOPMENT_HISTORY.en.md) and [PROJECT_JOURNAL](PROJECT_JOURNAL.en.md): project and team evolution.
-- [DECISION_LOG](DECISION_LOG.en.md): chronological decisions and revisions.
-- [GOVTECH_BUSINESS_QUESTIONS](GOVTECH_BUSINESS_QUESTIONS.en.md) and the historical [PDF](../output/pdf/govtech_business_questions.pdf): questions for the customer.
-- [IMPLEMENTATION_STATUS](../IMPLEMENTATION_STATUS.en.md): milestones predating the current matrix.
+- [DEVELOPMENT_HISTORY](development/DEVELOPMENT_HISTORY.en.md) and [PROJECT_JOURNAL](submission/PROJECT_JOURNAL.en.md): project and team evolution.
+- [DECISION_LOG](governance/DECISION_LOG.en.md): chronological decisions and revisions.
+- [GOVTECH_BUSINESS_QUESTIONS](submission/GOVTECH_BUSINESS_QUESTIONS.en.md) and the historical [PDF](../output/pdf/govtech_business_questions.pdf): questions for the customer.
+- [IMPLEMENTATION_STATUS](archive/IMPLEMENTATION_STATUS.en.md): milestones predating the current matrix.
 - [REPOSITORY_CLEANUP](review/REPOSITORY_CLEANUP.en.md): September 27 audit.
-- [hex-landing-rework](../hex-landing-rework.en.md): historical design plan.
+- [hex-landing-rework](archive/design/hex-landing-rework.en.md): historical design plan.
 - [Archive](archive/README.en.md): superseded specifications, plans, and exports; **not a source of truth for the current product or deployment**.
 
 All language versions are listed in [DOCUMENTATION_MAP](DOCUMENTATION_MAP.en.md). The shared glossary is [TERMINOLOGY](TERMINOLOGY.en.md).

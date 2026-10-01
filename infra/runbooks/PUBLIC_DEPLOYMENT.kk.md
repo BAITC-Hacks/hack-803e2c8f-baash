@@ -1,4 +1,4 @@
-[Русский](PUBLIC_DEPLOYMENT.md) · [English](PUBLIC_DEPLOYMENT.en.md) · [Қазақша](PUBLIC_DEPLOYMENT.kk.md)
+﻿[Русский](PUBLIC_DEPLOYMENT.md) · [English](PUBLIC_DEPLOYMENT.en.md) · [Қазақша](PUBLIC_DEPLOYMENT.kk.md)
 
 # Қоғамдық демо: орналастыру және пайдалану
 
@@ -144,4 +144,4 @@ python3 scripts/demo_refresh.py \
 - **Database:** `POSTGRES_PASSWORD` бірегей URL-safe құпия сөз болуы тиіс; migration/API/worker URLs содан алынады. Қолданыстағы ДҚ үшін environment өзгерісі рөлдің құпиясөзін өздігінен өзгертпейді.
 - **Seed:** сәйкес демонстрациялық жобаның дайын API-ына қарсы іске қосу; behind-proxy API әдетте жарияланбайды, сондықтан ішкі процесті немесе loopback-ке уақытша байлауды қолданыңыз. Seed үшін API-ды сыртқа ашпаңыз.
 
-Өндірістік пилот шарттары — [PILOT_DEPLOYMENT_REQUIREMENTS](PILOT_DEPLOYMENT_REQUIREMENTS.kk.md). [BACKUP_RESTORE](BACKUP_RESTORE.kk.md) процедураны белгілейді, бірақ бекітілген RPO/RTO емес. [Golden Demo](../../docs/GOLDEN_DEMO.kk.md) көрсету маршрутын, [FEATURE_STATUS](../../docs/FEATURE_STATUS.kk.md) — ағымдағы шекараларды анықтайды. Демонстрациялық scanner mock болып қала береді, B07/B08/B10 ашық.
+Өндірістік пилот шарттары — [PILOT_DEPLOYMENT_REQUIREMENTS](PILOT_DEPLOYMENT_REQUIREMENTS.kk.md). [BACKUP_RESTORE](BACKUP_RESTORE.kk.md) процедураны белгілейді, бірақ бекітілген RPO/RTO емес. [Golden Demo](../../docs/demo/GOLDEN_DEMO.kk.md) көрсету маршрутын, [FEATURE_STATUS](../../docs/submission/FEATURE_STATUS.kk.md) — ағымдағы шекараларды анықтайды. Демонстрациялық scanner mock болып қала береді, B07/B08/B10 ашық.

@@ -1,4 +1,4 @@
-[Русский](README.md) · [English](README.en.md) · [Қазақша](README.kk.md)
+﻿[Русский](README.md) · [English](README.en.md) · [Қазақша](README.kk.md)
 
 # Документация Pulse 109
 
@@ -9,42 +9,42 @@
 | Вопрос | Основной документ |
 | --- | --- |
 | Обзор для жюри | [README](../README.md) |
-| Текущее состояние продукта | [FEATURE_STATUS](FEATURE_STATUS.md) |
-| Маршрут показа и подготовка данных | [GOLDEN_DEMO](GOLDEN_DEMO.md) |
+| Текущее состояние продукта | [FEATURE_STATUS](submission/FEATURE_STATUS.md) |
+| Маршрут показа и подготовка данных | [GOLDEN_DEMO](demo/GOLDEN_DEMO.md) |
 | Проверенный публичный стенд | [PUBLIC_DEPLOYMENT](../infra/runbooks/PUBLIC_DEPLOYMENT.md): дата проверки и образ отделены от Git HEAD |
-| Внешние ответы и ограничения | [DECISIONS_AND_BLOCKERS](../DECISIONS_AND_BLOCKERS.md) |
+| Внешние ответы и ограничения | [DECISIONS_AND_BLOCKERS](governance/DECISIONS_AND_BLOCKERS.md) |
 | API/schema/events | [contracts](../contracts/README.md) и исполняемые схемы |
-| Эволюция и вклад команды | [PROJECT_JOURNAL](PROJECT_JOURNAL.md) / [DEVELOPMENT_HISTORY](DEVELOPMENT_HISTORY.md); не заменяют матрицу текущих возможностей |
+| Эволюция и вклад команды | [PROJECT_JOURNAL](submission/PROJECT_JOURNAL.md) / [DEVELOPMENT_HISTORY](development/DEVELOPMENT_HISTORY.md); не заменяют матрицу текущих возможностей |
 
 ## Для жюри
 
 | Документ | Назначение |
 | --- | --- |
 | [Обзор проекта](../README.md) | Задача, продукт, эволюция, команда и работающий стенд |
-| [PROJECT_JOURNAL](PROJECT_JOURNAL.md) | Четыре недели, подтверждённый вклад и роли по командному журналу |
-| [GOLDEN_DEMO](GOLDEN_DEMO.md) | Основной маршрут и границы сценария |
-| [DEMO_RUNBOOK](DEMO_RUNBOOK.md) / [DEMO_SCRIPT](DEMO_SCRIPT.md) | Подготовка, публичный вход и карточка ведущего |
-| [DEMO_RECORDING_SCRIPT](DEMO_RECORDING_SCRIPT.md) | Запись публичного пути; запись симуляции описана отдельно |
-| [FEATURE_STATUS](FEATURE_STATUS.md) / [ACCEPTANCE_MATRIX](../ACCEPTANCE_MATRIX.md) | Исполняемый контур, базовые алгоритмы, исследования, блокеры и критерии приёмки |
-| [Публичный стенд](../infra/runbooks/PUBLIC_DEPLOYMENT.md) / [DEMO_DAY_CHECKLIST](DEMO_DAY_CHECKLIST.md) | Проверенная конфигурация и подготовка к показу |
+| [PROJECT_JOURNAL](submission/PROJECT_JOURNAL.md) | Четыре недели, подтверждённый вклад и роли по командному журналу |
+| [GOLDEN_DEMO](demo/GOLDEN_DEMO.md) | Основной маршрут и границы сценария |
+| [DEMO_RUNBOOK](demo/DEMO_RUNBOOK.md) / [DEMO_SCRIPT](demo/DEMO_SCRIPT.md) | Подготовка, публичный вход и карточка ведущего |
+| [DEMO_RECORDING_SCRIPT](demo/DEMO_RECORDING_SCRIPT.md) | Запись публичного пути; запись симуляции описана отдельно |
+| [FEATURE_STATUS](submission/FEATURE_STATUS.md) / [ACCEPTANCE_MATRIX](submission/ACCEPTANCE_MATRIX.md) | Исполняемый контур, базовые алгоритмы, исследования, блокеры и критерии приёмки |
+| [Публичный стенд](../infra/runbooks/PUBLIC_DEPLOYMENT.md) / [DEMO_DAY_CHECKLIST](demo/DEMO_DAY_CHECKLIST.md) | Проверенная конфигурация и подготовка к показу |
 | [Аудит кейса](review/COMPETITION_AUDIT_2026-09-29.md) | Сопоставление с обязательным ТЗ; аудит 29 сентября и обновление 1 октября |
 | [Проверка документации](review/DOCUMENTATION_REVIEW_2026-10-01.md) | Источники, расхождения, ссылки и оставшиеся действия |
 
 ## Продукт
 
-[Индекс функций](features/README.md) связывает интерфейс с механизмами, API и смыслом метрик.
+[Индекс функций](product/features/README.md) связывает интерфейс с механизмами, API и смыслом метрик.
 
-- [Operations Center](features/OPERATIONS_CENTER.md)
-- [Smart Intake и маршрутизация](FEATURE_STATUS.md)
-- [Emerging Issues Radar](features/EMERGING_ISSUES.md)
-- [Incident War Room](features/INCIDENT_WAR_ROOM.md)
-- [Ask Pulse](features/ASK_PULSE.md)
-- [Data Lab](features/DATA_LAB.md)
-- [Replay Lab](features/REPLAY_LAB.md)
-- [Outcome Memory](features/OUTCOME_MEMORY.md)
-- [Next Best Action](features/NEXT_BEST_ACTION.md)
+- [Operations Center](product/features/OPERATIONS_CENTER.md)
+- [Smart Intake и маршрутизация](submission/FEATURE_STATUS.md)
+- [Emerging Issues Radar](product/features/EMERGING_ISSUES.md)
+- [Incident War Room](product/features/INCIDENT_WAR_ROOM.md)
+- [Ask Pulse](product/features/ASK_PULSE.md)
+- [Data Lab](product/features/DATA_LAB.md)
+- [Replay Lab](product/features/REPLAY_LAB.md)
+- [Outcome Memory](product/features/OUTCOME_MEMORY.md)
+- [Next Best Action](product/features/NEXT_BEST_ACTION.md)
 
-[MOCK_DEMO](MOCK_DEMO.md) — локальная браузерная симуляция для проверки UI, отдельная от публичного PostgreSQL-демо. [DESIGN](../DESIGN.md) описывает визуальные правила; [web README](../apps/web/README.md) — техническую границу web-процесса.
+[MOCK_DEMO](demo/MOCK_DEMO.md) — локальная браузерная симуляция для проверки UI, отдельная от публичного PostgreSQL-демо. [DESIGN](product/DESIGN.md) описывает визуальные правила; [web README](../apps/web/README.md) — техническую границу web-процесса.
 
 ## Архитектура
 
@@ -85,17 +85,17 @@
 | [SECURITY_PRIVACY](../infra/runbooks/SECURITY_PRIVACY.md), [CALL_RECORDING_GATE](../infra/runbooks/CALL_RECORDING_GATE.md), [security notes](security/README.md) | Доступ, приватность, разрешения на аудио и границы scanner |
 | [Dashboards](../infra/dashboards/README.md) / [Helm](../infra/helm/README.md) | Заготовки мониторинга и кластера, а не доказательство работающей инфраструктуры |
 | [Load tests](../tests/load/README.md) / [resilience tests](../tests/resilience/README.md) | Условия нагрузочных испытаний и проверка отказов |
-| [DEVELOPMENT](DEVELOPMENT.md) | Команды и текущий датированный CI |
+| [DEVELOPMENT](development/DEVELOPMENT.md) | Команды и текущий датированный CI |
 | [AGENTS](../AGENTS.md), [web AGENTS](../apps/web/AGENTS.md), [CLAUDE](../apps/web/CLAUDE.md) | Инструкции работы в репозитории |
 
 ## История
 
-- [DEVELOPMENT_HISTORY](DEVELOPMENT_HISTORY.md) и [PROJECT_JOURNAL](PROJECT_JOURNAL.md) — эволюция проекта и команды.
-- [DECISION_LOG](DECISION_LOG.md) — хронологические решения и пересмотр.
-- [GOVTECH_BUSINESS_QUESTIONS](GOVTECH_BUSINESS_QUESTIONS.md) и исторический [PDF](../output/pdf/govtech_business_questions.pdf) — вопросы заказчику.
-- [IMPLEMENTATION_STATUS](../IMPLEMENTATION_STATUS.md) — этапы до текущей матрицы.
+- [DEVELOPMENT_HISTORY](development/DEVELOPMENT_HISTORY.md) и [PROJECT_JOURNAL](submission/PROJECT_JOURNAL.md) — эволюция проекта и команды.
+- [DECISION_LOG](governance/DECISION_LOG.md) — хронологические решения и пересмотр.
+- [GOVTECH_BUSINESS_QUESTIONS](submission/GOVTECH_BUSINESS_QUESTIONS.md) и исторический [PDF](../output/pdf/govtech_business_questions.pdf) — вопросы заказчику.
+- [IMPLEMENTATION_STATUS](archive/IMPLEMENTATION_STATUS.md) — этапы до текущей матрицы.
 - [REPOSITORY_CLEANUP](review/REPOSITORY_CLEANUP.md) — аудит 27 сентября.
-- [hex-landing-rework](../hex-landing-rework.md) — исторический план дизайна.
+- [hex-landing-rework](archive/design/hex-landing-rework.md) — исторический план дизайна.
 - [Архив](archive/README.md) — заменённые спецификации, планы и экспорты; **не источник текущего состояния продукта или развёртывания**.
 
 Все языковые версии перечислены в [DOCUMENTATION_MAP](DOCUMENTATION_MAP.md). Общий словарь — [TERMINOLOGY](TERMINOLOGY.md).

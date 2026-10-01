@@ -1,4 +1,4 @@
-[Русский](PUBLIC_DEPLOYMENT.md) · [English](PUBLIC_DEPLOYMENT.en.md) · [Қазақша](PUBLIC_DEPLOYMENT.kk.md)
+﻿[Русский](PUBLIC_DEPLOYMENT.md) · [English](PUBLIC_DEPLOYMENT.en.md) · [Қазақша](PUBLIC_DEPLOYMENT.kk.md)
 
 # Public Demo: Deployment and Operations
 
@@ -144,4 +144,4 @@ This section describes options, not the state of current VPS. A new host require
 - **Database:** `POSTGRES_PASSWORD` must be a unique URL-safe secret; migration/API/worker URLs are derived from it. For existing DB, environment change does not modify role password by itself.
 - **Seed:** execute against ready API of corresponding demonstration project; behind-proxy API is normally not published, so use internal process or temporary loopback bind. Do not expose API publicly for seed.
 
-Production pilot requirements — [PILOT_DEPLOYMENT_REQUIREMENTS](PILOT_DEPLOYMENT_REQUIREMENTS.en.md). [BACKUP_RESTORE](BACKUP_RESTORE.en.md) defines procedure, but not approved RPO/RTO. [Golden Demo](../../docs/GOLDEN_DEMO.en.md) defines presentation route, [FEATURE_STATUS](../../docs/FEATURE_STATUS.en.md) — current boundaries. Demonstration scanner remains mock, B07/B08/B10 open.
+Production pilot requirements — [PILOT_DEPLOYMENT_REQUIREMENTS](PILOT_DEPLOYMENT_REQUIREMENTS.en.md). [BACKUP_RESTORE](BACKUP_RESTORE.en.md) defines procedure, but not approved RPO/RTO. [Golden Demo](../../docs/demo/GOLDEN_DEMO.en.md) defines presentation route, [FEATURE_STATUS](../../docs/submission/FEATURE_STATUS.en.md) — current boundaries. Demonstration scanner remains mock, B07/B08/B10 open.

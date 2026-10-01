@@ -1,4 +1,4 @@
-[Русский](model_stack.md) · [English](model_stack.en.md) · [Қазақша](model_stack.kk.md)
+﻿[Русский](model_stack.md) · [English](model_stack.en.md) · [Қазақша](model_stack.kk.md)
 
 # Целевой стек моделей пилота Pulse 109
 
@@ -6,7 +6,7 @@
 Текущий исполняемый контур использует открытый CPU лексический/хэш-векторный резервный путь и
 прогноз seasonal-naive. Дообученный классификатор/эмбеддинги и именованные GPU-модели
 не валидированы для исполнения на текстах граждан RU/KK. См.
-[FEATURE_STATUS](../docs/FEATURE_STATUS.md) и [MODEL_STRATEGY](../docs/ml/MODEL_STRATEGY.md).
+[FEATURE_STATUS](../docs/submission/FEATURE_STATUS.md) и [MODEL_STRATEGY](../docs/ml/MODEL_STRATEGY.md).
 
 ## Решение
 

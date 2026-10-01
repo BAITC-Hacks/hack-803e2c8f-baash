@@ -1,6 +1,6 @@
-[Русский](REPOSITORY_CLEANUP.md) · [English](REPOSITORY_CLEANUP.en.md) · [Қазақша](REPOSITORY_CLEANUP.kk.md)
+﻿[Русский](REPOSITORY_CLEANUP.md) · [English](REPOSITORY_CLEANUP.en.md) · [Қазақша](REPOSITORY_CLEANUP.kk.md)
 
-> Historical audit of 2026-09-27. Its branch/SHA and checks describe that revision, not current main. Current status: [FEATURE_STATUS](../FEATURE_STATUS.en.md).
+> Historical audit of 2026-09-27. Its branch/SHA and checks describe that revision, not current main. Current status: [FEATURE_STATUS](../submission/FEATURE_STATUS.en.md).
 
 # Repository cleanup review
 

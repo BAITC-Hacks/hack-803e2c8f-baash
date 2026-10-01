@@ -1,4 +1,4 @@
-[Русский](README.md) · [English](README.en.md) · [Қазақша](README.kk.md)
+﻿[Русский](README.md) · [English](README.en.md) · [Қазақша](README.kk.md)
 
 > Historical document. This is not a source of truth for the current project state.
 
@@ -7,7 +7,7 @@
 These files preserve the original specification, early implementation plan and
 review trail. They are **not current operating instructions**. For today's
 behavior use the [documentation index](../README.en.md),
-[feature matrix](../FEATURE_STATUS.en.md) and [demo runbook](../DEMO_RUNBOOK.en.md).
+[feature matrix](../submission/FEATURE_STATUS.en.md) and [demo runbook](../demo/DEMO_RUNBOOK.en.md).
 
 | Material | Why retained |
 | --- | --- |

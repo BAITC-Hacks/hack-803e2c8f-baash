@@ -1,11 +1,11 @@
-[Русский](START_HERE.md) · [English](START_HERE.en.md) · [Қазақша](START_HERE.kk.md)
+﻿[Русский](START_HERE.md) · [English](START_HERE.en.md) · [Қазақша](START_HERE.kk.md)
 
 > Historical document. This is not a source of truth for the current project state.
 
 # Start Here
 
 > Historical bootstrap guide. Its milestone instructions are superseded by the
-> [current documentation index](../README.en.md) and [feature matrix](../FEATURE_STATUS.en.md).
+> [current documentation index](../README.en.md) and [feature matrix](../submission/FEATURE_STATUS.en.md).
 
 ## Is the original specification enough
 

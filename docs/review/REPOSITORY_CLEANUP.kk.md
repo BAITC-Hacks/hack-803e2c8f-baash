@@ -1,6 +1,6 @@
-[Русский](REPOSITORY_CLEANUP.md) · [English](REPOSITORY_CLEANUP.en.md) · [Қазақша](REPOSITORY_CLEANUP.kk.md)
+﻿[Русский](REPOSITORY_CLEANUP.md) · [English](REPOSITORY_CLEANUP.en.md) · [Қазақша](REPOSITORY_CLEANUP.kk.md)
 
-> 2026-09-27 тарихи аудиті. Оның тармағы/SHA және тексерулері ағымдағы main-ді емес, сол ревизияны сипаттайды. Ағымдағы мәртебе: [FEATURE_STATUS](../FEATURE_STATUS.kk.md).
+> 2026-09-27 тарихи аудиті. Оның тармағы/SHA және тексерулері ағымдағы main-ді емес, сол ревизияны сипаттайды. Ағымдағы мәртебе: [FEATURE_STATUS](../submission/FEATURE_STATUS.kk.md).
 
 # Репозиторий тазалығының аудиті
 
