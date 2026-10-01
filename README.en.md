@@ -2,141 +2,153 @@
 
 # Pulse 109
 
-An assistance layer for 109 services that connects appeals into city incidents, helps operators decide and provides verifiable analytics.
+> From individual appeals to a shared view of a city problem.
 
-[Demo](https://baash.govtech-kz.com/demo) · [Landing](https://baash.govtech-kz.com/) · [Golden Demo](docs/GOLDEN_DEMO.md) · [Architecture](docs/architecture/README.md)
+An intelligent layer for 109 services that connects appeals into city incidents, helps operators decide and gives managers verifiable analytics.
 
-- **Team:** baash
-- **Project:** Pulse 109
-- **Track:** Gov cases
-- **Case:** Case 2 — intelligent platform for citizen appeals to 109
-- **Status:** public demonstration environment
+[Open demo](https://baash.govtech-kz.com/demo) · [Landing](https://baash.govtech-kz.com/) · [Golden Demo](docs/GOLDEN_DEMO.md) · [Architecture](docs/architecture/README.md)
+
+![Pulse 109 Operations Center using demonstration data](docs/screenshots/operations-center.png)
+
+**Team:** baash · **Project:** Pulse 109 · **Track:** Gov cases · **Case:** Case 2 — intelligent platform for citizen appeals to 109. The [Russian README](README.md) is canonical for submission.
 
 ### Public environment
 
-**Landing:** https://baash.govtech-kz.com/ · **Demo:** https://baash.govtech-kz.com/demo
+The **[landing](https://baash.govtech-kz.com/)** and **[interactive demo](https://baash.govtech-kz.com/demo)** share a Next.js application behind the organizer HTTPS proxy. FastAPI, PostgreSQL, migrations, audit, outbox and worker run the application workflow. Golden World is a synthetic ALA city; a replay adapter reproduces external delivery. PostgreSQL stays inside the stack. Deployment details and checks are in the [runbook](infra/runbooks/PUBLIC_DEPLOYMENT.md).
 
-The organizer HTTPS proxy serves Next.js and the real FastAPI/PostgreSQL stack: migrations, audit, outbox, worker and analytics execute application code. Golden World contains synthetic ALA records; a replay adapter reproduces external delivery. PostgreSQL does not publish a host port. Availability checked on 1 October 2026: HTTP 200, API and database `ready`. This is a demo profile; operational details are in the [deployment runbook](infra/runbooks/PUBLIC_DEPLOYMENT.md).
+## The task
 
-### GovTech Camp submission description
+The 109 case combines **Smart Intake and routing**, an **Operator Assistant** and a **Situation Center**: RU/KK interaction, similar appeals, surge detection, workload forecasts and natural-language questions about data.
 
-**Title:** baash / Pulse 109
+Different reports about water, roads or lighting can describe one city problem. Separate queues obscure their connection. Pulse 109 surfaces the common signal and helps coordinate services while retaining independent handling of every appeal.
 
-> Pulse 109 is an intelligent layer for 109 services that connects fragmented appeals into city incidents, helps operators make decisions and gives managers verifiable analytics.
-
-The [Russian README](README.md) is canonical for submission.
-
-## 1. The task
-
-The case combines Smart Intake and routing, an Operator Assistant and a Situation Center: RU/KK, similar appeals, surge detection, demand forecasts and natural-language analytics. Operators must understand advice and confirm consequential actions.
-
-Different reports about water, roads or lighting can describe one city problem. Separate queues obscure the connection. Pulse 109 surfaces the common signal while retaining independent handling of every appeal.
-
-## 2. What we built
+## What we built
 
 - **Smart Intake and operator queue:** adaptive questions, similar open issues, topic/service suggestions and human-confirmed routing.
-- **Emerging Issues Radar:** groups by time, location and available taxonomy, with a map and human cluster review.
-- **Incident War Room:** membership, history, ownership, evidence and confirmed merge/split decisions.
-- **Next Best Action and Outcome Memory:** rule-based advice and comparable verified outcomes; the demo corpus is explicitly synthetic.
+- **Emerging Issues Radar:** groups by location, time and topic, a MapLibre/OSM map and operator cluster review.
+- **Incident War Room:** shared problem workspace with membership, history, ownership, evidence and confirmed merge/split.
+- **Next Best Action and Outcome Memory:** advice with reason codes and comparable verified outcomes.
 - **Operations Center and Data Lab:** workload, attention feed, data quality, handoffs and aggregate-to-appeal drill-down.
-- **Ask Pulse:** RU/KK questions, PostgreSQL calculations, charts, provenance, drill-down, PDF/XLSX and baseline forecasts.
-- **Platform and HTTPS demo:** PostgreSQL, audit, idempotency, outbox, worker, adapters and a manual path when ML fails.
+- **Ask Pulse:** RU/KK questions, PostgreSQL calculations, charts, provenance, drill-down, PDF/XLSX and forecasts.
+- **Reliable platform:** durable decisions, audit, idempotency, outbox, worker and adapters; the manual path works when ML fails.
 
-**AI proposes — a human confirms.** An appeal is an individual citizen record with its own ID, history and state. An incident provides shared context for several appeals without erasing their identifiers or individual obligations.
+**AI proposes — a human confirms.** Each appeal retains its own ID, history and individual obligations. An incident connects several appeals into shared context for service coordination.
 
-## 3. Evolution during GovTech Camp
+## Evolution during GovTech Camp
 
-1. **Classification led to a data audit.** The initial direction was routing, operator assistance and a situation center. The audit found seven regions rather than twenty, no raw pre-decision citizen text and incompatible catalogs. The supplied data could not honestly prove the required RU/KK classifier.
-2. **Exports became a verifiable foundation.** Canonical ingestion preserved provenance, time quality and quarantine. Separate routing/retrieval/forecast experiments exposed regional transfer limits and leakage from fields created after decisions. Their results remained research evidence.
-3. **Individual tickets became a city situation.** Radar, Incident and War Room connect signals into a problem, while ownership, assignment and closure retain human confirmation. Outcome Memory, Replay Lab, Data Lab and Ask Pulse followed.
-4. **APIs became a repeatable demonstration.** Product UI, MapLibre/OSM, a Golden World with 120 days of history, a public VPS and recording guidance made the flow inspectable. The final phase reconciles reliability and documentation with demonstrated limits.
+1. **Audited the supplied data.** We started with classification, routing and operator assistance. Seven regional exports revealed different catalogs and missing raw pre-decision text. This shaped the next step: a shared data layer and separate evaluation of ML candidates.
+2. **Built a verifiable foundation.** Canonical ingestion preserves provenance, time quality and quarantine. Routing/retrieval/forecast experiments helped account for regional differences and exclude fields created after operator decisions.
+3. **Expanded to a city situation.** Radar, Incident and War Room connected individual tickets. Ownership, human confirmation and handoff control connected detection to execution; Outcome Memory, Replay Lab and Data Lab added feedback.
+4. **Made the product inspectable.** Ask Pulse, product UI, a map, Golden World with 120 days of history and a public VPS turned APIs into an end-to-end demo. The final phase focuses on stabilization, verification and presentation.
 
-Evidence: [Git chronology](docs/DEVELOPMENT_HISTORY.md), [Camp journal](docs/PROJECT_JOURNAL.md), [Decision Log](docs/DECISION_LOG.md).
+Decisions and commits: [development history](docs/DEVELOPMENT_HISTORY.md) · [Camp journal](docs/PROJECT_JOURNAL.md) · [Decision Log](docs/DECISION_LOG.md).
 
-## 4. Team work by week
+## Team and weekly work
 
-Periods combine the journal and `main` history. Work before 12 September is journal-reported; the first retained Git commit is dated 12 September. Commit counts do not measure total effort.
+| Period                         | Work                                                                                 | Main contributors            | Result                                                         |
+| ------------------------------ | ------------------------------------------------------------------------------------ | ---------------------------- | -------------------------------------------------------------- |
+| Week 1, before 12 September    | Case analysis, source audit and direction                                            | Team                         | Data picture and solution plan                                 |
+| Week 2, 12–18 September        | Contracts, first workflows, canonical ingest, routing/retrieval/forecast             | Baktiyar, Arsen              | Executable foundation and research reports                     |
+| Week 3, 19–25 September        | End-to-end scenario, PostgreSQL, outbox, ownership, Decision Gateway, closure/replay | Arsen, Baktiyar              | Manual path preserving decisions and delivery through failures |
+| Week 4, 26 September–1 October | Incident, Radar, Ask Pulse, UI, storage, Golden Demo, VPS and docs                   | Baktiyar, Arsen, Shyngyskhan | Public environment and demo route                              |
 
-| Period                         | Work                                                                                              | Main contributors                       | Result                                                            |
-| ------------------------------ | ------------------------------------------------------------------------------------------------- | --------------------------------------- | ----------------------------------------------------------------- |
-| Week 1, before 12 September    | Case analysis and source audit                                                                    | Team; individual breakdown not recorded | Documented data limits and initial direction                      |
-| Week 2, 12–18 September        | Contracts, initial workflows, canonical ingest, routing/retrieval/forecast experiments            | Baktiyar, Arsen — Git                   | Executable foundation and research reports                        |
-| Week 3, 19–25 September        | Research walkthrough, durable PostgreSQL, outbox, ownership, Decision Gateway, closure/replay     | Arsen, Baktiyar — Git                   | Manual workflow preserving decisions and delivery during failures |
-| Week 4, 26 September–1 October | Incident/control plane, Radar, city demo, Ask Pulse, UI, storage, Golden Demo, VPS and final docs | Baktiyar, Arsen, Shyngyskhan — Git      | Public environment and inspectable demo route                     |
+| Member                                   | Main contribution                                                                                                           |
+| ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| **Januzak Aspandiyar (@aspaAI)**         | Captain, architecture and defence — as recorded in the team journal                                                         |
+| **Arsen Baktygaliev (@Arseniiiii-ai)**   | Regional data, routing/retrieval/forecast research, Radar/Operations, city world, deployment overlays and CI/demo fixes     |
+| **Baktiyar Ablaikhan (@sronters)**       | Durable workflows, governance, ownership/Decision Gateway, Incident, Ask Pulse, UI/UX, Golden Demo, maps and VPS deployment |
+| **Sagyt Shyngyskhan (@Shyngyskhan-333)** | Replay/War Room/storage, Hex UI and final judge-facing documentation                                                        |
 
-| Member                               | Main area                                  | Evidence                                                                                                                                                                |
-| ------------------------------------ | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Januzak Aspandiyar (@aspaAI)         | Captain, architecture, defence             | Role reported in the original journal; individual weekly commits not verified in this history                                                                           |
-| Arsen Baktygaliev (@Arseniiiii-ai)   | Data, ML research, city demo               | Git: ingest, baselines, retrieval/forecast, Radar/Operations, synthetic world, deployment overlays and CI/demo fixes                                                    |
-| Baktiyar Ablaikhan (@sronters)       | Platform, governance, product UI           | Git: durable workflows, ownership/Decision Gateway, Incident/control plane, Ask Pulse, Golden Demo, maps and VPS deployment; 1 October recovery is operational evidence |
-| Sagyt Shyngyskhan (@Shyngyskhan-333) | Replay/War Room/storage, UI, documentation | Git: `b3b4440`, `4559a7d`, `41b6a1f`, `e494390`                                                                                                                         |
+Periods and roles follow the team journal and project history; contribution details and sources are in [PROJECT_JOURNAL](docs/PROJECT_JOURNAL.md).
 
-Names follow the team journal. Git also uses `Arsen Baktygaliyev` and `Shyngyskhan`. The [journal](docs/PROJECT_JOURNAL.md) links contributions to commits.
+## What works now
 
-## 5. What works now
+| Capability               | Current behavior                                                      | Where to inspect                                                                     |
+| ------------------------ | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Public site              | Landing and interactive HTTPS demo                                    | [Landing](https://baash.govtech-kz.com/) → [demo](https://baash.govtech-kz.com/demo) |
+| Smart Intake and routing | Intake, similar issues, suggestions and manual decisions              | Intake → queue → decision                                                            |
+| Radar and map            | Spatial/time groups with topic information; cluster → Incident        | Operations → Radar → cluster                                                         |
+| War Room                 | History, membership, ownership, Next Best Action and Outcome Memory   | Incidents → War Room                                                                 |
+| Ask Pulse                | RU/KK questions, calculations, charts, source records, PDF/XLSX       | Operations → Ask Pulse                                                               |
+| 30/60/90-day forecasts   | Transparent seasonal-naive baseline on 120 days of history            | Ask Pulse → one/two/three-month forecast                                             |
+| Data Lab and Replay Lab  | Quality and drill-down; saved reports and aggregate policy comparison | Data Lab / Replay Lab                                                                |
+| Platform                 | PostgreSQL, audit, outbox, worker, adapters and manual fallback       | Timeline, health, [architecture](docs/architecture/README.md)                        |
 
-✅ runtime; 🟡 partial / baseline / demo; 🔬 research; ⛔ external blocker. Full authority: [FEATURE_STATUS](docs/FEATURE_STATUS.md).
+The complete capability matrix is in [FEATURE_STATUS](docs/FEATURE_STATUS.md); current verification results are in [DEVELOPMENT](docs/DEVELOPMENT.md).
 
-| Capability                                  | Current state                                                                                                    | Where to inspect                                                                                                               |
-| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| Public landing and `/demo`                  | ✅ HTTPS, `demo` profile                                                                                         | [Landing](https://baash.govtech-kz.com/), [demo](https://baash.govtech-kz.com/demo)                                            |
-| Smart Intake, queue, routing                | ✅ manual workflow; 🟡 lexical CPU advice                                                                        | Intake → queue → decision                                                                                                      |
-| Radar, map, cluster → Incident              | ✅ geo/time/taxonomy, MapLibre/OSM with synthetic coordinates; 🟡 semantic signal unavailable                    | Operations → Radar → cluster; verify seed freshness before showing                                                             |
-| War Room, Next Best Action, Outcome Memory  | ✅ APIs/UI; 🟡 rules and synthetic outcomes                                                                      | Incidents → War Room                                                                                                           |
-| Ask Pulse RU/KK, charts, PDF/XLSX           | ✅ allowlisted questions and calculations with provenance                                                        | Operations → Ask Pulse                                                                                                         |
-| 30/60/90-day forecasts                      | 🟡 seasonal-naive on 120 days of Golden World                                                                    | Ask Pulse → one/two/three-month question                                                                                       |
-| Data Lab                                    | ✅ quality, handoffs, timings and drill-down                                                                     | Data Lab                                                                                                                       |
-| Replay Lab                                  | 🟡 report list and aggregate policy comparison; per-case trace not recorded                                      | Replay Lab; synthetic cases excluded from quality scoring                                                                      |
-| PostgreSQL, audit, outbox, worker, fallback | ✅ real processes; 🟡 synthetic external delivery                                                                | Timeline, health, [architecture](docs/architecture/README.md)                                                                  |
-| CI on `e494390`                             | ✅ quality: 429 passed / 23 skipped without DB; integration: 23 passed twice; 🟡 overall CI fails security audit | [Run 36876998829](https://github.com/BAITC-Hacks/hack-803e2c8f-baash/actions/runs/36876998829), [details](docs/DEVELOPMENT.md) |
+## Why Pulse 109: the classifier trap
 
-### Demo route
+One water supply problem can be described in different words:
 
-Four to five minutes: **new water appeal → operator decision → Radar → cluster → Incident War Room → Ask Pulse → source records / export**. Extra time: Outcome Memory, worker delivery, Data Lab or Replay Lab. Exact actions and water freshness checks are in [Golden Demo](docs/GOLDEN_DEMO.md). API counters change as reviewers act.
+- _“The water is cloudy and smells of rust.”_
+- _“Low pressure on the fifth floor.”_
+- _“The water stopped after repairs near our building.”_
+- _“The asphalt has been dug up beside the standpipe.”_
 
-![Operations Center: static capture of synthetic demo data](docs/screenshots/operations-center.png)
+Classification helps route each report, but different topics and queues can hide their connection. **Routing every ticket correctly is still not enough to see the shared city situation.**
 
-[Queue](docs/screenshots/operator-queue.png) · [Incidents](docs/screenshots/incidents-list.png) · [Data Lab](docs/screenshots/data-lab.png) · [Replay Lab](docs/screenshots/replay-lab.png). Captures illustrate the UI; inspect live state in `/demo`.
+Pulse 109 adds the next layer: **Radar** compares location, time and topic → an operator reviews the cluster on a map → creates an **Incident War Room** → coordinates service actions. The connection remains a hypothesis for human review, and each appeal keeps its history.
 
-## Architecture
+### Product evidence for judges
+
+| Criterion         | Pulse 109 response                               | Where it appears                            |
+| ----------------- | ------------------------------------------------ | ------------------------------------------- |
+| Civic value       | Shared problem view and service coordination     | Radar, War Room, separate appeal IDs        |
+| Innovation and AI | Explainable advice and RU/KK analytics           | Ask Pulse, Next Best Action, Outcome Memory |
+| Engineering       | Modular core, PostgreSQL, idempotency and outbox | Contracts, container-smoke, restore drill   |
+| Trust and control | Human confirmation and a manual path without ML  | Decision Gateway, audit, fallback           |
+| Reproducibility   | Golden World, API walkthrough and public HTTPS   | Golden Demo, CI, deployment runbook         |
+
+## Golden Demo: one path in 4–5 minutes
+
+```text
+Citizen signal RU/KK
+        ↓
+Smart Intake: questions + similar open issues
+        ↓
+Radar: a group of reports on the map
+        ↓
+Incident War Room: shared context + Next Best Action
+        ↓
+Operator action → outbox → worker → adapter
+        ↓
+Ask Pulse: question → calculation → source records → PDF/XLSX
+```
+
+1. **Report water quality:** fill the presenter example, show similar issues and submit the appeal manually.
+2. **Open Radar:** run a scan and inspect the map and reports in the prepared water cluster.
+3. **Create an Incident:** open War Room and show history, the coordinator, Outcome Memory and Next Best Action.
+4. **Confirm an action:** assign an appeal in the queue and show durable delivery through outbox/worker.
+5. **Ask Pulse:** “Show appeals for the last seven days in Almaty” → count, chart, calculation details, source records and export.
+
+[Full scenario](docs/GOLDEN_DEMO.md) · [Presenter runbook](docs/DEMO_RUNBOOK.md) · [Demo recording](docs/DEMO_RECORDING_SCRIPT.md). Prepare a current Golden World time window using the runbook before presenting.
+
+[Operator queue](docs/screenshots/operator-queue.png) · [Incident register](docs/screenshots/incidents-list.png) · [Data Lab](docs/screenshots/data-lab.png) · [Replay Lab](docs/screenshots/replay-lab.png).
+
+## Architecture and reliability
 
 ```mermaid
 flowchart LR
     UI[Next.js / operator] --> API[FastAPI modular core]
     API --> DB[(PostgreSQL / PostGIS / pgvector)]
-    API -. advisory .-> ML[Optional inference]
-    DB --> W[Outbox worker]
-    W --> R[Demo replay adapter]
+    API -. advice .-> ML[Optional inference]
     API --> O[Attachments / replay snapshots: local or S3]
+    DB --> W[Outbox worker]
+    W --> A[Isolated adapter]
+    A --> R[Demo replay / regional integration]
+    DB --> ASK[Ask Pulse / calculations and exports]
 ```
 
-Regional CRMs use isolated adapters and stable [contracts](contracts/README.md). S3 is selected by configuration for attachments/replay; the public environment uses local volumes. Intake, manual routing, status and audit work without ML. See [architecture](docs/architecture/README.md) for trust and failure boundaries.
+- **Fits existing processes:** regional systems connect through adapters and stable [contracts](contracts/README.md).
+- **Preserves decisions and assignments:** transactional outbox, `FOR UPDATE SKIP LOCKED`, retries and idempotent commands.
+- **Works without ML:** intake, manual routing, statuses and audit keep running if inference fails.
+- **Provides verifiable numbers:** Ask Pulse uses approved analytical queries, core calculations and links to source records.
 
-## Judge criteria
+See [architecture](docs/architecture/README.md) for detailed diagrams and access boundaries.
 
-| Criterion         | Implemented response                                                | Evidence                                            |
-| ----------------- | ------------------------------------------------------------------- | --------------------------------------------------- |
-| Civic value       | Connect fragmented appeals and coordinate incidents                 | Radar, War Room, preserved appeal IDs               |
-| Innovation and AI | Explainable advice and RU/KK analytics with explicit rules/fallback | Ask Pulse, Next Best Action, Outcome Memory         |
-| Engineering       | Modular core, PostgreSQL, idempotency, transactional outbox         | Contracts, container-smoke and restore drill        |
-| Trust and control | Human confirmation, regional access checks, manual ML fallback      | Decision Gateway, audit                             |
-| Reproducibility   | Golden World, API walkthrough, public HTTPS environment             | Golden Demo, demo-profile-smoke, deployment runbook |
+## Verification and startup
 
-These are product evidence, not proof of the mandatory ML requirements: [competition audit](docs/review/COMPETITION_AUDIT_2026-09-29.md).
-
-## Limits and research
-
-- Historical exports cover **7 of 20 regions**; the public demo is synthetic **ALA**. The authoritative manifest and remaining sources are unavailable (`B01`).
-- Demo background uses **5 topic families**; routing uses **4 synthetic topics**. Ten approved topics and a fine-tuned RU/KK runtime classifier are not proven (`B02/B06`).
-- Fine-tuned embeddings are historical research on executor text and proxy labels. The corpus is withheld pending privacy review; the numbers do not prove citizen-text retrieval quality. Runtime uses a disclosed fallback.
-- Golden World forecasts demonstrate baseline mechanics on fictional history, without a real demand accuracy claim.
-- Regional CRM, production identity, legal basis and retention remain unresolved (`B07/B08/B10`). The scanner is a mock. Security CI found four advisories in `urllib3` and `PyJWT`: an open release gate.
-
-[Status](docs/FEATURE_STATUS.md) · [Blockers](DECISIONS_AND_BLOCKERS.md) · [Acceptance Matrix](ACCEPTANCE_MATRIX.md) · [Documentation index](docs/README.md).
-
-## Local startup and verification
-
-Requires Docker with a Linux engine, Python 3.10–3.13, `uv` and Node.js/pnpm. From the root:
+The full local environment needs Docker with a Linux engine, Python 3.10–3.13, `uv` and Node.js/pnpm:
 
 ```sh
 uv sync --all-groups --frozen
@@ -144,6 +156,24 @@ pnpm install --frozen-lockfile
 uv run python scripts/demo_runtime.py prepare
 ```
 
-`prepare` recreates only the local `pulse109-demo` project and seeds/verifies Golden World. Success: `PULSE 109 DEMO READY`. Open `http://localhost:3000/demo`. Windows: `.\demo.ps1 prepare`. The public VPS follows its separate [runbook](infra/runbooks/PUBLIC_DEPLOYMENT.md).
+`prepare` recreates only the local `pulse109-demo` project, migrates, seeds and verifies Golden World. Success: `PULSE 109 DEMO READY`. Open [http://localhost:3000/demo](http://localhost:3000/demo). Windows: `.\demo.ps1 prepare`. The public VPS follows its separate [runbook](infra/runbooks/PUBLIC_DEPLOYMENT.md).
 
-Development checks: `make lint typecheck test contract-test e2e build`. PostgreSQL integration requires `PULSE109_TEST_DATABASE_URL` and the [isolated runner](docs/DEVELOPMENT.md); skipped is not passed. This documentation pass did not rerun the backend suite.
+```sh
+make lint typecheck test contract-test e2e build
+```
+
+PostgreSQL integration runs through the [isolated runner](docs/DEVELOPMENT.md) with `PULSE109_TEST_DATABASE_URL`. Current CI runs and results are collected in [verification documentation](docs/DEVELOPMENT.md) and [GitHub Actions](https://github.com/BAITC-Hacks/hack-803e2c8f-baash/actions).
+
+**GovTech Camp submission — baash / Pulse 109:**
+
+> Pulse 109 is an intelligent layer for 109 services that connects fragmented appeals into city incidents, helps operators make decisions and gives managers verifiable analytics.
+
+## Boundaries of the current environment
+
+| Area                  | Current environment and the next pilot stage                                                                                                                                                                                                                                                                                                                    |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Data and integration  | The demo uses synthetic ALA Golden World and a replay adapter. The canonical layer was built from seven supplied regional exports; further regions and a specific CRM connect through adapters once data/APIs are provided.                                                                                                                                     |
+| Models and forecasts  | Runtime uses deterministic lexical fallback and seasonal-naive forecasts. Fine-tuned candidates remain a separate research track until an approved pre-decision corpus and taxonomy are available. The demo has four routing topics and five background families; validation of ten topics, twenty regions and model quality on real appeals is the next stage. |
+| Replay and operations | Replay Lab compares policies at report level; per-case decision traces are not recorded yet. S3 is configurable; the VPS uses local volumes. Production identity, legal basis, retention and an operational scanner require pilot approval; the current scanner is a mock.                                                                                      |
+
+[Current status](docs/FEATURE_STATUS.md) · [Research and case requirements](docs/review/COMPETITION_AUDIT_2026-09-29.md) · [External dependencies](DECISIONS_AND_BLOCKERS.md) · [Documentation index](docs/README.md).

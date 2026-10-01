@@ -23,7 +23,11 @@ def checked_post(
 
 
 def verify_world(
-    client: httpx.Client, *, require_fresh: bool = True, persist_radar: bool = False
+    client: httpx.Client,
+    *,
+    require_fresh: bool = True,
+    persist_radar: bool = False,
+    water_source_ids: set[str] | None = None,
 ) -> None:
     ready = client.get("/v1/health/ready")
     ready.raise_for_status()
@@ -36,12 +40,15 @@ def verify_world(
     history_days = {source_id.split("-")[2] for source_id in history}
     if len(history_days) < 120:
         raise RuntimeError(f"Only {len(history_days)} of 120 synthetic history days are present")
-    if not WATER_IDS.issubset(rows):
-        raise RuntimeError(f"Missing water reports: {sorted(WATER_IDS - rows.keys())}")
-    request_ids = {str(rows[source_id]["request_id"]) for source_id in WATER_IDS}
+    water_ids = WATER_IDS if water_source_ids is None else water_source_ids
+    if len(water_ids) != 6:
+        raise RuntimeError("World verification requires exactly six water source IDs")
+    if not water_ids.issubset(rows):
+        raise RuntimeError(f"Missing water reports: {sorted(water_ids - rows.keys())}")
+    request_ids = {str(rows[source_id]["request_id"]) for source_id in water_ids}
     if require_fresh:
         received = [
-            datetime.fromisoformat(str(rows[source_id]["received_at"])) for source_id in WATER_IDS
+            datetime.fromisoformat(str(rows[source_id]["received_at"])) for source_id in water_ids
         ]
         oldest, newest = min(received), max(received)
         now = datetime.now(timezone.utc)
