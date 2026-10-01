@@ -21,26 +21,47 @@ PULSE109_TEST_DATABASE_URL=postgresql://<role>:<password>@<host>:5432/<existing-
 
 Роль должна создавать и удалять тестовые БД с UUID в имени. Runner не изменяет указанную исходную БД и БД демо.
 
-## CI на проверенном main
+## Проверенный stabilization release
 
-[Workflow](../.github/workflows/ci.yml) содержит четыре задания. Датированный прогон [36876998829](https://github.com/BAITC-Hacks/hack-803e2c8f-baash/actions/runs/36876998829) на `e494390`, 1 октября 2026 года:
+[CI 36889724226](https://github.com/BAITC-Hacks/hack-803e2c8f-baash/actions/runs/36889724226) на исполняемой ревизии `135680a`, 1 октября 2026: **все четыре jobs прошли**.
 
-| Job / шаг                                           | Результат                                                                |
-| --------------------------------------------------- | ------------------------------------------------------------------------ |
-| quality: lint, typecheck, build, Compose validation | passed                                                                   |
-| quality: pytest                                     | 429 passed, 23 skipped без integration DB                                |
-| quality: contract / e2e                             | 26 passed / 18 passed                                                    |
-| container-smoke                                     | passed, health, extensions, migrations, restore drill                    |
-| isolated integration runner                         | 23 passed в каждой из двух одноразовых PostgreSQL БД                     |
-| demo-profile-smoke                                  | passed, seed и полный сквозной API-сценарий                              |
-| security-supply-chain                               | failed на pip-audit: четыре предупреждения об уязвимостях в двух пакетах |
+| Job / шаг                                | Результат                                                              |
+| ---------------------------------------- | ---------------------------------------------------------------------- |
+| quality: lint, typecheck, build, Compose | passed                                                                 |
+| quality: pytest                          | 439 passed, 23 skipped без integration DB                              |
+| quality: contract / e2e                  | 26 passed / 18 passed                                                  |
+| container-smoke                          | passed: сервисы, расширения, миграции и restore drill                  |
+| isolated integration runner              | 23 passed в каждой из двух одноразовых PostgreSQL БД                   |
+| demo-profile-smoke                       | passed: seed и полный API-сценарий                                     |
+| security-supply-chain                    | passed: Python/Node audit, gitleaks, image build, оба Trivy шага, SBOM |
 
-Найденные уязвимости: `urllib3 2.7.0` — `GHSA-8988-9cw3-xx77`, `GHSA-gh4c-6fx4-qh6g`, `GHSA-vxq7-64xx-v4gw` (CI указывает исправленную версию `2.8.0`); `PyJWT 2.14.0` — `GHSA-42vr-xj54-vc7v` (исправление `2.15.0`). Это сведения из зафиксированного журнала CI, а не утверждение, что обновление уже проверено. Последующие Node/secret/image/SBOM шаги этого задания были пропущены. Исправление зависимостей и новый security gate остаются отдельной задачей; в документационном проходе lockfiles не менялись.
+Числа текущего полного прогона хранятся в этой секции; остальные документы ссылаются сюда.
 
-Историческая блокировка из-за оплаты BAITC-Hacks в сентябре не объясняет эти ошибки: на этом SHA задания действительно запустились. Старые успешные прогоны не являются доказательством текущего HEAD.
+### Точечные исправления зависимостей
+
+| Компонент                    | Было → стало                      |
+| ---------------------------- | --------------------------------- |
+| PyJWT                        | 2.14.0 → 2.15.0                   |
+| urllib3                      | 2.7.0 → 2.8.0                     |
+| Next.js / eslint-config-next | 16.3.4 → 16.3.6                   |
+| brace-expansion              | 1.1.18 → 1.1.21; 5.0.9 → 5.0.12   |
+| libpcre2-8-0 в API image     | 10.46-1~deb13u2 → 10.46-1~deb13u3 |
+| OpenSSL-пакеты в API image   | 3.5.7-1~deb13u2 → 3.5.7-1~deb13u3 |
+
+`uv.lock` обновлён через `uv lock`; Node lockfile — через pnpm. `boto3 1.40.30` / `botocore 1.40.76` сохранены: их ограничения допускают urllib3 2.8.0. Проверки Python без extra и с `--extra s3`, а также `pnpm audit --audit-level high` вернули «No known vulnerabilities found». Уязвимости не исключались из проверки. Dockerfile обновляет только четыре пакета OpenSSL/PCRE в закреплённом базовом образе; Trivy gate остаётся включённым.
+
+Первый повторный [прогон 36889227122](https://github.com/BAITC-Hacks/hack-803e2c8f-baash/actions/runs/36889227122) прошёл audits и выявил исправимые системные HIGH-находки. Они устранены следующим коммитом. Предыдущий красный [прогон 36885199904](https://github.com/BAITC-Hacks/hack-803e2c8f-baash/actions/runs/36885199904) описывает состояние до stabilization pass.
+
+Локально также прошли существующий backend suite, контрактные/E2E проверки, mypy, Ruff, web lint/typecheck/build и safety-тесты новой команды. Проверка PostgreSQL выполнена CI, а не засчитана по локальным skipped. Предупреждения ESLint о шрифте и Actions о Node 20 не блокируют jobs и не требуют смены архитектуры.
+
+### Public Golden World
+
+1 октября **21:13 Asia/Qyzylorda (16:13 UTC)** выполнено операторское обновление: резервная копия БД проверена `pg_restore --list` и SHA-256, затем через обычные API добавлены свежие fixtures. Сохранено 121 календарный день истории; шесть новых сообщений группируются Radar за шесть часов. Ask Pulse RU/KK, исходные записи, PDF/XLSX и прогнозы 30/60/90 прошли. Landing, `/demo` и оба health endpoints доступны с рабочей станции. Подробности и повторяемая команда — [PUBLIC_DEPLOYMENT](../infra/runbooks/PUBLIC_DEPLOYMENT.md).
+
+CI проверяет новые зависимости и образы. Работающие VPS images сохранены: web `22d89e7` и прежний backend. Этот проход обновил демонстрационные данные, а не выкатил новые images; зелёный image audit не приписывается старым контейнерам.
 
 ## Работающий контур и документация
 
 Демо исполняет FastAPI/PostgreSQL/migrations/audit/outbox/worker/Next.js; записи и внешние квитанции синтетические. Фикстура в памяти служит тестам и локальной симуляции, но не заменяет публичный PostgreSQL demo. [FEATURE_STATUS](FEATURE_STATUS.md) — источник текущего состояния.
 
-Документационный проход 1 октября: сверка всех активных Markdown, истории Git и ссылок, prettier и `git diff --check`. Тесты backend заново не запускались: исполняемый код, контракты и конфигурация этим проходом не изменяются. Результаты перечислены в [отчёте документации](review/DOCUMENTATION_REVIEW_2026-10-01.md).
+Предыдущий документационный проход `91fd220` описан отдельно и предшествует stabilization pass; его датированные результаты являются историей. Результаты перечислены в [отчёте документации](review/DOCUMENTATION_REVIEW_2026-10-01.md).
