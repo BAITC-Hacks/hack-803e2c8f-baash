@@ -1,4 +1,4 @@
-[Русский](README.md) | [English](README.en.md) | [Қазақша](README.kk.md)
+[Русский](README.md) · [English](README.en.md) · [Қазақша](README.kk.md)
 
 # Pulse 109
 
@@ -6,7 +6,7 @@
 
 An intelligent layer for 109 services that connects appeals into city incidents, helps operators decide and gives managers verifiable analytics.
 
-[Open demo](https://baash.govtech-kz.com/demo) · [Landing](https://baash.govtech-kz.com/) · [Golden Demo](docs/GOLDEN_DEMO.md) · [Architecture](docs/architecture/README.md)
+[Open demo](https://baash.govtech-kz.com/demo) · [Landing](https://baash.govtech-kz.com/) · [Golden Demo](docs/GOLDEN_DEMO.en.md) · [Architecture](docs/architecture/README.en.md)
 
 ![Pulse 109 Operations Center using demonstration data](docs/screenshots/operations-center.png)
 
@@ -14,7 +14,7 @@ An intelligent layer for 109 services that connects appeals into city incidents,
 
 ### Public environment
 
-The **[landing](https://baash.govtech-kz.com/)** and **[interactive demo](https://baash.govtech-kz.com/demo)** share a Next.js application behind the organizer HTTPS proxy. FastAPI, PostgreSQL, migrations, audit, outbox and worker run the application workflow. Golden World is a synthetic ALA city; a replay adapter reproduces external delivery. PostgreSQL stays inside the stack. Deployment details and checks are in the [runbook](infra/runbooks/PUBLIC_DEPLOYMENT.md).
+The **[landing](https://baash.govtech-kz.com/)** and **[interactive demo](https://baash.govtech-kz.com/demo)** share a Next.js application behind the organizer HTTPS proxy. FastAPI, PostgreSQL, migrations, audit, outbox and worker run the application workflow. Golden World is a synthetic ALA city; a replay adapter reproduces external delivery. PostgreSQL stays inside the stack. Deployment details and checks are in the [runbook](infra/runbooks/PUBLIC_DEPLOYMENT.en.md).
 
 ## The task
 
@@ -41,7 +41,7 @@ Different reports about water, roads or lighting can describe one city problem. 
 3. **Expanded to a city situation.** Radar, Incident and War Room connected individual tickets. Ownership, human confirmation and handoff control connected detection to execution; Outcome Memory, Replay Lab and Data Lab added feedback.
 4. **Made the product inspectable.** Ask Pulse, product UI, a map, Golden World with 120 days of history and a public VPS turned APIs into an end-to-end demo. The final phase focuses on stabilization, verification and presentation.
 
-Decisions and commits: [development history](docs/DEVELOPMENT_HISTORY.md) · [Camp journal](docs/PROJECT_JOURNAL.md) · [Decision Log](docs/DECISION_LOG.md).
+Decisions and commits: [development history](docs/DEVELOPMENT_HISTORY.en.md) · [Camp journal](docs/PROJECT_JOURNAL.en.md) · [Decision Log](docs/DECISION_LOG.en.md).
 
 ## Team and weekly work
 
@@ -59,7 +59,7 @@ Decisions and commits: [development history](docs/DEVELOPMENT_HISTORY.md) · [Ca
 | **Baktiyar Ablaikhan (@sronters)**       | Durable workflows, governance, ownership/Decision Gateway, Incident, Ask Pulse, UI/UX, Golden Demo, maps and VPS deployment |
 | **Sagyt Shyngyskhan (@Shyngyskhan-333)** | Replay/War Room/storage, Hex UI and final judge-facing documentation                                                        |
 
-Periods and roles follow the team journal and project history; contribution details and sources are in [PROJECT_JOURNAL](docs/PROJECT_JOURNAL.md).
+Periods and roles follow the team journal and project history; contribution details and sources are in [PROJECT_JOURNAL](docs/PROJECT_JOURNAL.en.md).
 
 ## What works now
 
@@ -72,9 +72,9 @@ Periods and roles follow the team journal and project history; contribution deta
 | Ask Pulse                | RU/KK questions, calculations, charts, source records, PDF/XLSX       | Operations → Ask Pulse                                                               |
 | 30/60/90-day forecasts   | Transparent seasonal-naive baseline on 120 days of history            | Ask Pulse → one/two/three-month forecast                                             |
 | Data Lab and Replay Lab  | Quality and drill-down; saved reports and aggregate policy comparison | Data Lab / Replay Lab                                                                |
-| Platform                 | PostgreSQL, audit, outbox, worker, adapters and manual fallback       | Timeline, health, [architecture](docs/architecture/README.md)                        |
+| Platform                 | PostgreSQL, audit, outbox, worker, adapters and manual fallback       | Timeline, health, [architecture](docs/architecture/README.en.md)                        |
 
-The complete capability matrix is in [FEATURE_STATUS](docs/FEATURE_STATUS.md); current verification results are in [DEVELOPMENT](docs/DEVELOPMENT.md).
+The complete capability matrix is in [FEATURE_STATUS](docs/FEATURE_STATUS.en.md); current verification results are in [DEVELOPMENT](docs/DEVELOPMENT.en.md).
 
 ## Why Pulse 109: the classifier trap
 
@@ -121,7 +121,7 @@ Ask Pulse: question → calculation → source records → PDF/XLSX
 4. **Confirm an action:** assign an appeal in the queue and show durable delivery through outbox/worker.
 5. **Ask Pulse:** “Show appeals for the last seven days in Almaty” → count, chart, calculation details, source records and export.
 
-[Full scenario](docs/GOLDEN_DEMO.md) · [Presenter runbook](docs/DEMO_RUNBOOK.md) · [Demo recording](docs/DEMO_RECORDING_SCRIPT.md). Prepare a current Golden World time window using the runbook before presenting.
+[Full scenario](docs/GOLDEN_DEMO.en.md) · [Presenter runbook](docs/DEMO_RUNBOOK.en.md) · [Demo recording](docs/DEMO_RECORDING_SCRIPT.en.md). Prepare a current Golden World time window using the runbook before presenting.
 
 [Operator queue](docs/screenshots/operator-queue.png) · [Incident register](docs/screenshots/incidents-list.png) · [Data Lab](docs/screenshots/data-lab.png) · [Replay Lab](docs/screenshots/replay-lab.png).
 
@@ -139,12 +139,12 @@ flowchart LR
     DB --> ASK[Ask Pulse / calculations and exports]
 ```
 
-- **Fits existing processes:** regional systems connect through adapters and stable [contracts](contracts/README.md).
+- **Fits existing processes:** regional systems connect through adapters and stable [contracts](contracts/README.en.md).
 - **Preserves decisions and assignments:** transactional outbox, `FOR UPDATE SKIP LOCKED`, retries and idempotent commands.
 - **Works without ML:** intake, manual routing, statuses and audit keep running if inference fails.
 - **Provides verifiable numbers:** Ask Pulse uses approved analytical queries, core calculations and links to source records.
 
-See [architecture](docs/architecture/README.md) for detailed diagrams and access boundaries.
+See [architecture](docs/architecture/README.en.md) for detailed diagrams and access boundaries.
 
 ## Verification and startup
 
@@ -156,13 +156,13 @@ pnpm install --frozen-lockfile
 uv run python scripts/demo_runtime.py prepare
 ```
 
-`prepare` recreates only the local `pulse109-demo` project, migrates, seeds and verifies Golden World. Success: `PULSE 109 DEMO READY`. Open [http://localhost:3000/demo](http://localhost:3000/demo). Windows: `.\demo.ps1 prepare`. The public VPS follows its separate [runbook](infra/runbooks/PUBLIC_DEPLOYMENT.md).
+`prepare` recreates only the local `pulse109-demo` project, migrates, seeds and verifies Golden World. Success: `PULSE 109 DEMO READY`. Open [http://localhost:3000/demo](http://localhost:3000/demo). Windows: `.\demo.ps1 prepare`. The public VPS follows its separate [runbook](infra/runbooks/PUBLIC_DEPLOYMENT.en.md).
 
 ```sh
 make lint typecheck test contract-test e2e build
 ```
 
-PostgreSQL integration runs through the [isolated runner](docs/DEVELOPMENT.md) with `PULSE109_TEST_DATABASE_URL`. Current CI runs and results are collected in [verification documentation](docs/DEVELOPMENT.md) and [GitHub Actions](https://github.com/BAITC-Hacks/hack-803e2c8f-baash/actions).
+PostgreSQL integration runs through the [isolated runner](docs/DEVELOPMENT.en.md) with `PULSE109_TEST_DATABASE_URL`. Current CI runs and results are collected in [verification documentation](docs/DEVELOPMENT.en.md) and [GitHub Actions](https://github.com/BAITC-Hacks/hack-803e2c8f-baash/actions).
 
 **GovTech Camp submission — baash / Pulse 109:**
 
@@ -176,4 +176,4 @@ PostgreSQL integration runs through the [isolated runner](docs/DEVELOPMENT.md) w
 | Models and forecasts  | Runtime uses deterministic lexical fallback and seasonal-naive forecasts. Fine-tuned candidates remain a separate research track until an approved pre-decision corpus and taxonomy are available. The demo has four routing topics and five background families; validation of ten topics, twenty regions and model quality on real appeals is the next stage. |
 | Replay and operations | Replay Lab compares policies at report level; per-case decision traces are not recorded yet. S3 is configurable; the VPS uses local volumes. Production identity, legal basis, retention and an operational scanner require pilot approval; the current scanner is a mock.                                                                                      |
 
-[Current status](docs/FEATURE_STATUS.md) · [Research and case requirements](docs/review/COMPETITION_AUDIT_2026-09-29.md) · [External dependencies](DECISIONS_AND_BLOCKERS.md) · [Documentation index](docs/README.md).
+[Current status](docs/FEATURE_STATUS.en.md) · [Research and case requirements](docs/review/COMPETITION_AUDIT_2026-09-29.en.md) · [External dependencies](DECISIONS_AND_BLOCKERS.en.md) · [Documentation index](docs/README.en.md).

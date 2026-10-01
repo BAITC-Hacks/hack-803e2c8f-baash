@@ -1,16 +1,11 @@
-# Security and privacy release gate
+[Русский](SECURITY_PRIVACY.md) · [English](SECURITY_PRIVACY.en.md) · [Қазақша](SECURITY_PRIVACY.kk.md)
 
-- Non-local API profiles require a bearer token with validated issuer, audience, expiry, roles, and
-  regions. Development identity headers are disabled in pilot and production.
-- Verify cross-region reads, mutations, reports, and job access return `403`/`404` without revealing
-  object existence. Exports require a verified purpose and enforce row limits and masking metadata.
-- Confirm raw names, addresses, identifiers, phones, appeal text, tokens, and request bodies are absent
-  from logs, metrics, traces, exception bodies, and report metadata.
-- Confirm TLS/mTLS termination, database/object-store encryption, secret-store injection, key
-  rotation, backup encryption, retention, and deletion with the named infrastructure/legal owners.
-- Run locked dependency audit, repository secret scan, SBOM generation, and container vulnerability
-  scan in CI. Unresolved high/critical findings block the release.
-- Test malicious appeal text as data: it cannot invoke tools, expand authorization, select SQL, alter
-  policy, or send a generated response.
-- Keep Open311, replay, geocoder/tile, call-recording, and synthetic data clearly labelled; none imply
-  a live government integration or legal approval.
+# Проверка безопасности и приватности релиза
+
+- API-профили вне локального контура требуют bearer token с проверенными issuer, audience, сроком действия, ролями и регионами. Заголовки development identity отключены в pilot и production.
+- Проверьте, что чтение, изменения, отчёты и доступ к заданиям другого региона возвращают `403`/`404`, не раскрывая существование объекта. Экспорт требует проверенной цели и соблюдает ограничения строк и метаданные маскирования.
+- Убедитесь, что исходные имена, адреса, идентификаторы, телефоны, текст обращений, токены и тела запросов отсутствуют в логах, метриках, трассах, телах исключений и метаданных отчётов.
+- Подтвердите TLS/mTLS termination, шифрование БД/объектного хранилища, внедрение секретов из secret store, ротацию ключей, шифрование backup, сроки хранения и удаление с назначенными инфраструктурными и правовыми ответственными.
+- Выполните в CI аудит зафиксированных зависимостей, сканирование секретов репозитория, генерацию SBOM и проверку уязвимостей контейнера. Нерешённые high/critical находки блокируют релиз.
+- Проверяйте вредоносный текст обращения как данные: он не может вызывать инструменты, расширять полномочия, выбирать SQL, менять политику или отправлять сгенерированный ответ.
+- Явно обозначайте Open311, replay, geocoder/tile, запись звонков и синтетические данные; ни один из них не означает действующую государственную интеграцию или правовое одобрение.

@@ -1,3 +1,5 @@
+[Русский](DEMO_RECORDING_SCRIPT.md) · [English](DEMO_RECORDING_SCRIPT.en.md) · [Қазақша](DEMO_RECORDING_SCRIPT.kk.md)
+
 # Запись двухминутного демо
 
 Основной источник для финального видео — публичный PostgreSQL-backed [demo](https://baash.govtech-kz.com/demo). Путь совпадает с [Golden Demo](GOLDEN_DEMO.md). Нужны здоровые API/БД, подготовленный мир и свежий водный сценарий; доступность landing сама по себе этого не доказывает. Перед записью сверьте [deployment runbook](../infra/runbooks/PUBLIC_DEPLOYMENT.md).

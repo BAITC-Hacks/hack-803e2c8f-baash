@@ -1,3 +1,5 @@
+[Русский](DEMO_RUNBOOK.md) · [English](DEMO_RUNBOOK.en.md) · [Қазақша](DEMO_RUNBOOK.kk.md)
+
 # Pulse 109: запуск и маршрут демонстрации
 
 Основной маршрут показа — [Golden Demo](GOLDEN_DEMO.md). Он связывает одно новое

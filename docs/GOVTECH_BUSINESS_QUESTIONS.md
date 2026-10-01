@@ -1,3 +1,5 @@
+[Русский](GOVTECH_BUSINESS_QUESTIONS.md) · [English](GOVTECH_BUSINESS_QUESTIONS.en.md) · [Қазақша](GOVTECH_BUSINESS_QUESTIONS.kk.md)
+
 # Questions for GovTech organizers / Вопросы организаторам GovTech
 
 The questions below identify decisions that cannot be inferred from sample data or a demo. Please give an owner, authoritative document, effective date and example for each answer. We can continue the isolated synthetic demonstration while answers are pending.

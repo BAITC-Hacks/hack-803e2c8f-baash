@@ -1,59 +1,35 @@
+[Русский](OUTCOME_MEMORY.md) · [English](OUTCOME_MEMORY.en.md) · [Қазақша](OUTCOME_MEMORY.kk.md)
+
 # Outcome Memory
 
-## What it stores
+## Что хранит
 
-Not that a case was closed, but how it was resolved and whether the resolution
-held: the taxonomy codes, the actions taken, the evidence, the time to
-resolution, the closure verification, and whether it was reopened or recurred.
+Не только факт закрытия, но способ решения и устойчивость результата: коды таксономии, действия, доказательства, время до решения, проверку закрытия, повторное открытие и повторяемость проблемы.
 
-## What qualifies
+## Критерии включения
 
-Only a human-confirmed closure with valid evidence. A status arriving from a CRM
-does not qualify, because it records that somebody marked a ticket closed, not
-that the problem was fixed. The provenance chain is enforced in the model: a
-closure id, a preflight id, a confirming actor digest, at least one piece of
-content-addressed evidence, and a confirmation that cannot precede the operator
-decision.
+Только подтверждённое человеком закрытие с действительными доказательствами. Статус CRM фиксирует отметку «закрыто», но не исправление проблемы. Модель обеспечивает цепочку происхождения: ID закрытия, ID предварительной проверки, digest подтвердившего пользователя, минимум одно доказательство с адресацией по содержимому и подтверждение не раньше решения оператора.
 
-## What it shows
+## Что показывает
 
-When a comparable problem appears, the war room shows how many verified
-outcomes exist, what was done in them, the median time to resolution and how
-many went thirty days without recurrence.
+Когда появляется похожая проблема, War Room показывает число проверенных исходов, выполненные действия, медиану времени до решения и количество случаев без повторения за тридцать дней.
 
-It never says "do X". It shows the record and lets an operator draw the
-conclusion.
+Модуль не говорит «сделайте X». Он показывает запись, а вывод делает оператор.
 
-## No text crosses this boundary
+## Текст не пересекает эту границу
 
-Retrieval uses controlled taxonomy terms only. Free text, names, locations and
-identifiers are rejected by the model validators, so the memory cannot become a
-back door around the privacy boundary.
+Поиск использует только контролируемые термины таксономии. Валидаторы модели отклоняют свободный текст, имена, места и идентификаторы, чтобы память не стала обходом границы конфиденциальности.
 
-## Current state
+## Текущее состояние
 
-Wired into the war room and answering.
+Подключено к War Room и отвечает.
 
-Production retrieval still refuses to yield candidates, correctly. It needs an
-approved corpus, a verified evidence timestamp, a controlled retrieval-term
-mapping and a retention approval, none of which exist. Waiting for those would
-leave the capability invisible, and a capability nobody can see is one nobody
-can judge.
+Промышленный поиск пока обоснованно отказывается выдавать кандидатов: нужны утверждённый корпус, проверенное время доказательства, контролируемое сопоставление поисковых терминов и согласованный срок хранения. Сейчас их нет. Ожидание оставило бы возможность невидимой для оценки.
 
-The demo profile therefore mounts a separate reader over the closures the demo
-itself produced through the real closure workflow, human-confirmed and
-evidence-backed. They pass the same model validators production retrieval would
-face, and every record carries `data_classification: synthetic` with an explicit
-`DEMO_SYNTHETIC_OUTCOME_CORPUS` label in its own provenance. The reader refuses a
-caller that has not accepted synthetic data.
+Поэтому demo-профиль использует отдельный reader закрытий, полученных самой демонстрацией через реальный workflow закрытия, подтверждённых человеком и доказательствами. Они проходят те же валидаторы, что промышленный поиск. Каждая запись содержит `data_classification: synthetic` и явную метку `DEMO_SYNTHETIC_OUTCOME_CORPUS` в происхождении. Reader отклоняет вызов, если пользователь не согласился на синтетические данные.
 
-These records are a demonstration corpus. They must never appear in a production
-model-quality claim.
+Это демонстрационный корпус; его записи никогда не подтверждают промышленное качество модели.
 
-## One number the demo cannot show
+## Число, которого демо не показывает
 
-Resolution time. The seeding script records the decision and the confirmed
-closure within the same second, so the duration is an artefact of how the demo
-was built rather than a fact about resolving anything. Any gap under a minute is
-reported as unknown instead of zero, because a median of zero hours would be a
-lie dressed as a metric.
+Время решения. Seed фиксирует решение и подтверждённое закрытие в одну секунду, поэтому длительность описывает способ создания демо, а не устранение проблемы. Разрыв меньше минуты отображается как неизвестный вместо нуля: медиана ноль часов создала бы ложный показатель.

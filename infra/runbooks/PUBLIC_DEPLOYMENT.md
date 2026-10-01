@@ -1,3 +1,5 @@
+[Русский](PUBLIC_DEPLOYMENT.md) · [English](PUBLIC_DEPLOYMENT.en.md) · [Қазақша](PUBLIC_DEPLOYMENT.kk.md)
+
 # Публичное демо: размещение и эксплуатация
 
 Текущая запись о развёртывании [лендинга](https://baash.govtech-kz.com/) и [рабочего пространства](https://baash.govtech-kz.com/demo), проверенная **1 октября 2026 года**. Стенд — `PULSE109_PROFILE=demo`: реальные FastAPI/PostgreSQL/migrations/audit/outbox/worker, синтетические записи ALA, демонстрационные учётные записи и синтетические квитанции replay-доставки. Региональная CRM и IdP не подключены; правовые основания и сроки хранения не согласованы. Это демонстрационный стенд.

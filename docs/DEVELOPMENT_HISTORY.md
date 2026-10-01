@@ -1,3 +1,5 @@
+[Русский](DEVELOPMENT_HISTORY.md) · [English](DEVELOPMENT_HISTORY.en.md) · [Қазақша](DEVELOPMENT_HISTORY.kk.md)
+
 # История разработки Pulse 109
 
 Хронология всей сохранённой истории `main`, сверенная 1 октября 2026 года до `e494390`. Это история изменений, а текущий статус определяется [FEATURE_STATUS](FEATURE_STATUS.md). Предварительная работа до 12 сентября описана в [журнале Camp](PROJECT_JOURNAL.md); Git-коммиты за 3–11 сентября не заявляются.

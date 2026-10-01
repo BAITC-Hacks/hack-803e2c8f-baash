@@ -1,3 +1,5 @@
+[Русский](DECISIONS_AND_BLOCKERS.md) · [English](DECISIONS_AND_BLOCKERS.en.md) · [Қазақша](DECISIONS_AND_BLOCKERS.kk.md)
+
 # Решения и внешние блокеры Pulse 109
 
 Текущее состояние — [FEATURE_STATUS](docs/FEATURE_STATUS.md); здесь фиксируются границы и ответы, которые должен дать заказчик или организатор. Публичный synthetic demo не закрывает производственные согласования.

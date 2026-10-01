@@ -1,6 +1,8 @@
+[Русский](README.md) · [English](README.en.md) · [Қазақша](README.kk.md)
+
 # Архитектура Pulse 109
 
-Русское описание текущего исполняемого контура и границ доверия. [FEATURE_STATUS](../FEATURE_STATUS.md) определяет готовность возможностей; [контракты](../../contracts/README.md) задают стабильные границы API, схем и событий. Описание не удостоверяет готовность к промышленной эксплуатации.
+Описание текущего исполняемого контура и границ доверия. [FEATURE_STATUS](../FEATURE_STATUS.md) определяет готовность возможностей; [контракты](../../contracts/README.md) задают стабильные границы API, схем и событий. Описание не удостоверяет готовность к промышленной эксплуатации.
 
 ## Процессы и источники истины
 
@@ -112,4 +114,4 @@ flowchart LR
 
 ## Где проверять
 
-[OpenAPI](../../contracts/openapi.yaml) · [canonical schema](../../contracts/canonical_request.schema.json) · [event catalog](../../contracts/event_catalog.md) · [ADR](../../contracts/adr/) · [CI и команды](../DEVELOPMENT.md) · [Golden Demo](../GOLDEN_DEMO.md). Англоязычные спецификации и внутренние технические записки индексированы в [docs/README](../README.md); английский обзор продукта — [README.en](../../README.en.md).
+[OpenAPI](../../contracts/openapi.yaml) · [canonical schema](../../contracts/canonical_request.schema.json) · [event catalog](../../contracts/event_catalog.md) · [ADR](../../contracts/adr/) · [CI и команды](../DEVELOPMENT.md) · [Golden Demo](../GOLDEN_DEMO.md). Спецификации и внутренние технические записки индексированы в [docs/README](../README.md); обзор продукта — [README](../../README.md).

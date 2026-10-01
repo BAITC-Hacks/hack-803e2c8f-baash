@@ -1,29 +1,29 @@
-> Historical design plan. The Hex UI pass landed in `4559a7d`; unchecked tasks below are not the current product backlog. Current status: [FEATURE_STATUS](docs/FEATURE_STATUS.md).
+[Русский](hex-landing-rework.md) · [English](hex-landing-rework.en.md) · [Қазақша](hex-landing-rework.kk.md)
 
-# Implementation Plan: Pulse 109 Hex Visual Style Landing Page Rework
+> Исторический проектный план. Проход Hex UI появился в `4559a7d`; неотмеченные задачи ниже не являются текущим бэклогом продукта. Текущий статус: [FEATURE_STATUS](docs/FEATURE_STATUS.md).
 
-Historical proposal from a parallel design pass. The current landing takes
-visual cues from this plan, but its product panels are captures of the real
-working demo; unchecked items below are not the current task backlog.
+# План реализации: Pulse 109 Переработка целевой страницы шестнадцатеричного визуального стиля
 
-## Goal
+Историческое предложение из параллельного прохода проекта. Текущий лендинг основан на визуальных подсказках этого плана, но панели продуктов представляют собой реальную рабочую демонстрацию; неотмеченные элементы ниже не являются текущим журналом невыполненных задач.
 
-Refactor the Pulse 109 landing page (`apps/web/app/landing.tsx` and `apps/web/app/landing.module.css`) to embody the visual style of **Hex** (AI Analytics Platform for Your Whole Team) extracted via InspoMCP: Bento Grid macrostructure, light editorial aesthetic, precise Hex color palette (#d49e46, #ecc484, #080720, #5c9c4c, #bcb4d4), type weight + scale driven hierarchy, sharp 1px border radii, subtle technical grids, and delightful micro-interactions.
+## Цель
 
-## Tasks
+Рефакторинг целевой страницы Pulse 109 (`apps/web/app/landing.tsx` и `apps/web/app/landing.module.css`), чтобы воплотить визуальный стиль **Hex** (платформы AI Analytics для всей вашей команды), извлеченный с помощью InspoMCP: макроструктура Bento Grid, легкая редакционная эстетика, точная цветовая палитра Hex (#d49e46, #ecc484, #080720, #5c9c4c, #bcb4d4), иерархия, управляемая весом и масштабом, резкие радиусы границ в 1 пиксель, тонкие технические сетки и восхитительные микровзаимодействия.
 
-- [ ] Task 1: Initialize Project DESIGN.md from InspoMCP Hex extracted tokens → Verify: `DESIGN.md` exists with exact Hex palette, type ramp, and bento specifications.
-- [ ] Task 2: Configure Hex typography, font faces (IBM Plex Sans & Mono with Formula / Cinetype geometric styling) in `apps/web/app/globals.css` and layout → Verify: CSS variables and Google Fonts/IBM Plex loaded.
-- [ ] Task 3: Redesign `landing.module.css` with Hex design tokens, surface system (`#080720` ink, `#ecc484` / `#d49e46` support/accents, `#5c9c4c` live/status green, `#bcb4d4` muted violet), Bento Grid layouts (irregular spans, 1px borders, subtle paper/technical grid texture, sharp 1px/2px radius) → Verify: CSS compiles cleanly.
-- [ ] Task 4: Refactor Hero into an asymmetric Hex-style Bento Hero: Headline in expanded display scale, Live Municipal Stage with interactive arrival chart, Real-time Operations Pulse, and Ask Pulse inspector card → Verify: Hero displays in modular bento cells with responsive desktop and mobile layouts.
-- [ ] Task 5: Refactor Feature & Operational Architecture sections into Hex Bento Grid cards with technical micro-interactions, guardrail badges, and inspection states → Verify: Bento modules render cleanly without layout shifts.
-- [ ] Task 6: Refactor Ask Pulse analytical exploration and Incident Aggregation into Hex notebook/studio bento cards with verified provenance tags and drilldown paths → Verify: Interactive toggles and synthetic data disclaimers function properly.
-- [ ] Task 7: Refactor Navigation, Language Switcher (RU/KK), Facts Ticker, and Footer to match Hex high-craft minimalism and 1440px container discipline → Verify: Sticky nav and accessibility skip links work across viewports.
-- [ ] Task 8: Add Design Spells micro-interactions: subtle hover coordinate glows, bento tile corner markers (`+` grid crosses), interactive metric inspection, and smooth transitions → Verify: 60fps micro-animations without layout shifting.
-- [ ] Task 9: Run TypeScript validation, linting, and Next.js verification → Verify: `node node_modules/.pnpm/typescript@5.9.2/node_modules/typescript/lib/tsc.js --project apps/web/tsconfig.json --noEmit` exits with 0 and zero errors.
+## Задачи
 
-## Done When
+- [ ] Задача 1. Инициализация проекта DESIGN.md из жетонов InspoMCP, извлеченных в шестнадцатеричном формате → Убедитесь, что `DESIGN.md` существует с точной шестнадцатеричной палитрой, набором типов и спецификациями бенто.
+- [ ] Задача 2. Настройте шестнадцатеричную типографику, начертания шрифтов (IBM Plex Sans и Mono с геометрическим стилем Formula/Cinetype) в `apps/web/app/globals.css` и макете → Проверьте: загружены переменные CSS и Google Fonts/IBM Plex.
+- [ ] Задача 3: Редизайн `landing.module.css` с помощью жетонов шестнадцатеричного дизайна, система поверхности (`#080720` чернила, `#ecc484` / `#d49e46` поддержка/акценты, `#5c9c4c` живой/зеленый статус, `#bcb4d4` приглушенный фиолетовый), макеты Bento Grid (неравномерные промежутки, границы в 1 пиксель, тонкая текстура бумаги/техническая сетка, резкая радиус 1 или 2 пикселя) → Убедитесь, что CSS компилируется правильно.
+- [ ] Задача 4. Реорганизация героя в асимметричного героя бенто в стиле Hex: заголовок в расширенном масштабе отображения, живая муниципальная сцена с интерактивной диаграммой прибытия, импульс операций в реальном времени и карточка инспектора Ask Pulse → Проверка: герой отображается в модульных ячейках бенто с адаптивным макетом для настольных компьютеров и мобильных устройств.
+- [ ] Задача 5. Рефакторинг разделов «Функции и операционная архитектура» в карты Hex Bento Grid с техническими микровзаимодействиями, значками ограждений и состояниями проверки → Проверьте: модули Bento визуализируются четко, без изменений макета.
+- [ ] Задача 6. Рефакторинг Ask Pulse аналитического исследования и агрегирования инцидентов в Hex-карточки для ноутбуков/студийных бенто с проверенными тегами происхождения и путями детализации → Проверить: интерактивные переключатели и синтетические заявления об отказе от ответственности работают правильно.
+- [ ] Задача 7. Рефакторинг навигации, переключателя языка (RU/KK), бегущей строки фактов и нижнего колонтитула в соответствии с минимализмом Hex и дисциплиной контейнеров размером 1440 пикселей → Проверьте: липкая навигация и ссылки пропуска специальных возможностей работают во всех окнах просмотра.
+- [ ] Задача 8. Добавление микровзаимодействий Design Spells: едва заметное свечение координат при наведении, угловые маркеры плитки бенто (крестики сетки `+`), интерактивная проверка показателей и плавные переходы → Проверка: микроанимация со скоростью 60 кадров в секунду без смещения макета.
+- [ ] Задача 9. Запустите проверку TypeScript, анализ и проверку Next.js → Проверьте: `node node_modules/.pnpm/typescript@5.9.2/node_modules/typescript/lib/tsc.js --project apps/web/tsconfig.json --noEmit` завершается с 0 и нулевыми ошибками.
 
-- [ ] The landing page adheres strictly to the Hex design system: Bento Grid macrostructure, specified palette, dominant ink/surfaces, type weight hierarchy, sharp geometry, and responsive 1440px max-width container.
-- [ ] All Pulse 109 domain invariants, bilingual RU/KK support, synthetic data labels, and demo links remain completely intact.
-- [ ] TypeScript check passes cleanly with zero errors.
+## Готово, когда
+
+- [ ] Целевая страница строго соответствует системе дизайна Hex: макроструктура Bento Grid, заданная палитра, доминирующие чернила/поверхности, иерархия веса шрифтов, четкая геометрия и адаптивный контейнер максимальной ширины 1440 пикселей.
+- [ ] Все инварианты домена Pulse 109, двуязычная поддержка RU/KK, синтетические метки данных и демонстрационные ссылки остаются полностью нетронутыми.
+- [ ] Проверка TypeScript проходит без ошибок.

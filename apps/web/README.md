@@ -1,3 +1,5 @@
-# Pulse 109 web process
+[Русский](README.md) · [English](README.en.md) · [Қазақша](README.kk.md)
 
-The M0 process is dependency-free and exists to prove Compose startup and health wiring. The operator UI is implemented in a later milestone.
+# Веб-процесс Pulse 109
+
+Процесс M0 не имеет зависимостей и подтверждает запуск Compose и подключение проверок состояния. Интерфейс оператора реализован на более позднем этапе.

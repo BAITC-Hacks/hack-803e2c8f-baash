@@ -1,11 +1,14 @@
-# Prompt to Start Implementation
+[Русский](START_CODEX_PROMPT.md) · [English](START_CODEX_PROMPT.en.md) · [Қазақша](START_CODEX_PROMPT.kk.md)
 
-> Historical M0/M1 prompt. Do not use it to restart the current platform.
-> See the [current documentation index](../README.md).
+> Исторический документ. Не является источником текущего состояния проекта.
 
-Implement Pulse 109 using the repository instructions and implementation package in this repository.
+# Задание первоначального запуска
 
-Start by reading, in order:
+> Историческое задание M0/M1. Не используйте его для повторного создания текущей платформы. См. [текущий индекс документации](../README.md).
+
+Реализуйте Pulse 109, используя инструкции репозитория и комплект реализации в этом репозитории.
+
+Начните с чтения по порядку:
 
 1. `AGENTS.md`
 2. `CODEX_IMPLEMENTATION_HANDOFF.md`
@@ -15,21 +18,21 @@ Start by reading, in order:
 6. `contracts/canonical_request.schema.json`
 7. `contracts/event_catalog.md`
 
-Then inspect the current repository and git status. Do not assume the repository is empty and do not overwrite existing user work.
+Затем проверьте текущее состояние репозитория и Git. Не считайте репозиторий пустым и не перезаписывайте существующую работу пользователя.
 
-Your first implementation objective is Milestone M0 followed by M1. Create a concrete execution plan, but continue into implementation without stopping for routine choices. Ask a question only if the missing answer changes data ownership, security, an irreversible schema, API compatibility or the first integration target. For other unknowns, use the documented safe default, record the assumption and continue.
+Первая цель реализации — M0, затем M1. Составьте конкретный план, но продолжайте реализацию, не останавливаясь на обычных решениях. Задавайте вопросы, только если отсутствующий ответ меняет ответственность за данные, безопасность, необратимую схему, совместимость API или первую цель интеграции. Для остальных неизвестных используйте документированное безопасное исходное решение, запишите предположение и продолжайте.
 
-Required outputs for this run:
+Необходимые результаты этого запуска:
 
-- a working repository scaffold matching the target layout;
-- reproducible local startup with no external network dependency after dependencies and images are available;
-- root build, lint, typecheck, test and contract-test commands;
-- PostgreSQL, PostGIS and pgvector development services;
-- versioned canonical contracts wired into validation tests;
-- raw-to-canonical import skeleton with provenance, quarantine and missing-time handling;
-- initial database migrations;
-- `IMPLEMENTATION_STATUS.md` with commands run, results, remaining blockers and the exact next milestone.
+- рабочий каркас репозитория, соответствующий целевой структуре;
+- воспроизводимый локальный запуск без внешней сетевой зависимости после получения зависимостей и images;
+- команды build, lint, typecheck, test и contract-test из корня;
+- сервисы разработки PostgreSQL, PostGIS и pgvector;
+- версионируемые канонические контракты, подключённые к проверочным тестам;
+- каркас импорта исходных данных в канонический формат с происхождением данных, карантином и сохранением отсутствующего времени;
+- первоначальные миграции базы данных;
+- `IMPLEMENTATION_STATUS.md` с выполненными командами, результатами, оставшимися блокерами и конкретным следующим этапом.
 
-Do not train a production model or invent missing organizer data. Use clearly labelled synthetic fixtures only for tests. Keep the manual critical path functional from the beginning.
+Не обучайте production модель и не придумывайте отсутствующие данные организаторов. Используйте явно обозначенные синтетические тестовые данные только для тестов. Ручной критический путь должен работать с самого начала.
 
-After M0 and M1 pass their acceptance gates, review the diff for contract drift, leaked data, accidental coupling and missing failure states. Fix material issues before declaring the run complete.
+После прохождения приёмочных проверок M0 и M1 просмотрите diff на расхождение контрактов, утечку данных, случайное связывание компонентов и отсутствующие состояния ошибок. Исправьте существенные проблемы перед завершением запуска.

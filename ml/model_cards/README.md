@@ -1,4 +1,5 @@
-# Model Cards
+[Русский](README.md) · [English](README.en.md) · [Қазақша](README.kk.md)
 
-Approved candidate and champion model cards will be stored here without model weights.
+# Паспорта моделей
 
+Здесь будут храниться утверждённые паспорта моделей-кандидатов и моделей champion без весов моделей.

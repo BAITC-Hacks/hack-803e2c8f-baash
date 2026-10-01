@@ -1,21 +1,22 @@
-# ADR 003 Human Control for AI Actions
+[Русский](ADR-003-human-control.md) · [English](ADR-003-human-control.en.md) · [Қазақша](ADR-003-human-control.kk.md)
 
-Status: mandatory
+# ADR 003 Контроль человеком действий ИИ
 
-## Decision
+Статус: обязательно
 
-AI output is advisory. A person confirms the final topic, service, priority, duplicate membership and reply before the platform changes an appeal or communicates with a citizen. Deterministic rules may only raise urgency or require an emergency handoff; the model cannot lower a rule-set priority.
+## Решение
 
-## Reasons
+Вывод ИИ носит рекомендательный характер. Человек подтверждает окончательные тему, службу, приоритет, принадлежность дубля и ответ до изменения обращения или общения с гражданином. Детерминированные правила могут только повышать срочность или требовать экстренной передачи; модель не может снижать приоритет, установленный правилами.
 
-- The case materials require human control in decisions affecting citizens.
-- Current datasets do not provide a complete leakage-free label history for autonomous routing.
-- Corrections are valuable supervised feedback and must remain attributable.
+## Причины
 
-## Controls
+- Материалы кейса требуют контроля человеком решений, затрагивающих граждан.
+- Текущие наборы данных не предоставляют полной истории меток без утечек для автономной маршрутизации.
+- Исправления служат ценным обучающим сигналом и должны сохранять авторство.
 
-- Store the input feature snapshot, model version, scores, rule hits, human action and reason code.
-- Route low-confidence and out-of-domain cases to the manual catalog.
-- Keep every original appeal when an incident groups duplicates.
-- Disable generated drafting without disabling intake, assignment, status tracking or analytics.
+## Меры контроля
 
+- Хранить снимок входных признаков, версию модели, оценки, сработавшие правила, действие человека и reason code.
+- Направлять случаи с низкой уверенностью и вне области модели в ручной каталог.
+- Сохранять каждое исходное обращение при объединении дублей инцидентом.
+- Отключать генерацию черновиков независимо от приёма, назначения, отслеживания статуса и аналитики.

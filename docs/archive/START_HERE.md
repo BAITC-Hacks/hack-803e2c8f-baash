@@ -1,36 +1,39 @@
-# Start Here
+[Русский](START_HERE.md) · [English](START_HERE.en.md) · [Қазақша](START_HERE.kk.md)
 
-> Historical bootstrap guide. Its milestone instructions are superseded by the
-> [current documentation index](../README.md) and [feature matrix](../FEATURE_STATUS.md).
+> Исторический документ. Не является источником текущего состояния проекта.
 
-## Is the original specification enough
+# Начните здесь
 
-It is strong architecture documentation, but it should not be used as one giant implementation prompt. It describes both the first pilot and the national target state, contains dependencies that only the organizers can resolve and leaves implementation sequencing to the reader.
+> Историческая инструкция первоначального запуска. Указания по этапам заменены [текущим индексом документации](../README.md) и [матрицей возможностей](../FEATURE_STATUS.md).
 
-This kit converts it into an executable workflow for Codex.
+## Достаточно ли исходной спецификации
 
-## How to use the kit
+Это сильная архитектурная документация, но её не следует использовать как одно большое задание на реализацию. Она описывает и первый пилот, и целевую национальную систему, содержит зависимости, которые могут разрешить только организаторы, и оставляет порядок выполнения на усмотрение читателя.
 
-1. Put the contents of this kit in the root of a new or existing Git repository.
-2. Keep `AGENTS.md` in the repository root so Codex loads the durable project rules automatically.
-3. Start Codex from the repository root and give it the text in `START_CODEX_PROMPT.md`.
-4. Let the first run complete M0 and produce a reviewable plan and scaffold.
-5. Continue milestone by milestone. A separate chat or worktree per milestone is preferable once the repository exists.
-6. Add real datasets only under an access-controlled path outside Git. Commit manifests, schemas and anonymized fixtures, never production PII.
+Этот комплект превращает её в исполнимый рабочий процесс для Codex.
 
-## Files to give Codex
+## Как использовать комплект
 
-- `AGENTS.md`: short durable repository rules.
-- `CODEX_IMPLEMENTATION_HANDOFF.md`: implementation order and engineering decisions.
-- `DECISIONS_AND_BLOCKERS.md`: what is fixed, unknown and safe to assume.
-- `ACCEPTANCE_MATRIX.md`: evidence required to finish each milestone.
-- `contracts/`: executable OpenAPI, JSON Schema, events and ADRs.
-- `docs/`: the complete technical specification and rendered architecture.
+1. Поместите содержимое комплекта в корень нового или существующего Git-репозитория.
+2. Сохраните `AGENTS.md` в корне, чтобы Codex автоматически загружал постоянные правила проекта.
+3. Запустите Codex из корня репозитория и передайте текст `START_CODEX_PROMPT.md`.
+4. Первый запуск должен завершить M0 и подготовить проверяемый план и каркас проекта.
+5. Продолжайте по этапам. После создания репозитория для каждого этапа предпочтителен отдельный чат или worktree.
+6. Храните реальные наборы данных вне Git, по пути с контролем доступа. Вносите в Git манифесты, схемы и обезличенные тестовые данные, но никогда реальные PII.
 
-## What not to do
+## Файлы для Codex
 
-- Do not paste only the 40-page PDF into an empty chat and ask to build everything.
-- Do not ask for all modules in one unreviewed diff.
-- Do not claim model quality before raw text, labels and a frozen test set exist.
-- Do not let a mocked regional integration silently become the production integration.
-- Do not store real appeal payloads in Git, prompts, logs or screenshots.
+- `AGENTS.md`: краткие постоянные правила репозитория.
+- `CODEX_IMPLEMENTATION_HANDOFF.md`: порядок выполнения и инженерные решения.
+- `DECISIONS_AND_BLOCKERS.md`: что зафиксировано, неизвестно и недопустимо решать предположениями.
+- `ACCEPTANCE_MATRIX.md`: доказательства, необходимые для завершения каждого этапа.
+- `contracts/`: исполнимые OpenAPI, JSON Schema, события и ADR.
+- `docs/`: полная техническая спецификация и схемы архитектуры.
+
+## Чего не делать
+
+- Не передавайте в пустой чат только 40-страничный PDF с просьбой построить всё.
+- Не запрашивайте все модули одним непроверенным diff.
+- Не заявляйте качество модели до появления исходного текста, меток и зафиксированного тестового набора.
+- Не превращайте тестовую региональную интеграцию в реальную production интеграцию без явного указания.
+- Не сохраняйте реальные payload обращений в Git, текстах заданий, журналах или скриншотах.

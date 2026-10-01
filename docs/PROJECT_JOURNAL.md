@@ -1,3 +1,5 @@
+[Русский](PROJECT_JOURNAL.md) · [English](PROJECT_JOURNAL.en.md) · [Қазақша](PROJECT_JOURNAL.kk.md)
+
 # Итоговый журнал GovTech Camp
 
 Команда **baash**, проект **Pulse 109**, трек **Gov cases**, **Case 2**. Журнал отвечает на вопросы «какая задача → что сделали → кто работал по неделям → что работает сейчас». Обзор — в [README](../README.md), текущая функциональная матрица — в [FEATURE_STATUS](FEATURE_STATUS.md).

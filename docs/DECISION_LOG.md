@@ -1,829 +1,826 @@
-# Pulse 109 Decision Log
-
-Chronological internal decisions; early target choices and evidence refer to
-their recorded dates. Current runtime/status is [FEATURE_STATUS](FEATURE_STATUS.md).
-D-036 withholds the historical prose corpus and supersedes D-018/D-019/D-023
-quality/reproducibility claims; S3 runtime wiring in `5c9d044` supersedes the
-storage-wiring deferral in D-071. Neither named models nor archived scores
-establish current mandatory citizen-text fine-tuning compliance.
-
-Record implementation decisions here when the repository, contracts or available integrations require a concrete choice that is not already locked by `AGENTS.md`, the executable contracts or `DECISIONS_AND_BLOCKERS.md`.
-
-## Initial accepted decisions
-
-### D-001 — Modular core before service extraction
-
-- **Status:** accepted
-- **Decision:** implement a modular FastAPI core with separate processes for web, API, workers, inference and adapters.
-- **Reason:** it gives production separation at runtime without creating a distributed ownership and deployment burden during the first month.
-- **Revisit when:** a module has an independent owner, security boundary, scaling profile or measured reliability bottleneck.
-
-### D-002 — PostgreSQL is authoritative
-
-- **Status:** accepted
-- **Decision:** PostgreSQL is the system of record; PostGIS and pgvector extend the same database. Redis, search indexes and caches are derived and optional.
-- **Reason:** this keeps transactions, audit, recovery and local deployment manageable.
-- **Revisit when:** measured load or retention requirements exceed the documented capacity plan.
-
-### D-003 — Human confirmation for consequential AI actions
-
-- **Status:** accepted
-- **Decision:** models propose categories, routing, priority, duplicate links and reply drafts; authorized users confirm consequential actions.
-- **Reason:** appeal history, SLA and accountability must remain explainable and reversible.
-- **Revisit when:** a specific low-risk action has approved policy, calibrated quality, monitoring and a safe rollback path.
-
-### D-004 — Stable canonical contract with isolated adapters
-
-- **Status:** accepted
-- **Decision:** every external CRM or government system integrates through its own adapter and the versioned canonical request/event contracts.
-- **Reason:** integration-specific changes must not leak into domain logic.
-- **Revisit when:** never for vendor-specific convenience; evolve only through a versioned contract change.
-
-### D-005 — Pilot inference within two GPUs
-
-- **Status:** accepted
-- **Decision:** use the model stack documented in `contracts/model_stack.md`, with explicit batching, quantization where specified, CPU/lexical fallbacks and no hard dependency on a hosted LLM.
-- **Reason:** the platform must fit the stated compute envelope and remain operable during model outages.
-- **Revisit when:** benchmark evidence and an approved infrastructure budget justify a change.
-
-## Entry template
-
-### D-006 - Separate canonical import time from public intake time
-
-- **Date:** 2026-09-11
-- **Status:** accepted
-- **Context:** the canonical adapter schema permits `received_at: null` with explicit `missing` or `date_only` quality, while the public `CreateRequest` schema requires a concrete date-time.
-- **Decision:** M1 canonical import remains a separate application boundary and preserves null business time. It does not call or weaken the public M2 create DTO.
-- **Alternatives:** fabricate a timestamp; loosen the public API; quarantine every missing date.
-- **Consequences:** no contract drift or invented precision; M2 must map public intake and adapter import through one service after their separate validation steps.
-- **Evidence:** canonical contract tests and `test_missing_and_date_only_time_do_not_invent_instants`.
-- **Revisit when:** a versioned public bulk-import API is approved.
-
-### D-007 - Deterministic synthetic M1 ingestion before source selection
-
-- **Date:** 2026-09-11
-- **Status:** accepted
-- **Context:** the first regional system, authoritative source manifest, legal basis, and retention policy are external blockers.
-- **Decision:** implement the M1 parser against an explicitly synthetic JSONL mapping and reject any manifest not marked synthetic. Keep source-specific transport and production persistence behind later adapter/repository work.
-- **Alternatives:** invent a regional protocol; wait without implementing contract and DQ behavior.
-- **Consequences:** provenance, quarantine, time quality, and idempotency are executable now without implying a live integration.
-- **Evidence:** `data/manifests/synthetic-m1.json` and the reproducible DQ report.
-- **Revisit when:** B07 and B10 are resolved in writing.
-
-### D-008 - Synthetic-only M3 evidence before candidate training
-
-- **Date:** 2026-09-12
-- **Status:** accepted
-- **Context:** B02, B03, B06 and B10 block representative labels, leakage-safe production features, the authoritative taxonomy and approved raw text.
-- **Decision:** implement the versioned inference interface, deterministic mock/lexical CPU modes and a linear baseline evaluated only on an explicitly synthetic grouped temporal fixture. Require human confirmation for every output.
-- **Alternatives:** train XLM-R on invented labels; expose uncalibrated scores as actionable quality; postpone all inference contracts.
-- **Consequences:** M3 integration and evaluation mechanics are executable, while all metrics remain labelled fixture diagnostics and no autonomous routing is enabled.
-- **Evidence:** `contracts/inference.schema.json`, `ml/datasets/synthetic_m3_manifest.json`, `ml/evaluation/synthetic_m3/` and `tests/model/`.
-- **Revisit when:** approved pre-decision text, label policy, taxonomy and leakage documentation are supplied.
-
-### D-009 - Manual in-memory vertical slice is not the production repository
-
-- **Date:** 2026-09-12
-- **Status:** accepted
-- **Context:** M3 feedback needs an executable human-decision boundary, while completing the PostgreSQL M2 repository is outside this run's requested milestones.
-- **Decision:** mount the contract-shaped manual API over an in-memory transactional repository for local/browser tests, and create forward database tables for the durable M2/M3 state without claiming they are wired at runtime.
-- **Alternatives:** fake a human-correction test entirely inside the model package; silently present memory state as durable.
-- **Consequences:** the no-ML operator path and feedback semantics are testable now; M2 remains the next milestone until the same transaction boundary is implemented in PostgreSQL.
-- **Evidence:** `services/core/src/pulse109/manual_path/`, migrations `0003`/`0004`, API E2E and browser screenshots.
-- **Revisit when:** the PostgreSQL repository and approved identity/authorization adapter are connected.
-
-### D-010 - Deterministic hybrid fallback before representative M4 data
-
-- **Date:** 2026-09-12
-- **Status:** accepted
-- **Context:** B02 and B04 block representative retrieval judgments, embeddings, and confirmed duplicate pairs.
-- **Decision:** implement PostgreSQL FTS/pgvector storage and reciprocal-rank fusion, while using a deterministic lexical/hash-vector fallback for synthetic tests. Every duplicate remains a proposal with text, service, time, and geo evidence and requires a human decision.
-- **Alternatives:** download unapproved embedding models; claim fixture scores as production quality; automatically merge high-scoring pairs.
-- **Consequences:** storage and review contracts are executable offline without creating a quality claim or destroying appeal identity.
-- **Evidence:** migration `0005`, `ml/datasets/synthetic_m4_manifest.json`, `ml/evaluation/synthetic_m4/`, and retrieval/E2E tests.
-- **Revisit when:** approved raw text, representative judgments, confirmed pairs, and evaluation policy are available.
-
-### D-011 - Replay adapter is the only M5 external transport
-
-- **Date:** 2026-09-12
-- **Status:** accepted
-- **Context:** B07 leaves the first regional target, owner, API, sandbox, and status semantics unknown.
-- **Decision:** ship a typed adapter SDK, deterministic replay adapter, bounded retries, dead-letter state, and reconciliation with unknown statuses routed to mapping review. Do not invent a live system protocol.
-- **Alternatives:** bind domain code to an assumed CRM; omit delivery failure behavior until a target exists.
-- **Consequences:** the delivery state machine and incident membership are testable, but no national or live integration is claimed.
-- **Evidence:** migration `0006`, adapter contract/outage tests, and `data/reports/synthetic-m5-replay-trace.json`.
-- **Revisit when:** B07 is resolved and the first adapter contract is approved.
-
-### D-012 - Governed synthetic read model for M6
-
-- **Date:** 2026-09-12
-- **Status:** accepted
-- **Context:** authoritative national coverage, SLA policy, production identity, and legal approval remain blocked by B01, B06, B08, and B10.
-- **Decision:** expose an allowlisted metric catalog and governed intent parser over synthetic read results. Dashboard, PDF, and XLSX consume the same immutable metric result; missing and stale regions remain explicit and never become numeric zeros.
-- **Alternatives:** allow arbitrary SQL; fabricate national values; encode an unapproved SLA threshold.
-- **Consequences:** situation-center semantics and export reconciliation are executable without representing unavailable policy or data as fact.
-- **Evidence:** migration `0007`, analytics/report tests, export comparison E2E, and browser evidence in `ml/evaluation/synthetic_m6/`.
-- **Revisit when:** B01, B06, B08, and B10 are resolved.
-
-### D-013 - Karaganda dates parse as M/D/Y
-
-- **Date:** 2026-09-13
-- **Status:** accepted
-- **Context:** 87 709 Karaganda rows carry a second date field above 12 while the first field never exceeds 12, which fixes the order as month first.
-- **Decision:** parse `created_date`, `updated_date` and `submission_date` with an explicit M/D/Y rule in the regional CSV adapter.
-- **Alternatives:** default D/M/Y parsing, or per-row format inference.
-- **Consequences:** two years of Karaganda history keep correct day and month. Inference was rejected because it is not deterministic across runs.
-- **Evidence:** `adapters/regional_csv`, `data/reports/regional-csv-dq-report.json`.
-- **Revisit when:** the source owner confirms or contradicts the export locale.
-
-### D-014 - Turkestan collapses to one record per incident
-
-- **Date:** 2026-09-13
-- **Status:** accepted
-- **Context:** the Turkestan export holds 98 876 rows over 52 050 distinct `incidentid` values. Repeats are lifecycle snapshots, not separate appeals.
-- **Decision:** keep the row with the latest `updateddate` per `incidentid` and count the rest as deduplicated.
-- **Alternatives:** treat every row as an appeal, or retain all versions as history.
-- **Consequences:** any Turkestan metric computed without this step is inflated by roughly 47 percent. Version history is deferred until the source publishes a lifecycle contract.
-- **Evidence:** 46 826 rows collapsed, recorded in `data/reports/regional-csv-dq-report.json`.
-- **Revisit when:** B07 delivers a lifecycle event contract.
-
-### D-015 - Pavlodar parts concatenate without deduplication
-
-- **Date:** 2026-09-13
-- **Status:** accepted
-- **Context:** the two Pavlodar files share zero `id` values and both span 2020-02-09 to 2026-07-26, so the split is arbitrary rather than chronological.
-- **Decision:** concatenate both parts into one regional stream.
-- **Alternatives:** treat part 2 as a newer snapshot of part 1.
-- **Consequences:** 666 634 Pavlodar records enter the canonical stream, which is 67.3 percent of the corpus. Region-weighted evaluation becomes mandatory.
-- **Evidence:** identifier intersection of zero, verified over both files.
-- **Revisit when:** the source explains the split.
-
-### D-016 - Akmola column-shift rows are quarantined
-
-- **Date:** 2026-09-13
-- **Status:** accepted
-- **Context:** the Akmola export has 180 lines with unescaped quotes. In 32 records the shift is visible because `creation_date` holds an organisation name fragment rather than a date.
-- **Decision:** route those rows to quarantine with `SCHEMA_DRIFT_COLUMN_SHIFT` and never repair them heuristically.
-- **Alternatives:** infer field boundaries and repair, or drop silently.
-- **Consequences:** the canonical count is 990 000 rather than the 990 032 recorded in `DECISIONS_AND_BLOCKERS.md`. The difference is exactly these 32 rows.
-- **Evidence:** `quarantine_reasons` in the data quality report.
-- **Revisit when:** the source supplies a correctly escaped export.
-
-### D-017 - Location normalization status is missing for nearly every record
-
-- **Date:** 2026-09-13
-- **Status:** accepted
-- **Context:** coordinates are populated in 23 of 20 591 Kostanay rows and 264 of 98 876 Turkestan rows. The other five sources carry no coordinate columns.
-- **Decision:** set `location.normalization_status` to `missing` unless a coordinate pair parses, and keep geocoding outside the ingest step.
-- **Alternatives:** geocode addresses during ingest.
-- **Consequences:** incident proposals rest on topic, service and time. Spatial clustering has no source and cannot be demonstrated as measured behaviour.
-- **Evidence:** column fill rates in the data quality report.
-- **Revisit when:** a geocoding service is approved or the source supplies coordinates.
-
-### D-018 - Fine-tuning targets retrieval embeddings, not the intake classifier
-
-- **Date:** 2026-09-13
-- **Status:** accepted
-- **Context:** a full pass over all eight exports confirms that no field holds citizen text. The only free text is written by the executor after closure, giving 14 397 unique documents, of which 72 percent exceed 40 characters and 3 150 exceed 150 characters.
-- **Decision:** train embeddings for similar resolved case retrieval on that corpus. Keep the intake classifier on categorical features with a linear baseline until raw text arrives.
-- **Alternatives:** wait for B02, train the classifier on weak service L1-L3 labels, or claim no fine-tuning at all.
-- **Consequences (assessment corrected 2026-10-01):** this records an executor-text research direction, not compliance with the required citizen-text runtime fine-tuning. The intake classifier remains blocked on B02 and implementation/validation. D-036 later withheld this corpus pending privacy approval.
-- **Evidence:** corpus statistics in `data/reports/regional-csv-dq-report.json`, with a language split of 96.9 percent ru, 3.0 percent mixed and 0 percent kk.
-- **Revisit when:** B02 delivers raw appeal text before 20 September.
-
-### D-019 - Redacted corpus is versioned in the private repository
-
-- **Date:** 2026-09-14
-- **Status:** accepted
-- **Context:** D-018 produced a 14 397 document corpus that every training and evaluation run depends on. Keeping it outside git made the retrieval results impossible to reproduce from a clone.
-- **Decision:** version the redacted corpus, the 32 quarantine rows and the quality report. The repository is private and access stays limited to the team.
-- **Alternatives:** keep the corpus out of git and distribute it by hand, or ship only hashes.
-- **Consequences:** a clone reproduces retrieval evaluation without external files. The canonical stream stays ignored because 1.7 GB does not belong in git, which is a size decision and not a privacy one. B10 is still unresolved, so this data must not leave the private repository and must not appear in any public artifact.
-- **Evidence:** residual PII scan over both files reports zero IIN, phone and email. Manifest at `ml/datasets/regional_retrieval_manifest.json`.
-- **Revisit when:** B10 returns a legal basis and retention class, or the repository visibility changes.
-
-### D-020 - Routing has no portable taxonomy across regions
-
-- **Date:** 2026-09-14
-- **Status:** accepted
-- **Context:** leave-one-region-out over the seven regions shows that a model trained on six regions does not work on the seventh. Kostanay shares 94.4 percent of its topic names with the training regions yet scores 0.002 accuracy. Turkestan shares 82.9 percent and scores 0.005. Karaganda shares zero.
-- **Decision:** treat the barrier to twenty regions as a taxonomy mapping problem, not a data volume problem. Report coverage per region and never present a single national routing number.
-- **Alternatives:** train one national model and report its average, or wait for the remaining thirteen regions.
-- **Consequences:** each region needs a versioned mapping from its own service catalogue onto a shared taxonomy before any cross-region claim holds. More data alone does not fix this.
-- **Evidence:** `ml/evaluation/routing_v1/routing_report.json`, section `leave_one_region_out`.
-- **Revisit when:** an authoritative shared service taxonomy arrives, or B01 delivers the remaining regions with their catalogues.
-
-### D-021 - The routing ceiling without citizen text is measured, not assumed
-
-- **Date:** 2026-09-14
-- **Status:** accepted
-- **Context:** a topic to service lookup reaches 0.573 accuracy on a temporal split inside each region. A logistic regression over topic, region, district, channel and time features reaches 0.588, which is 1.5 points better on accuracy and 0.02 points worse on macro F1.
-- **Decision:** ship the lookup with backoff as the routing baseline and keep the linear model as the confidence source for the abstention threshold. Do not claim a modelling gain that the numbers do not support.
-- **Alternatives:** present the model as the routing solution, or drop the model entirely.
-- **Consequences:** the coverage curve becomes the product feature. At 30 percent coverage accuracy is 0.972, at 50 percent it is 0.809. The operator receives everything below the threshold, which makes human-in-the-loop a tunable setting rather than a slogan.
-- **Evidence:** `ml/evaluation/routing_v1/routing_report.json`, sections `baselines`, `model` and `coverage_curve`.
-- **Revisit when:** B02 delivers raw appeal text, which is the only input expected to move this ceiling.
-
-### D-022 - Karaganda stays in the routing metrics with an explicit caveat
-
-- **Date:** 2026-09-14
-- **Status:** accepted
-- **Context:** Karaganda is 99.9 percent deterministic from topic alone because the executor organisation is derived from the category. It contributes 14 percent of the test slice at 0.989 accuracy and lifts the aggregate by 6.7 points. Excluding it moves the model from 0.588 to 0.521.
-- **Decision:** keep Karaganda in the reported metrics and publish both aggregates side by side, with and without it.
-- **Alternatives:** exclude it from routing metrics, or report only the aggregate that includes it.
-- **Consequences:** no number is hidden. A reader sees the inflated aggregate and the honest one in the same table, and can judge which applies to their region.
-- **Evidence:** `per_region` in the routing report.
-- **Revisit when:** new case data arrives and the region mix changes.
-
-### D-023 - Fine-tuned retrieval embeddings beat both baselines by a measured margin
-
-- **Date:** 2026-09-14
-- **Status:** accepted
-- **Context:** a frozen `multilingual-e5-small` loses to a character TF-IDF baseline on this corpus, scoring nDCG@10 of 0.3791 against 0.3932. Off-the-shelf multilingual semantics adds nothing to short clerical Russian text, which is what gives fine-tuning a measurable job.
-- **Decision:** fine-tune the base model with MultipleNegativesRankingLoss on 7 466 pairs mined only from the training period, and report the gain against the lexical baseline rather than against the frozen model.
-- **Alternatives:** ship the frozen model, ship lexical only, or claim the fine-tuning requirement without measuring it.
-- **Consequences (assessment corrected 2026-10-01):** the historical report records nDCG@10 0.4086 against lexical 0.3932 and frozen 0.3791 on executor-text proxy data. This does not close the mandatory citizen-text fine-tuned embedding runtime requirement. D-036 blocks quality claims and corpus reuse pending privacy/split approval.
-- **Evidence:** `ml/evaluation/retrieval_ft_v1/retrieval_finetune_report.json`, `ml/model_cards/retrieval_e5_small_ft_v1.json`.
-- **Revisit when:** raw citizen text arrives, since queries in production are citizen texts while every query here is an executor text.
-
-### D-024 - Retrieval stays hybrid because lexical wins the tail
-
-- **Date:** 2026-09-14
-- **Status:** accepted
-- **Context:** the fine-tuned model leads on Recall@1 (0.4713 against 0.4625) and nDCG@10, yet trails marginally on Recall@10 (0.6925 against 0.6937). The gain is concentrated at the top of the ranking.
-- **Decision:** keep lexical retrieval in the serving path permanently and fuse it with the dense ranking, rather than treating lexical as a fallback that a good enough model would retire.
-- **Alternatives:** replace lexical with the dense model once it wins on the headline metric.
-- **Consequences:** the operator sees a better first result from the dense side and keeps the recall of the lexical side. This confirms the existing locked decision that a lexical fallback always remains available, now with a measurement behind it.
-- **Evidence:** per-system Recall@1 and Recall@10 in the fine-tune report.
-- **Revisit when:** a reranker is added, which may change where each retriever contributes.
-
-### D-025 - Trained weights are not versioned, the model card is
-
-- **Date:** 2026-09-14
-- **Status:** accepted
-- **Context:** one checkpoint is 465 MB and is reproduced in about five minutes on CPU. The corpus, the pair mining and the split are all deterministic under a fixed seed.
-- **Decision:** ignore `ml/evaluation/**/model/` in git and version a model card carrying the weight sha256, the training configuration, the split and every metric.
-- **Alternatives:** commit the weights, or add Git LFS.
-- **Consequences:** a clone reproduces the checkpoint from the corpus that is versioned. A reviewer can match any reported number to the exact weights that produced it without the repository carrying half a gigabyte per experiment.
-- **Evidence:** `ml/model_cards/retrieval_e5_small_ft_v1.json`, field `weights.sha256`.
-- **Revisit when:** a checkpoint has to be shipped to an environment that cannot retrain.
-
-### D-026 - Load forecasting selects per region against a seasonal-naive baseline
-
-- **Date:** 2026-09-15
-- **Status:** accepted
-- **Context:** rolling-origin backtest over the four regions with enough history. A ridge model on calendar and lag features beats seasonal naive on the two large high-variance regions (Pavlodar 19.9 percent lower MAE at a 7-day horizon, VKO 14.9 percent) and loses on the two smaller or shorter series (Karaganda, Turkestan), where seasonal naive is already strong.
-- **Decision:** forecast each region with the method that wins its own backtest, and report both methods for every region. A model is used only where it beats the baseline it must beat.
-- **Alternatives:** one national model, or the ridge model everywhere regardless of the backtest.
-- **Consequences:** the situation centre reports a load forecast with a measured error against a reconstructible baseline, and never claims a modelling gain a region's data does not support. Three regions have too little history and are marked skipped rather than forecast weakly.
-- **Evidence:** `ml/evaluation/forecast_v1/forecast_report.json`, sections `regions.*.backtest` and `summary`.
-- **Revisit when:** new case data lengthens the short regions, or statsmodels ETS is added as a third candidate.
-
-### D-027 - Surge detection is a robust residual, not a threshold on the count
-
-- **Date:** 2026-09-15
-- **Status:** accepted
-- **Context:** raw daily counts have strong weekly rhythm, so a Monday is not a surge just because it exceeds a Sunday. The series is decomposed into a weekday-median seasonal, a centred rolling-median trend, and a residual.
-- **Decision:** flag a surge when the residual exceeds k times the scaled median absolute deviation, with k of 4. This is the aggregate form of the incident concept, an emerging problem rather than a claim that two appeals are one event.
-- **Alternatives:** a fixed daily threshold, or a mean-and-standard-deviation bound that outliers would inflate.
-- **Consequences:** the manager view surfaces roughly 1 to 7 percent of days per region as surges, each with its residual size, and the top examples are real spikes such as Pavlodar on 2024-06-21 at 2355 appeals against a norm near 370. Detection quality is not yet validated against labelled incidents.
-- **Evidence:** `regions.*.surges` in the forecast report.
-- **Revisit when:** a labelled incident set exists to measure precision and recall.
-
-### D-028 - The forecast is translated to operators per shift
-
-- **Date:** 2026-09-15
-- **Status:** accepted
-- **Context:** a graph of appeals per day is not a decision. A supervisor needs a staffing number.
-- **Decision:** convert the forecast to operators per shift using average handle time and a target occupancy, and mark both inputs as placeholders until the operator interview supplies real values.
-- **Alternatives:** report only the appeal volume and leave staffing to the reader.
-- **Consequences:** the number becomes actionable, for example Pavlodar's recent 339 appeals per day maps to about 5 operators per shift at a 6-minute handle time and 85 percent occupancy. The staffing figure is only as good as its two assumptions, which are stated in the report.
-- **Evidence:** `regions.*.staffing_recent` and the `staffing` block in the forecast report.
-- **Revisit when:** the operator interview returns a measured handle time and occupancy target.
-
-### D-029 - One end-to-end scenario composes the three modules on real data
-
-- **Date:** 2026-09-20
-- **Status:** accepted
-- **Context:** the three modules existed as separate scripts and reports. Judges reward one coherent working scenario over three separate metrics, and the product positioning is a single operational contour.
-- **Decision:** ship `ml/training/demo_scenario.py`, which runs one appeal through routing, assist, surge and forecast, emitting a single trace where every downstream number comes from a real artifact. The intake free text is illustrative and labelled as such in the trace, because no citizen text exists (D-018). Everything after intake is real.
-- **Alternatives:** keep the modules separate, or fake the whole flow with mock outputs for a smoother demo.
-- **Consequences:** the demo has a spine. The default case is Pavlodar on 2024-06-21, a real surge day with 1819 water-supply appeals for a single topic. Routing returns 0.25 confidence and correctly sends the case to an operator, which demonstrates the abstention path rather than hiding it. The fine-tuned retriever returns three real resolved water-break cases. The manager view shows the surge and a 5-operators-per-shift staffing call.
-- **Evidence:** `ml/evaluation/demo_v1/demo_trace.json`, reproducible from the canonical stream and the merged reports.
-- **Revisit when:** raw citizen text arrives and the illustrative intake can be replaced by a real appeal.
-
-### D-030 - Durable pilot path and verified identity boundary
-
-- **Date:** 2026-09-13
-- **Status:** accepted
-- **Context:** M7 requires PostgreSQL durability and production access controls while B08 still blocks the selected identity provider and hosting profile.
-- **Decision:** pilot/production profiles use PostgreSQL repositories for appeals and incidents, transactional audit/outbox writes, OIDC/JWKS validation, role and region scopes, and object-level report checks. Header identity is limited to local/development/test profiles.
-- **Alternatives:** retain in-memory production state; trust identity headers at the reverse proxy; block all implementation pending provider selection.
-- **Consequences:** the production boundary is fail-closed and Keycloak-compatible without selecting an unapproved provider. Local synthetic demos remain self-contained.
-- **Evidence:** migrations `0008`-`0011`, `pulse109.security`, PostgreSQL integration tests, and security tests.
-- **Revisit when:** B08 supplies the approved issuer, audience, claims, network and hosting profile.
-
-### D-031 - Pre-submit duplicate evidence and reversible incident membership
-
-- **Date:** 2026-09-13
-- **Status:** accepted
-- **Context:** the research requires duplicate warning before submission and reversible incident grouping without losing appeal identity.
-- **Decision:** expose a non-mutating preflight endpoint with category, distance, time, lexical and semantic evidence; every membership decision is append-only and can explicitly remove then reconfirm a member. No candidate is merged automatically.
-- **Alternatives:** search only after creating an appeal; hard-merge high-score pairs; mutate the prior membership row.
-- **Consequences:** citizen/operator workflows can act on evidence while every appeal retains its identifier, history and SLA clock.
-- **Evidence:** OpenAPI `preflightAppeal`, retrieval tests, incident event history, golden-flow E2E, and durable integration test.
-- **Revisit when:** B04 provides approved pairs/groups and a production threshold policy.
-
-### D-032 - Versioned policy records never invent an SLA
-
-- **Date:** 2026-09-13
-- **Status:** accepted
-- **Context:** routing, confidence and SLA behavior need versioning, approval, effective dates and rollback, but B06 leaves the authoritative rules unavailable.
-- **Decision:** persist immutable policy versions and review metadata; expose only active/effective versions. The synthetic routing/confidence policies are labelled local fixtures and SLA calculation remains disabled until an approved effective SLA policy exists.
-- **Alternatives:** hard-code an assumed SLA; expose draft policy as active; omit policy provenance from assignment.
-- **Consequences:** assignments retain policy provenance and missing policy remains visible rather than becoming a fabricated deadline.
-- **Evidence:** migration `0009`, policy catalog API/tests, assignment validation, and rollback runbook.
-- **Revisit when:** B06 is resolved by the policy owner.
-
-### D-033 - Compatibility services and release evidence remain explicitly synthetic
-
-- **Date:** 2026-09-13
-- **Status:** accepted
-- **Context:** P1/P2 recommendations include Open311, Martin/MapLibre, MLOps tools and signed supply-chain evidence, while real source contracts, map hosting and signing authority are unavailable.
-- **Decision:** provide an isolated Open311 sandbox, Martin-ready MapLibre source, tool-compatible offline exports, OTel instrumentation, dependency/SBOM CI gates and hash-indexed synthetic evidence. Do not claim a live adapter, production map, model promotion or signed release.
-- **Alternatives:** invent regional credentials/endpoints; require external services for the offline demo; omit compatibility seams.
-- **Consequences:** integration and operations mechanics are executable now and replaceable through stable boundaries; production claims stay gated by B01-B10.
-- **Evidence:** `adapters/open311`, situation map, `synthetic_mlop`, security CI, runbooks and `release/evidence-index.md`.
-- **Revisit when:** the first source, tile/geocoder infrastructure and release-signing owner are approved.
-
-### D-034 - Preserve time provenance and scope idempotency to the region
-
-- **Date:** 2026-09-23
-- **Status:** superseded by D-036
-- **Context:** M7 review found an invented received time in migration 0008, ambiguous status-event timestamps, and a global create idempotency receipt.
-- **Decision:** received time and its quality are stored separately from observed time; missing or date-only time stays null. Status events state quality explicitly. Create receipts are region-scoped and transaction-locked; object access is checked before replay receipts are returned.
-- **Alternatives:** backfill from observation time; infer exact quality from a timestamp; rely on unique-violation retry for concurrent requests.
-- **Consequences:** SLA and analytics cannot mistake ingestion time for source time; concurrent retries get one response and cannot cross region boundaries.
-- **Evidence:** OpenAPI and canonical schema changes, migration 0008, M7 durable-path and contract tests.
-- **Revisit when:** source-specific time semantics are approved and integration tests run against the target PostgreSQL profile.
-
-### D-035 - Fail closed for unapproved operational features and private data
-
-- **Date:** 2026-09-23
-- **Status:** accepted
-- **Context:** the current retrieval, analytics and report providers are synthetic or process-local; the available regex does not safely remove names and addresses from arbitrary citizen text.
-- **Decision:** pilot/production serves the durable manual path but returns `read_model_unavailable` for those demo endpoints. Operational intake requires an immutable source reference and configured legal basis and retention class; free text is not stored as a feature or passed to inference until an approved privacy gateway exists.
-- **Alternatives:** present synthetic metrics as live data; treat regex masking as complete PII redaction; invent legal defaults.
-- **Consequences:** several assistive features remain unavailable in the operational profile while the manual critical path can proceed with approved private storage and policy configuration.
-- **Evidence:** profile gating tests, operational-intake tests, security review and `IMPLEMENTATION_STATUS.md`.
-- **Revisit when:** B01, B02, B08 and B10 supply approved data, identity, redaction, storage and policies.
-
-### D-036 - Withhold unapproved regional prose and historical model claims
-
-- **Date:** 2026-09-23
-- **Status:** accepted
-- **Context:** review of the merged regional research artifacts found street addresses in the versioned retrieval corpus, raw source values in quarantine, timezone assumptions for naive dates, and `Recall@k` labels for query hit rates. B10 does not approve private-text processing or model quality claims.
-- **Decision:** replace the corpus prose with a fixed withheld marker, remove source row values from quarantine, preserve naive and date-only time as non-instants, disable new corpus export and fail training/evaluation loaders on withheld text. Mark historical reports and the model card unverified, with query metrics labelled hit rate. Preserve existing Git history pending the repository owner's retention decision; this change does not rewrite published commits.
-- **Alternatives:** rely on expanded regex masking; continue model training from the existing corpus; rewrite published Git history without a retention plan.
-- **Consequences:** regional ML scripts no longer yield quality numbers from these artifacts. The manual operational path is unaffected. Historical blobs remain reachable in Git until a separate retention and history-remediation decision is executed.
-- **Evidence:** `scripts/withhold_unapproved_corpus.py`, regional ingest and research-artifact gate tests, manifest/model-card status, and CI security scan.
-- **Revisit when:** B10 approves a private source store, redaction process, legal basis, retention class, and independently reviewed evaluation split.
-
-### D-037 — Governed ownership facts remain advisory
-
-- **Date:** 2026-09-24
-- **Status:** accepted
-- **Context:** the supplied M8 Handoff Guard design requires ownership evidence without silently replacing regional systems or allowing an AI to assign a service.
-- **Decision:** store regional organization, jurisdiction, asset and responsibility-rule facts as append-only effective versions with source and approval references. The assessment reads only approved, effective records for the appeal region and last human-confirmed service. It returns explicit ambiguity, time provenance and prior rejection evidence; only a human may execute a handoff.
-- **Alternatives:** infer current ownership from free text; auto-assign the highest-ranked candidate; overwrite a rule in place.
-- **Consequences:** operators can review candidate evidence even when ML and adapters are unavailable. Unapproved or absent catalog facts yield no candidate. A later command path must separately validate a confirmed handoff and record an idempotent receipt.
-- **Evidence:** migration `0012_m8_ownership_catalog`, ownership engine and tests, OpenAPI assessment contract.
-- **Revisit when:** approved regional ownership sources and handoff protocols are available.
-
-### D-038 — Isolate inference behind a typed provider
-
-- **Date:** 2026-09-24
-- **Status:** accepted
-- **Context:** the core imported the lexical model implementation directly although inference runs as a separate deployment boundary.
-- **Decision:** manual-path classification calls an injected `InferenceProvider`; a named local lexical implementation preserves offline/test fallback. Pilot/production still fail closed before inference until an approved de-identified feature snapshot and remote provider are configured.
-- **Alternatives:** keep model imports in both manual services; auto-fallback to local inference after remote failures.
-- **Consequences:** model transport can change without changing appeal transactions. The provider boundary alone is not a complete Decision Gateway or an operational remote inference client.
-- **Evidence:** `services/core/src/pulse109/decisions/inference_provider.py`, provider-injection test and existing manual-path E2E flow.
-- **Revisit when:** B02/B08/B10 approve real features, privacy handling and operational inference.
-
-### D-039 — Bind handoff outcomes to a durable assignment
-
-- **Date:** 2026-09-24
-- **Status:** accepted
-- **Context:** handoff loop evidence must refer to a particular appeal assignment and cannot be inferred from free text or a model proposal.
-- **Decision:** only an operator, supervisor or administrator can record accepted/rejected outcomes through an idempotent, region-scoped command. The assignment unit identifier must match the organization identifier until a governed organization/unit crosswalk exists. The outcome, timeline, audit, outbox and receipt commit together; evidence references are content addressed.
-- **Alternatives:** infer rejection from status transitions; accept an unbound organization; record outcome without a timeline or audit event.
-- **Consequences:** replayed commands return the same receipt and wrong-region requests cannot expose a receipt. Assignments without an organization-bound unit cannot yet record an outcome.
-- **Evidence:** ownership outcome repository and API, contract/event catalog and PostgreSQL integration test.
-- **Revisit when:** approved organization/unit mapping and regional handoff protocol are available.
-
-### D-040 — Ask only policy-required intake questions
-
-- **Date:** 2026-09-24
-- **Status:** accepted
-- **Context:** service-specific appeals need different evidence, while raw values and citizen text must stay outside a public planning seam.
-- **Decision:** resolve one approved, effective regional service/topic policy and return kk/ru authored questions based only on known/missing/unknown field states. Missing states remain unknown; no inference fills them. The plan is advisory, versioned and bounded, with no raw values in its request or response.
-- **Alternatives:** fixed universal form; LLM-generated questions; infer missing values from free text.
-- **Consequences:** absent or conflicting policies yield an explicit unavailable state. Policy publication and conditional fields remain subsequent M8 work.
-- **Evidence:** migration `0013_m8_intake_policy`, intake component, route, OpenAPI and integration tests.
-- **Revisit when:** approved regional intake requirements, localized wording and evidence classes are supplied.
-
-### D-041 — Decision Gateway needs explicit approved inputs
-
-- **Date:** 2026-09-24
-- **Status:** accepted
-- **Context:** inference confidence and ownership suggestions must never become an autonomous routing decision. A missing required-field policy or ownership evidence from another appeal cannot be treated as valid evidence.
-- **Decision:** keep the gateway a pure advisory evaluator. It accepts an approved effective confidence policy, explicit required-field states, and ownership evidence bound to the same appeal and version. Missing field policy yields `INSUFFICIENT_DATA`; mismatched ownership is discarded. All outcomes require human confirmation and never set an assignee.
-- **Alternatives:** use model confidence as an assignment threshold; infer a complete field policy from an empty input; reuse ownership evidence by service alone.
-- **Consequences:** the evaluator can be tested with synthetic evidence, but operational use awaits governed policy publication and approved feature snapshots.
-- **Evidence:** `services/core/src/pulse109/decisions/gateway.py` and focused gateway tests.
-- **Revisit when:** approved regional confidence thresholds, intake requirements and model validation evidence are available.
-
-### D-042 — Jurisdiction evidence must agree at stated precision
-
-- **Date:** 2026-09-24
-- **Status:** accepted
-- **Context:** an appeal may contain an exact jurisdiction ID, coordinates, asset reference, or a mixture. Boundary overlaps and coordinate uncertainty can make an apparently exact lookup unsafe.
-- **Decision:** resolve only approved effective jurisdiction versions in the appeal region. Coordinate evidence needs complete coordinates and a bounded precision radius; one boundary must cover the full uncertainty shape. Supplied ID and coordinates must agree. Unknown, partial and conflicting evidence is flagged for human review and never causes assignment.
-- **Alternatives:** use the point center alone; choose the first matching polygon; trust a source ID despite contradictory coordinates.
-- **Consequences:** borderline appeals may need manual review. PostGIS tests exercise overlap and boundary behavior with synthetic geometries.
-- **Evidence:** ownership repository/service and `tests/integration/test_m8_ownership_catalog.py`.
-- **Revisit when:** approved regional geometry and precision conventions are supplied.
-
-### D-043 — Bind confidence thresholds to the exact model artifact
-
-- **Date:** 2026-09-25
-- **Status:** accepted
-- **Context:** a region-wide confidence threshold could be applied to an unrelated model or taxonomy and misrepresent its calibration.
-- **Decision:** store append-only, approved and effective confidence policies keyed by region, model artifact SHA-256, taxonomy version and preprocessing version. The reader permits only one matching version and excludes synthetic policies in operational mode. The gateway verifies the same binding before using thresholds and withholds its confidence band when the policy is absent or mismatched. The catalog API shows confidence policies only from this typed table; older unbound `catalog.policy_version` confidence rows cannot drive runtime decisions or appear as current policy.
-- **Alternatives:** one threshold for all models in a region; trust the model-supplied confidence band without a policy binding.
-- **Consequences:** a new artifact or taxonomy requires its own reviewed policy. Operational use remains unavailable until a policy is approved and the feature snapshot is authorized.
-- **Evidence:** migration `0014_m8_confidence_policy`, policy repository and gateway tests.
-- **Revisit when:** approved model calibration evidence and regional publication workflow are available.
-
-### D-044 — Publish confidence thresholds through independent review
-
-- **Date:** 2026-09-25
-- **Status:** accepted
-- **Context:** artifact-bound confidence thresholds need a controlled path from proposal to effective use, with evidence that a second person reviewed the exact values.
-- **Decision:** record immutable, region-scoped proposals with a canonical command digest and SHA-256 source reference. A different authenticated administrator or supervisor approves or rejects the digest. Approval atomically writes the immutable policy, review, audit and outbox; overlapping approved intervals are prohibited in PostgreSQL. Synthetic policies are rejected in operational profiles.
-- **Alternatives:** direct edits to the confidence policy table; in-place approval flag; optimistic review without database constraints.
-- **Consequences:** approval requires a future effective start and cannot silently replace an active policy. The regional taxonomy and real calibration evidence remain external inputs.
-- **Evidence:** migration `0015_m8_confidence_publication`, publication API and PostgreSQL integration test.
-- **Revisit when:** regional policy authority and production artifact registry are available.
-
-### D-045 — Close only with appeal-bound evidence and a human command
-
-- **Date:** 2026-09-25
-- **Status:** accepted
-- **Context:** an imported or regional status alone cannot prove that an appeal was resolved, and a closure must preserve every appeal's own history.
-- **Decision:** preflight requires a recorded `resolved` state and validates content-addressed attachment references against the same appeal, region and current version without changing its status. A separate explicit operator confirmation atomically changes status, consumes the preflight, records the timeline and audit events, queues outbox delivery and stores an idempotent receipt. Any intervening appeal version invalidates the preflight. Resolved status alone never proves closure.
-- **Alternatives:** close from source status; accept a free-form evidence URI; update status before recording audit.
-- **Consequences:** closure requires an existing durable attachment reference and operator review. Evidence existence does not by itself attest to substantive resolution; the reason and decision remain accountable to the operator.
-- **Evidence:** migration `0016_m9_closure_integrity`, closure API and PostgreSQL integration test.
-- **Revisit when:** regional evidence classes and legally approved closure criteria are supplied.
-
-### D-046 — Resolve the handoff assignment from the durable appeal
-
-- **Date:** 2026-09-25
-- **Status:** accepted
-- **Context:** operators must not guess or manually enter an opaque assignment UUID before confirming a handoff outcome.
-- **Decision:** expose the latest persisted assignment through a region-scoped, authenticated read route and feed that ID into the handoff panel. The panel disables outcome recording when no assignment exists and preserves the same idempotency key for a retry after an uncertain network result.
-- **Alternatives:** UUID entry field; derive assignment ID from the appeal ID; submit outcome without assignment binding.
-- **Consequences:** outcomes remain tied to a real assignment. A completed regional organization/unit crosswalk is still needed for broader operational handoff coverage.
-- **Evidence:** latest-assignment API, operator panel, and manual-path integration assertion.
-- **Revisit when:** a governed organization/unit crosswalk is approved.
-
-### D-047 — Count recurrence only after verified closure
-
-- **Date:** 2026-09-25
-- **Status:** accepted
-- **Context:** repeated reports at one infrastructure object can indicate failed resolution, but similar unclosed appeals may belong to one ongoing incident rather than recurrence.
-- **Decision:** the read-only recurrence assessment requires a stable object ID, an exact business event time and a human-selected topic for the new appeal. It counts distinct prior confirmed incidents only when their current membership is confirmed, a matching appeal has an operator-confirmed closure preflight, and that closure precedes the new event within a bounded window. A closure within seven days signals possible failed resolution; three distinct verified incidents signal a recurring pattern. The result is advisory and requires human confirmation.
-- **Alternatives:** count all related appeals; infer event time from row order; treat imported `closed` status as proof of resolution.
-- **Consequences:** uncertain time, missing object or topic, and unverified closures produce abstention or no verified history. The assessment may undercount until regional asset IDs and evidence are reliable.
-- **Evidence:** `pulse109.recurrence` read model and service, focused tests and PostgreSQL integration scenario.
-- **Revisit when:** regional asset identity quality, incident closure semantics and approved recurrence thresholds are available.
-
-### D-048 — Keep Replay Lab historical and non-promoting
-
-- **Date:** 2026-09-25
-- **Status:** accepted
-- **Context:** rule and model changes need evidence before rollout, but historical observations cannot prove a counterfactual outcome and synthetic fixtures cannot establish model quality.
-- **Decision:** replay only immutable, content-addressed, region-scoped snapshots with a small approved input-feature allowlist. Reject post-decision fields, non-finite values and cross-region cases. Exclude synthetic cases from all reported quality metrics. Keep labels outside predictor inputs, report descriptive baseline/candidate comparisons and prohibit promotion in the persistence schema.
-- **Alternatives:** run candidate policies against live appeals; use outcome fields as inputs; include synthetic fixtures in accuracy; promote automatically on a better historical score.
-- **Consequences:** the current engine is an offline comparison component, not a release controller. Production datasets, approved policy artifacts and representative labels are still needed.
-- **Evidence:** `pulse109.replay`, migration `0017_m11_replay_lab` and focused deterministic tests.
-- **Revisit when:** B02/B04/B05 provide approved snapshots and labels, and signed model artifacts exist.
-
-### D-049 — Treat outcome memory as verified retrieval only
-
-- **Date:** 2026-09-25
-- **Status:** accepted
-- **Context:** prior resolutions can help operators, but imported `closed` status, unowned evidence or post-decision fields would contaminate advice and intake training.
-- **Decision:** eligible outcome records require a human-confirmed closure chain, appeal-owned content-addressed evidence, source provenance and a redacted classification. Retrieval is region/service/topic scoped, excludes the source appeal, uses controlled terms, labels synthetic data and abstains when no verified match exists. Outcome records are explicitly blocked from becoming intake features or autonomous replies.
-- **Alternatives:** RAG over raw appeal text; direct use of status `closed`; treat prior resolutions as training input for the current intake decision.
-- **Consequences:** this is a validated component boundary. A PostgreSQL reader must still assemble and verify the proof chain before operational retrieval is exposed.
-- **Evidence:** `pulse109.outcome_memory` and focused eligibility tests.
-- **Revisit when:** approved source corpus, redaction, taxonomy and legal retention rules are available.
-
-### D-050 — Resolve regional unit IDs through approved organization mappings
-
-- **Date:** 2026-09-25
-- **Status:** accepted
-- **Context:** regional assignments may carry a unit ID that is different from the canonical organization ID used by Handoff Guard. Treating them as equal blocks valid outcomes or invites arbitrary operator input.
-- **Decision:** keep direct identity matching for existing assignments. Otherwise require one append-only, independently reviewed, effective regional mapping for the exact service and unit at assignment time, linked to an approved organization version. Synthetic mappings are excluded in operational profiles. Store the mapping ID with the outcome and its audit/event payload.
-- **Alternatives:** trust an organization ID supplied with the outcome; fuzzy name matching; accept a mapping published after the assignment as retroactive proof.
-- **Consequences:** unmatched units remain unavailable for outcome recording, and real crosswalk entries need approval before assignments use them. Existing direct-ID assignments remain compatible.
-- **Evidence:** migration `0018_m8_unit_organization_crosswalk`, handoff repository and PostgreSQL integration scenario.
-- **Revisit when:** the first regional unit directory and publication authority are supplied.
-
-### D-051 — Select conditional evidence without intake values
-
-- **Date:** 2026-09-25
-- **Status:** accepted
-- **Context:** different issue types need different evidence, and an approved policy may require a later field only after a prerequisite is known.
-- **Decision:** extend the immutable intake policy payload with optional `when_states` predicates referencing earlier unconditional fields and a controlled `evidence_type`. Evaluate only trusted `known`/`missing`/`unknown` states. Inactive conditional fields are omitted from the question plan; an active missing field produces its authored question and evidence type. Reject unknown, forward or cyclic dependencies.
-- **Alternatives:** inspect raw citizen answers to choose evidence; use arbitrary policy expressions; ask every possible field up front.
-- **Consequences:** policies can adapt without backend code changes or PII in the planning seam. Conditions on categorical answer values and final attachment validation still require approved regional schema and storage rules.
-- **Evidence:** adaptive intake service, PostgreSQL reader, OpenAPI response and focused tests.
-- **Revisit when:** approved regional field taxonomy and evidence classes are provided.
-
-### D-052 — Require supervised review of a repeated rejected handoff
-
-- **Date:** 2026-09-25
-- **Status:** accepted
-- **Context:** the ownership assessment warned about prior rejection, but a manual assignment could still repeat the same organization without a reviewed reason.
-- **Decision:** while locking the appeal for assignment, check recorded rejection for the proposed organization ID or one currently approved unit-to-organization mapping. Refuse the repeat with a conflict until a supervisor or administrator supplies a controlled override reason. Store the override in the appeal event, audit and outbox payload. Keep manual routing available when no organization identity can be established.
-- **Alternatives:** silently permit repeated rejected routes; prohibit all reassignment; infer a target organization from a service name.
-- **Consequences:** a rejected organization's repeat route becomes reviewable and idempotent. Unknown unit identity cannot be guarded until the regional directory is approved; role enforcement depends on the authenticated API boundary.
-- **Evidence:** assignment service, OpenAPI command, route authorization test and PostgreSQL handoff integration scenario.
-- **Revisit when:** an approved regional unit directory and supervisor escalation policy are supplied.
-
-### D-053 — Bind offline replay receipts to immutable snapshot content
-
-- **Date:** 2026-09-25
-- **Status:** accepted
-- **Context:** the replay schema stores manifest and report metadata, but a report ID alone cannot prove that the compared cases match the saved object.
-- **Decision:** canonicalize pseudonymous snapshot bytes, verify their SHA-256 before storing them through an injected immutable object store, and persist the content address with the manifest. Report writes require the original typed dataset and verify its region, ID, cutoff, engine digest and content hash against the stored manifest. Reports remain descriptive and cannot be promoted.
-- **Alternatives:** trust caller-supplied snapshot hashes; persist reports without checking dataset binding; store raw case snapshots in PostgreSQL.
-- **Consequences:** a failed database write may leave an unreferenced immutable object for lifecycle cleanup. No operational run endpoint exists until approved datasets and policies are available.
-- **Evidence:** Replay Lab persistence repository, focused tests and PostgreSQL integration smoke scenario.
-- **Revisit when:** B02/B04/B05 provide approved representative snapshots and policy artifacts.
-
-### D-054 — Persist advisory gateway assessments against verified inputs
-
-- **Date:** 2026-09-25
-- **Status:** accepted
-- **Context:** a transient gateway result does not establish which appeal version, model recommendation, candidate set and confidence policy an operator saw.
-- **Decision:** lock the appeal at its current version, verify the complete persisted recommendation and ranked candidates, and resolve any claimed confidence policy against the approved effective catalog in the same transaction. Store an immutable result with input/evidence digests and an exact-retry key, plus audit and outbox rows. Every result remains advisory and requires human confirmation; no assignment action is exposed.
-- **Alternatives:** trust caller-supplied model or policy fields; record only the winning candidate; reuse one assessment after the appeal changes.
-- **Consequences:** historical assessments are reproducible and stale or mismatched evidence fails closed. The database schema gains a composite recommendation binding and append-only assessment table. Operational publication waits for approved model and intake artifacts.
-- **Evidence:** migration `0019_m8_gateway_assessment`, assessment repository, focused tests and PostgreSQL integration scenario.
-- **Revisit when:** B02/B04/B05 provide approved model snapshots, taxonomy and calibration evidence.
-
-### D-055 — Measure handoff outcomes from explicit operational cohorts
-
-- **Date:** 2026-09-25
-- **Status:** accepted
-- **Context:** a first-pass acceptance rate or repeated rejected handoff count can be misleading if the cohort silently includes synthetic fixtures, lacks an outcome, counts a later assignment as the first, or guesses a regional unit's organization.
-- **Decision:** compute read-only metrics for one region and a bounded UTC assignment-time interval, using the interval end as the outcome observation cutoff. First-pass acceptance uses the globally first assignment per appeal and its earliest unambiguous observed outcome before the cutoff; unknown outcomes remain unclassified. Repeated rejected handoffs require one approved, effective, non-synthetic organization identity and a recorded rejection on an earlier assignment before the current assignment time. An explicit operational source-system allowlist excludes synthetic test-only appeals. Return raw numerators, denominators, quality and provenance; zero denominators produce an unavailable rate.
-- **Alternatives:** infer outcomes from source status; count the first assignment inside each reporting window; divide by all appeals regardless of outcome; map units by name.
-- **Consequences:** this repository is opt-in and has no dashboard route until the regional source allowlist and publication authority are approved. Unmapped or ambiguous assignments remain visible as data-quality counts.
-- **Evidence:** `pulse109.ownership.metrics`, focused tests and PostgreSQL integration smoke.
-- **Revisit when:** a regional unit directory, approved source registry and reporting definitions are available.
-
-### D-056 — Advance incident state only through supervised, evidenced transitions
-
-- **Date:** 2026-09-26
-- **Status:** accepted
-- **Context:** confirmed incident membership existed, but the incident could not progress through active response, resolution and closure with a reviewable state history.
-- **Decision:** require a supervisor or administrator, the current incident version, an idempotency key and a controlled reason code for each forward transition. Resolution and closure require SHA-256 evidence references; PostgreSQL accepts them only when they belong to attachments of currently confirmed member appeals in the same region. Record the transition in incident history, audit and outbox in one transaction. Appeal identities, statuses and SLAs remain independent.
-- **Alternatives:** infer incident closure from regional source status; accept arbitrary notes or unowned attachment references; change incident state without review.
-- **Consequences:** evidence ownership is checked, but attachment content and remediation quality are not independently verified by this command. Merge, split, reopen and supersession still require their own governed operations.
-- **Evidence:** incident lifecycle route, OpenAPI schema, synthetic E2E and PostgreSQL integration scenario.
-- **Revisit when:** approved incident evidence policy and regional remediation workflow are available.
-
-### D-057 — Verify regional release bundles before activation
-
-- **Date:** 2026-09-26
-- **Status:** accepted
-- **Context:** federated policy and catalog distribution needs an integrity and downgrade boundary while central service connectivity may be unavailable.
-- **Decision:** use a bounded canonical JSON manifest signed with an explicitly trusted Ed25519 key. Verify signature, region, schema, validity window and artifact digests before an atomic PostgreSQL activation that advances both version and sequence. Persist append-only release history and the original signed bytes so current keys and time can reverify a stored release. Expose immutable verified content and preserve the last known good bundle on rejection.
-- **Alternatives:** accept unsigned configuration updates; trust a caller-supplied digest; permit a lower sequence to replace the active release.
-- **Consequences:** verification and durable activation are implemented; artifact retrieval, key rotation, signing authority and regional deployment are still required before this becomes an operational control plane. A stored active row is historical evidence, so consumers must reverify its signed bytes against current trust and expiry before application.
-- **Evidence:** `pulse109.control_plane`, migration `0020_bundle_activation`, focused tamper, replay, scope, expiry and immutability tests, and PostgreSQL integration scenario.
-- **Revisit when:** signing keys, regional runtime and approved release artifacts are supplied.
-
-### D-058 — Keep browser intake synthetic until private source storage exists
-
-- **Date:** 2026-09-26
-- **Status:** accepted
-- **Context:** the guided browser form could show a fabricated success number after a network error and supplied a raw address in a field defined as an opaque private reference. No approved immutable source storage, legal basis or retention class exists for real citizen intake.
-- **Decision:** show success only after the API returns a valid request UUID; retry an ambiguous failure with the same idempotency key and body. Remove persistent browser drafts, restoring legacy drafts in memory once. Disable submission by default; an explicit synthetic-assist flag allows only test submissions and never passes raw address text as a private reference. Keep received time missing when the source did not provide it.
-- **Alternatives:** invent an offline acceptance number; treat a raw address as a private reference; submit real data before B08/B10 are approved.
-- **Consequences:** the web journey is not an operational citizen channel until protected source storage and governance are integrated. The synthetic mode can exercise the UI and backend with fictitious data.
-- **Evidence:** `apps/web/app/intake.tsx`, frontend typecheck and lint, API fail-closed requirements.
-- **Revisit when:** B08/B10 provide approved identity, immutable source storage, legal basis and retention rules.
-
-### D-059 — Advance incident version for every membership decision
-
-- **Date:** 2026-09-26
-- **Status:** accepted
-- **Context:** membership decisions were append-only but did not advance the incident aggregate version, allowing a stale `incident_version` to authorize a later decision.
-- **Decision:** each confirmed, rejected or removed membership decision atomically advances the incident version. The membership decision, incident event, audit record and outbox event carry the resulting aggregate version. Idempotent replays return the original response before checking the submitted version, after region scope is verified.
-- **Alternatives:** version membership decisions independently; permit multiple decisions at one incident version.
-- **Consequences:** clients must submit the latest incident version after every membership decision; no schema migration is needed because existing version fields hold the aggregate version.
-- **Evidence:** in-memory E2E and PostgreSQL integration coverage.
-- **Revisit when:** membership becomes an independently versioned aggregate with an explicit cross-aggregate concurrency contract.
-
-### D-060 — Supervised incident topology operations (merge, split, reopen)
-
-- **Date:** 2026-09-26
-- **Status:** accepted
-- **Context:** incidents cluster multiple appeals, but cluster errors require explicit operational intervention to merge related incidents, split segregated clusters, or reopen closed incidents upon recurring appeal spikes without losing historical lineage or appeal autonomy.
-- **Decision:** implement versioned, atomic incident merge and split operations and supervised reopen transitions (`resolved -> monitoring`, `closed -> monitoring`). Merge supersedes the source incident and transfers confirmed member appeals to the target incident. Split creates a new target incident for a verified subset while leaving at least one member in the source. Both require supervisor authentication, region scoping, controlled reason codes, and SHA-256 evidence refs validated against confirmed member attachments.
-- **Alternatives:** autonomous LLM-driven incident merges/splits; mutable destructive updates deleting source incidents; unconstrained cross-region clustering.
-- **Consequences:** all member appeals retain independent identifiers, SLAs, and histories. Cycle prevention is enforced. Idempotent replays are guaranteed.
-- **Evidence:** `contracts/openapi.yaml`, `contracts/event_catalog.md`, `services/core/src/pulse109/incidents/`, `tests/e2e/test_incident_topology.py`, `tests/integration/test_incident_topology_persistence.py`.
-- **Revisit when:** multi-region cross-jurisdiction clustering is approved.
-
-### D-061 — Replay Lab offline inspection API, language slices, and operator UI panels
-
-- **Date:** 2026-09-26
-- **Status:** accepted
-- **Context:** policy and model evaluations must be inspectable and auditable across demographic and linguistic slices (KK, RU, mixed) without executing autonomous deployments or mutating live routing rules.
-- **Decision:** expose authenticated Replay Lab inspection endpoints (`GET /v1/replay/reports`, `GET /v1/replay/reports/{report_id}`) returning comparative metrics across baseline and candidate policies (route agreement, operator override rate, first-pass acceptance rate, historical handoff churn) and language slice agreements. Complement with operator UI panels for Incident Topology and Replay Lab in Next.js web application. Replay is strictly descriptive; policy activation requires cryptographically signed regional bundles via the control plane.
-- **Alternatives:** autonomous auto-deployment on passing score; unsegmented global metrics masking language bias; monolithic analytics database.
-- **Consequences:** full observability into language performance parity; operators and supervisors can review historical evidence before approving regional configuration bundles.
-- **Evidence:** `contracts/openapi.yaml`, `services/core/src/pulse109/replay/`, `apps/web/app/incident-topology-panel.tsx`, `apps/web/app/replay-lab-panel.tsx`, `tests/contract/test_contracts.py`, `services/core/tests/replay/test_router.py`.
-- **Revisit when:** approved production candidate policies and live regional datasets are ingested.
-
-### D-062 — Governed anomaly detectors and actionable Situation Center alert review
-
-- **Date:** 2026-09-26
-- **Status:** accepted
-- **Context:** operators and regional supervisors require automated detection of operational anomalies (handoff loops, reopen spikes, adapter lag, override spikes) and the ability to review, acknowledge, or dismiss alerts with controlled disposition codes without losing audit trail.
-- **Decision:** implement modular detectors (`HandoffLoopDetector`, `ReopenSpikeDetector`, `AdapterLagDetector`, `OverrideSpikeDetector`) orchestrated by `AlertDetectorEngine` with active alert deduplication. Map detected anomalies to existing database-constrained alert types (`volume_spike`, `incident_growth`, `sla_risk`, `data_quality`, `model_drift`) with specific detector metadata in evidence. Mount `POST /v1/alerts/{alert_id}/reviews` with authenticated role checks (`operator`, `supervisor`, `analyst`, `auditor`, `admin`), regional isolation, and controlled action codes (`acknowledge`, `resolve`, `dismiss`). Provide interactive alert triage in Situation Center frontend.
-- **Alternatives:** autonomous automated rule mutators; unstructured string alerts; unmonitored outbox backlogs.
-- **Consequences:** operations team can detect handoff ping-pong ($A \to B \to A$), delivery delays, and routing model drift early; every alert review produces immutable audit and timeline evidence.
-- **Evidence:** `contracts/openapi.yaml`, `services/core/src/pulse109/analytics/detectors.py`, `services/core/tests/analytics/test_detectors.py`, `apps/web/app/situation-center.tsx`, `tests/contract/test_contracts.py`.
-- **Revisit when:** real-time streaming event processing or WebSocket push alerts are approved.
-
-### D-063 — Privacy reference boundary and immutable PII access audit
-
-- **Date:** 2026-09-26
-- **Status:** accepted
-- **Context:** citizen PII (names, phone numbers, addresses, personal identifiers) must be isolated from feature data, inference pipelines, traces, metric labels, and application logs. Resolving private references or unmasking data requires strict access scope validation and an immutable audit trail.
-- **Decision:** implement `pulse109.privacy` service backed by `privacy.private_ref` and `audit.audit_event`. Require authenticated actor roles to intersect the reference's `access_scope` and match regional bounds before returning private details. Whenever a private reference is accessed, atomically write an immutable audit event (`PII_VIEWED`, `PII_REVEALED`, `PII_EXPORTED`) recording actor, action, timestamp, and purpose code. Never include raw PII text in audit payloads, metric labels, logger output, or OpenTelemetry trace spans.
-- **Alternatives:** plain text storage in application database; un-audited token resolution; ad-hoc regex redaction at log egress.
-- **Consequences:** zero PII leakage guarantee across the platform; compliance with citizen data protection laws and access governance; every PII view is fully accountable.
-- **Evidence:** `services/core/src/pulse109/privacy/`, `services/core/tests/privacy/test_privacy_service.py`, `services/core/tests/test_observability.py`.
-- **Revisit when:** HSM / external vault integration and homomorphic encryption are specified.
-
-### D-064 — Control plane bundle inspection and atomic activation HTTP API
-
-- **Date:** 2026-09-26
-- **Status:** accepted
-- **Context:** regional deployments and operators need to inspect currently active verified release bundles and activate new Ed25519-signed bundles via the public API with role-based governance and anti-rollback guarantees.
-- **Decision:** expose authenticated API endpoints `GET /v1/control-plane/bundles/active` and `POST /v1/control-plane/bundles/activate`. Inspection requires operator/supervisor/analyst/auditor/admin role and concrete region isolation (`X-Region-Id`). Activation requires supervisor or admin role, validates the signed envelope cryptographically via `BundleVerifier`, asserts regional matching between envelope and header, and applies atomic monotonicity checks advancing both version and sequence. Contract is published in `contracts/openapi.yaml` (`37` operations, `60` schemas).
-- **Alternatives:** direct database manipulation; manual CLI deployment only; unauthenticated bundle activation.
-- **Consequences:** complete control-plane lifecycle exposed over HTTP with strict cryptographic verification and anti-rollback protection; fallback in memory preserves testing and offline operational safety.
-- **Evidence:** `contracts/openapi.yaml`, `services/core/src/pulse109/control_plane/router.py`, `services/core/tests/control_plane/test_router.py`, `tests/contract/test_contracts.py`.
-- **Revisit when:** multi-party signing threshold schemes (e.g. M-of-N Ed25519) are introduced.
-
-### D-065 — Security hardening of citizen attachment ingestion and malware scanning
-
-- **Date:** 2026-09-26
-- **Status:** accepted
-- **Context:** citizen appeal attachments uploaded to the platform present attack vectors including disguised executables, polyglot files, script injection, and malware.
-- **Decision:** implement comprehensive attachment validation pipeline in `pulse109.security.attachments`. Enforce strict allowlisted MIME types (`application/pdf`, `image/jpeg`, `image/png`, `image/webp`, `text/plain`), inspect binary magic bytes to prevent MIME sniffing evasion, scan for executable headers (`MZ`, `\x7fELF`, `\xca\xfe\xba\xbe`, shebang `#!`) and embedded scripts (`<script`), compute canonical SHA-256 digests, and integrate pluggable `MalwareScanner` abstraction (`MockMalwareScanner` with simulated EICAR and threat detection).
-- **Alternatives:** rely purely on client-supplied `Content-Type` header; store uninspected blobs directly into S3; client-side validation only.
-- **Consequences:** malicious or disguised payloads are blocked and quarantined at ingestion boundary before persisting to object storage or worker processing; zero executable execution risk.
-- **Evidence:** `services/core/src/pulse109/security/attachments.py`, `tests/security/test_attachments.py`.
-- **Revisit when:** ClamAV / external cloud threat detection API is connected in staging.
-
-### D-066 — Attachment ingestion, queue listing, persistent alert store, and privacy API exposure
-
-- **Date:** 2026-09-26
-- **Status:** accepted
-- **Context:** an independent audit revealed critical seams preventing production operator use: attachments had validation functions but no operational HTTP upload/list endpoint (blocking closure preflight and incident resolution evidence chains); the operator workspace had to fall back to hardcoded IDs due to a missing appeal listing endpoint; alert reviews and states were in-memory despite existing PostgreSQL tables; privacy reference resolution was unmounted; replay snapshot bytes were lost on restart; and the Next.js web proxy dropped query strings.
-- **Decision:** expose authenticated `POST /v1/requests/{id}/attachments` and `GET /v1/requests/{id}/attachments` validating magic bytes, executable markers, and malware scanning before persisting to `appeals.attachment_ref` and recording `action='attachment.uploaded'` in timeline. Expose `GET /v1/requests` with cursor/limit pagination, status filtering, and region isolation. Wire `PostgresAlertStore` into `analytics` to persist alerts and reviews in `analytics.alert` and `analytics.alert_review`. Expose authenticated `POST /v1/privacy/references/{token}/resolve` and `GET /v1/privacy/references/{token}/audits`. Wire `FileSnapshotStore` into `PostgresReplayRepository`. Forward query search strings in `apps/web/app/api/core/[...path]/route.ts`.
-- **Alternatives:** keep in-memory mock endpoints; let operators upload attachments directly via raw SQL fixtures; bypass query params in web tier.
-- **Consequences:** complete evidence ingestion, appeal queue triage, and privacy audit lifecycle are now fully operational end-to-end over HTTP; persistent stores survive restart; operator workspace displays live backend data.
-- **Evidence:** `contracts/openapi.yaml` (42 operations, 67 schemas), `docs/archive/PRODUCTION_AUDIT.md`, `services/core/tests/manual_path/test_router.py`, `services/core/tests/privacy/test_privacy_router.py`, `services/core/tests/analytics/test_detectors.py`.
-- **Revisit when:** S3 direct presigned upload URLs with async scanning webhooks are introduced.
-
-### D-067 — Monotonic control plane rollback CLI and quarantine closure integrity verification
-
-- **Date:** 2026-09-26
-- **Status:** accepted
-- **Context:** (1) The signed bundle control plane implements strict anti-rollback counters (`version` and `sequence`), but lacked a dedicated command to safely rollback to an earlier configuration without disabling monotonic protections. (2) Closure integrity requires verified evidence attachments, but previously did not explicitly assert that referenced files were not security-quarantined or flagged.
-- **Decision:** (1) Implement `create_rollback_bundle` in `pulse109.control_plane.bundles` and add `pulse109-bundle rollback` CLI action. The rollback command reads the target bundle's content, sets `version = max(active.version, target.version) + 1` and `sequence = max(active.sequence, target.sequence) + 1`, re-signs the bundle with an authorized Ed25519 private key, and atomically installs it to PostgreSQL. (2) In `PostgresClosureRepository.create_preflight` and `confirm`, query `data_classification` from `appeals.attachment_ref` and reject any evidence item marked `security` with HTTP 422 `evidence_quarantined`. Re-verify attachment presence and clean status during confirmation before atomic closure.
-- **Alternatives:** allow manual decrement of sequence watermarks in the database; disable anti-rollback during emergency incidents; accept quarantined evidence with a warning flag.
-- **Consequences:** emergency rollbacks are fully supported while preserving strict monotonic tamper resistance and anti-replay invariants; zero risk of malicious or quarantined files being accepted as closure proof.
-- **Evidence:** `services/core/src/pulse109/control_plane/bundles.py`, `services/core/src/pulse109/control_plane/cli.py`, `services/core/src/pulse109/outcomes/postgres.py`, `services/core/tests/control_plane/test_bundles.py`, `services/core/tests/control_plane/test_cli.py`, `tests/integration/test_m9_closure_integrity.py`.
-- **Revisit when:** multi-signature threshold approval for rollback releases is mandated.
-
-### D-068 — Isolated demo profile and fail-closed external seams
-
-- **Date:** 2026-09-26
-- **Status:** accepted for local/demo runtime; operational integrations remain blocked
-- **Context:** the existing local UI and worker could report fabricated decisions or replay delivery, while attachment metadata could be saved without the bytes.
-- **Decision:** use one `demo` profile of the normal FastAPI/PostgreSQL/outbox/worker/web topology, with idempotent labelled fixtures and a dedicated Compose project. Reject replay delivery in pilot/production. Store demo attachment bytes in its isolated volume, but reject operational upload until approved immutable storage and real scanning exist. Bind private-reference access to stored region ownership; leave legacy unknown-region rows inaccessible. The operator queue uses API receipts rather than sample-state success.
-- **Alternatives:** a separate fake demonstration app; enabling replay delivery in pilot; treating metadata-only attachments as stored content.
-- **Consequences:** reviewers can reproduce the same critical path while external gaps remain explicit. Existing private references need an approved region backfill before access. Demo volumes are disposable and must contain synthetic data only.
-- **Evidence:** `infra/compose/docker-compose.demo.yml`, `scripts/demo_runtime.py`, migration `0022_privacy_region`, profile/privacy/worker tests, `docs/DEMO_RUNBOOK.md`.
-- **Revisit when:** the first regional adapter, approved object store/scanner and production identity provider are supplied.
-
-### D-069 — Incident readback and demonstrable end-to-end path
-
-- **Date:** 2026-09-27
-- **Status:** accepted for demo and local review
-- **Context:** the incident backend could mutate durable state but had no region-scoped read endpoint; an unused web panel fabricated success when topology commands failed. The demo only showed a partial appeal-to-status journey.
-- **Decision:** add a scoped incident detail contract with candidate and confirmed member IDs; expose a small operator panel that calls the actual create, membership and supervisor-confirm APIs. Seed a second related synthetic appeal and clean evidence, then verify decision, assignment, worker delivery, incident, resolution, closure, recurrence and analytics through the demo API in CI. Remove unmounted sample-only panels that fabricated operational results.
-- **Alternatives:** keep a static incident illustration; pre-seed a confirmed incident; return sample incident data when the API fails.
-- **Consequences:** a reviewer can reload and inspect persisted membership, and API failures stay visible. The panel does not yet cover topology merge/split. PostgreSQL topology and resolution commands require clean evidence from current incident members; approved evidence policy remains external.
-- **Evidence:** `services/core/src/pulse109/incidents`, `apps/web/app/incident-workflow-panel.tsx`, `scripts/verify_demo_flow.py`, demo-profile CI job.
-- **Revisit when:** approved incident evidence and regional workflow rules are available.
-
-### D-070 — Keep PulseDM as a governed research candidate beside the conservative ML stack
-
-- **Date:** 2026-09-27
-- **Status:** accepted for research design and offline evaluation, not model deployment
-- **Context:** the current critical path has a lexical CPU fallback and human Decision Gateway, while candidate routing/retrieval models lack approved KK/RU/mixed labels. A structured non-generative decision model could share representations across advisory questions, but neither its accuracy nor operational benefit is established.
-- **Decision:** retain the conservative supervised routing, hybrid retrieval and pair-classifier track; specify PulseDM as a separate multilingual Choice/Boolean/Score research design; allow Jev or structured LLMs only as optional external benchmarks/teachers after privacy approval. Compare all implemented candidates on identical pinned decision-time cases. Add an offline Choice/Boolean evaluator with leakage, split and probability checks; keep Score evaluation, training and serving unimplemented until justified. No model enters the hot path or gains authority over SLA, ownership, assignment, merge or closure through this decision.
-- **Alternatives:** replace the existing inference service with an untrained PulseDM placeholder; select a public leaderboard winner; send citizen text to an external benchmark by default.
-- **Consequences:** research can proceed without breaking CPU/manual continuity or claiming unavailable model quality. Candidate configurations and weights will be added only with a concrete runner, license check, approved dataset and model card.
-- **Evidence:** `docs/ml/`, `ml/evaluation/candidate_compare.py`, `tests/model/test_candidate_compare.py`, existing synthetic baseline and Replay Lab contracts.
-- **Revisit when:** approved, privacy-reviewed KK/RU/mixed gold data and deployment resources support a measured candidate experiment.
-
-### D-071 — Keep operator showcase actions contract-bound and integration reruns disposable
-
-- **Date:** 2026-09-28
-- **Status:** accepted for pilot review
-- **Context:** reviewers need to inspect replay comparisons and incident topology actions, but stored replay reports retain aggregate policy metrics rather than per-case decisions. Reusing an integration database causes state from one pass to influence another. Production object storage, identity infrastructure, and delivery environment have not been supplied.
-- **Decision:** expose only persisted Replay Lab report and aggregate metric differences; label case-level decision traces unavailable rather than reconstructing them. Have War Room controls call the existing region-scoped merge/split API with user confirmation, evidence hash, and idempotency key. Run integration passes in newly created UUID-named PostgreSQL databases, never against the caller database. Provide immutable local/S3-compatible storage adapters without wiring them into attachments or replay until approved infrastructure is supplied.
-- **Alternatives:** render invented case decisions; implement client-side topology changes; truncate shared integration tables; claim a bucket or OIDC deployment exists.
-- **Consequences:** the showcase is inspectable and failures remain visible, while per-case replay trace, production storage wiring, IdP, deployment, retention, and recovery targets remain open external work.
-- **Evidence:** `apps/web/app/replay-lab.tsx`, `apps/web/app/incident-war-room.tsx`, `scripts/run_integration_tests.py`, `services/core/src/pulse109/security/object_storage.py`, `tests/architecture/test_integration_isolation.py`, `infra/runbooks/PILOT_DEPLOYMENT_REQUIREMENTS.md`.
-- **Revisit when:** B02/B03 supply decision-time trace semantics, and B07/B08/B10 supply approved service, identity, storage, privacy, and recovery requirements.
-
-### D-072 — Use captured working demo screens as landing proof
-
-- **Date:** 2026-09-29
-- **Status:** accepted for synthetic demo
-- **Context:** the first landing used independently drawn interface imitations whose counts and controls could diverge from the application.
-- **Decision:** frame screenshots captured from the running PostgreSQL-backed demo for Operations Center, Smart Intake, operator queue, War Room, Ask Pulse and Data Lab. Label them as static captures of synthetic data. Keep the CTA connected to the actual workspace; improve weak operational layouts in the app before capturing them.
-- **Alternatives:** maintain parallel mock UI components; use proprietary reference imagery; embed an interactive demo inside the landing.
-- **Consequences:** landing proof corresponds to available screens and does not imply live regional data. Screenshots must be refreshed after material app-UI changes. No API or migration changes.
-- **Evidence:** `apps/web/app/landing.tsx`, `apps/web/public/product/`, `infra/docker/web.Dockerfile`.
-- **Revisit when:** the application UI changes enough that the static captures no longer represent it.
-
-### D-073 — Treat process stages as independent snapshot counts
-
-- **Date:** 2026-09-29
-- **Status:** accepted
-- **Context:** a resolved appeal is not simultaneously in the current `in_progress` state; the Data Lab displayed a 125% conversion and a fictitious largest drop between independent counts.
-- **Decision:** preserve the existing stage counts and drill-down keys, but leave cohort-conversion and largest-drop fields unset and explain the snapshot semantics in the UI. Make VPS Compose database URLs use the configured URL-safe PostgreSQL password across migrate, API and worker; public overlays require a nonempty value.
-- **Alternatives:** infer historical transitions from current statuses; keep the misleading percentage; change the API schema; retain a hard-coded local password in public containers.
-- **Consequences:** exact counts remain inspectable without fabricated conversion. Public deploys need an explicit database secret; existing PostgreSQL role passwords require deliberate rotation rather than only changing Compose environment.
-- **Evidence:** `services/core/tests/datalab/test_datalab_contracts.py`, `docs/features/DATA_LAB.md`, `infra/compose/`, `infra/runbooks/PUBLIC_DEPLOYMENT.md`.
-- **Revisit when:** a true event-cohort funnel is specified and tested against append-only lifecycle data.
-
-### D-XXX — Short title
-
-- **Date:** YYYY-MM-DD
-- **Status:** proposed | accepted | superseded
-- **Context:** what forced the choice
-- **Decision:** the selected behavior or design
-- **Alternatives:** serious options considered
-- **Consequences:** performance, security, migration and operations impact
-- **Evidence:** benchmark, test, issue or contract reference
-- **Revisit when:** explicit trigger, if any
-
-### D-ASK-01 — Version trusted-time analytics semantics
-
-- **Date:** 2026-09-28
-- **Status:** accepted for pilot review
-- **Context:** Ask Pulse needs trusted business-time filtering, human-confirmed dimensions, and explicit exclusion of records without reliable event time. The existing analytics endpoint already exposes observed-time volume results to consumers.
-- **Decision:** publish trusted-time volume semantics as `appeals_volume/2.0.0` and use that version for Ask Pulse. Keep the existing `appeals_volume/1.0.0` meaning and default intact for `/analytics/query`. Do not synthesize missing region/time buckets as zero without an approved completeness policy.
-- **Alternatives:** silently change the existing metric's meaning; keep using ingestion/observation timestamps for citizen-facing trend questions; infer zero from an empty query result.
-- **Consequences:** existing consumers keep their current interpretation. Ask Pulse excludes ambiguous business times and identifies its metric version. Sparse results remain sparse until source freshness policy establishes completeness.
-- **Evidence:** `services/core/src/pulse109/analytics/catalog.py`, `services/core/src/pulse109/analytics/repository.py`, `services/core/tests/analytics/test_repository_boundary.py`, `docs/features/ASK_PULSE.md`.
-- **Revisit when:** metric versioning becomes a shared contract with external analytics consumers or approved freshness completeness rules are supplied.
-
-### D-074 — Reconcile submission documentation with verified evidence
-
-- **Date:** 2026-10-01
-- **Status:** accepted for documentation
-- **Context:** judge READMEs and journals mixed historic counts, future models, stale storage/deployment facts and unsupported current claims.
-- **Decision:** use Russian as canonical judge language, equivalent English/Kazakh READMEs, weekly Git/document evidence with explicit provenance, and dated CI/deployment records. Keep research, synthetic demo and external blockers distinct.
-- **Consequences:** no product/runtime/executable contracts changed. Security CI failures and stale public water fixtures remain visible rather than being declared fixed.
-- **Evidence:** [documentation review](review/DOCUMENTATION_REVIEW_2026-10-01.md), [current status](FEATURE_STATUS.md), [deployment](../infra/runbooks/PUBLIC_DEPLOYMENT.md).
-- **Revisit when:** source code, CI, deployment or team evidence changes.
+[Русский](DECISION_LOG.md) · [English](DECISION_LOG.en.md) · [Қазақша](DECISION_LOG.kk.md)
+
+# Pulse 109 Журнал решений
+
+Хронологические внутренние решения; ранний выбор целей и доказательства относятся к их зарегистрированным датам. Текущее исполняемый контур/статус: [FEATURE_STATUS](FEATURE_STATUS.md). D-036 не включает исторический корпус прозы и заменяет требования D-018/D-019/D-023 к качеству/воспроизводимости; Подключение при работе приложения S3 в `5c9d044` заменяет отсрочку подключения хранения в D-071. Ни названные модели, ни архивные оценки не устанавливают действующее обязательное соответствие требованиям дообучения текста обращений граждан.
+
+Запишите здесь решения по реализации, если репозиторий, контракты или доступные интеграции требуют конкретного выбора, который еще не заблокирован `AGENTS.md`, исполняемыми контрактами или `DECISIONS_AND_BLOCKERS.md`.
+
+## Первоначальные принятые решения
+
+### D-001 — Модульное ядро перед извлечением службы
+
+- **Статус:** принято
+- **Решение:** реализовать модульное ядро FastAPI с отдельными процессами для сети, API, воркеров, инференса и адаптеров.
+- **Причина:** это обеспечивает разделение производства при работе приложения без создания нагрузки на распределенное владение и развертывание в течение первого месяца.
+- **Возвращайтесь, когда:** у модуля есть независимый владелец, граница безопасности, профиль масштабирования или узкое место в измеренной надежности.
+
+### D-002 — PostgreSQL авторитетный
+
+- **Статус:** принято
+- **Решение:** PostgreSQL — система записи; PostGIS и pgvector расширяют одну и ту же базу данных. Redis индексы поиска и кэши являются производными и необязательными.
+- **Причина:** это обеспечивает управляемость транзакций, аудита, восстановления и локального развёртывания.
+- **Возвращайтесь, когда:** измеренные требования к нагрузке или хранению превышают документированный план ёмкости.
+
+### D-003 — Подтверждение человеком действий со значимыми последствиями ИИ
+
+- **Статус:** принято
+- **Решение:** модели предлагают категории, маршрутизацию, приоритет, повторяющиеся ссылки и черновики ответов; авторизованные пользователи подтверждают последующие действия.
+- **Причина:** история обращений, SLA и ответственность должны оставаться объяснимыми и обратимыми.
+- **Возвращайтесь, когда:** для конкретного действия с низким уровнем риска есть утвержденная политика, откалиброванное качество, мониторинг и безопасный путь отката.
+
+### D-004 — Стабильный канонический контракт с изолированными адаптерами
+
+- **Статус:** принято
+- **Решение:** каждая внешняя CRM или государственная система интегрируется через собственный адаптер и канонические контракты запросов/событий с поддержкой версий.
+- **Причина:** изменения, специфичные для интеграции, не должны проникать в логику предметной области.
+- **Возвращайтесь, когда:** никогда для удобства конкретного поставщика; развиваться только посредством изменения версии контракта.
+
+### D-005 — Вывод пилота в двух GPU
+
+- **Статус:** принято
+- **Решение:** использовать стек моделей, описанный в `contracts/model_stack.md`, с явным пакетированием, квантованием, где указано, CPU/лексическими резервными путями и без жесткой зависимости от размещенного LLM.
+- **Причина:** платформа должна соответствовать заявленному объему вычислений и оставаться работоспособной во время простоев модели.
+- **Вернитесь к этому вопросу, когда** базовые данные и утвержденный бюджет на инфраструктуру оправдывают изменение.
+
+## Шаблон записи
+
+### D-006 — Отделить время канонического импорта от времени публичного приема.
+
+- **Дата:** 11 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** каноническая схема адаптера допускает `received_at: null` с явным качеством `missing` или `date_only`, тогда как общедоступная схема `CreateRequest` требует конкретной даты и времени.
+- **Решение.** Канонический импорт M1 остается отдельной границей приложения и сохраняет нулевое рабочее время. Это не призывает и не ослабляет общественность М2, создавая DTO.
+- **Альтернативы**: создать временную метку; ослабить общественность API; карантин каждой пропущенной даты.
+- **Последствия**: отсутствие отклонения контракта или выдуманной точности; M2 должен сопоставить публичный приём обращений и импорт адаптеров через одну службу после отдельных этапов проверки.
+- **Доказательства:** канонические контрактные тесты и `test_missing_and_date_only_time_do_not_invent_instants`.
+- **Вернитесь, когда:** общедоступный массовый импорт с версиями API будет одобрен.
+
+### D-007 – Детерминированный прием синтетического M1 до выбора источника
+
+- **Дата:** 11 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** первая региональная система, авторитетный исходный манифест, правовая основа и политика хранения являются внешними блокировщиками.
+- **Решение:** внедрить синтаксический анализатор M1 для явно синтетического сопоставления JSONL и отклонить все манифесты, не помеченные как синтетические. Сохраняйте транспортировку и производство для конкретного источника после последующей работы с адаптером/репозиторием.
+- **Альтернативы**: изобрести региональный протокол; подождите, не реализуя контракт и поведение DQ.
+- **Последствия:** происхождение, карантин, качество времени и идемпотентность теперь могут выполняться без необходимости живой интеграции.
+- **Доказательства:** `data/manifests/synthetic-m1.json` и воспроизводимый отчет DQ.
+- **Вернитесь, когда:** вопросы B07 и B10 будут решены в письменном виде.
+
+### D-008 - Только синтетические доказательства M3 перед обучением кандидатов
+
+- **Дата:** 12 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** B02, B03, B06 и B10 блокируют репрезентативные метки, признаки для рабочего контура, обеспечивающие защиту от утечек, авторитетную таксономию и утвержденный необработанный текст.
+- **Решение:** реализовать интерфейс вывода с поддержкой версий, детерминированные тестовые/лексические режимы CPU и линейный базовый алгоритм, оцениваемую только на явно синтетическом сгруппированном временном фиксе. Требовать подтверждения человеком для каждого результата.
+- **Альтернативы**: обучение XLM-R на изобретенных метках; выставлять некалиброванные оценки как действенное качество; отложить все контракты вывода.
+- **Последствия:** Механизмы интеграции и оценки M3 являются исполняемыми, в то время как все метрики остаются помеченными как диагностика устройств, а автономная маршрутизация не включена.
+- **Доказательства:** `contracts/inference.schema.json`, `ml/datasets/synthetic_m3_manifest.json`, `ml/evaluation/synthetic_m3/` и `tests/model/`.
+- **Вернитесь, когда** будет предоставлен утвержденный текст предварительного решения, политика маркировки, таксономия и документация об утечках.
+
+### D-009 — Вертикальный срез в памяти вручную не является рабочим репозиторием.
+
+- **Дата:** 12 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** Обратная связь M3 требует выполнения границ, допускаемых человеком, а завершение репозитория PostgreSQL M2 выходит за рамки требуемых этапов этого запуска.
+- **Решение:** смонтировать руководство API в форме контракта над репозиторием транзакций в памяти для локальных/браузерных тестов и создать прямые таблицы базы данных для устойчивого состояния M2/M3, не заявляя, что они подключены при работе приложения.
+- **Альтернативы**: полностью имитируйте тест на человеческую коррекцию внутри пакета модели; молча представить состояние памяти как прочное.
+- **Последствия:** путь оператора no-ML и семантика обратной связи теперь доступны для тестирования; M2 остается следующей вехой, пока та же граница транзакции не будет реализована в PostgreSQL.
+- **Доказательства:** `services/core/src/pulse109/manual_path/`, миграции `0003`/`0004`, API E2E и скриншоты браузера.
+- **Вернитесь, когда:** репозиторий PostgreSQL и одобренный адаптер идентификации/авторизации подключены.
+
+### D-010 — Детерминированный гибридный резерв перед репрезентативными данными M4
+
+- **Дата:** 12 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** B02 и B04 блокируют репрезентативные выводы поиска, эмбеддинги и подтвержденные повторяющиеся пары.
+- **Решение:** реализовать хранилище PostgreSQL FTS/pgvector и слияние обратных рангов, используя при этом детерминированный резервный лексический/хеш-вектор для синтетических тестов. Каждый дубликат остается предложением с текстом, услугой, временем и географическими данными и требует человеческого решения.
+- **Альтернативы**: загрузите неутвержденные модели внедрения; заявлять, что оценки приспособлений соответствуют качеству продукции; автоматически объединять пары с высокими показателями.
+- **Последствия:** контракты на хранение и проверку можно выполнить в автономном режиме, не создавая претензий по качеству и не разрушая по обращению идентичность.
+- **Доказательства:** тесты на миграцию `0005`, `ml/datasets/synthetic_m4_manifest.json`, `ml/evaluation/synthetic_m4/` и поиск/E2E.
+- **Вернитесь, когда** будут доступны утвержденный исходный текст, репрезентативные суждения, подтвержденные пары и политика оценки.
+
+### D-011 - Адаптер воспроизведения - единственный внешний транспорт M5.
+
+- **Дата:** 12 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** B07 оставляет неизвестными первую региональную цель, владельца, API, песочницу и семантику статуса.
+- **Решение**: отправьте типизированный адаптер SDK, детерминированный адаптер воспроизведения, ограниченные повторы, состояние недоставленных сообщений и сверку с неизвестными статусами, направленными на проверку сопоставления. Не изобретайте протокол активной системы.
+- **Альтернативы**: привяжите код домена к предполагаемому CRM; опускать поведение при сбое доставки, пока не существует цель.
+- **Последствия:** машину состояний доставки и членство в инцидентах можно протестировать, но не требуется национальной или живой интеграции.
+- **Доказательства:** миграция `0006`, тесты контракта/отключения адаптера и `data/reports/synthetic-m5-replay-trace.json`.
+- **Вернитесь, когда:** ошибка B07 будет устранена и первый контракт на адаптер будет одобрен.
+
+### D-012 — управляемая модель синтетического чтения для M6.
+
+- **Дата:** 12 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** авторитетное национальное освещение, политика SLA, производственная идентичность и юридическое одобрение остаются заблокированными B01, B06, B08 и B10.
+- **Решение:** предоставить каталог метрик из белого списка и управляемый анализатор намерений для синтетических результатов чтения. Dashboard, PDF и XLSX используют один и тот же неизменяемый результат метрики; отсутствующие и устаревшие регионы остаются явными и никогда не становятся числовыми нулями.
+- **Альтернативы:** разрешить произвольный SQL; фабриковать национальные ценности; кодировать неутвержденный порог SLA.
+- **Последствия:** семантика ситуационного центра и экспортная сверка могут выполняться без представления недоступной политики или данных как факта.
+- **Доказательства:** миграция `0007`, аналитика/тесты отчетов, сравнение экспорта E2E и данные браузера в `ml/evaluation/synthetic_m6/`.
+- **Вернитесь, когда:** B01, B06, B08 и B10 будут решены.
+
+### D-013 - Даты Караганды анализируются как М/Д/Г
+
+- **Дата:** 13 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** 87 709 строк Караганды содержат второе поле даты выше 12, тогда как первое поле никогда не превышает 12, что фиксирует порядок месяца как первый.
+- **Решение:** проанализировать `created_date`, `updated_date` и `submission_date` с явным правилом M/D/Y в региональном адаптере CSV.
+- **Альтернативы**: синтаксический анализ D/M/Y по умолчанию или вывод формата для каждой строки.
+- **Последствия:** два года истории Караганды сохраняют верность дня и месяца. Вывод был отклонен, поскольку он не является детерминированным для всех серий.
+- **Доказательства:** `adapters/regional_csv`, `data/reports/regional-csv-dq-report.json`.
+- **Повторно посетите, если** владелец источника подтверждает или опровергает локаль экспорта.
+
+### D-014 - Туркестан падает до одного рекорда за инцидент
+
+- **Дата:** 13 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** экспорт Туркестана содержит 98 876 строк с 52 050 различными значениями `incidentid`. Повторы — это снимки жизненного цикла, а не отдельные обращения.
+- **Решение:** сохранить строку с последними `updateddate` для `incidentid`, а остальные считать дедуплицированными.
+- **Альтернативы**: рассматривайте каждую строку как обращение или сохраняйте все версии как историю.
+- **Последствия:** любая туркестанская метрика, рассчитанная без этого шага, завышена примерно на 47 процентов. История версий откладывается до тех пор, пока источник не опубликует контракт жизненного цикла.
+- **Доказательства:** 46 826 строк свернуты, записано в `data/reports/regional-csv-dq-report.json`.
+- **Вернитесь, когда:** B07 доставляет контракт на событие жизненного цикла.
+
+### D-015 - Части Павлодара объединяются без дедупликации
+
+- **Дата:** 13 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** в двух павлодарских файлах одинаковые значения `id` равны нулю, и оба охватывают период с 9 февраля 2020 г. по 26 июля 2026 г., поэтому разделение является произвольным, а не хронологическим.
+- **Решение:** объединить обе части в один региональный поток.
+- **Альтернативы**: рассматривайте часть 2 как более новую версию части 1.
+- **Последствия:** В канонический поток попали 666 634 павлодарских записи, что составляет 67,3% корпуса. Оценка с учетом региона становится обязательной.
+- **Доказательство**: пересечение нулевого идентификатора, проверено для обоих файлов.
+- **Вернитесь, когда**: источник объясняет раскол.
+
+### Д-016 - Акмолинские ряды смены колонн помещены на карантин
+
+- **Дата:** 13 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** экспорт из Акмолы содержит 180 строк с неэкранированными кавычками. В 32 записях сдвиг заметен, поскольку `creation_date` содержит фрагмент названия организации, а не дату.
+- **Решение:** отправить эти строки в карантин с помощью `SCHEMA_DRIFT_COLUMN_SHIFT` и никогда не восстанавливать их эвристически.
+- **Альтернативы**: определите границы поля и исправьте их или сбросьте беззвучно.
+- **Последствия:** каноническое число составляет 990 000, а не 990 032, зафиксированное в `DECISIONS_AND_BLOCKERS.md`. Разница именно в этих 32 рядах.
+- **Доказательства:** `quarantine_reasons` в отчете о качестве данных.
+- **Вернитесь, когда**: источник предоставляет правильно экранированный экспорт.
+
+### D-017 — Статус нормализации местоположения отсутствует почти для каждой записи.
+
+- **Дата:** 13 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** координаты заполнены в 23 из 20 591 костанайской строки и в 264 из 98 876 туркестанской строки. Остальные пять источников не содержат столбцов координат.
+- **Решение:** установите для `location.normalization_status` значение `missing`, если пара координат не анализируется, и оставьте геокодирование вне этапа вставки.
+- **Альтернативы**: адреса геокодирования во время загрузки.
+- **Последствия:** предложения по инцидентам зависят от темы, услуги и времени. Пространственная кластеризация не имеет источника и не может быть продемонстрирована как измеряемое поведение.
+- **Доказательства:** коэффициент заполнения столбцов в отчете о качестве данных.
+- **Вернитесь, когда** служба геокодирования будет одобрена или источник предоставит координаты.
+
+### D-018 — Точная настройка целевых вложений поиска, а не входного классификатора.
+
+- **Дата:** 13 сентября 2026 г.
+- **Статус:** принято
+- **Контекст**: полный просмотр всех восьми экспортированных данных подтверждает, что ни одно поле не содержит текст гражданина. Единственный свободный текст пишется исполнителем после закрытия, что дает 14 397 уникальных документов, из которых 72 процента превышают 40 символов, а 3 150 превышают 150 символов.
+- **Решение**: обучите вложения для поиска аналогичных решенных случаев в этом корпусе. Сохраняйте входной классификатор для категориальных признаков с линейной базовой линией до тех пор, пока не появится необработанный текст.
+- **Альтернативы**: дождитесь B02, обучите классификатор на слабых сервисных метках L1–L3 или вообще не требуйте тонкой настройки.
+- **Последствия (оценка исправлена 01.10.2026):** это фиксирует направление исследования текста исполнителя, а не соответствие требуемой тонкой настройке среды выполнения текста гражданина. Классификатор приема остается заблокированным в B02 и реализации/проверке. Позже D-036 скрыл этот корпус до получения разрешения на конфиденциальность.
+- **Фактические данные:** статистика корпуса в `data/reports/regional-csv-dq-report.json`, с языковым разделением 96,9 процента ру, 3,0 процента смешанного языка и 0 процентов kk.
+- **Вернитесь к этому моменту:** B02 предоставит необработанный текст обращения до 20 сентября.
+
+### D-019 — Версия отредактированного корпуса находится в частном репозитории.
+
+- **Дата:** 14 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** D-018 подготовил корпус документов из 14 397 документов, от которых зависит каждое обучение и оценка. Хранение его вне git делало невозможным воспроизведение результатов извлечения из клона.
+- **Решение:** пересмотреть отредактированный корпус, 32 карантинные строки и отчет о качестве. Репозиторий является частным, и доступ к нему остается только у команды.
+- **Альтернативы**: исключите корпус из git и распространяйте его вручную или отправляйте только хэши.
+- **Последствия:** клон воспроизводит поисковую оценку без внешних файлов. Канонический поток игнорируется, поскольку 1,7 ГБ не принадлежат git, что является решением размера, а не конфиденциальности. Вопрос B10 все еще не решен, поэтому эти данные не должны покидать частный репозиторий и не должны появляться в каких-либо общедоступных артефактах.
+- **Доказательства:** остаточное PII сканирование обоих файлов выявило отсутствие ИИН, телефона и электронной почты. Манифест в `ml/datasets/regional_retrieval_manifest.json`.
+- **Повторно посетите, когда:** B10 возвращает юридическое основание и класс хранения или изменяется видимость репозитория.
+
+### D-020 – Маршрутизация не имеет переносимой таксономии между регионами.
+
+- **Дата:** 14 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** исключение одного региона из семи регионов показывает, что модель, обученная на шести регионах, не работает на седьмом. В Костанае 94,4 процента названий тем совпадают с регионами обучения, но точность составляет 0,002. Туркестан имеет долю 82,9 процента и оценку 0,005. В Караганде акций ноль.
+- **Решение:** рассматривать барьер в двадцать регионов как проблему таксономического картирования, а не как проблему объема данных. Сообщайте о покрытии каждого региона и никогда не указывайте единый национальный номер маршрутизации.
+- **Альтернативы**: обучите одну национальную модель и сообщите ее среднее значение или дождитесь результатов остальных тринадцати регионов.
+- **Последствия:** каждому региону необходимо сопоставление версий из собственного каталога сервисов с общей таксономией, прежде чем будет выполнено какое-либо межрегиональное утверждение. Увеличение количества данных само по себе не исправит ситуацию.
+- **Доказательства:** `ml/evaluation/routing_v1/routing_report.json`, раздел `leave_one_region_out`.
+- **Повторно посетите,** когда появится авторитетная таксономия общих служб или B01 доставит оставшиеся регионы с их каталогами.
+
+### D-021 — Потолок маршрутизации без текста гражданина измерен, но не предполагается.
+
+- **Дата:** 14 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** точность поиска по теме для сервиса достигает 0,573 при временном разбиении внутри каждого региона. Логистическая регрессия по признакам темы, региона, района, канала и времени достигает 0,588, что на 1,5 балла лучше по точности и на 0,02 балла хуже по макросу F1.
+- **Решение:** отправьте поиск с отсрочкой в качестве базового алгоритма маршрутизации и сохраните линейную модель в качестве источника достоверности для порога воздержания. Не заявляйте о выигрыше от моделирования, который не подтверждается цифрами.
+- **Альтернативы**: представьте модель как решение для маршрутизации или полностью откажитесь от модели.
+- **Последствия:** кривая покрытия становится особенностью продукта. При 30-процентном покрытии точность составляет 0,972, при 50-процентном — 0,809. Оператор получает все, что ниже порогового значения, что делает участие человека в цикле настраиваемой настройкой, а не лозунгом.
+- **Доказательства:** `ml/evaluation/routing_v1/routing_report.json`, разделы `baselines`, `model` и `coverage_curve`.
+- **Вернитесь, когда:** B02 предоставляет необработанный текст обращения, который, как ожидается, является единственным вводом, который может изменить этот потолок.
+
+### D-022 - Караганда остается в метрике маршрутизации с явным предупреждением
+
+- **Дата:** 14 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** Караганда на 99,9% детерминирована только по теме, поскольку организация-исполнитель выводится из этой категории. Он составляет 14 процентов тестового среза с точностью 0,989 и поднимает совокупный показатель на 6,7 балла. Исключение этого параметра перемещает модель с 0,588 на 0,521.
+- **Решение:** оставить Караганду в отчетных показателях и опубликовать оба агрегата рядом, с ним и без него.
+- **Альтернативы**: исключите его из показателей маршрутизации или сообщите только тот агрегат, который его включает.
+- **Последствия:** ни один номер не скрыт. Читатель видит завышенную совокупность и честную в одной таблице и может судить, какая из них применима к его региону.
+- **Доказательство:** `per_region` в отчете о маршрутизации.
+- **Вернитесь, когда** поступят новые данные о случаях заболевания и изменится состав регионов.
+
+### D-023 — Точно настроенные методы извлечения данных значительно превосходят оба базовых уровня.
+
+- **Дата:** 14 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** замороженный `multilingual-e5-small` проигрывает базовому уровню символа TF-IDF в этом корпусе, получая nDCG@10 0,3791 против 0,3932. Готовая многоязычная семантика ничего не добавляет к краткому канцелярскому русскому тексту, что и дает измеримую работу по тонкой настройке.
+- **Решение:** точно настройте базовую модель с помощью MultipleNegativesRankingLoss на 7 466 парах, полученных только за период обучения, и сообщите о приросте по сравнению с лексическим базовым уровнем, а не с замороженной моделью.
+- **Альтернативы**: отправьте замороженную модель, отправьте только лексическую версию или заявите о необходимости тонкой настройки без ее измерения.
+- **Последствия (оценка исправлена 1 октября 2026 г.):** в историческом отчете записано значение nDCG@10 0,4086 против лексического 0,3932 и замороженное 0,3791 в текстовых прокси-данных исполнителя. Это не отменяет обязательного требования к точно настроенной среде выполнения внедрения Citizen-Text. D-036 блокирует претензии по качеству и повторное использование корпуса до получения разрешения на конфиденциальность/разделение.
+- **Доказательства:** `ml/evaluation/retrieval_ft_v1/retrieval_finetune_report.json`, `ml/model_cards/retrieval_e5_small_ft_v1.json`.
+- **Вернитесь, когда:** поступает необработанный текст гражданина, поскольку рабочие запросы представляют собой тексты граждан, а каждый запрос здесь является текстом исполнителя.
+
+### D-024 – Поиск остается гибридным, потому что лексический побеждает хвост
+
+- **Дата:** 14 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** точно настроенная модель лидирует на Recall@1 (0,4713 против 0,4625) и nDCG@10, но незначительно отстает от Recall@10 (0,6925 против 0,6937). Прибыль концентрируется на вершине рейтинга.
+- **Решение:** постоянно оставлять лексический поиск в пути обслуживания и объединять его с плотным ранжированием, а не рассматривать лексический поиск как резервный путь, из-за которого достаточно хорошая модель может выйти из эксплуатации.
+- **Альтернативы**: замените лексическую модель плотной, как только она выиграет по показателю заголовка.
+- **Последствия:** оператор видит лучший первый результат с плотной стороны и сохраняет запоминание лексической стороны. Это подтверждает существующее заблокированное решение о том, что лексический резервный путь всегда остается доступным, теперь уже с измерением, стоящим за ним.
+- **Доказательства:** Recall@1 и Recall@10 для каждой системы в отчете о точной настройке.
+- **Вернитесь, когда:** будет добавлен инструмент изменения рейтинга, который может изменить вклад каждого ретривера.
+
+### D-025 — Версии тренированных весов не указаны, карточка модели
+
+- **Дата:** 14 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** одна контрольная точка занимает 465 МБ и воспроизводится примерно за пять минут на CPU. Корпус, парный майнинг и разделение являются детерминированными при фиксированном начальном значении.
+- **Решение:** игнорировать `ml/evaluation/**/model/` в git и создать версию карты модели с весом sha256, конфигурацией обучения, разделением и всеми метриками.
+- **Альтернативы**: зафиксируйте веса или добавьте Git LFS.
+- **Последствия:** клон воспроизводит контрольную точку из корпуса, для которого существует версия. Рецензент может сопоставить любое заявленное число с точными весами, из-за которых оно было получено, при этом в репозитории не будет храниться полгигабайта на эксперимент.
+- **Доказательства:** `ml/model_cards/retrieval_e5_small_ft_v1.json`, поле `weights.sha256`.
+- **Возвращайтесь, когда** контрольная точка должна быть отправлена в среду, которая не может быть переобучена.
+
+### D-026 – прогнозирование нагрузки выполняется для каждого региона на основе сезонно-ориентированного базового уровня.
+
+- **Дата:** 15 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** скользящее тестирование по четырем регионам с достаточной историей. Гребневая модель по календарным и запаздывающим характеристикам превосходит сезонную наивность в двух крупных регионах с высокой дисперсией (Павлодар на 19,9 процента ниже MAE при горизонте 7 дней, ВКО 14,9 процента) и проигрывает двум меньшим или более коротким сериям (Караганда, Туркестан), где сезонная наивность уже сильна.
+- **Решение**: спрогнозируйте каждый регион с помощью метода, который выиграл собственное тестирование на исторических данных, и сообщите об обоих методах для каждого региона. Модель используется только там, где она превышает базовый уровень, который она должна превзойти.
+- **Альтернативы**: одна национальная модель или модель гребня везде, независимо от ретроспективного тестирования.
+- **Последствия**: ситуационный центр сообщает прогноз нагрузки с погрешностью измерения относительно реконструируемого базового уровня и никогда не заявляет о выигрыше от моделирования, который не поддерживается данными региона. Три региона имеют слишком малую историю и скорее отмечены как пропущенные, чем как слабо прогнозируемые.
+- **Доказательства:** `ml/evaluation/forecast_v1/forecast_report.json`, разделы `regions.*.backtest` и `summary`.
+- **Возвращайтесь, когда:** новые данные о наблюдениях удлиняют короткие регионы или статистические модели ETS добавляются в качестве третьего кандидата.
+
+### D-027 — Обнаружение скачков напряжения — это устойчивый остаток, а не порог счетчика.
+
+- **Дата:** 15 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** необработанные дневные показатели имеют сильный недельный ритм, поэтому понедельник не является всплеском только потому, что он превышает воскресенье. Ряд разлагается на медианный сезонный тренд по будням, центрированный скользящий медианный тренд и остаток.
+- **Решение**: отмечайте всплеск, когда остаток превышает масштабированное медианное абсолютное отклонение в k раз, при этом k равно 4. Это совокупная форма концепции инцидента, возникающая проблема, а не утверждение, что две обращения — это одно событие.
+- **Альтернативы**: фиксированный дневной порог или граница среднего и стандартного отклонения, которая будет завышена при выбросах.
+- **Последствия:** менеджер рассматривает примерно 1–7 процентов дней в каждом регионе как всплески, каждый из которых имеет свой остаточный размер, и наиболее распространенными примерами являются реальные всплески, такие как Павлодар 21 июня 2024 г., когда 2355 дней превышают норму около 370. Качество обнаружения еще не проверено на основе помеченных инцидентов.
+- **Доказательства:** `regions.*.surges` в прогнозном отчете.
+- **Вернитесь, когда:** существует помеченный набор инцидентов для измерения точности и полноты.
+
+### D-028 - Прогноз переводится операторам за смену
+
+- **Дата:** 15 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** график обращений за день не является решением. Руководителю нужна штатная численность.
+- **Решение:** преобразуйте прогноз в число операторов за смену, используя среднее время обработки и целевую занятость, и отмечайте оба входных параметра в качестве заполнителей до тех пор, пока собеседование с оператором не предоставит реальные значения.
+- **Альтернативы**: укажите только объем обращений, а укомплектование персоналом оставьте на усмотрение читателя.
+- **Последствия:** эта цифра становится реальной: например, недавние 339 обращений в день в Павлодаре соответствуют примерно 5 операторам в смену при 6-минутном времени обработки и 85-процентной занятости. Штатное расписание соответствует двум предположениям, изложенным в отчете.
+- **Доказательства:** `regions.*.staffing_recent` и блок `staffing` в прогнозном отчете.
+- **Вернитесь, когда**: интервью с оператором возвращает измеренное время обработки и целевую занятость.
+
+### D-029 — Один сквозной сценарий состоит из трех модулей на реальных данных.
+
+- **Дата:** 20 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** три модуля существовали как отдельные сценарии и отчеты. Судьи оценивают один последовательный рабочий сценарий по трем отдельным показателям, а позиционирование продукта представляет собой единый операционный контур.
+- **Решение:** корабль `ml/training/demo_scenario.py`, который выполняет один запрос через маршрутизацию, помощь, всплеск и прогноз, выдавая единственную трассировку, где каждое нисходящее число исходит от реального артефакта. Свободный текст на входе является иллюстративным и помечен соответствующим образом в трассировке, поскольку текста обращений граждан не существует (D-018). Все после приема реально.
+- **Альтернативы**: храните модули отдельно или имитируйте весь процесс с помощью макетов выходных данных для более плавной демонстрации.
+- **Последствия:** у демо-версии есть смысл. По умолчанию это Павлодар 21 июня 2024 г., настоящий день всплеска с 1819 обращениями по водоснабжению по одной теме. Маршрутизация возвращает достоверность 0,25 и правильно отправляет обращение оператору, который демонстрирует путь воздержания, а не скрывает его. Тщательно настроенный ретривер возвращает три реальных разрешенных случая разрыва воды. Представление менеджера показывает всплеск и набор персонала на 5 операторов в смену.
+- **Доказательства:** `ml/evaluation/demo_v1/demo_trace.json`, воспроизводимо из канонического потока и объединенных отчетов.
+- **Вернитесь, когда:** появится необработанный текст обращения гражданина, и иллюстративную информацию можно будет заменить реальным призывом.
+
+### D-030 — Прочный пилотный маршрут и проверенная граница идентичности.
+
+- **Дата:** 13 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** M7 требует PostgreSQL надежности и контроля производственного доступа, в то время как B08 по-прежнему блокирует выбранного поставщика удостоверений и профиль хостинга.
+- **Решение:** пилотные/производственные профили используют репозитории PostgreSQL для обращений и инцидентов, аудита транзакций/записи исходящих сообщений, проверки OIDC/JWKS, областей ролей и регионов, а также проверок отчетов на уровне объекта. Идентичность заголовка ограничена локальными профилями/профилями разработки/тестирования.
+- **Альтернативы**: сохранение производственного состояния в памяти; доверять заголовкам удостоверений на обратном прокси-сервере; заблокировать все реализации, ожидающие выбора поставщика.
+- **Последствия:** производственная граница надежно закрыта и совместима с Keycloak без выбора неутвержденного поставщика. Локальные синтетические демо-версии остаются самостоятельными.
+- **Доказательства:** миграции `0008`-`0011`, `pulse109.security`, PostgreSQL интеграционные тесты и тесты безопасности.
+- **Вернитесь, когда:** B08 предоставляет утвержденного эмитента, аудиторию, претензии, сеть и профиль хостинга.
+
+### D-031 – Предварительная подача дубликатов доказательств и участие в обратимом инциденте
+
+- **Дата:** 13 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** исследование требует дублированного предупреждения перед отправкой и обратимой группировки инцидентов без потери идентичности обращения.
+- **Решение:** предоставить неизменяемую предполетную конечную точку с указанием категории, расстояния, времени, лексических и семантических данных; каждое решение о членстве доступно только для добавления и может явно удалить, а затем повторно подтвердить члена. Ни один кандидат не объединяется автоматически.
+- **Альтернативы**: поиск только после создания обращения; жесткое объединение пар с высокими показателями; изменить предыдущую строку членства.
+- **Последствия:** рабочие процессы граждан/операторов могут действовать на основе доказательств, в то время как каждое обращение сохраняет свой идентификатор, историю и часы SLA.
+- **Доказательства:** OpenAPI `preflightAppeal`, тесты извлечения данных, история инцидентов, E2E «золотого потока» и долгосрочный интеграционный тест.
+- **Вернитесь, когда:** B04 содержит утвержденные пары/группы и политику порога производительности.
+
+### D-032 - Версионные записи политики никогда не изобретают SLA
+
+- **Дата:** 13 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** маршрутизация, достоверность и поведение SLA требуют создания версий, утверждения, дат вступления в силу и отката, но B06 оставляет авторитетные правила недоступными.
+- **Решение:** сохранить неизменяемые версии политики и просмотреть метаданные; выставляйте только активные/эффективные версии. Политики синтетической маршрутизации/доверительности помечаются как локальные устройства, и расчет SLA остается отключенным до тех пор, пока не появится утвержденная эффективная политика SLA.
+- **Альтернативы:** жестко запрограммировать предполагаемый SLA; объявить проект политики активным; исключить происхождение политики из назначения.
+- **Последствия:** задания сохраняют происхождение политики, а отсутствующая политика остается видимой, а не становится сфабрикованным сроком.
+- **Доказательства:** миграция `0009`, каталог политик API/tests, проверка назначения и модуль Runbook отката.
+- **Вернитесь, когда:** B06 будет устранен владельцем политики.
+
+### D-033 — Службы совместимости и доказательства выпуска остаются явно синтетическими.
+
+- **Дата:** 13 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** Рекомендации P1/P2 включают инструменты Open311, Martin/MapLibre, MLOps и подписанные доказательства цепочки поставок, в то время как реальные исходные контракты, хостинг карт и полномочия подписи недоступны.
+- **Решение:** предоставить изолированную изолированную программную среду Open311, исходный код MapLibre, готовый к работе с Мартином, совместимый с инструментами автономный экспорт, инструментарий OTel, шлюзы зависимости/SBOM CI и синтетические доказательства, индексированные по хешу. Не заявляйте права на действующий адаптер, производственную карту, промо-модель или подписанный выпуск.
+- **Альтернативы**: придумать региональные учетные данные/конечные точки; требовать внешние услуги для автономной демонстрации; опустить совместимые швы.
+- **Последствия:** механизмы интеграции и эксплуатации теперь можно выполнять и заменять через стабильные границы; производственные претензии остаются закрытыми B01-B10.
+- **Доказательства:** `adapters/open311`, карта ситуации, `synthetic_mlop`, безопасность CI, Runbook и `release/evidence-index.md`.
+- **Повторно посетите, когда:** будут утверждены первый источник, инфраструктура листов/геокодера и владелец, подписавший выпуск.
+
+### D-034 — Сохранение временного происхождения и идемпотентности области для региона.
+
+- **Дата:** 23 сентября 2026 г.
+- **Статус:** заменен D-036.
+- **Контекст:** Проверка M7 обнаружила выдуманное время получения в миграции 0008, неоднозначные временные метки событий состояния и глобальное уведомление о создании идемпотентности.
+- **Решение:** полученное время и его качество сохраняются отдельно от наблюдаемого времени; время отсутствует или содержит только дату, остается нулевым. События состояния явно определяют качество. Квитанции создания привязаны к региону и заблокированы для транзакций; доступ к объекту проверяется перед возвратом квитанций о воспроизведении.
+- **Альтернативы**: заполнение по времени наблюдения; определить точное качество по временной метке; полагаться на повторную попытку с нарушением уникальности для одновременных запросов.
+- **Последствия:** SLA и аналитика не может принять время приема за время источника; одновременные повторные попытки получают один ответ и не могут пересекать границы региона.
+- **Доказательства:** изменения OpenAPI и канонической схемы, миграция 0008, тестирование надежного пути M7 и контрактов.
+- **Вернитесь, когда:** специфичная для источника семантика времени будет одобрена и будут проведены интеграционные тесты для целевого профиля PostgreSQL.
+
+### D-035 — Ошибка закрыта из-за неутвержденных эксплуатационных функций и личных данных.
+
+- **Дата:** 23 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** текущие поставщики извлечения, аналитики и отчетов являются синтетическими или локальными для процесса; доступное регулярное выражение не позволяет безопасно удалять имена и адреса из произвольного текста граждан.
+- **Решение:** Пилотная/производственная версия использует надежный путь вручную, но возвращает `read_model_unavailable` для этих конечных точек демонстрации. Для оперативного приема требуется неизменяемая ссылка на источник, настроенное правовое основание и класс хранения; свободный текст не сохраняется как функция и не передается в инференс до тех пор, пока не появится утвержденный шлюз конфиденциальности.
+- **Альтернативы**: представление синтетических показателей в виде реальных данных; рассматривать маскирование регулярных выражений как полное исправление PII; изобретать юридические дефолты.
+- **Последствия:** некоторые вспомогательные функции остаются недоступными в рабочем профиле, в то время как критический путь вручную может продолжиться с утвержденным частным хранилищем и настройкой политики.
+- **Доказательства:** профильные тесты, входные тесты, проверка безопасности и `IMPLEMENTATION_STATUS.md`.
+- **Вернитесь, когда:** B01, B02, B08 и B10 предоставляют утвержденные данные, идентификационные данные, редактирование, хранение и политики.
+
+### D-036 - Отказаться от несанкционированных заявлений о региональных прозаических и исторических моделях.
+
+- **Дата:** 23 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** при проверке объединенных региональных исследовательских артефактов были обнаружены адреса в версионированном корпусе поиска, необработанные исходные значения в карантине, предположения о часовом поясе для простых дат и метки `Recall@k` для показателей результативности запросов. B10 не одобряет претензии по обработке частного текста или качеству модели.
+- **Решение:** заменить прозу корпуса фиксированным скрытым маркером, удалить значения исходной строки из карантина, сохранить простое время и время только для даты как немгновенное, отключить новый экспорт корпуса и не запускать загрузчики обучения/оценки скрытого текста. Отметьте исторические отчеты и карточку модели как непроверенную, присвоив показателям запроса метку попадания. Сохранять существующую историю Git до решения владельца репозитория о хранении; это изменение не перезаписывает опубликованные коммиты.
+- **Альтернативы**: используйте расширенную маскировку регулярных выражений; продолжить обучение модели на основе существующего корпуса; переписать опубликованную историю Git без плана хранения.
+- **Последствия:** региональные скрипты ML больше не выдают показатели качества на основе этих артефактов. Ручной рабочий путь не затрагивается. Исторические BLOB-объекты остаются доступными в Git до тех пор, пока не будет принято отдельное решение о хранении и исправлении истории.
+- **Доказательства:** `scripts/withhold_unapproved_corpus.py`, региональные проверки приема и исследования артефактов, статус манифеста/модельной карты и сканирование безопасности CI.
+- **Вернитесь, когда:** B10 утвердит частное хранилище исходных кодов, процесс редактирования, правовую основу, класс хранения и независимо проверенное разделение оценок.
+
+### D-037 — Факты о государственной собственности остаются рекомендательными.
+
+- **Дата:** 24 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** поставляемый проект M8 Handoff Guard требует подтверждения права собственности без молчаливой замены региональных систем или разрешения ИИ назначать услугу.
+- **Решение:** хранить факты о региональной организации, юрисдикции, активах и правилах ответственности в качестве действующих версий, доступных только для добавления, со ссылками на источник и утверждение. При оценке учитываются только утвержденные, действующие записи для региона обращения и последней подтвержденной человеком услуги. Он возвращает явную двусмысленность, временное происхождение и предыдущие доказательства отклонения; только человек может выполнить передачу ответственности.
+- **Альтернативы**: определение текущего владельца на основе произвольного текста; автоматическое назначение кандидата с самым высоким рейтингом; перезаписать существующее правило.
+- **Последствия:** операторы могут просматривать возможные доказательства, даже если ML и адаптеры недоступны. Неутвержденные или отсутствующие факты в каталоге не дают кандидата. Более поздний путь команды должен отдельно подтвердить подтвержденную передачу ответственности и записать идемпотентное получение.
+- **Доказательства:** миграция `0012_m8_ownership_catalog`, механизм владения и тесты, контракт на оценку OpenAPI.
+- **Вернитесь к этому вопросу, когда** станут доступны утвержденные источники региональной собственности и протоколы передачи.
+
+### D-038 — Изолировать вывод за типизированным провайдером
+
+- **Дата:** 24 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** ядро импортировало реализацию лексической модели напрямую, хотя вывод выполняется как отдельная граница развёртывания.
+- **Решение:** классификация пути вручную вызывает введенный `InferenceProvider`; именованная локальная лексическая реализация сохраняет резервный режим автономного/тестового режима. Пилотный/производственный проект по-прежнему не закрывается перед выводом, пока не будут настроены утвержденный обезличенный снимок функции и удаленный поставщик.
+- **Альтернативы**: сохраните импорт моделей в обоих ручных сервисах; автоматический возврат к локальному выводу после удаленных сбоев.
+- **Последствия:** модель транспорта может измениться без изменения транзакций обращения. Граница провайдера сама по себе не является полным Decision Gateway или работающим удаленным клиентом вывода.
+- **Доказательства:** `services/core/src/pulse109/decisions/inference_provider.py`, тест внедрения поставщика и существующий поток E2E с ручным управлением.
+- **Вернитесь, когда:** B02/B08/B10 одобрит реальные функции, обеспечение конфиденциальности и операционные выводы.
+
+### D-039 — Привязка результатов передачи к долгосрочному назначению
+
+- **Дата:** 24 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** доказательства цикла передачи должны относиться к конкретному апелляционному заданию и не могут быть выведены из произвольного текста или типового предложения.
+- **Решение:** только оператор, руководитель или администратор может записывать принятые/отклоненные результаты с помощью идемпотентной команды на уровне региона. Идентификатор подразделения назначения должен совпадать с идентификатором организации до тех пор, пока не появится перекресток управляемой организации/подразделения. Результат, график, аудит, исходящие и квитанции фиксируются вместе; Ссылки на доказательства относятся к содержанию.
+- **Альтернативы**: вывод об отказе от смены статуса; принять несвязанную организацию; записывать результаты без временных рамок или событий аудита.
+- **Последствия:** воспроизводимые команды возвращают одну и ту же квитанцию, а запросы из неправильного региона не могут предоставить квитанцию. Назначения без привязанного к организации подразделения еще не могут фиксировать результат.
+- **Доказательства:** хранилище результатов владения и API, каталог контрактов/событий и интеграционный тест PostgreSQL.
+- **Вернитесь, когда:** будут доступны утвержденное сопоставление организации/подразделения и региональный протокол передачи.
+
+### D-040 — Задавайте только те вступительные вопросы, которые требуются по правилам.
+
+- **Дата:** 24 сентября 2026 г.
+- **Статус:** принято
+- **Контекст.** Обращения к конкретным услугам требуют разных доказательств, в то время как необработанные ценности и текст обращения гражданина должны оставаться за пределами государственного планирования.
+- **Решение:** утвердить одну утвержденную эффективную региональную политику в отношении услуг/тем и вернуть вопросы, созданные kk/ru, только на основе известных/отсутствующих/неизвестных состояний полей. Пропавшие штаты остаются неизвестными; никакие выводы не наполняют их. План является рекомендательным, версионным и ограниченным, без необработанных значений в запросе или ответе.
+- **Альтернативы:** фиксированная универсальная форма; вопросы, созданные LLM; вывести пропущенные значения из произвольного текста.
+- **Последствия:** отсутствие или конфликтующие политики приводят к явному состоянию недоступности. Публикация политики и условные поля остаются последующей работой M8.
+- **Доказательства:** миграция `0013_m8_intake_policy`, компонент приема, маршрут, OpenAPI и интеграционные тесты.
+- **Возврат, когда:** будут предоставлены утвержденные региональные требования к приему, локализованные формулировки и классы доказательств.
+
+### D-041 — Decision Gateway требует явных одобренных входных данных
+
+- **Дата:** 24 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** достоверность выводов и предложения о принадлежности никогда не должны становиться автономным решением о маршрутизации. Отсутствие обязательного поля политики или свидетельства о праве собственности из другой обращения не может считаться действительным доказательством.
+- **Решение:** оставить шлюз чисто консультативным оценщиком. Он принимает одобренную эффективную политику конфиденциальности, явные состояния обязательных полей и доказательства владения, привязанные к одному и тому же обращению и версии. Отсутствие политики поля дает `INSUFFICIENT_DATA`; несовпадающее право собственности отбрасывается. Все результаты требуют подтверждения человеком и никогда не устанавливают правопреемника.
+- **Альтернативы**: используйте достоверность модели в качестве порога назначения; вывести полную политику поля из пустого ввода; повторно использовать доказательства владения только службой.
+- **Последствия:** оценщик может быть протестирован с использованием синтетических данных, но для оперативного использования требуется публикация регулируемой политики и утвержденные снимки функций.
+- **Доказательства:** `services/core/src/pulse109/decisions/gateway.py` и целевые тесты шлюзов.
+- **Возврат, когда:** будут доступны утвержденные региональные пороговые значения достоверности, требования к приему и доказательства проверки модели.
+
+### D-042 — Доказательства юрисдикции должны совпадать с заявленной точностью.
+
+- **Дата:** 24 сентября 2026 г.
+- **Статус:** принято
+- **Контекст.** обращение может содержать точный идентификатор юрисдикции, координаты, ссылку на объект или и то и другое. Перекрытие границ и неопределенность координат могут сделать кажущийся точным поиск небезопасным.
+- **Решение:** разрешайте только утвержденные версии действующей юрисдикции в регионе обращения. Для доказательства координат необходимы полные координаты и ограниченный точный радиус; одна граница должна охватывать всю форму неопределенности. Предоставленный идентификатор и координаты должны совпадать. Неизвестные, частичные и противоречивые доказательства помечаются для проверки человеком и никогда не подлежат назначению.
+- **Альтернативы**: используйте только центр точки; выберите первый соответствующий многоугольник; доверять идентификатору источника, несмотря на противоречивые координаты.
+- **Последствия:** пограничные обращения могут потребовать рассмотрения вручную. Тесты PostGIS проверяют перекрытие и граничное поведение с синтетической геометрией.
+- **Доказательства:** владение репозиторием/сервисом и `tests/integration/test_m8_ownership_catalog.py`.
+- **Вернитесь, когда:** будут предоставлены утвержденные региональные соглашения по геометрии и точности.
+
+### D-043 — Привяжите пороги достоверности к точному артефакту модели.
+
+- **Дата:** 25 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** региональный порог достоверности может быть применен к несвязанной модели или таксономии и исказить ее калибровку.
+- **Решение:** хранить одобренные и эффективные политики конфиденциальности только для добавления, привязанные к региону, артефакт модели SHA-256, версию таксономии и версию предварительной обработки. Считыватель допускает только одну совпадающую версию и исключает синтетические политики в рабочем режиме. Шлюз проверяет ту же привязку перед использованием пороговых значений и удерживает доверительный интервал, если политика отсутствует или не соответствует. В каталоге API показаны политики доверия только из этой типизированной таблицы; более старые несвязанные строки достоверности `catalog.policy_version` не могут влиять на решения при работе приложения или отображаться в качестве текущей политики.
+- **Альтернативы**: один порог для всех моделей в регионе; доверяйте доверительному интервалу, предоставленному моделью, без привязки к политике.
+- **Последствия:** новый артефакт или таксономия требует собственной пересмотренной политики. Оперативное использование остается недоступным до тех пор, пока не будет одобрена политика и не авторизован моментальный снимок функции.
+- **Доказательства:** миграция `0014_m8_confidence_policy`, тесты хранилища политик и шлюза.
+- **Вернитесь к этому вопросу, когда** станут доступны утвержденные доказательства калибровки модели и рабочий процесс региональной публикации.
+
+### D-044 — Опубликовать пороговые значения достоверности посредством независимой проверки
+
+- **Дата:** 25 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** пороговые значения достоверности, связанные с артефактами, требуют контролируемого пути от предложения до эффективного использования с подтверждением того, что второй человек проверил точные значения.
+- **Решение:** записывайте неизменяемые предложения на уровне региона с каноническим дайджестом команд и ссылкой на источник SHA-256. Другой прошедший проверку подлинности администратор или руководитель утверждает или отклоняет дайджест. Утверждение атомарно записывает неизменяемую политику, проверку, аудит и исходящие сообщения; перекрытие утвержденных интервалов запрещено в PostgreSQL. Синтетические политики отвергаются в операционных профилях.
+- **Альтернативы**: прямое редактирование таблицы политики конфиденциальности; флаг одобрения на месте; оптимистичный обзор без ограничений базы данных.
+- **Последствия:** одобрение требует эффективного запуска в будущем и не может молча заменить действующую политику. Региональная таксономия и реальные данные калибровки остаются внешними факторами.
+- **Доказательства:** миграция `0015_m8_confidence_publication`, публикация API и PostgreSQL интеграционный тест.
+- **Вернитесь, когда:** будут доступны региональный орган политики и реестр рабочих артефактов.
+
+### D-045 — Закрытие только при наличии доказательств, связанных с обращением, и по команде человека.
+
+- **Дата:** 25 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** сам по себе импортный или региональный статус не может служить доказательством того, что обращение была решена, а закрытие должно сохранять историю каждой обращения.
+- **Решение:** предварительная проверка требует записи состояния `resolved` и проверяет ссылки на вложения с адресом содержимого на соответствие тому же обращению, региону и текущей версии без изменения его статуса. Отдельное явное подтверждение оператора атомарно меняет статус, использует предварительную проверку, записывает временную шкалу и события аудита, ставит в очередь доставку исходящих сообщений и сохраняет идемпотентную квитанцию. Любая промежуточная версия обращения аннулирует предполетную подготовку. Сам по себе решенный статус никогда не доказывает закрытия.
+- **Альтернативы:** закрыть исходный статус; принять URI доказательства в свободной форме; обновить статус перед записью аудита.
+- **Последствия:** для закрытия требуется наличие ссылки на надежное крепление и проверка оператором. Наличие доказательств само по себе не свидетельствует о существенном разрешении дела; причина и решение остаются подотчетными оператору.
+- **Доказательства:** миграция `0016_m9_closure_integrity`, закрытие API и PostgreSQL интеграционный тест.
+- **Вернитесь, когда:** будут предоставлены региональные классы доказательств и юридически утвержденные критерии закрытия.
+
+### D-046 — Решите вопрос о передаче из долгосрочной обращения.
+
+- **Дата:** 25 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** операторы не должны угадывать или вручную вводить непрозрачный UUID назначения до подтверждения результата передачи ответственности.
+- **Решение:** предоставить последнее сохраненное назначение через аутентифицированный маршрут чтения на уровне региона и передать этот идентификатор на панель передачи. Панель отключает запись результатов, если присвоения не существует, и сохраняет тот же ключ идемпотентности для повторной попытки после неопределенного сетевого результата.
+- **Альтернативы:** поле ввода UUID; получить идентификатор назначения из идентификатора обращения; отправить результат без привязки назначения.
+- **Последствия:** результаты остаются привязанными к реальному заданию. Завершенный переход к региональной организации/подразделению по-прежнему необходим для более широкого охвата оперативной передачи ответственности.
+- **Доказательство:** последнее назначение API, панель оператора и утверждение интеграции ручного пути.
+- **Повторно посетите, когда:** одобрен переход подконтрольной организации/подразделению.
+
+### D-047 — Повторение подсчета только после проверенного закрытия
+
+- **Дата:** 25 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** повторные сообщения на одном объекте инфраструктуры могут указывать на неудавшееся решение, однако подобные незакрытые обращения могут относиться к одному продолжающемуся инциденту, а не к повторению.
+- **Решение:** для оценки повторения только для чтения требуется стабильный идентификатор объекта, точное время бизнес-события и выбранная пользователем тема для нового обращения. Он учитывает отдельные ранее подтвержденные инциденты только в том случае, если их текущее членство подтверждено, соответствующий запрос имеет предполетную проверку закрытия, подтвержденную оператором, и это закрытие предшествует новому событию в ограниченном окне. Закрытие в течение семи дней сигнализирует о возможном провале решения; три отдельных подтвержденных инцидента свидетельствуют о повторяющейся схеме. Результат носит рекомендательный характер и требует человеческого подтверждения.
+- **Альтернативы**: подсчитать все связанные обращения; определить время события по порядку строк; рассматривать импортированный статус `closed` как подтверждение разрешения.
+- **Последствия:** неопределенное время, отсутствие объекта или темы, а также непроверенные закрытия приводят к воздержанию от участия или отсутствию проверенной истории. Оценка может быть занижена до тех пор, пока региональные идентификаторы активов и доказательства не станут надежными.
+- **Доказательства:** `pulse109.recurrence` прочитайте модель и услугу, целевые тесты и PostgreSQL сценарий интеграции.
+- **Вернитесь, когда** станут доступны качество идентификации региональных активов, семантика закрытия инцидентов и утвержденные пороговые значения повторения.
+
+### D-048 — Оставьте Replay Lab историческим и нерекламирующим.
+
+- **Дата:** 25 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** изменения правил и моделей должны быть подтверждены перед их внедрением, но исторические наблюдения не могут доказать противоречащий фактам результат, а синтетические приспособления не могут определить качество модели.
+- **Решение:** воспроизводить только неизменяемые снимки с адресом содержимого и региональной областью с небольшим утвержденным списком входных функций. Отклоняйте поля после принятия решения, неконечные значения и межрегиональные случаи. Исключите синтетические случаи из всех сообщаемых показателей качества. Храните метки вне входных данных предикторов, сообщайте описательные сравнения базовых показателей и кандидатов и запрещайте продвижение в схеме персистентности.
+- **Альтернативы**: проводить политику кандидатов против прямых обращений; использовать поля результатов в качестве входных данных; включать в точность синтетические светильники; автоматически продвигаться по более высокому историческому счету.
+- **Последствия:** текущий движок является компонентом автономного сравнения, а не контроллером выпуска. Наборы производственных данных, утвержденные артефакты политики и репрезентативные метки по-прежнему необходимы.
+- **Доказательства:** `pulse109.replay`, миграция `0017_m11_replay_lab` и целенаправленные детерминированные тесты.
+- **Вернитесь, когда:** B02/B04/B05 предоставляют утвержденные снимки и метки, а также существуют подписанные артефакты модели.
+
+### D-049 — Считайте воспоминания о результатах только верифицированными воспоминаниями.
+
+- **Дата:** 25 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** предыдущие решения могут помочь операторам, но импортированный статус `closed`, бесхозные доказательства или поля после принятия решения могут испортить рекомендации и входное обучение.
+- **Решение:** соответствующие записи о результатах должны иметь подтвержденную человеком цепочку замыканий, доказательства, принадлежащие обращения, с адресом содержания, происхождение источника и отредактированную классификацию. Извлечение осуществляется в пределах региона/услуги/темы, исключает обращение к источнику, использует контролируемые термины, помечает синтетические данные и воздерживается, если не существует проверенного совпадения. Записи о результатах явно не могут стать функциями приема или автономными ответами.
+- **Альтернативы**: RAG поверх необработанного текста обращения; прямое использование статуса `closed`; рассматривать предыдущие решения как входные данные для обучения текущему решению о приеме.
+- **Последствия:** это проверенная граница компонента. Читатель PostgreSQL все равно должен собрать и проверить цепочку доказательств, прежде чем будет раскрыт операционный поиск.
+- **Доказательства:** `pulse109.outcome_memory` и целевые тесты на соответствие требованиям.
+- **Вернитесь к просмотру, когда:** будут доступны утвержденный исходный корпус, правила редактирования, таксономии и юридического хранения.
+
+### D-050 — Разрешение идентификаторов региональных подразделений с помощью утвержденных сопоставлений организаций.
+
+- **Дата:** 25 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** региональные назначения могут иметь идентификатор подразделения, отличный от канонического идентификатора организации, используемого Handoff Guard. Если рассматривать их как равные, это блокирует действительные результаты или приводит к произвольному вводу данных оператором.
+- **Решение:** сохранить прямое сопоставление идентификаторов для существующих заданий. В противном случае потребуется только одно добавленное, независимо проверенное эффективное региональное сопоставление для конкретной службы и подразделения на момент назначения, связанное с утвержденной версией организации. Синтетические сопоставления исключены из операционных профилей. Сохраните идентификатор сопоставления с результатом и его полезными данными аудита/события.
+- **Альтернативы**: доверяйте идентификатору организации, указанному в результате; нечеткое совпадение имен; принять картографию, опубликованную после задания, в качестве доказательства обратной силы.
+- **Последствия:** несовпадающие объекты остаются недоступными для записи результатов, а реальные записи о переходах требуют одобрения, прежде чем они будут использованы в заданиях. Существующие назначения прямого идентификатора остаются совместимыми.
+- **Доказательства:** миграция `0018_m8_unit_organization_crosswalk`, передача репозитория и сценарий интеграции PostgreSQL.
+- **Вернитесь, когда:** будут предоставлены первый каталог регионального подразделения и полномочия публикации.
+
+### D-051 — Выберите условные доказательства без значений потребления
+
+- **Дата:** 25 сентября 2026 г.
+- **Статус:** принято
+- **Контекст.** для разных типов проблем требуются разные доказательства, а для утвержденной политики может потребоваться дополнительное поле только после того, как станет известно предварительное условие.
+- **Решение:** расширить полезную нагрузку неизменяемой политики приема с помощью необязательных предикатов `when_states`, ссылающихся на более ранние безусловные поля, и контролируемого `evidence_type`. Оценивайте только доверенные состояния `known`/`missing`/`unknown`. Неактивные условные поля исключаются из плана вопросов; активное отсутствующее поле создает авторский вопрос и тип доказательства. Отклонять неизвестные, прямые или циклические зависимости.
+- **Альтернативы**: просмотрите необработанные ответы граждан, чтобы выбрать доказательства; использовать произвольные политические выражения; заранее спросите все возможные поля.
+- **Последствия:** политики можно адаптировать без изменения внутреннего кода или PII в процессе планирования. Условия для категориальных значений ответов и окончательной проверки вложений по-прежнему требуют утвержденной региональной схемы и правил хранения.
+- **Доказательства:** адаптивная служба приема, PostgreSQL считыватель, ответ OpenAPI и целевые тесты.
+- **Вернитесь, когда:** будут предоставлены утвержденная региональная полевая таксономия и классы доказательств.
+
+### D-052 — Требовать контролируемого рассмотрения повторного отклонения передачи ответственности
+
+- **Дата:** 25 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** в оценке прав собственности содержится предупреждение о предварительном отклонении, но при назначении вручную все равно может повторяться та же организация без проверки причины.
+- **Решение:** при блокировке обращения о назначении проверьте записанное отклонение для предложенного идентификатора организации или одного утвержденного в настоящее время сопоставления подразделения с организацией. Откажитесь от повторения с конфликтом до тех пор, пока супервизор или администратор не укажет причину контролируемого переопределения. Сохраните переопределение в событии обращения, аудите и исходящих данных. Обеспечьте доступность ручной маршрутизации, если невозможно установить личность организации.
+- **Альтернативы**: автоматическое разрешение повторных отклоненных маршрутов; запретить любое переназначение; определить целевую организацию по названию службы.
+- **Последствия:** повторный маршрут отклоненной организации становится доступным для проверки и идемпотентным. Неизвестная личность объекта не может быть защищена до тех пор, пока не будет утвержден региональный каталог; Применение роли зависит от аутентифицированной границы API.
+- **Доказательства:** служба назначения, команда OpenAPI, тест авторизации маршрута и сценарий интеграции PostgreSQL передачи ответственности.
+- **Вернитесь, когда:** будет предоставлен утвержденный каталог региональных подразделений и политика эскалации вопросов руководителю.
+
+### D-053 — Привязка квитанций об автономном воспроизведении к неизменяемому содержимому снимка.
+
+- **Дата:** 25 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** схема воспроизведения хранит метаданные манифеста и отчета, но сам по себе идентификатор отчета не может доказать, что сравниваемые случаи соответствуют сохраненному объекту.
+- **Решение:** канонизировать байты псевдонимных снимков, проверить их SHA-256 перед сохранением их через внедренное хранилище неизменяемых объектов и сохранить адрес содержимого в манифесте. Для записи отчета требуется исходный типизированный набор данных и сверяется его регион, идентификатор, граница, дайджест механизма и хэш содержимого с сохраненным манифестом. Отчеты остаются описательными и не подлежат продвижению.
+- **Альтернативы:** доверять хэшам снимков, предоставленным вызывающей стороной; сохранять отчеты без проверки привязки набора данных; хранить необработанные снимки дел в PostgreSQL.
+- **Последствия:** неудачная запись в базу данных может оставить неизменяемый объект, на который нет ссылки, для очистки жизненного цикла. Конечная точка рабочего запуска не существует до тех пор, пока не станут доступны утвержденные наборы данных и политики.
+- **Доказательства:** Replay Lab хранилище персистентности, целевые тесты и PostgreSQL сценарий дымовой интеграции.
+- **Вернитесь, когда:** B02/B04/B05 предоставит утвержденные репрезентативные снимки и артефакты политики.
+
+### D-054 — Сохранение оценок консультативного шлюза на основе проверенных входных данных
+
+- **Дата:** 25 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** результат временного шлюза не определяет, какую версию обращения, рекомендацию модели, набор кандидатов и политику конфиденциальности увидел оператор.
+- **Решение**: заблокируйте текущую версию обращения, проверьте все сохраненные рекомендации и ранжированные кандидаты, а также разрешите любую заявленную политику конфиденциальности в отношении утвержденного действующего каталога в той же транзакции. Сохраняйте неизменяемый результат с дайджестами ввода/доказательства и ключом точной повторной попытки, а также строками аудита и исходящими сообщениями. Каждый результат носит рекомендательный характер и требует человеческого подтверждения; никакое действие присваивания не отображается.
+- **Альтернативы**: доверять полям модели или политики, предоставленным вызывающей стороной; фиксировать только победившего кандидата; повторно использовать одну оценку после изменения обращения.
+- **Последствия:** исторические оценки воспроизводимы, а устаревшие или несовпадающие доказательства не поддаются проверке. Схема базы данных получает составную привязку рекомендаций и таблицу оценки, доступную только для добавления. Оперативная публикация ожидает одобрения модели и приёма артефактов.
+- **Доказательства:** миграция `0019_m8_gateway_assessment`, хранилище оценок, целевые тесты и сценарий интеграции PostgreSQL.
+- **Вернитесь, когда:** B02/B04/B05 предоставит утвержденные снимки модели, таксономию и доказательства калибровки.
+
+### D-055 — Измерить результаты передачи управления из явных оперативных когорт
+
+- **Дата:** 25 сентября 2026 г.
+- **Статус:** принято
+- **Контекст.** процент принятых с первого прохода или количество повторных отклоненных передач могут ввести в заблуждение, если когорта молча включает синтетические приспособления, не имеет результата, считает более позднее назначение первым или угадывает организацию регионального подразделения.
+- **Решение**: вычислить метрики, доступные только для чтения, для одного региона и ограниченного временного интервала назначения в формате UTC, используя конец интервала в качестве границы наблюдения за результатами. Прием с первого прохода использует первое в глобальном масштабе назначение для каждой обращения и самый ранний однозначный наблюдаемый результат до завершения; неизвестные результаты остаются неклассифицированными. Для повторных отклоненных передач требуется одно утвержденное, эффективное, несинтетическое удостоверение организации и зарегистрированный отказ по предыдущему заданию до момента текущего назначения. Явный список разрешений операционной исходной системы исключает синтетические обращения только для тестирования. Возвращает необработанные числители, знаменатели, качество и происхождение; нулевой знаменатель дает недоступную ставку.
+- **Альтернативы**: выводы о результатах на основании статуса источника; подсчитайте первое назначение внутри каждого окна отчетности; делить по всем обращениям независимо от результата; отображать единицы по имени.
+- **Последствия:** этот репозиторий является добровольным и не имеет маршрута информационной панели до тех пор, пока не будут утверждены региональный список разрешенных источников и полномочия публикации. Несопоставленные или неоднозначные назначения остаются видимыми, поскольку учитываются качество данных.
+- **Доказательства:** `pulse109.ownership.metrics`, целенаправленные тесты и PostgreSQL интеграционный дым.
+- **Вернитесь, когда** станет доступен каталог региональных подразделений, утвержденный реестр источников и определения отчетности.
+
+### D-056 — Продвигайте состояние инцидента только посредством контролируемых и подтвержденных переходов.
+
+- **Дата:** 26 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** подтвержденное членство в инциденте существовало, но инцидент не мог развиваться путем активного реагирования, разрешения и закрытия с доступной для просмотра историей состояния.
+- **Решение:** для каждого прямого перехода требуется супервизор или администратор, текущая версия инцидента, ключ идемпотентности и контролируемый код причины. Разрешение и закрытие требуют ссылок на доказательства SHA-256; PostgreSQL принимает их только в том случае, если они относятся к вложениям подтвержденных на данный момент обращений участников в том же регионе. Зафиксируйте переход в истории инцидентов, аудите и исходящих сообщениях в одной транзакции. Идентификаторы, статусы и соглашения об уровне обслуживания обращений остаются независимыми.
+- **Альтернативы**: вывод о закрытии инцидента на основе статуса регионального источника; принимать произвольные заметки или ссылки на вложения, не принадлежащие владельцу; изменить состояние инцидента без проверки.
+- **Последствия:** право собственности на доказательства проверяется, но содержание вложения и качество исправления не проверяются независимо этой командой. Слияние, разделение, повторное открытие и замена по-прежнему требуют собственных управляемых операций.
+- **Доказательства:** маршрут жизненного цикла инцидента, схема OpenAPI, синтетический E2E и сценарий интеграции PostgreSQL.
+- **Вернитесь, когда** станут доступны утвержденная политика сбора данных об инцидентах и региональный рабочий процесс по устранению неполадок.
+
+### D-057 — Перед активацией проверьте пакеты региональных выпусков.
+
+- **Дата:** 26 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** для федеративной политики и распространения каталога требуется граница целостности и перехода на более раннюю версию, в то время как подключение к центральным службам может быть недоступно.
+- **Решение:** использовать ограниченный канонический манифест JSON, подписанный явно доверенным ключом Ed25519. Проверьте подпись, регион, схему, окно достоверности и дайджесты артефактов перед атомарной активацией PostgreSQL, которая продвигает как версию, так и последовательность. Сохранять историю выпусков только для добавления и исходные подписанные байты, чтобы текущие ключи и время могли повторно проверить сохраненный выпуск. Предоставляйте неизменяемый проверенный контент и сохраняйте последний известный хороший пакет в случае отклонения.
+- **Альтернативы**: принимать неподписанные обновления конфигурации; доверять дайджесту, предоставленному вызывающим абонентом; разрешить более низкую последовательность для замены активного выпуска.
+- **Последствия:** реализована проверка и долговременная активация; извлечение артефактов, ротация ключей, полномочия подписи и региональное развертывание по-прежнему необходимы, прежде чем это станет плоскостью оперативного управления. Сохраненная активная строка является историческим свидетельством, поэтому перед применением потребители должны повторно проверить ее подписанные байты на соответствие текущему доверию и сроку действия.
+- **Доказательства:** `pulse109.control_plane`, миграция `0020_bundle_activation`, целенаправленное вмешательство, воспроизведение, проверка области действия, срока действия и неизменяемости, а также сценарий интеграции PostgreSQL.
+- **Вернитесь к этому вопросу, когда** будут предоставлены ключи подписи, региональная среда выполнения и артефакты утвержденного выпуска.
+
+### D-058 — Сохраняйте синтетический ввод данных браузером до тех пор, пока не появится частное хранилище исходных данных.
+
+- **Дата:** 26 сентября 2026 г.
+- **Статус:** принято
+- **Контекст.** управляемая форма браузера могла отображать сфабрикованный номер успеха после сетевой ошибки и предоставлять необработанный адрес в поле, определенном как непрозрачная частная ссылка. Для реального использования гражданами не существует утвержденного хранилища неизменяемых источников, правовых оснований или классов хранения.
+- **Решение:** показывает успех только после того, как API вернет действительный UUID запроса; повторите неоднозначную ошибку с тем же ключом идемпотентности и телом. Удалите постоянные черновики браузера, один раз восстановив устаревшие черновики в памяти. Отключить отправку по умолчанию; явный флаг синтетической помощи разрешает только отправку тестов и никогда не передает необработанный текст адреса в качестве частной ссылки. Сохраняйте полученное время отсутствующим, если источник его не предоставил.
+- **Альтернативы**: придумайте офлайн-код приема; рассматривать необработанный адрес как частную ссылку; представить реальные данные до утверждения B08/B10.
+- **Последствия:** веб-путешествие не станет оперативным гражданским каналом до тех пор, пока не будут интегрированы защищенное хранилище исходных данных и управление. Синтетический режим может использовать пользовательский интерфейс и серверную часть с вымышленными данными.
+- **Доказательства:** `apps/web/app/intake.tsx`, проверка типа интерфейса и проверка, API требования к отказоустойчивому закрытию.
+- **Вернитесь, когда:** B08/B10 предоставит утвержденную идентификацию, неизменяемое хранилище исходного кода, юридическую основу и правила хранения.
+
+### D-059 — Предварительная версия инцидента для каждого решения о членстве
+
+- **Дата:** 26 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** решения о членстве допускались только для добавления, но не продвигали совокупную версию инцидента, что позволяло использовать устаревший `incident_version` для авторизации более позднего решения.
+- **Решение:** каждое подтвержденное, отклоненное или удаленное решение о членстве атомарно продвигает версию инцидента. Решение о членстве, событие инцидента, запись аудита и событие исходящих сообщений содержат результирующую совокупную версию. Идемпотентные повторы возвращают исходный ответ перед проверкой отправленной версии после проверки области региона.
+- **Альтернативы**: независимое принятие решений о членстве в версиях; разрешить несколько решений по одной версии инцидента.
+- **Последствия:** клиенты должны предоставлять последнюю версию инцидента после каждого решения о членстве; миграция схемы не требуется, поскольку существующие поля версии содержат агрегатную версию.
+- **Доказательства:** интеграция E2E в памяти и PostgreSQL.
+- **Вернитесь к этому вопросу, когда** членство станет агрегатом с независимым управлением версиями и явным контрактом межагрегатного параллелизма.
+
+### D-060 — Контролируемые операции по топологии инцидента (слияние, разделение, повторное открытие)
+
+- **Дата:** 26 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** инциденты группируют несколько обращений, но ошибки кластера требуют явного оперативного вмешательства для объединения связанных инцидентов, разделения отдельных кластеров или повторного открытия закрытых инцидентов после повторяющихся всплесков количества обращений без потери исторической преемственности или автономии обращений.
+- **Решение:** реализовать операции слияния и разделения инцидентов с контролем версий, а также контролируемые повторные переходы (`resolved -> monitoring`, `closed -> monitoring`). Слияние заменяет исходный инцидент и передает подтвержденные обращения участников в целевой инцидент. Split создает новый целевой инцидент для проверенного подмножества, оставляя хотя бы одного участника в источнике. Оба требуют аутентификации супервизора, определения области региона, контролируемых кодов причин и ссылок на доказательства SHA-256, проверенных на основе подтвержденных вложений участников.
+- **Альтернативы**: автономное объединение/разделение инцидентов на основе LLM; изменяемые деструктивные обновления, удаляющие исходные инциденты; неограниченная межрегиональная кластеризация.
+- **Последствия:** все обращения участников сохраняют независимые идентификаторы, соглашения об уровне обслуживания и историю. Применяется предотвращение цикла. Идемпотентные повторы гарантированы.
+- **Доказательства:** `contracts/openapi.yaml`, `contracts/event_catalog.md`, `services/core/src/pulse109/incidents/`, `tests/e2e/test_incident_topology.py`, `tests/integration/test_incident_topology_persistence.py`.
+- **Вернитесь к этому вопросу, когда:** будет одобрена кластеризация нескольких регионов и юрисдикций.
+
+### D-061 — Replay Lab автономная проверка API, языковые фрагменты и панели пользовательского интерфейса оператора.
+
+- **Дата:** 26 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** оценки политики и модели должны быть доступными для проверки и аудита по демографическим и языковым слоям (KK, RU, смешанным) без выполнения автономного развёртывания или изменения действующих правил маршрутизации.
+- **Решение:** предоставить аутентифицированные конечные точки проверки Replay Lab (`GET /v1/replay/reports`, `GET /v1/replay/reports/{report_id}`), возвращающие сравнительные показатели базовой политики и политик-кандидатов (соглашение о маршруте, частота переопределения оператором, уровень принятия первого прохода, исторический отток передачи ответственности) и соглашения о языковых сегментах. Дополняется панелями пользовательского интерфейса оператора для топологии инцидентов и веб-приложения Replay Lab в Next.js. Воспроизведение носит строго описательный характер; Для активации политики требуются региональные пакеты с криптографической подписью через плоскость управления.
+- **Альтернативы**: автономное автоматическое развертывание при проходном балле; несегментированные глобальные показатели, маскирующие языковую предвзятость; монолитная аналитическая база данных.
+- **Последствия:** полная наблюдаемость паритета языковой производительности; операторы и руководители могут просматривать исторические данные перед утверждением пакетов региональных конфигураций.
+- **Доказательства:** `contracts/openapi.yaml`, `services/core/src/pulse109/replay/`, `apps/web/app/incident-topology-panel.tsx`, `apps/web/app/replay-lab-panel.tsx`, `tests/contract/test_contracts.py`, `services/core/tests/replay/test_router.py`.
+- **Вернитесь, когда:** будут приняты утвержденные политики кандидатов на производство и актуальные региональные наборы данных.
+
+### D-062 — Управляемые детекторы аномалий и действенный обзор предупреждений Ситуационного центра.
+
+- **Дата:** 26 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** операторам и региональным супервайзерам требуется автоматическое обнаружение эксплуатационных аномалий (петли переключения, всплески повторного открытия, задержка адаптера, блокировка всплесков) и возможность просматривать, подтверждать или отклонять оповещения с помощью кодов контролируемой обработки без потери контрольного журнала.
+- **Решение:** внедрить модульные детекторы (`HandoffLoopDetector`, `ReopenSpikeDetector`, `AdapterLagDetector`, `OverrideSpikeDetector`), управляемые `AlertDetectorEngine`, с активной дедупликацией оповещений. Карта обнаружила аномалии существующих типов оповещений, ограниченных базой данных (`volume_spike`, `incident_growth`, `sla_risk`, `data_quality`, `model_drift`) с указанием конкретных метаданных детектора. Подключите `POST /v1/alerts/{alert_id}/reviews` с проверкой аутентифицированных ролей (`operator`, `supervisor`, `analyst`, `auditor`, `admin`), региональной изоляцией и кодами контролируемых действий (`acknowledge`, `resolve`, `dismiss`). Обеспечьте интерактивную сортировку оповещений в интерфейсе Ситуационного центра.
+- **Альтернативы:** автономные автоматизированные мутаторы правил; неструктурированные строковые оповещения; неконтролируемые очереди исходящих сообщений.
+- **Последствия:** оперативная группа может заранее обнаружить пинг-понг передачи ответственности ($A \to B \to A$), задержки доставки и дрейф модели маршрутизации; каждая проверка предупреждений дает неизменные доказательства аудита и графика.
+- **Доказательства:** `contracts/openapi.yaml`, `services/core/src/pulse109/analytics/detectors.py`, `services/core/tests/analytics/test_detectors.py`, `apps/web/app/situation-center.tsx`, `tests/contract/test_contracts.py`.
+- **Вернитесь, когда** будет одобрена обработка событий потоковой передачи в реальном времени или push-уведомления WebSocket.
+
+### D-063 — Эталонная граница конфиденциальности и неизменный аудит доступа PII
+
+- **Дата:** 26 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** гражданин PII (имена, номера телефонов, адреса, личные идентификаторы) должен быть изолирован от данных объектов, конвейеров вывода, трассировок, меток метрик и журналов приложений. Разрешение частных ссылок или разоблачение данных требует строгой проверки области доступа и неизменяемого контрольного журнала.
+- **Решение:** внедрить сервис `pulse109.privacy`, поддерживаемый `privacy.private_ref` и `audit.audit_event`. Требовать, чтобы роли аутентифицированного актера пересекали ссылку `access_scope` и соответствовали региональным границам, прежде чем возвращать личные данные. Всякий раз, когда осуществляется доступ к частной ссылке, атомарно записывайте неизменяемое событие аудита (`PII_VIEWED`, `PII_REVEALED`, `PII_EXPORTED`), записывающее субъект, действие, временную метку и код цели. Никогда не включайте необработанный текст PII в полезные данные аудита, метки метрик, выходные данные журнала или диапазоны трассировки OpenTelemetry.
+- **Альтернативы**: хранение в виде обычного текста в базе данных приложения; непроверенное разрешение токена; специальное редактирование регулярных выражений при выходе журнала.
+- **Последствия:** гарантия отсутствия PII утечек по платформе; соблюдение законов о защите данных граждан и управлении доступом; каждый PII просмотр несет полную ответственность.
+- **Доказательства:** `services/core/src/pulse109/privacy/`, `services/core/tests/privacy/test_privacy_service.py`, `services/core/tests/test_observability.py`.
+- **Вернитесь, когда:** указаны интеграция HSM/внешнего хранилища и гомоморфное шифрование.
+
+### D-064 — Проверка пакета плоскости управления и атомная активация HTTP API
+
+- **Дата:** 26 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** региональные развёртывания и операторы должны проверять текущие активные проверенные пакеты выпусков и активировать новые пакеты, подписанные Ed25519, через общедоступный API с управлением на основе ролей и гарантиями против отката.
+- **Решение:** предоставить аутентифицированные API конечные точки `GET /v1/control-plane/bundles/active` и `POST /v1/control-plane/bundles/activate`. Для проверки требуется роль оператора/супервайзера/аналитика/аудитора/администратора и изоляция конкретного региона (`X-Region-Id`). Для активации требуется роль супервизора или администратора, криптографически проверяет подписанный конверт с помощью `BundleVerifier`, утверждает региональное соответствие между конвертом и заголовком и применяет атомарные проверки монотонности, продвигая как версию, так и последовательность. Контракт публикуется в `contracts/openapi.yaml` (`37` операции, `60` схемы).
+- **Альтернативы:** прямое манипулирование базой данных; только ручное развертывание CLI; активация пакета без аутентификации.
+- **Последствия:** полный жизненный цикл плоскости управления раскрыт более HTTP со строгой криптографической проверкой и защитой от отката; Резервное копирование в памяти сохраняет безопасность тестирования и автономной работы.
+- **Доказательства:** `contracts/openapi.yaml`, `services/core/src/pulse109/control_plane/router.py`, `services/core/tests/control_plane/test_router.py`, `tests/contract/test_contracts.py`.
+- **Вернитесь к этому вопросу, когда:** будут введены схемы пороговых значений многостороннего подписания (например, M-of-N Ed25519).
+
+### D-065 — Усиление безопасности при перехвате вложений граждан и сканировании вредоносных программ.
+
+- **Дата:** 26 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** вложения к обращениям граждан, загруженные на платформу, представляют векторы атак, включая замаскированные исполняемые файлы, полиглотные файлы, внедрение скриптов и вредоносное ПО.
+- **Решение:** внедрить комплексный конвейер проверки вложений в `pulse109.security.attachments`. Применять строгие типы MIME из разрешенных списков (`application/pdf`, `image/jpeg`, `image/png`, `image/webp`, `text/plain`), проверять двоичные магические байты, чтобы предотвратить уклонение от перехвата MIME, сканировать исполняемые заголовки (`MZ`, `\x7fELF`, `\xca\xfe\xba\xbe`, shebang `#!`) и встроенные скрипты (`<script`), вычисляют канонические дайджесты SHA-256 и интегрируют подключаемую `MalwareScanner` абстракцию (`MockMalwareScanner` с имитацией EICAR и обнаружением угроз).
+- **Альтернативы:** полагаются исключительно на заголовок `Content-Type`, предоставленный клиентом; хранить непроверенные объекты непосредственно в S3; только проверка на стороне клиента.
+- **Последствия:** вредоносные или замаскированные полезные данные блокируются и помещаются в карантин на границе приема, прежде чем сохраняться в хранилище объектов или рабочей обработке; нулевой риск выполнения исполняемого файла.
+- **Доказательства:** `services/core/src/pulse109/security/attachments.py`, `tests/security/test_attachments.py`.
+- **Вернитесь, когда:** ClamAV / обнаружение внешних облачных угроз API подключено в промежуточном режиме.
+
+### D-066 — Прием вложений, внесение в очередь, постоянное хранилище предупреждений и раскрытие конфиденциальности API
+
+- **Дата:** 26 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** независимый аудит выявил критические недостатки, препятствующие использованию оператором производства: вложения имели функции проверки, но не имели рабочей конечной точки загрузки/списка HTTP (блокировка цепочек доказательной подготовки закрытия и разрешения инцидентов); рабочему пространству оператора пришлось вернуться к жестко закодированным идентификаторам из-за отсутствия конечной точки списка обращений; просмотры предупреждений и состояния находились в памяти, несмотря на существующие таблицы PostgreSQL; разрешение ссылки на конфиденциальность было отключено; Байты снимка воспроизведения были потеряны при перезапуске; и веб-прокси Next.js удалил строки запроса.
+- **Решение:** предоставить аутентифицированные `POST /v1/requests/{id}/attachments` и `GET /v1/requests/{id}/attachments` для проверки магических байтов, исполняемых маркеров и сканирования вредоносного ПО перед сохранением в `appeals.attachment_ref` и записью `action='attachment.uploaded'` на временной шкале. Откройте `GET /v1/requests` с нумерацией курсора/ограничения по страницам, фильтрацией статуса и изоляцией регионов. Подключите `PostgresAlertStore` к `analytics`, чтобы оповещения и обзоры сохранялись в `analytics.alert` и `analytics.alert_review`. Откройте аутентифицированные `POST /v1/privacy/references/{token}/resolve` и `GET /v1/privacy/references/{token}/audits`. Подключите `FileSnapshotStore` к `PostgresReplayRepository`. Строки поиска прямого запроса в `apps/web/app/api/core/[...path]/route.ts`.
+- **Альтернативы**: хранить в памяти макеты конечных точек; позволить операторам загружать вложения напрямую через необработанные SQL тестовые данные; обойти параметры запроса на веб-уровне.
+- **Последствия:** полный прием доказательств, сортировка очереди обращений и жизненный цикл аудита конфиденциальности теперь полностью работоспособны и сквозны в течение HTTP; постоянные хранилища выдерживают перезапуск; В рабочей области оператора отображаются текущие данные серверной части.
+- **Доказательства:** `contracts/openapi.yaml` (42 операции, 67 схем), `docs/archive/PRODUCTION_AUDIT.md`, `services/core/tests/manual_path/test_router.py`, `services/core/tests/privacy/test_privacy_router.py`, `services/core/tests/analytics/test_detectors.py`.
+- **Вернитесь к этому вопросу, когда:** будут представлены URL-адреса прямой загрузки S3 с веб-перехватчиками асинхронного сканирования.
+
+### D-067 — Монотонный откат плоскости управления CLI и проверка целостности закрытия карантина
+
+- **Дата:** 26 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** (1) Плоскость управления подписанным пакетом реализует строгие счетчики антиотката (`version` и `sequence`), но не имеет специальной команды для безопасного отката к более ранней конфигурации без отключения монотонной защиты. (2) Целостность закрытия требует проверенных вложений доказательств, но ранее явно не утверждалось, что файлы, на которые ссылаются, не были помещены на карантин безопасности или не помечены.
+- **Решение:** (1) Реализовать `create_rollback_bundle` в `pulse109.control_plane.bundles` и добавить `pulse109-bundle rollback` действие CLI. Команда отката считывает содержимое целевого пакета, устанавливает `version = max(active.version, target.version) + 1` и `sequence = max(active.sequence, target.sequence) + 1`, повторно подписывает пакет авторизованным закрытым ключом Ed25519 и атомарно устанавливает его в PostgreSQL. (2) В `PostgresClosureRepository.create_preflight` и `confirm` запросите `data_classification` из `appeals.attachment_ref` и отклоните любой элемент доказательства, отмеченный `security` с HTTP 422 `evidence_quarantined`. Повторно проверьте наличие вложения и статус очистки во время подтверждения перед атомарным закрытием.
+- **Альтернативы**: разрешить ручное уменьшение водяных знаков последовательности в базе данных; отключить антиоткат при аварийных происшествиях; принимать помещенные в карантин доказательства с предупреждающим флажком.
+- **Последствия:** аварийные откаты полностью поддерживаются при сохранении строгой монотонной устойчивости к несанкционированному вмешательству и инвариантов защиты от повторного воспроизведения; нулевой риск того, что вредоносные или помещенные в карантин файлы будут приняты в качестве доказательства закрытия.
+- **Доказательства:** `services/core/src/pulse109/control_plane/bundles.py`, `services/core/src/pulse109/control_plane/cli.py`, `services/core/src/pulse109/outcomes/postgres.py`, `services/core/tests/control_plane/test_bundles.py`, `services/core/tests/control_plane/test_cli.py`, `tests/integration/test_m9_closure_integrity.py`.
+- **Вернитесь к этому вопросу, когда:** требуется одобрение порогового значения мультиподписей для откатных выпусков.
+
+### D-068 — Изолированный демонстрационный профиль и герметичные наружные швы.
+
+- **Дата:** 26 сентября 2026 г.
+- **Статус:** принят для локальной/демо-версии; операционная интеграция остается заблокированной
+- **Контекст:** существующий локальный пользовательский интерфейс и исполнитель могут сообщать о сфабрикованных решениях или воспроизводить повторы, а метаданные вложений могут сохраняться без байтов.
+- **Решение:** использовать один профиль `demo` нормальной топологии FastAPI/PostgreSQL/outbox/worker/web с идемпотентно помеченными фикстурами и выделенным проектом Compose. Отклонить доставку повтора в пилотной/производственной версии. Храните байты демонстрационных вложений в изолированном томе, но отклоняйте рабочую загрузку до тех пор, пока не будет утверждено неизменяемое хранилище и не будет проведено реальное сканирование. Привязать доступ к частной ссылке к сохраненному владению регионом; оставьте устаревшие строки неизвестного региона недоступными. Очередь оператора использует квитанции API, а не успешное состояние выборки.
+- **Альтернативы**: отдельное фейковое демонстрационное приложение; включение доставки повторов в пилотной версии; обработка вложений, содержащих только метаданные, как сохраненного контента.
+- **Последствия:** рецензенты могут воспроизвести один и тот же критический путь, в то время как внешние пробелы остаются явными. Перед доступом к существующим частным ссылкам необходимо заполнить утвержденный регион. Демо-тома являются одноразовыми и должны содержать только синтетические данные.
+- **Доказательства:** `infra/compose/docker-compose.demo.yml`, `scripts/demo_runtime.py`, миграция `0022_privacy_region`, тесты профиля/конфиденциальности/рабочих, `docs/DEMO_RUNBOOK.md`.
+- **Вернитесь, когда:** будут предоставлены первый региональный адаптер, утвержденное хранилище/сканер объектов и поставщик рабочих удостоверений.
+
+### D-069 — Повторное чтение инцидента и демонстрация сквозного пути
+
+- **Дата:** 27 сентября 2026 г.
+- **Статус:** принято для демо-версии и локальной проверки.
+- **Контекст:** серверная часть инцидента могла изменить устойчивое состояние, но не имела конечной точки чтения на уровне региона; неиспользуемая веб-панель сфабриковала успех, когда команды топологии завершились неудачно. Демонстрация показала лишь частичный путь обращения к статусу.
+- **Решение:** добавить контракт с подробным описанием инцидента с идентификаторами кандидатов и подтвержденных участников; откройте небольшую панель оператора, которая вызывает фактические API-интерфейсы создания, членства и подтверждения супервизора. Подайте вторую связанную синтетическую обращение и очистите доказательства, затем проверьте решение, назначение, доставку работника, инцидент, разрешение, закрытие, повторение и аналитику с помощью демонстрации API в CI. Удалите несмонтированные панели только для образцов, на которых были получены эксплуатационные результаты.
+- **Альтернативы**: сохраняйте статическую иллюстрацию инцидента; заранее сообщить о подтвержденном инциденте; возвращать выборочные данные об инциденте в случае сбоя API.
+- **Последствия:** рецензент может перезагрузить и проверить сохраненное членство, а API сбоев останется видимым. Панель еще не рассматривает слияние/разделение топологии. PostgreSQL команды топологии и разрешения требуют четких доказательств от текущих участников инцидента; утвержденная политика доказательств остается внешней.
+- **Доказательства:** `services/core/src/pulse109/incidents`, `apps/web/app/incident-workflow-panel.tsx`, `scripts/verify_demo_flow.py`, демо-профиль CI задания.
+- **Вернитесь, когда** станут доступны утвержденные доказательства инцидента и региональные правила рабочего процесса.
+
+### D-070 — Оставьте PulseDM в качестве управляемого кандидата-исследователя рядом с консервативной стопкой ML.
+
+- **Дата:** 27 сентября 2026 г.
+- **Статус:** принято для разработки исследования и автономной оценки, но не для развёртывания модели.
+- **Контекст:** текущий критический путь имеет лексический резервный путь CPU и человеческий Decision Gateway, в то время как возможные модели маршрутизации/поиска не имеют утвержденных меток KK/RU/mixed. Структурированная негенеративная модель принятия решений может иметь общие представления по консультативным вопросам, но ни ее точность, ни операционная выгода не установлены.
+- **Решение:** сохранить консервативную контролируемую маршрутизацию, гибридный поиск и парный классификатор; указать PulseDM как отдельный многоязычный проект исследования выбора/логического значения/оценки; разрешать Jev или структурированные LLM только в качестве дополнительных внешних эталонов/учителей после утверждения конфиденциальности. Сравните всех реализованных кандидатов в идентичных закрепленных случаях времени принятия решения. Добавьте автономный оценщик выбора/логического значения с проверками на утечку, разделение и вероятность; оставляйте оценку баллов, обучение и обслуживание нереализованными до тех пор, пока это не будет оправдано. Ни одна модель не вступает в «горячий путь» и не получает полномочий в отношении SLA, владения, назначения, слияния или закрытия посредством этого решения.
+- **Альтернативы:** замените существующую службу вывода необученным заполнителем PulseDM; выбрать победителя публичного списка лидеров; по умолчанию отправлять текст гражданина во внешний тест.
+- **Последствия:** исследование может продолжаться, не нарушая CPU/ручной непрерывности и не заявляя о недоступном качестве модели. Возможные конфигурации и веса будут добавлены только при наличии конкретного бегуна, проверки лицензии, утвержденного набора данных и карты модели.
+- **Доказательства:** `docs/ml/`, `ml/evaluation/candidate_compare.py`, `tests/model/test_candidate_compare.py`, существующие синтетические базовые алгоритмы и Replay Lab контракты.
+- **Вернитесь, когда:** утвержденные, проверенные с соблюдением конфиденциальности данные KK/RU/mixed gold и ресурсы по развертыванию поддерживают экспериментальный эксперимент-кандидат.
+
+### D-071 — Демонстрационные действия оператора должны быть привязаны к контракту, а повторы интеграции должны быть одноразовыми.
+
+- **Дата:** 28 сентября 2026 г.
+- **Статус:** принято на пилотную проверку
+- **Контекст.** проверяющим необходимо проверять сравнение повторов и действия по топологии инцидентов, но в сохраненных отчетах о повторах сохраняются совокупные показатели политики, а не решения по каждому случаю. Повторное использование базы данных интеграции приводит к тому, что состояние одного прохода влияет на другой. Хранилище производственных объектов, инфраструктура идентификации и среда доставки не предоставлены.
+- **Решение:** предоставить только сохраненный отчет Replay Lab и совокупные различия в показателях; помечать недоступные следы решений на уровне дела, а не реконструировать их. Пусть элементы управления War Room вызывают существующее объединение/разделение на уровне региона API с подтверждением пользователя, хэшем доказательства и ключом идемпотентности. Запускайте этапы интеграции во вновь созданных базах данных с именем UUID PostgreSQL, а не в вызывающей базе данных. Предоставляйте неизменяемые локальные/S3-совместимые адаптеры хранения данных, не подключая их к вложениям и не воспроизводя их до тех пор, пока не будет предоставлена ​​утвержденная инфраструктура.
+- **Альтернативы**: выносить вымышленные решения по делам; внедрение изменений топологии на стороне клиента; усекать общие таблицы интеграции; заявите, что существует сегмент или развертывание OIDC.
+- **Последствия:** демонстрационная версия доступна для проверки, и сбои остаются видимыми, в то время как отслеживание повторов по каждому случаю, подключение производственного хранилища, IdP, цели развёртывания, хранения и восстановления остаются открытыми для внешней работы.
+- **Доказательства:** `apps/web/app/replay-lab.tsx`, `apps/web/app/incident-war-room.tsx`, `scripts/run_integration_tests.py`, `services/core/src/pulse109/security/object_storage.py`, `tests/architecture/test_integration_isolation.py`, `infra/runbooks/PILOT_DEPLOYMENT_REQUIREMENTS.md`.
+- **Возвращайтесь, когда:** B02/B03 предоставляют семантику трассировки во время принятия решения, а B07/B08/B10 предоставляют утвержденные требования к обслуживанию, идентификации, хранению, конфиденциальности и восстановлению.
+
+### D-072 — Используйте захваченные рабочие демонстрационные экраны в качестве доказательства приземления.
+
+- **Дата:** 29 сентября 2026 г.
+- **Статус:** принят в синтетическую демо-версию
+- **Контекст:** на первом этапе использовались независимо нарисованные имитации интерфейса, счетчики и элементы управления которых могли отличаться от приложения.
+- **Решение:** кадрируйте снимки экрана, сделанные из работающей демонстрации на базе PostgreSQL для Operations Center, Smart Intake, очереди оператора, War Room, Ask Pulse и Data Lab. Обозначьте их как статические записи синтетических данных. Держите CTA связанным с реальным рабочим пространством; улучшите слабые рабочие макеты в приложении перед их захватом.
+- **Альтернативы**: поддержка параллельных макетов компонентов пользовательского интерфейса; использовать собственные эталонные изображения; встроить интерактивную демо-версию в лендинг.
+- **Последствия:** подтверждение посадки соответствует доступным экранам и не подразумевает актуальные региональные данные. Снимки экрана необходимо обновлять после существенных изменений пользовательского интерфейса приложения. Нет API или изменений миграции.
+- **Доказательства:** `apps/web/app/landing.tsx`, `apps/web/public/product/`, `infra/docker/web.Dockerfile`.
+- **Вернитесь, когда** пользовательский интерфейс приложения изменится настолько, что статические снимки больше не будут его отображать.
+
+### D-073 — Рассматривайте этапы процесса как независимые подсчеты моментальных снимков.
+
+- **Дата:** 29 сентября 2026 г.
+- **Статус:** принято
+- **Контекст:** решенная обращение не находится одновременно в текущем состоянии `in_progress`; Data Lab показал конверсию 125% и фиктивное самое большое падение между независимыми подсчетами.
+- **Решение:** сохраните существующие значения количества стадий и ключей детализации, но оставьте поля «Когортное преобразование» и «Наибольшая выгрузка» неустановленными и объясните семантику моментального снимка в пользовательском интерфейсе. Сделать так, чтобы URL-адреса базы данных VPS Compose использовали настроенный URL-безопасный пароль PostgreSQL для миграции, API и рабочего процесса; общедоступные наложения требуют непустого значения.
+- **Альтернативы**: на основании текущего статуса выводятся исторические переходы; сохраняйте вводящий в заблуждение процент; изменить схему API; сохраняйте жестко закодированный локальный пароль в общедоступных контейнерах.
+- **Последствия:** точные подсчеты можно проверить без искусственного преобразования. Для публичного развёртывания требуется явный секрет базы данных; существующие пароли роли PostgreSQL требуют намеренной ротации, а не просто изменения среды создания.
+- **Доказательства:** `services/core/tests/datalab/test_datalab_contracts.py`, `docs/features/DATA_LAB.md`, `infra/compose/`, `infra/runbooks/PUBLIC_DEPLOYMENT.md`.
+- **Вернитесь, когда** будет указана истинная последовательность событийной когорты, которая будет проверена на основе данных жизненного цикла, доступных только для добавления.
+
+### D-XXX — Краткое название
+
+- **Дата:** ГГГГ-ММ-ДД
+- **Статус:** предложено | принято | заменен
+- **Контекст:** что заставило сделать выбор
+- **Решение**: выбранное поведение или дизайн.
+- **Альтернативы**: рассматриваются серьезные варианты
+- **Последствия:** производительность, безопасность, миграция и влияние на операции.
+- **Доказательства**: контрольный показатель, тест, проблема или ссылка на контракт.
+- **Вернитесь, когда:** явный триггер, если таковой имеется.
+
+### D-ASK-01 — Версия семантики аналитики доверенного времени
+
+- **Дата:** 28 сентября 2026 г.
+- **Статус:** принято на пилотную проверку
+- **Контекст:** Ask Pulse требует надежной фильтрации рабочего времени, подтвержденных человеком измерений и явного исключения записей без надежного времени событий. Существующая конечная точка аналитики уже предоставляет потребителям результаты наблюдаемого объема.
+- **Решение:** опубликовать семантику тома доверенного времени как `appeals_volume/2.0.0` и использовать эту версию для Ask Pulse. Сохраните существующее значение `appeals_volume/1.0.0` и значение по умолчанию для `/analytics/query`. Не синтезируйте недостающие сегменты региона/времени как нулевые без утвержденной политики полноты.
+- **Альтернативы**: незаметно изменить значение существующего показателя; продолжать использовать временные метки приема/наблюдения для вопросов о тенденциях, обращенных к гражданам; вывести ноль из пустого результата запроса.
+- **Последствия:** существующие потребители сохраняют свою текущую интерпретацию. Ask Pulse исключает неоднозначное рабочее время и идентифицирует его метрическую версию. Редкие результаты остаются редкими до тех пор, пока политика актуальности источника не установит полноту.
+- **Доказательства:** `services/core/src/pulse109/analytics/catalog.py`, `services/core/src/pulse109/analytics/repository.py`, `services/core/tests/analytics/test_repository_boundary.py`, `docs/features/ASK_PULSE.md`.
+- **Вернитесь к этому вопросу, когда:** управление версиями показателей станет общим контрактом с внешними потребителями аналитики или будут предоставлены утвержденные правила актуальности и полноты.
+
+### D-074 — Сверить представленную документацию с проверенными доказательствами.
+
+- **Дата:** 1 октября 2026 г.
+- **Статус:** принят в документацию
+- **Контекст:** в файлах README и журналах смешаны исторические данные, будущие модели, устаревшие факты хранения/развёртывания и неподтвержденные текущие утверждения.
+- **Решение:** использовать русский язык в качестве канонического языка судьи, эквивалентные английские/казахские README, еженедельные Git/документы с явным происхождением и датированные CI/записи о развертывании. Разделяйте исследования, синтетические демо-версии и внешние блокировщики.
+- **Последствия:** никакие контракты на продукт, среду выполнения и исполняемый файл не изменились. Сбои в системе безопасности CI и устаревшие водопроводные системы остаются видимыми, а не объявляются исправленными.
+- **Доказательства:** [обзор документации](review/DOCUMENTATION_REVIEW_2026-10-01.md), [текущий статус](FEATURE_STATUS.md), [развертывание](../infra/runbooks/PUBLIC_DEPLOYMENT.md).
+- **Возвращайтесь, когда** изменяются исходный код, CI, развертывание или свидетельства команды.

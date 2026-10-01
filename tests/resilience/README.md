@@ -1,5 +1,5 @@
-# Resilience Tests
+[Русский](README.md) · [English](README.en.md) · [Қазақша](README.kk.md)
 
-Dependency-failure scenarios are introduced with each functional milestone. M0 keeps readiness
-independent of ML and live regional systems.
+# Тесты устойчивости
 
+Сценарии отказа зависимостей добавляются на каждом функциональном этапе. В M0 готовность не зависит от ML и работающих региональных систем.

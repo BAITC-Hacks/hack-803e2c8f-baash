@@ -1,15 +1,16 @@
-# Historical material / Архив
+[Русский](README.md) · [English](README.en.md) · [Қазақша](README.kk.md)
 
-These files preserve the original specification, early implementation plan and
-review trail. They are **not current operating instructions**. For today's
-behavior use the [documentation index](../README.md),
-[feature matrix](../FEATURE_STATUS.md) and [demo runbook](../DEMO_RUNBOOK.md).
+> Исторический документ. Не является источником текущего состояния проекта.
 
-| Material | Why retained |
-| --- | --- |
-| `START_HERE.md`, `START_CODEX_PROMPT.md`, `IMPLEMENTATION_STATUS_TEMPLATE.md` | Original bootstrap instructions and status template; their M0/M1 directions are obsolete. |
-| `DEMO_FLOW.md`, `BUSINESS_LOGIC_QUESTIONS.md`, `Pulse109_Business_Logic_Questions.pdf` | Earlier demonstration and organizer-question versions; superseded by the current runbook and question set. |
-| `PRODUCTION_ROADMAP.md`, `PRODUCTION_AUDIT.md` | Dated readiness assessments; preserve their evidence and decision provenance, not their current-state claims. |
-| `Pulse_109_Technical_Specification_and_Architecture_v1_1.pdf` and `.docx` | Original source specification in reviewable and editable forms. |
+# Исторический материал / Архив
 
-No file in this archive is a production quality or deployment certification.
+В этих файлах сохраняются исходная спецификация, план ранней реализации и обзорная информация. Это **не действующая инструкция по эксплуатации**. Для сегодняшнего поведения используйте [индекс документации](../README.md), [матрицу функций](../FEATURE_STATUS.md) и [демо-runbook](../DEMO_RUNBOOK.md).
+
+| Материал | Почему сохранен |
+| Материал | Почему сохранено |
+| `START_HERE.md`, `START_CODEX_PROMPT.md`, `IMPLEMENTATION_STATUS_TEMPLATE.md` | Оригинальные инструкции по начальной загрузке и шаблон статуса; их направления M0/M1 устарели. |
+| `START_HERE.md`, `START_CODEX_PROMPT.md`, `IMPLEMENTATION_STATUS_TEMPLATE.md` | Оригинальные инструкции по начальной загрузке и шаблон статуса; их направления M0/M1 устарели. |
+| `DEMO_FLOW.md`, `BUSINESS_LOGIC_QUESTIONS.md`, `Pulse109_Business_Logic_Questions.pdf` | Более ранние демонстрационные версии и версии с вопросами-органайзерами; заменен текущим модулем Runbook и набором вопросов. |
+| `PRODUCTION_ROADMAP.md`, `PRODUCTION_AUDIT.md` | Датированные оценки готовности; сохранить свои доказательства и происхождение решений, а не свои заявления о текущем состоянии. |
+| `Pulse_109_Technical_Specification_and_Architecture_v1_1.pdf` и `.docx` | Спецификация исходного кода в доступной для просмотра и редактирования форме. |
+Ни один файл в этом архиве не является сертификатом качества продукции или внедрения.

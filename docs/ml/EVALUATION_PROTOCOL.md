@@ -1,29 +1,31 @@
-# Shared evaluation protocol / Общий протокол оценки
+[Русский](EVALUATION_PROTOCOL.md) · [English](EVALUATION_PROTOCOL.en.md) · [Қазақша](EVALUATION_PROTOCOL.kk.md)
 
-**Question:** Does a candidate improve the same Pulse-specific KK/RU/mixed decisions at a defensible review budget while preserving privacy and operational fallback? Public leaderboard rank does not answer this. Вопрос: превосходит ли кандидат базовые методы на тех же проверенных обращениях при заданной нагрузке на оператора?
+# Общий протокол оценки
 
-## Cohort and lineage
+**Вопрос:** превосходит ли кандидат базовые алгоритмы на тех же подтверждённых обращениях специфики Pulse на языках KK/RU/mixed при обоснованной нагрузке на оператора с сохранением приватности и резервного пути? Ранг в публичном лидерборде не отвечает на этот вопрос.
 
-1. Freeze a versioned, privacy-approved **pre-decision** feature snapshot and separate adjudicated label for each question. No raw PII or post-decision outcomes enter model inputs. The evaluation file contains only pseudonymous SHA-256 keys, times, question/options, gold labels and region/language slice. Store approved model inputs elsewhere under the required controls.
-2. Freeze taxonomy/question versions and deduplicate by appeal/incident group. Within each region use chronological train → calibration → test, with group-disjoint boundaries; audit cross-region transfer separately. Hold out multilingual code-switching, typos, short/ambiguous cases and unknown categories as explicit slices.
-3. Fit weights on train. Fit temperature/thresholds on calibration. Use test only once for final comparison. Every candidate sees the **identical** test case/question keys and permitted information available at that decision time. External teachers cannot label the test set.
-4. Record source/legal approval, snapshot/content hashes, exclusions, code/lock revision, model artifact hash, preprocessing/taxonomy/policy versions, seed, hardware, batch size and p50/p95 end-to-end latency. Assess drift and post-deployment outcomes separately; offline gains never auto-promote a model.
+## Когорта и происхождение данных
 
-## Metrics and decisions
+1. Зафиксировать версионированный снимок признаков **до принятия решения**, прошедший проверку приватности, и отдельную согласованную разметку для каждого вопроса. Исходные PII и исходы после решения оператора не попадают во входные данные модели. Файл оценки содержит только псевдонимные SHA-256 ключи, временные метки, вопрос/варианты, эталонные метки и срез региона/языка. Утверждённые входные данные моделей хранятся отдельно под требуемым контролем.
+2. Зафиксировать версии таксономии и вопросов и дедуплицировать по группам обращений и инцидентов. Внутри каждого региона использовать хронологическое разделение train → calibration → test с непересекающимися группами; перенос между регионами аудируется отдельно. Выделить в явные срезы смешение языков (code-switching), опечатки, короткие/неоднозначные тексты и неизвестные категории.
+3. Обучать веса на train. Подбирать температуру и пороги на calibration. Использовать test строго один раз для финального сравнения. Каждый кандидат получает **идентичные** ключи тестовых случаев/вопросов и разрешённую информацию, доступную на момент решения. Внешние teacher-модели не могут размечать тестовый набор.
+4. Фиксировать юридическое основание/согласование источника, хеши снимка и содержимого, исключения, ревизию кода/lock-файла, хеш артефакта модели, версии предобработки/таксономии/политики, seed, аппаратную платформу, размер батча и задержку p50/p95. Оценивать дрейф данных и результаты после развёртывания отдельно; выигрыш в офлайне никогда автоматически не переводит модель в промышленную эксплуатацию.
 
-| Suite | Required evidence |
+## Метрики и решения
+
+| Набор | Обязательные доказательства |
 | --- | --- |
-| Routing Choice/Boolean | Top-1, Top-3 recall, macro-F1, NLL, multiclass Brier, 10-bin ECE, OOD AUROC where both classes exist, accuracy/risk vs coverage, AURC; counts and intervals by RU/KK/mixed, region and question |
-| Similar-appeal retrieval | Recall@5/10/20, MRR, nDCG@10; lexical-only, dense-only and hybrid ablations; retrieval plus reranker latency |
-| Duplicate/incident | Pair AUPRC, precision/recall at review budget, false-merge rate, incident-level consistency; human-confirmed adjudications only |
-| Operational effect | First-pass acceptance, operator correction, handoff, manual-review burden, time to correct owner, reopen/recurrence; prospective evidence, not synthetic metrics |
+| Маршрутизация Choice/Boolean | Top-1, полнота Top-3, macro-F1, NLL, многоклассовый Brier, 10-биновый ECE, AUROC для OOD (где присутствуют оба класса), кривая «точность/риск от покрытия», AURC; объёмы выборок и доверительные интервалы по RU/KK/mixed, регионам и вопросам |
+| Поиск похожих обращений | Recall@5/10/20, MRR, nDCG@10; абляции только лексического, только плотного и гибридного поиска; задержка поиска и переранжирования |
+| Дубликат/инцидент | AUPRC пар, точность/полнота при заданном бюджете ручной проверки, доля ложных объединений, согласованность на уровне инцидентов; только решения, подтверждённые человеком |
+| Операционный эффект | Принятие с первого предъявления, исправления оператором, передача, нагрузка ручной проверки, время до правильного ответственного, повторные открытия/рецидивы; проспективные доказательства, а не синтетические метрики |
 
-Report missing/small slices plainly. Compare error types and calibration, not only averages. OOD scoring is a separate discrimination measure; a high max class probability is **not** automatically a reliable OOD detector. Selective coverage means the fraction of evaluated predictions above a chosen review threshold, **not** permission to auto-route. Confidence intervals and minimum sample sizes must be set before any production-selection decision.
+Отсутствующие или малые срезы указываются явно. Сравнивайте типы ошибок и калибровку, а не только средние значения. Оценка OOD — отдельная мера дискриминации; высокая максимальная вероятность класса **не** является надёжным детектором OOD сама по себе. Выборочное покрытие означает долю оцениваемых предсказаний выше выбранного порога проверки, а **не** разрешение на автоматическую маршрутизацию. Доверительные интервалы и минимальные размеры выборок должны быть определены до любого решения о выборе модели для эксплуатации.
 
-## Runnable contract now
+## Текущий исполняемый контракт
 
 `python -m ml.evaluation.candidate_compare --manifest MANIFEST.json --cases CASES.jsonl --submission MODEL_A.json --submission MODEL_B.json --output REPORT.json`
 
-The evaluator verifies SHA-256 dataset identity, exact field allowlists, decision-time order, group-disjoint and per-region temporal splits, normalized finite probabilities, complete identical test coverage and explicit synthetic/approval status. It evaluates Choice and Boolean (Boolean uses `false`/`true` options), never reads raw text and emits `NOT_VALIDATED` for synthetic fixtures or `EVALUATION_ONLY` for an approved real set; `production_promotion_allowed` is always false. It cannot prove a declared artifact was really trained without leakage, validate the approval reference or replace independent privacy review. Score-question evaluation and training runners remain future work.
+Инструмент оценки проверяет соответствие SHA-256 датасета, точные белые списки полей, хронологический порядок на момент решения, групповые непересекающиеся и повидовые временные разбиения, нормализованные конечные вероятности, полное идентичное тестовое покрытие и явный статус синтетических/утверждённых данных. Он оценивает Choice и Boolean (Boolean использует варианты `false`/`true`), никогда не считывает исходный текст и возвращает `NOT_VALIDATED` для синтетических фикстур или `EVALUATION_ONLY` для утверждённого реального набора; флаг `production_promotion_allowed` всегда равен false. Он не может доказать, что заявленный артефакт был действительно обучен без утечек, проверить юридическое основание или заменить независимую проверку приватности. Оценка вопросов типа Score и запуск процессов обучения остаются будущей задачей.
 
-See [experiment input format](../../experiments/README.md), [data requirements](DATA_REQUIREMENTS.md) and [model governance](MODEL_GOVERNANCE.md).
+См. [формат входных данных экспериментов](../../experiments/README.md), [требования к данным](DATA_REQUIREMENTS.md) и [управление моделями](MODEL_GOVERNANCE.md).

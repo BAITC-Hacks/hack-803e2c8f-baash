@@ -1,49 +1,33 @@
+[Русский](INCIDENT_WAR_ROOM.md) · [English](INCIDENT_WAR_ROOM.en.md) · [Қазақша](INCIDENT_WAR_ROOM.kk.md)
+
 # Incident War Room
 
-## The problem it solves
+## Какую проблему решает
 
-An incident was a group of linked appeals. An operator needs it to be the
-operational record of one city problem: who reported it, where the reports fall,
-who owns it, what was done about comparable problems, what the evidence says and
-what can be done next.
+Инцидент был группой связанных обращений. Оператору нужна оперативная запись одной городской проблемы: кто сообщил, где расположены сообщения, кто отвечает, что помогло в похожих случаях, о чём говорят доказательства и что делать дальше.
 
-## One read
+## Одно чтение
 
-`GET /v1/incidents/{id}/workspace` assembles everything inside one connection.
-The frontend used to need a request per panel, which is slow and invites panels
-to disagree with each other, because each one sees a different instant.
+`GET /v1/incidents/{id}/workspace` собирает всё в одном соединении. Раньше frontend делал запрос на каждую панель: это медленно и создаёт расхождения, поскольку панели видят разные моменты.
 
-The endpoint is read-only by construction. Every write stays on its own domain
-endpoint, so the war room cannot become a side door around the human decision
-path.
+Endpoint устроен только для чтения. Каждая запись остаётся в собственном доменном endpoint, поэтому War Room не обходит подтверждение человеком.
 
-## Sections
+## Разделы
 
-- **Situation**: members, confirmed and candidate counts, how long it has been
-  active, topic and service.
-- **Report footprint**: the reports on a map, their centroid and spread.
-- **Ownership**: candidates from the existing resolver, with the rules that
-  matched and any loop risk.
-- **Comparable verified outcomes**: from outcome memory, human-closed only.
-- **Next actions**: rule-based suggestions with their reason codes.
-- **Delivery**: queued, delivered, retrying and permanently failed.
-- **Timeline and evidence**: append-only events and attached artefacts.
+- **Ситуация**: участники, подтверждённые и кандидатные количества, длительность активности, тема и служба.
+- **География сообщений**: сообщения на карте, их центр и разброс.
+- **Ответственность**: кандидаты существующего resolver, совпавшие правила и риск петли передачи.
+- **Похожие проверенные исходы**: Outcome Memory, только закрытые человеком случаи.
+- **Следующие действия**: рекомендации правил с reason codes.
+- **Доставка**: в очереди, доставлена, повторяется или окончательно не удалась.
+- **Хронология и доказательства**: события только с добавлением и прикреплённые артефакты.
 
-## The map says footprint, not impact
+## Карта показывает сообщения, а не зону воздействия
 
-The radius describes the spread of the reports this incident received. Calling
-it an impact area would assert something about people who never reported
-anything. The UI text says so next to the figure.
+Радиус описывает разброс сообщений инцидента. Назвать его зоной воздействия означало бы сделать вывод о людях, ничего не сообщавших. UI объясняет это рядом с показателем.
 
-The current demo web uses MapLibre/OSM tiles and synthetic coordinates. The
-backend footprint computes centroid/spread; it does not establish impact or
-cause. Before real citizen locations are displayed, the external tile-provider
-network/privacy boundary requires approval.
+Текущий web демо использует тайлы MapLibre/OSM и синтетические координаты. Backend вычисляет центр и разброс, но не устанавливает воздействие или причину. До отображения реальных мест граждан требуется согласование сетевой границы и конфиденциальности внешнего поставщика тайлов.
 
-## Absent geography is the normal case
+## Отсутствие географии — обычный случай
 
-Coordinates are extremely sparse in the supplied regional exports; they are not
-absent from every row. Synthetic Golden World coordinates do not prove real
-geographic coverage. The footprint reports
-`unavailable, COORDINATES_ABSENT` rather than drawing an empty canvas, and a
-single located report abstains, because spread across one point means nothing.
+В предоставленных региональных выгрузках координаты крайне редки, но присутствуют в некоторых строках. Координаты Golden World не доказывают реального географического покрытия. Вместо пустой карты footprint возвращает `unavailable, COORDINATES_ABSENT`. При одном сообщении с координатами он отказывается от вывода: разброс одной точки не имеет смысла.

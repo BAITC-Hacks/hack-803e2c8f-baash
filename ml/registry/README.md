@@ -1,7 +1,7 @@
-# Model Registry References
+[Русский](README.md) · [English](README.en.md) · [Қазақша](README.kk.md)
 
-This directory contains immutable artifact references and hashes, never mutable model weights.
+# Ссылки реестра моделей
 
-`ml/evaluation/synthetic_mlop/mlflow_registry_manifest.json` is a local MLflow-compatible manifest
-with synthetic champion, challenger, and rollback aliases. It does not promote a model and is not a
-replacement for an approved MLflow deployment.
+Каталог содержит неизменяемые ссылки на артефакты и хеши, но никогда — изменяемые веса моделей.
+
+`ml/evaluation/synthetic_mlop/mlflow_registry_manifest.json` — локальный манифест, совместимый с MLflow, с синтетическими псевдонимами champion, challenger и rollback. Он не продвигает модель и не заменяет утверждённое внедрение MLflow.

@@ -1,3 +1,5 @@
+[Русский](DOCUMENTATION_REVIEW_2026-10-01.md) · [English](DOCUMENTATION_REVIEW_2026-10-01.en.md) · [Қазақша](DOCUMENTATION_REVIEW_2026-10-01.kk.md)
+
 # Проверка документации перед сдачей GovTech Camp
 
 > Исторический отчёт документационного прохода `91fd220`, до stabilization. Последующее исправление security CI и обновление Golden World описаны в [DEVELOPMENT](../DEVELOPMENT.md) и [PUBLIC_DEPLOYMENT](../../infra/runbooks/PUBLIC_DEPLOYMENT.md). Открытые действия ниже отражают состояние на момент этого отчёта.

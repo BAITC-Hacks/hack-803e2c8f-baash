@@ -1,3 +1,5 @@
+[Русский](GOLDEN_DEMO.md) · [English](GOLDEN_DEMO.en.md) · [Қазақша](GOLDEN_DEMO.kk.md)
+
 # Демо-сценарий Pulse 109
 
 Публичный стенд: [landing](https://baash.govtech-kz.com/) и [demo](https://baash.govtech-kz.com/demo). Проверенное размещение и актуальная свежесть мира — в [PUBLIC_DEPLOYMENT](../infra/runbooks/PUBLIC_DEPLOYMENT.md). Водный сценарий обновлён и проверен 1 октября в 21:13 Asia/Qyzylorda. Перед следующим показом обновите его по операторской процедуре: свежесть ограничена текущим окном Radar.

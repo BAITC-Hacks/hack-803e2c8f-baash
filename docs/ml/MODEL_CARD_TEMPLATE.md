@@ -1,17 +1,19 @@
-# Model card template / Шаблон паспорта модели
+[Русский](MODEL_CARD_TEMPLATE.md) · [English](MODEL_CARD_TEMPLATE.en.md) · [Қазақша](MODEL_CARD_TEMPLATE.kk.md)
 
-Complete this for an actual artifact. Delete example placeholders before review; do not use a model-card file to imply approval.
+# Шаблон паспорта модели
 
-| Field | Required value |
+Заполните для реального артефакта. До проверки удалите примерные заглушки; файл паспорта не означает утверждения.
+
+| Поле | Обязательное значение |
 | --- | --- |
-| Identity | Model ID, task/question types, artifact SHA-256, base model and pinned license/revision |
-| Status | `NOT_VALIDATED`, `EVALUATION_ONLY`, `ADVISORY_TRIAL`, or separately approved operational state; approver/date |
-| Inputs | Pre-decision feature allowlist, redaction/preprocess version, taxonomy/question/options version, forbidden fields |
-| Data | Training/calibration/test dataset IDs and hashes, approval/legal reference, cutoffs, regional/language counts, synthetic fraction |
-| Method | Architecture, training seed/code/lock hash, loss, calibration fitting split, OOD/abstention method |
-| Results | Baselines, test counts, per-slice routing/retrieval/pair metrics as applicable, calibration and selective risk, confidence intervals |
-| Performance | Hardware, batch size, p50/p95 latency, memory, CPU/GPU fallback behavior |
-| Safety | PII review, leakage checks, known failure modes, human confirmation boundary, bias/drift monitoring |
-| Operations | Deployment profile, Decision Gateway policy binding, rollback artifact, owner and next review date |
+| Идентичность | Model ID, типы задач/вопросов, SHA-256 артефакта, базовая модель и закреплённые лицензия/revision |
+| Статус | `NOT_VALIDATED`, `EVALUATION_ONLY`, `ADVISORY_TRIAL` или отдельно утверждённое рабочее состояние; кто и когда утвердил |
+| Входы | Разрешённые признаки до решения, версия обезличивания/предобработки, версия таксономии/вопросов/вариантов, запрещённые поля |
+| Данные | ID и хеши train/calibration/test, ссылка на разрешение/основание, cutoff, числа по регионам/языкам, доля синтетических данных |
+| Метод | Архитектура, seed обучения/хеш кода и lock, loss, срез подбора калибровки, метод OOD/отказа |
+| Результаты | Baselines, число тестов, применимые метрики routing/retrieval/pairs по срезам, калибровка, выборочный риск, доверительные интервалы |
+| Производительность | Оборудование, batch size, p50/p95 задержки, память, поведение CPU/GPU резервного пути |
+| Безопасность | Проверка PII и утечек, известные отказы, граница подтверждения человеком, мониторинг смещения/drift |
+| Эксплуатация | Профиль внедрения, привязка к политике Decision Gateway, артефакт отката, владелец и дата следующей проверки |
 
-**RU:** если нет утверждённых данных/меток, заполните причину отсутствия, а не числовой показатель из synthetic fixtures. **EN:** report null/unavailable instead of inventing a quality score.
+Если утверждённых данных или меток нет, укажите причину отсутствия и null/недоступность, а не выдуманную оценку качества из synthetic fixtures.

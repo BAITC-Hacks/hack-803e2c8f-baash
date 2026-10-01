@@ -1,166 +1,128 @@
-# Demo flow, Mock Demo Day #2
+[Русский](DEMO_FLOW.md) · [English](DEMO_FLOW.en.md) · [Қазақша](DEMO_FLOW.kk.md)
 
-> **Superseded planning draft — not a runnable walkthrough.** This document
-> describes proposed panels, a demo-state selector and regional-data claims that
-> are not present in the current running application. Use the verified
-> [demo runbook](../DEMO_RUNBOOK.md) and [feature-status matrix](../FEATURE_STATUS.md)
-> for Mock Demo Day. Do not present this draft's claims as live behavior.
+> Исторический документ. Не является источником текущего состояния проекта.
 
-Format requested by the organisers: no slides. Show the working MVP live, say
-what runs today, what is still being built, and what comes next.
+# Демо-версия, Mock Demo Day #2
 
-Slot: 28 or 29 September, 17:00 for Gov cases. Online.
+> **Замененный проект планирования — не работоспособное пошаговое руководство.** В этом документе описаны предлагаемые панели, селектор демо-состояний и утверждения региональных данных, которых нет в текущем запущенном приложении. Используйте проверенный [демонстрационный блокнот](../DEMO_RUNBOOK.md) и [матрицу состояний функций](../FEATURE_STATUS.md) для пробного демонстрационного дня. Не представляйте утверждения этого проекта как живое поведение.
 
-The whole walkthrough is one page. Every panel below exists in
-`apps/web/app/page.tsx` and is served by the live stack, not by a mockup.
+Формат, запрошенный организаторами: без слайдов. Покажите работающий MVP вживую, расскажите, что работает сегодня, что еще строится и что будет дальше.
+
+Время проведения: 28 или 29 сентября, 17:00 для правительственных дел. Онлайн.
+
+Все прохождение занимает одну страницу. Каждая панель ниже существует в `apps/web/app/page.tsx` и обслуживается живым стеком, а не макетом.
 
 ---
 
-## 0. Pre-flight, 20 minutes before the call
+## 0. Предполетная подготовка, за 20 минут до звонка.
 
 ```bash
 make up          # Compose profile from infra/compose
 make migrate     # forward-only Alembic chain
 ```
 
-Then open the web app and confirm three things before anyone joins:
+Затем откройте веб-приложение и подтвердите три вещи, прежде чем кто-либо присоединится:
 
-1. The page renders and the language switch toggles **ru / kk**.
-2. The demo-state selector is visible and set to `ready`.
-3. `make dq-report` prints without error, so the data path is alive.
+1. Страница отображается, и переключатель языка переключается на **ru / kk**.
+2. Селектор демонстрационного состояния виден и установлен на `ready`.
+3. `make dq-report` печатается без ошибок, поэтому путь к данным активен.
 
-If Compose does not come up, go straight to the fallback in section 5. Do not
-debug Docker while the jury watches.
-
----
-
-## 1. What runs today, said in one sentence
-
-> Обращение проходит весь контур: приём, определение владельца, решение с
-> порогом уверенности, инцидент, закрытие с проверкой доказательств. Всё, что
-> вы увидите, работает на реальных выгрузках семи регионов.
-
-Then stop talking and start clicking.
+Если Compose не запускается, сразу переходите к резервному варианту в разделе 5. Не отлаживайте Docker, пока жюри наблюдает.
 
 ---
 
-## 2. The walkthrough, panel by panel
+## 1. Что работает сегодня, сказано в одном предложении
 
-The panels appear on the page in this order. Follow it top to bottom.
+> Обращение проходит весь цикл: прием, определение владельца, решение с порогом уверенности, инцидент, закрытие с проверкой доказательства. Все, что вы показываете, работает на одних выгрузках в семи регионах.
 
-### 2.1 Intake
+Затем прекратите говорить и начните щелкать.
 
-Submit an appeal. Show the bilingual form and the adaptive questions: the form
-asks only what changes the routing decision, not a fixed questionnaire.
+---
 
-Say out loud, once: **the citizen free text is illustrative, because the
-supplied exports contain no citizen text.** Everything after intake is real.
-This is the first line of our data request to the organisers.
+## 2. Прохождение, панель за панелью
 
-### 2.2 Situation centre
+Панели появляются на странице в этом порядке. Следуйте ему сверху вниз.
 
-Regional service overview. Show the surge and the load forecast.
+### 2.1 Прием
 
-Concrete number to name: Pavlodar, 21 June 2024, **2355 appeals in one day
-against a norm near 370**, of which **1819 were a single water-supply topic**.
-That is a real infrastructure event found in the data, not a synthetic example.
+Подать обращение. Покажите двуязычную форму и адаптивные вопросы: форма спрашивает только то, что меняет решение о маршруте, а не фиксированную анкету.
 
-Say that the forecast method is chosen per region by backtest, and that the
-model wins two regions while seasonal naive wins two. We do not claim a model
-gain a region's data does not support.
+Произнесите вслух один раз: **свободный текст гражданина является иллюстративным, поскольку предоставленный экспорт не содержит текста гражданина.** Все, что после приема, реально. Это первая строка нашего запроса данных к организаторам.
 
-### 2.3 Ownership and handoff
+### 2.2 Ситуационный центр
 
-Show owner recommendation and the Handoff Guard. The point: the system proposes
-an owner, a human confirms, and the handoff is guarded so an appeal cannot fall
-between two organisations.
+Обзор региональных услуг. Покажите всплеск и прогноз нагрузки.
 
-### 2.4 Incident topology
+Конкретное число: Павлодар, 21 июня 2024 г., **2355 обращений за один день при норме около 370**, из которых **1819 обращений касались одной темы водоснабжения**. Это реальное инфраструктурное событие, обнаруженное в данных, а не синтетический пример.
 
-Show how separate appeals become one municipal incident, and that every citizen
-keeps an individual request id and SLA. This is the product differentiator:
-ten calls about one burst pipe become one job for the service, not ten.
+Допустим, метод прогнозирования выбирается для каждого региона путем тестирования на исторических данных и что модель выигрывает в двух регионах, а сезонная наивность — в двух. Мы не заявляем, что прирост модели не поддерживается данными региона.
+
+### 2.3 Право собственности и передача
+
+Показать рекомендации владельца и Handoff Guard. Суть в том, что система предлагает владельца, человек подтверждает, а передача охраняется, чтобы обращение не могла попасть между двумя организациями.
+
+### 2.4 Топология инцидента
+
+Покажите, как отдельные обращения становятся одним муниципальным инцидентом и что каждый гражданин сохраняет индивидуальный идентификатор запроса и SLA. В этом особенность продукта: десять звонков по поводу одного разрыва трубы становятся для сервиса одной работой, а не десятью.
 
 ### 2.5 Replay Lab
 
-Show a replay inspection. This is how a policy or model change is checked
-before it reaches production: old versus new decisions on the same appeals.
+Покажите проверку повтора. Именно так проверяется изменение политики или модели до того, как оно достигнет производства: старые и новые решения по одним и тем же обращениям.
 
-### 2.6 Closure integrity
+### 2.6 Целостность закрытия
 
-Show that a closure requires clean evidence. A case cannot be closed by
-assertion.
+Покажите, что для закрытия необходимы четкие доказательства. Дело не может быть закрыто заявлением.
 
 ---
 
-## 3. Show it breaking, on purpose
+## 3. Нарочно покажите, что он ломается
 
-This is the strongest part of the demo and most teams will not have it. Use the
-demo-state selector to switch states live:
+Это самая сильная часть демо-версии, и у большинства команд ее не будет. Используйте селектор демо-состояний для переключения состояний в реальном времени:
 
-| State              | What the jury sees                              | What to say                                                                |
-| ------------------ | ----------------------------------------------- | -------------------------------------------------------------------------- |
-| `low_confidence`   | routing hands the case to an operator           | the abstention path, human-in-the-loop as a threshold rather than a slogan |
-| `ml_unavailable`   | the contour keeps working without ML            | no requirement depends on the model being healthy                          |
-| `stale_catalog`    | stale service catalogue is surfaced, not hidden | the system refuses to route on data it knows is old                        |
-| `sync_retry`       | outbox retry after an external system fails     | an appeal is not lost when the regional system is down                     |
-| `forbidden_region` | access denied across a region boundary          | region scoping is enforced, not decorative                                 |
-
-Pick two. `low_confidence` and `sync_retry` are the most legible in a short
-slot.
+| Государство | Что видит жюри | Что сказать |
+| Состояние | Что видит жюри | Что сказать |
+| `low_confidence` | маршрутизация передает дело оператору | путь воздержания, «человек в процессе» как порог, а не лозунг |
+| `low_confidence` | маршрутизация передает дело оператору | путь воздержания, «человек в курсе» как порог, а не лозунг |
+| `ml_unavailable` | контур продолжает работать без ML | отсутствие требований зависит от исправности модели |
+| `stale_catalog` | устаревший каталог услуг отображается, а не скрыт | система отказывается маршрутизировать данные, которые, как она знает, устарели |
+| `sync_retry` | повторная попытка исходящих сообщений после сбоя внешней системы | обращение не теряется, когда региональная система не работает |
+| `forbidden_region` | доступ запрещен за границей региона | Область видимости региона является принудительной, а не декоративной. |
+Выберите два. `low_confidence` и `sync_retry` наиболее разборчивы в коротком слоте.
 
 ---
 
-## 4. What is honestly not finished
+## 4. Что, честно говоря, не доделано
 
-State this before the jury asks. It reads as maturity, and every item is an
-open external dependency rather than a gap we hid.
+Скажите это, прежде чем присяжные спросят. Это воспринимается как зрелость, и каждый элемент — это открытая внешняя зависимость, а не пробел, который мы спрятали.
 
-- **No citizen text in the data.** The routing ceiling without it is measured:
-  a lookup table reaches 0.573 accuracy, a model 0.588. The gap closes only
-  with raw appeal text, which is our first request to the organisers.
-- **No portable taxonomy across regions.** Leave-one-region-out: a model
-  trained on six regions scores 0.002 on Kostanay even though 94.4 percent of
-  topic names match. The barrier to twenty regions is service-catalogue
-  mapping, not data volume.
-- **No Kazakh in the corpus.** 96.9 percent ru, 3.0 percent mixed, zero pure
-  kk. Bilingual evaluation needs a frozen test set from the organisers.
-- **No coordinates.** Filled in 0.1 to 0.3 percent of rows, so incident
-  grouping runs on topic, service and time. Geo clustering waits on real
-  address or coordinate data.
-- **No live regional integration.** The adapter contract is implemented and
-  exercised by a replay adapter. A real sandbox is request number four.
+- **В данных нет текста гражданина.** Измеряется потолок маршрутизации без него: таблица поиска достигает точности 0,573, модель — 0,588. Разрыв устраняется только с помощью необработанного текста обращения, который является нашей первой просьбой к организаторам.
+- **Нет переносимой таксономии между регионами.** Leave-one-region-out: модель, обученная на шести регионах, набрала 0,002 балла в Костанае, хотя 94,4 процента названий тем совпадают. Препятствием для двадцати регионов является отображение каталога услуг, а не объем данных.
+- **Казахского языка в корпусе нет.** 96,9 процентов ру, 3,0 процента смешанных, ноль чистых кк. Для двуязычной оценки требуется замороженный набор тестов от организаторов.
+- **Координаты отсутствуют.** Заполнено от 0,1 до 0,3 процента строк, поэтому группировка инцидентов выполняется по теме, услуге и времени. Геокластеризация ожидает данных реального адреса или координат.
+- **Нет активной региональной интеграции.** Контракт адаптера реализуется и выполняется адаптером воспроизведения. Настоящая песочница — это запрос номер четыре.
 
 ---
 
-## 5. Fallback if the stack does not start
+## 5. Резервный вариант, если стек не запускается
 
-Do not debug live. In order of preference:
+Не проводите отладку в реальном времени. В порядке предпочтения:
 
-1. **Recorded walkthrough.** Record the full flow the evening before and keep
-   the file locally, not in cloud storage.
-2. **Evidence run.** `make release-evidence` and `make dq-report` produce real
-   output in the terminal. Showing the pipeline produce numbers live is still a
-   live demo.
-3. **Say it plainly.** "The environment is not starting on this machine, here
-   is the recorded run and here is the repository." A stack that fails with a
-   recorded backup costs nothing. A stack that fails while you debug it on
-   camera costs the slot.
+1. **Записанное пошаговое руководство.** Запишите весь процесс накануне вечером и сохраните файл локально, а не в облачном хранилище.
+2. **Прогон доказательств.** `make release-evidence` и `make dq-report` производят реальный вывод в терминале. Демонстрация показателей производительности конвейера в реальном времени по-прежнему остается живой демонстрацией.
+3. **Скажите прямо.** «Среда не запускается на этом компьютере, вот записанный запуск и вот репозиторий». Стек, который вышел из строя с записанной резервной копией, ничего не стоит. Стек, который выходит из строя во время его отладки на камере, стоит слота.
 
 ---
 
-## 6. Timing
+## 6. Выбор времени
 
-A short slot is enough for six panels if nobody narrates architecture.
+Короткого слота хватит на шесть панелей, если никто не будет рассказывать об архитектуре.
 
-| Minutes     | Section                                 |
-| ----------- | --------------------------------------- |
-| 0:00 – 0:30 | one sentence on what runs               |
-| 0:30 – 3:30 | panels 2.1 to 2.6                       |
-| 3:30 – 4:30 | two failure states                      |
-| 4:30 – 5:30 | what is not finished, and the four asks |
-| rest        | questions                               |
-
-The four asks, in priority order: raw appeal text, the remaining thirteen
-regions **with their service catalogues**, a frozen kk/ru test set, and one
-regional sandbox with an architect contact.
+| Минуты | Раздел |
+| Минуты | Раздел |
+| 0:00 – 0:30 | одно предложение о том, что работает |
+| 0:00 – 0:30 | одно предложение о том, что происходит |
+| 0:30 – 3:30 | панели 2.1–2.6 |
+| 3:30 – 4:30 | два состояния отказа |
+| 4:30 – 5:30 | что не доделано, и четверка спрашивает |
+| отдых | вопросы |
+Четыре запроса в порядке приоритета: необработанный текст обращения, оставшиеся тринадцать регионов **с их каталогами услуг**, замороженный тестовый набор kk/ru и одна региональная песочница с контактным лицом архитектора.

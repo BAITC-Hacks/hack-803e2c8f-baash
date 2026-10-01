@@ -1,3 +1,5 @@
+[Русский](DEMO_SCRIPT.md) · [English](DEMO_SCRIPT.en.md) · [Қазақша](DEMO_SCRIPT.kk.md)
+
 # Карточка ведущего Pulse 109
 
 Точная команда подготовки и полный маршрут: [Golden Demo](GOLDEN_DEMO.md).

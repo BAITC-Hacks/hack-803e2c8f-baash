@@ -1,24 +1,15 @@
-# Evaluation
+[Русский](README.md) · [English](README.en.md) · [Қазақша](README.kk.md)
 
-The [shared candidate evaluator](candidate_compare.py) compares offline Choice/Boolean submissions on the same pinned test cases. It requires privacy-safe pseudonymous metadata, group-disjoint temporal splits, complete normalized probabilities, and marks all synthetic output `NOT_VALIDATED`. Its [protocol](../../docs/ml/EVALUATION_PROTOCOL.md) and [input contract](../../experiments/README.md) distinguish this from deployed models. PulseDM is currently [design only](../../docs/ml/PULSEDM_DESIGN.md).
+# Оценка
 
-Evaluation artifacts must identify the dataset cutoff, split policy, region/language slices, and seed.
+[Общий инструмент оценки кандидатов](candidate_compare.py) выполняет офлайн-сравнение сабмитов Choice/Boolean на одних и тех же зафиксированных тестовых случаях. Он требует безопасных с точки зрения приватности псевдонимных метаданных, групповых непересекающихся временных разбиений, полных нормализованных вероятностей и помечает любой синтетический вывод как `NOT_VALIDATED`. Его [протокол](../../docs/ml/EVALUATION_PROTOCOL.md) и [контракт входных данных](../../experiments/README.md) отделяют это сравнение от развёрнутых моделей. PulseDM в настоящее время имеет статус [только дизайн](../../docs/ml/PULSEDM_DESIGN.md).
 
-M4 retrieval evidence in `synthetic_m4/` is generated from the pinned synthetic M4 manifest. Its
-scores and latency are local fixture diagnostics only; representative retrieval and duplicate-pair
-quality remain blocked by B02 and B04.
+Артефакты оценки должны содержать дату среза датасета (cutoff), политику разбиения, срезы по регионам/языкам и seed.
 
-`make retrieval-eval` reports Recall@10/20, MRR, nDCG@10, p95 latency, duplicate pair precision,
-recall and F1, and incident-level B-cubed F1. The corpus and judgments are synthetic and the report
-must not be used as a quality claim.
+Доказательства поиска M4 в каталоге `synthetic_m4/` генерируются на основе зафиксированного синтетического манифеста M4. Полученные оценки и показатели задержки являются исключительно локальной диагностикой фикстур; подтверждение репрезентативного качества поиска и пар дубликатов остаётся заблокированным блокерами B02 и B04.
 
-`make mlops-eval` writes `synthetic_mlop/` with a routing risk-coverage/AURC report, explicit
-abstention bands, a Label Studio-compatible feedback export, an MLflow-compatible registry
-manifest, an Evidently-compatible categorical drift report, and a hash manifest. No heavyweight
-MLOps service dependency is required; these files exercise versioning and handoff formats only.
+Команда `make retrieval-eval` выводит Recall@10/20, MRR, nDCG@10, задержку p95, точность, полноту и F1 для пар дубликатов, а также метрику B-cubed F1 на уровне инцидентов. Корпус и разметка синтетические, поэтому отчёт не должен использоваться для заявлений о качестве.
 
-`retrieval_v1/`, `retrieval_ft_v1/`, and `demo_v1/` contain historical regional research reports.
-Their source timezone and text redaction have not been approved, so the numbers cannot support
-production quality claims. Query success metrics are labelled `hit_rate_at_k`: they count queries
-with any relevant result, rather than recall over all relevant documents. The associated corpus
-is withheld and the scripts stop if it is supplied.
+Команда `make mlops-eval` формирует каталог `synthetic_mlop/`, содержащий отчёт о соотношении риска и покрытия (risk-coverage)/AURC для маршрутизации, явные диапазоны отказа от ответа, экспорт обратной связи в формате Label Studio, манифест реестра в формате MLflow, отчёт о категориальном дрейфе в формате Evidently и хеш-манифест. Никаких тяжеловесных зависимостей сервисов MLOps не требуется; эти файлы проверяют исключительно версионирование и форматы передачи данных.
+
+Каталоги `retrieval_v1/`, `retrieval_ft_v1/` и `demo_v1/` содержат исторические региональные исследовательские отчёты. Исходный часовой пояс и обезличивание текста в них не были утверждены, поэтому эти показатели не могут подтверждать качество моделей в промышленной эксплуатации. Метрики успешности запросов помечены как `hit_rate_at_k`: они считают запросы с хотя бы одним релевантным результатом, а не полноту по всем релевантным документам. Соответствующий корпус скрыт, и скрипты останавливают работу при его передаче.

@@ -1,22 +1,23 @@
-# ADR 001 Modular Business Core
+[Русский](ADR-001-modular-monolith.md) · [English](ADR-001-modular-monolith.en.md) · [Қазақша](ADR-001-modular-monolith.kk.md)
 
-Status: accepted for the first production release
+# ADR 001 Модульное бизнес-ядро
 
-## Decision
+Статус: принято для первого промышленного выпуска
 
-Implement intake, routing decisions, appeals, incidents, catalog, audit and report orchestration as modules in one deployable backend. Run model inference, background workers and regional adapters as separate processes with stable HTTP or event contracts.
+## Решение
 
-## Reasons
+Реализовать приём, решения о маршрутизации, обращения, инциденты, каталог, аудит и оркестрацию отчётов как модули одного развёртываемого backend. Вывод моделей, фоновые worker и региональные адаптеры запускаются отдельными процессами со стабильными HTTP-контрактами или контрактами событий.
 
-- One month is too short to operate many independently deployed business services safely.
-- Appeal creation, operator decision, audit and outbox publication require one transaction.
-- Module boundaries can be enforced in code and tests before they become network boundaries.
-- Inference and adapter workloads need independent scaling and failure isolation from the critical intake path.
+## Причины
 
-## Consequences
+- Одного месяца недостаточно для безопасной эксплуатации множества независимо развёртываемых бизнес-сервисов.
+- Создание обращения, решение оператора, аудит и публикация outbox требуют одной транзакции.
+- Границы модулей можно закрепить в коде и тестах до превращения их в сетевые границы.
+- Нагрузки вывода моделей и адаптеров требуют независимого масштабирования и изоляции отказов от критического пути приёма.
 
-- The core uses one PostgreSQL database, but each module owns its tables and access layer.
-- Cross-module writes go through application services, not direct table access.
-- A module can later be extracted when measured load, ownership or release cadence requires it.
-- A new network service requires an architecture decision, SLO, ownership and contract tests.
+## Последствия
 
+- Ядро использует одну базу PostgreSQL, но каждый модуль владеет своими таблицами и слоем доступа.
+- Записи между модулями выполняются через сервисы приложения, а не прямой доступ к таблицам.
+- Модуль можно выделить позже, если этого потребуют измеренная нагрузка, ответственность или частота выпусков.
+- Новый сетевой сервис требует архитектурного решения, SLO, владельца и тестов контрактов.

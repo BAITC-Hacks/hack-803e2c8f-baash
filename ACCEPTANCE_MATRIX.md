@@ -1,3 +1,5 @@
+[Русский](ACCEPTANCE_MATRIX.md) · [English](ACCEPTANCE_MATRIX.en.md) · [Қазақша](ACCEPTANCE_MATRIX.kk.md)
+
 # Матрица приёмки Pulse 109
 
 Это критерии и индекс доказательств, а не утверждение о закрытии всех этапов. Текущее состояние — [FEATURE_STATUS](docs/FEATURE_STATUS.md); соответствие обязательному ТЗ — [аудит](docs/review/COMPETITION_AUDIT_2026-09-29.md).

@@ -1,129 +1,92 @@
-# Production platform completion
+[Русский](PRODUCTION_ROADMAP.md) · [English](PRODUCTION_ROADMAP.en.md) · [Қазақша](PRODUCTION_ROADMAP.kk.md)
 
-> **Historical planning assessment (26 September 2026).** The percentages and
-> completion claims below are qualitative estimates from that date, not a
-> deployment certification. The current [feature-status matrix](../FEATURE_STATUS.md)
-> and [demo runbook](../DEMO_RUNBOOK.md) describe verified behavior and blockers.
+> Исторический документ. Не является источником текущего состояния проекта.
 
-Where the platform stands and what closes the remaining engineering work that
-does not depend on documents the state has not given us yet.
+# Завершение производственной платформы
 
-Assessment date: 26 September 2026, against branch
-`codex/production-platform-20260923`.
+> **Историческая оценка планирования (26 сентября 2026 г.).** Приведенные ниже проценты и заявления о завершении являются качественными оценками с этой даты, а не сертификатом развёртывания. Текущая [матрица состояния функций](../FEATURE_STATUS.md) и [демонстрационный блокнот](../DEMO_RUNBOOK.md) описывают проверенное поведение и блокировщики.
 
-## Readiness
+Где стоит платформа и что закрывает остальные инженерные работы, не зависящие от документов, которые нам государство пока не предоставило.
 
-| Goal                           | Readiness |
-| ------------------------------ | --------- |
-| Architectural foundation       | ~90%      |
-| Strong demonstration product   | ~80-85%   |
-| Real pilot in one region       | ~65-70%   |
-| Production for state operation | ~55-60%   |
-| Mature multi-region platform   | ~45-50%   |
+Дата оценки: 26 сентября 2026 г., по ветке `codex/production-platform-20260923`.
 
-The spread is wide not because half the code is missing. The core is already
-developed. The last 30 to 40 percent of a production system is the heaviest
-part: real integrations, identity, privacy, operations, load and disaster
-recovery, observability, and proven ML quality.
+## Готовность
 
-## Already substantially closed
+| Цель | Готовность |
+| Цель | Готовность |
+| Архитектурный фундамент | ~90% |
+| Архитектурный фундамент | ~90% |
+| Сильный демонстрационный продукт | ~80-85% |
+| Реальный пилот в одном регионе | ~65-70% |
+| Производство для государственной эксплуатации | ~55-60% |
+| Зрелая мультирегиональная платформа | ~45-50% |
+Разброс велик не потому, что отсутствует половина кода. Ядро уже разработано. Последние 30–40 процентов производственной системы — это самая тяжелая часть: реальная интеграция, идентичность, конфиденциальность, операции, восстановление после нагрузки и аварий, наблюдаемость и проверенное ML качество.
 
-- **Durable path.** PostgreSQL, migrations, idempotency and outbox, base
-  transaction integrity, restore testing and security CI have been exercised.
-  A recent full local run covered 210 tests plus contracts, E2E, lint,
-  typecheck and build, and PostgreSQL passed CI afterwards.
-- **Ownership and decision.** Geo jurisdiction, owner recommendation,
-  unit to organization mapping, Handoff Guard, first-pass acceptance and
-  rejection aggregates, immutable gateway assessment, model-bound confidence
-  policy, and two-person policy publication.
-- **Adaptive intake.** Versioned policy, conditional questions, evidence
-  requirements and UI.
-- **Incident and outcome.** Closure integrity, recurrence, Outcome Memory
-  boundary, lifecycle and versioning, relations and topology work,
-  evidence-aware closing.
-- **Replay Lab.** Snapshots, persistence, report against snapshot verification.
-- **Signed regional bundles.** Durable activation and signature re-verification.
+## Уже практически закрыт
 
-## The eight remaining blocks
+- **Надежный путь.** PostgreSQL, были проверены миграции, идемпотентность и исходящие сообщения, базовая целостность транзакций, тестирование восстановления и безопасность CI. Недавний полный локальный запуск охватывал 210 тестов плюс контракты, E2E, анализ, проверку типов и сборку, а затем PostgreSQL прошел CI.
+- **Владение и решение.** Географическая юрисдикция, рекомендации владельца, сопоставление подразделений с организациями, Handoff Guard, агрегаты принятия и отклонения при первом проходе, неизменяемая оценка шлюза, политика конфиденциальности на основе модели и публикация политики двумя лицами.
+- **Адаптивный прием.** Версионная политика, условные вопросы, требования к доказательствам и пользовательский интерфейс.
+- **Инцидент и результат.** Целостность закрытия, повторение, граница Outcome Memory, жизненный цикл и управление версиями, отношения и топология, закрытие с учетом фактических данных.
+- **Replay Lab.** Снимки, постоянство, отчет по проверке снимков.
+- **Подписанные региональные пакеты.** Надежная активация и повторная проверка подписи.
 
-These are ordered as one program, not fifty scattered features.
+## Восемь оставшихся блоков
 
-### 1. Finish the incident graph and topology
+Они упорядочены как одна программа, а не пятьдесят разрозненных функций.
 
-Commit `0257928` was an urgent checkpoint explicitly marked as unfinished
-relations work. Complete `merge / split / supersede / related / caused_by /
-recurrence_of`, version and invariant checks, persistence, audit and outbox,
-and a usable UI for them.
+### 1. Завершите граф инцидента и топологию.
 
-### 2. Complete the control plane, not only the signed bundle primitive
+Коммит `0257928` был срочной контрольной точкой, явно отмеченной как незавершенная работа по связям с общественностью. Полные `merge / split / supersede / related / caused_by / recurrence_of`, проверки версий и инвариантов, сохранение, аудит и исходящие сообщения, а также удобный пользовательский интерфейс для них.
 
-Signed bundles exist. The lifecycle does not:
+### 2. Завершите плоскость управления, а не только подписанный примитив пакета.
+
+Подписанные пакеты существуют. Жизненный цикл не:
 
 ```
 draft → validate → sign → stage → activate → last-known-good → rollback
 ```
 
-Plus release history, fleet state, compatibility matrix, staged rollout by
-region, and a CLI or admin UI. The bundle CLI was started after `0257928` and
-interrupted.
+Плюс история выпусков, состояние парка, матрица совместимости, поэтапное внедрение по регионам, а также интерфейс командной строки или интерфейс администратора. Пакет CLI был запущен после `0257928` и прерван.
 
-### 3. Replay Lab UI and release diff
+### 3. Replay Lab Пользовательский интерфейс и разница между версиями
 
-The backend is strong. The user must see old versus new policy or model,
-changed decisions, regressions by kk / ru / region / category, confidence
-intervals, affected appeals, and a verdict of `BLOCK / CANARY / SAFE TO
-PROMOTE`.
+Бэкэнд сильный. Пользователь должен видеть старую и новую политику или модель, измененные решения, регрессию по kk/ru/региону/категории, доверительные интервалы, затронутые обращения и вердикт `BLOCK / CANARY / SAFE TO PROMOTE`.
 
-### 4. Connect the frontend to the operational backend end to end
+### 4. Подключите внешний интерфейс к рабочему серверному интерфейсу вплотную.
 
-Handoff, adaptive intake and closure elements exist. The full operator journey
-must be continuous:
+Существуют элементы переключения, адаптивного впуска и закрытия. Полный путь оператора должен быть непрерывным:
 
 ```
 queue → appeal → required evidence → ownership → gateway assessment
       → decision → assignment → handoff outcome → incident → resolution → closure
 ```
 
-No pages that look production but still behave as an evidence or demo view in
-places.
+Никаких страниц, которые выглядят как рабочие, но местами ведут себя как доказательства или демонстрационные версии.
 
-### 5. Observability and SRE layer
+### 5. Наблюдаемость и уровень SRE
 
-No finished production OpenTelemetry stack is evidenced. Add end-to-end traces,
-Prometheus metrics, dashboards, structured logs, and the operational signals
-that matter here: outbox lag, adapter lag, PII access audit, gateway
-abstention, override rate, first-pass acceptance, reopen rate, recurrence rate,
-error budgets and alerts.
+Никакого законченного производственного стека OpenTelemetry не обнаружено. Добавьте сквозные трассировки, метрики Prometheus, информационные панели, структурированные журналы и рабочие сигналы, которые здесь имеют значение: задержка исходящих сообщений, задержка адаптера, аудит доступа PII, воздержание от шлюза, частота переопределения, принятие первого прохода, частота повторного открытия, частота повторения, бюджеты ошибок и оповещения.
 
-### 6. Hard production resilience
+### 6. Высокая устойчивость производства
 
-Restore testing exists, which is real progress. Still missing: load tests, soak
-tests, worker crash and restart, database connection exhaustion, adapter
-timeout, inference outage, object storage outage, concurrent operator
-conflicts, rollback migration test, degraded-mode test, and chaos scenarios.
+Существует тестирование восстановления, и это настоящий прогресс. Все еще отсутствуют: нагрузочные тесты, тесты на выдержку, сбой и перезапуск рабочего процесса, исчерпание соединения с базой данных, тайм-аут адаптера, сбой вывода, сбой в хранилище объектов, конфликты параллельных операторов, тест на откат миграции, тест в деградированном режиме и сценарии хаоса.
 
-The bar is not "the happy path works". The bar is "half the system was broken
-and no appeal was lost".
+Бар не «работает счастливый путь». Планка такова: «половина системы была сломана, и ни одна обращение не была отклонена».
 
-### 7. Security finishing
+### 7. Охранная отделка
 
-The supply-chain gate works. Before real production: attachment malware and
-MIME scanning, secrets and KMS integration, key rotation, service identities
-with mTLS or equivalent internal auth, rate limiting, resource limits, CSP and
-security headers, an RLS and authorization test suite, and a threat model.
+Ворота цепочки поставок работают. Перед реальным производством: вложения вредоносных программ и сканирование MIME, секреты и интеграция KMS, ротация ключей, удостоверения служб с помощью mTLS или эквивалентной внутренней аутентификации, ограничение скорости, ограничения ресурсов, CSP и заголовки безопасности, набор тестов RLS и авторизации, а также модель угроз.
 
-### 8. Production deployment profile
+### 8. Профиль производственного развёртывания
 
-The deployment target that the above runs on, as a profile rather than a
-document.
+Цель развёртывания, на которой выполняется описанное выше, в виде профиля, а не документа.
 
-## The largest remaining piece is not code
+## Самый большой оставшийся фрагмент не является кодом
 
-A real-world vertical slice. We deliberately did not invent a regional API, a
-taxonomy and SLA policy, production OIDC and hosting, or the legal rules for
-data processing, because those artefacts have not been provided.
+Реальный вертикальный срез. Мы сознательно не изобрели региональную API, таксономию и SLA политику, производство OIDC и хостинг, а также юридические правила обработки данных, потому что эти артефакты не были предоставлены.
 
-When they arrive, what remains is connection rather than redesign:
+Когда они придут, останется лишь подключение, а не редизайн:
 
 ```
 real 109 source → real ingest → PII vault and redaction → canonical appeal
@@ -132,16 +95,13 @@ real 109 source → real ingest → PII vault and redaction → canonical appeal
   → verified closure
 ```
 
-That is the transition from an excellent engineering prototype to a real
-production pilot.
+Это переход от превосходного инженерного прототипа к реальному серийному пилотному проекту.
 
-## ML is not production AI yet
+## ML пока не является производственным AI
 
-We have correctly refused to manufacture evidence: a doubtful corpus was
-closed, reports were marked unverified, and Outcome Memory refuses to return a
-result without an approved corpus.
+Мы правильно отказались от фабрикации доказательств: сомнительный корпус закрыли, отчеты пометили как непроверенные, а Outcome Memory отказывается возвращать результат без утвержденного корпуса.
 
-What still stands between here and production ML:
+Что еще стоит между этим и производством ML:
 
 ```
 production routing dataset → leakage audit → temporal splits
@@ -149,33 +109,23 @@ production routing dataset → leakage audit → temporal splits
   → fairness and slices → shadow → replay → canary → registry and promotion
 ```
 
-Without real raw pre-decision appeal text, no honest claim that the routing
-model is production-grade is possible. This should not be worked around with
-synthetic models.
+Без реального исходного текста обращения перед принятием решения невозможно честное заявление о том, что модель маршрутизации соответствует производственному уровню. Эту проблему не следует обойти с помощью синтетических моделей.
 
-## Privacy remains a production block
+## Конфиденциальность остается производственным блоком
 
-The right architectural constraint is already in place: the citizen form does
-not pretend an appeal was accepted during a network failure, and real address
-or private submission does not activate without approved private storage.
+Правильное архитектурное ограничение уже установлено: форма гражданина не делает вид, что обращение была принята во время сбоя сети, а реальный адрес или частная подача не активируются без утвержденного частного хранилища.
 
-What remains is the real pipeline:
+Остаётся настоящий конвейер:
 
 ```
 PII Gateway → detection → tokenization → encrypted vault
   → purpose-limited reveal → retention and deletion → access audit
 ```
 
-This is where deterministic KZ recognizers, a contextual PII detector and
-controlled pseudonymization belong.
+Именно здесь принадлежат детерминированные распознаватели KZ, контекстный детектор PII и контролируемая псевдонимизация.
 
-## Summary
+## Резюме
 
-Roughly 15 to 20 percent of engineering work stands between here and a very
-strong platform. Roughly 35 to 45 percent stands between here and real state
-production, and a significant part of that remainder depends on external
-contracts, data and operations rather than on how much more code is written.
+Примерно от 15 до 20 процентов инженерных работ находится между этим местом и очень прочной платформой. Примерно от 35 до 45 процентов находится между этим и реальным государственным производством, и значительная часть этого остатка зависит от внешних контрактов, данных и операций, а не от того, сколько еще кода будет написано.
 
-`0257928` was an urgent checkpoint commit. Work on incident relations and the
-bundle CLI continued after it, so it should not be treated as a finished
-release.
+`0257928` — срочная фиксация контрольной точки. После этого продолжилась работа над связями инцидентов и пакетным CLI, поэтому его не следует рассматривать как законченный выпуск.

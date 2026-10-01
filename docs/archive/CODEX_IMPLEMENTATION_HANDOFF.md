@@ -1,31 +1,35 @@
-# Pulse 109 Codex Implementation Handoff
+[Русский](CODEX_IMPLEMENTATION_HANDOFF.md) · [English](CODEX_IMPLEMENTATION_HANDOFF.en.md) · [Қазақша](CODEX_IMPLEMENTATION_HANDOFF.kk.md)
 
-## 1 Purpose
+> Исторический документ. Не является источником текущего состояния проекта.
 
-This file translates the Pulse 109 specification into an implementation sequence for a coding agent. The intended result is a production-grade pilot in one month, not a national rollout disguised as a demo. The pilot must implement a real, auditable vertical slice with one regional integration when access is available and a contract-identical replay adapter when it is not.
+# Pulse 109 Передача реализации Кодекса
 
-The full system remains designed for twenty regions. Current evidence covers seven regions, raw appeal text is largely unavailable and several integration and policy decisions remain external blockers. The implementation must expose these limitations instead of filling them with invented data or protocols.
+## 1 Цель
 
-## 2 Target outcome
+Этот файл преобразует спецификацию Pulse 109 в последовательность реализации для агента кодирования. Предполагаемый результат — пилотный проект промышленного уровня за один месяц, а не национальное внедрение, замаскированное под демо-версию. Пилотный проект должен реализовать реальный, проверяемый вертикальный срез с одной региональной интеграцией, когда доступ доступен, и идентичным контракту адаптером воспроизведения, когда он отсутствует.
 
-At the release candidate, a representative appeal must complete this path:
+Полная система по-прежнему рассчитана на двадцать регионов. Текущие данные охватывают семь регионов, необработанный текст обращения по большей части недоступен, а некоторые интеграционные и политические решения остаются внешними блокирующими факторами. Реализация должна выявить эти ограничения, а не заполнять их придуманными данными или протоколами.
 
-1. A source channel creates an appeal idempotently.
-2. The system stores provenance and an immutable source reference before ML.
-3. Privacy processing creates an approved redacted representation.
-4. Routing returns top-three topic and service candidates, confidence, OOD state and version.
-5. Retrieval returns similar resolved cases with evidence.
-6. Duplicate detection proposes related appeals using text, geography, time and service.
-7. An operator confirms or corrects the route and may confirm incident membership.
-8. The decision, audit event and outbox record commit atomically.
-9. An adapter delivers the assignment or records a visible pending state.
-10. External statuses update the appeal timeline idempotently.
-11. The situation center shows coverage, freshness, trends, SLA and approved alerts.
-12. The same governed metric definition produces UI, PDF and spreadsheet values.
+## 2 Целевой результат
 
-The flow must still accept, route manually, audit and synchronize later when ML or the external system is unavailable.
+На релиз-кандидате представительное обращение должно завершить этот путь:
 
-## 3 Architecture baseline
+1. Исходный канал идемпотентно создает обращение.
+2. Система сохраняет происхождение и неизменяемую ссылку на источник перед ML.
+3. Обработка конфиденциальности создает утвержденное отредактированное представление.
+4. Маршрутизация возвращает три основных темы и кандидата на услуги, достоверность, состояние и версию OOD.
+5. Поиск возвращает аналогичные решенные дела с доказательствами.
+6. Обнаружение дубликатов предлагает связанные обращения с использованием текста, географии, времени и услуг.
+7. Оператор подтверждает или корректирует маршрут и может подтвердить принадлежность к инциденту.
+8. Решение, событие аудита и запись исходящих сообщений фиксируются атомарно.
+9. Адаптер доставляет задание или записывает видимое состояние ожидания.
+10. Внешние статусы идемпотентно обновляют сроки обращения.
+11. Ситуационный центр показывает покрытие, актуальность, тенденции, SLA и утвержденные оповещения.
+12. Одно и то же определение управляемой метрики создает значения пользовательского интерфейса, PDF и электронной таблицы.
+
+Поток все равно должен принимать, маршрутизировать вручную, проверять и синхронизировать позже, когда ML или внешняя система недоступна.
+
+## 3 Базовый уровень архитектуры
 
 ```mermaid
 flowchart TB
@@ -41,35 +45,35 @@ flowchart TB
   WORKER --> ANALYTICS[Read Models and Reports]
 ```
 
-### 3.1 Deployable processes
+### 3.1 Развертываемые процессы
 
-| Process | Responsibility | Scaling and failure boundary |
-| --- | --- | --- |
-| `web` | Operator, situation center and administration UI | Stateless horizontal replicas |
-| `core-api` | Appeals, triage decisions, incidents, catalog, audit and report orchestration | Critical transactional path |
-| `worker` | Outbox delivery, reconciliation, reports, forecasts and scheduled jobs | Pools separated by workload |
-| `ml-inference` | Routing, embeddings, reranking, OOD and optional drafts | GPU replicas with CPU fallback |
-| `adapter-runtime` | Source-specific protocol, mapping and checkpoints | Isolated by source and partition |
-| `ml-training` | Offline dataset building, training and evaluation | Never in the production critical path |
+| Процесс | Ответственность | Масштабирование и граница отказа |
+| Процесс | Ответственность | Масштабирование и граница отказа |
+| `web` | Пользовательский интерфейс оператора, ситуационного центра и администрации | Горизонтальные реплики без сохранения состояния |
+| `web` | Пользовательский интерфейс оператора, ситуационного центра и администрирования | Горизонтальные реплики без сохранения состояния |
+| `core-api` | Обращения, решения по triage, инциденты, каталог, аудит и составление отчетов | Критический транзакционный путь |
+| `worker` | Доставка исходящих сообщений, сверка, отчеты, прогнозы и запланированные задания | Пулы, разделенные по рабочей нагрузке |
+| `ml-inference` | Маршрутизация, эмбеддинг, изменение ранжирования, OOD и дополнительные черновики | GPU реплик с CPU резервным вариантом |
+| `adapter-runtime` | Протокол, зависящий от источника, сопоставление и контрольные точки | Изолирован по источнику и разделу |
+| `ml-training` | Создание, обучение и оценка автономного набора данных | Никогда на критическом пути производства |
+### 3.2 Бизнес-модули в ядре
 
-### 3.2 Business modules in the core
+| Модуль | Владеет | Операции с общедоступными приложениями |
+| Модуль | Владеет | Операции с общедоступными приложениями |
+| `appeals` | Обращение к моментальным снимкам и событиям жизненного цикла, предназначенным только для добавления | Создание, чтение и добавление исходного события |
+| `appeals` | Обращение к моментальным снимкам и событиям жизненного цикла только для добавления | Создание, чтение и добавление исходного события |
+| `triage` | Ссылки на рекомендации и человеческие решения | Классифицировать, подтвердить, исправить и переназначить |
+| `catalog` | Версионные темы, услуги, обязательные поля и политики SLA. | Разработать действующий каталог и опубликовать утвержденную версию |
+| `incidents` | Запись об инцидентах и ​​версионные решения о членстве | Предлагать, подтверждать, отклонять и удалять членство |
+| `integration` | Исходный реестр, исходящие сообщения, попытки, контрольные точки и сопоставления | Доставить, согласовать, воспроизвести и проверить работоспособность |
+| `analytics` | Определения метрик, управляемые запросы и материализованные модели чтения | Запрос по идентификатору метрики и пороговому значению |
+| `reports` | Шаблоны отчетов, задания, артефакты и хеши | Создание, проверка и загрузка экспорта |
+| `audit` | Неизменяемая безопасность и история решений | Добавить для внутреннего использования и прочитать уполномоченными аудиторами |
+Каждый модуль имеет схему PostgreSQL и интерфейс репозитория. Ни один модуль не осуществляет запись напрямую в таблицы другого модуля.
 
-| Module | Owns | Public application operations |
-| --- | --- | --- |
-| `appeals` | Appeal snapshot and append-only lifecycle events | Create, read and append source event |
-| `triage` | Recommendation references and human decisions | Classify, confirm, correct and reassign |
-| `catalog` | Versioned topics, services, required fields and SLA policies | Resolve effective catalog and publish approved version |
-| `incidents` | Incident record and versioned membership decisions | Propose, confirm, reject and remove membership |
-| `integration` | Source registry, outbox, attempts, checkpoints and mappings | Deliver, reconcile, replay and inspect health |
-| `analytics` | Metric definitions, governed queries and materialized read models | Query by Metric ID and cutoff |
-| `reports` | Report templates, jobs, artifacts and hashes | Create, inspect and download export |
-| `audit` | Immutable security and decision history | Append internally and read by authorized auditors |
+## 4 Схема репозитория
 
-Each module owns a PostgreSQL schema and repository interface. No module writes directly to another module's tables.
-
-## 4 Repository layout
-
-Create this layout unless an existing repository already has an equivalent convention:
+Создайте этот макет, если существующий репозиторий еще не имеет эквивалентного соглашения:
 
 ```text
 .
@@ -138,291 +142,290 @@ Create this layout unless an existing repository already has an equivalent conve
     └── security/
 ```
 
-Use Python lockfiles and Node lockfiles. Do not depend on floating container tags or unpinned model revisions. If an existing repository already selects versions, preserve them unless a measured incompatibility requires an upgrade.
+Используйте файлы блокировки Python и файлы блокировки Node. Не полагайтесь на плавающие теги контейнеров или незакрепленные версии модели. Если существующий репозиторий уже выбирает версии, сохраните их, если только измеренная несовместимость не потребует обновления.
 
-## 5 Technology baseline
+## 5 Базовый уровень технологии
 
-### 5.1 Application
+### 5.1 Применение
 
-- Backend: Python, FastAPI, Pydantic v2, SQLAlchemy 2 and Alembic.
-- Frontend: Next.js App Router, React and TypeScript with accessible server-backed forms and a small client state layer only where necessary.
-- Database: PostgreSQL with PostGIS and pgvector extensions.
-- Object storage: S3-compatible API with encrypted buckets and immutable artifact naming.
-- Background work: a dedicated Python worker over PostgreSQL outbox and job tables. Do not introduce Kafka, Celery or another broker in M0 unless the repository already depends on it.
-- Local runtime: Docker Compose.
-- Target runtime: OCI images and Helm values for Kubernetes or OpenShift-compatible deployment.
-- Observability: OpenTelemetry traces and metrics, Prometheus-compatible metrics and structured JSON logs without request bodies.
-- Authentication: OIDC JWT validation in non-local environments. Local fake identity is allowed only under an explicit development profile.
+- Серверная часть: Python, FastAPI, Pydantic v2, SQLAlchemy 2 и Alembic.
+- Интерфейс: Next.js App Router, React и TypeScript с доступными формами, поддерживаемыми сервером, и небольшим слоем состояния клиента только там, где это необходимо.
+- База данных: PostgreSQL с расширениями PostGIS и pgvector.
+- Хранилище объектов: S3-совместимое API с зашифрованными сегментами и неизменяемым именованием артефактов.
+- Фоновая работа: выделенный работник Python над ящиком исходящих сообщений PostgreSQL и таблицами заданий. Не вводите Kafka, Celery или другой брокер в M0, если репозиторий уже не зависит от него.
+- Локальная среда выполнения: Docker Compose.
+- Целевая среда выполнения: образы OCI и значения Helm для Kubernetes или развёртывания, совместимого с OpenShift.
+- Наблюдение: трассировки и метрики OpenTelemetry, метрики, совместимые с Prometheus, и структурированные журналы JSON без тел запросов.
+- Аутентификация: OIDC JWT проверка в нелокальных средах. Локальная поддельная личность разрешена только при наличии явного профиля разработки.
 
-### 5.2 Machine learning
+### 5.2 Машинное обучение
 
-- Routing candidate: fine-tuned XLM-RoBERTa base with hierarchical multi-label heads.
-- Routing baseline: character TF-IDF plus calibrated linear classifier.
-- Retrieval: BGE-M3 embeddings with hybrid BM25 and pgvector search.
-- Reranking: BGE reranker v2 m3.
-- Duplicates: calibrated pair model using retrieval scores, geography, time, topic and service; high-precision rules remain available.
-- Draft and governed intent parsing: Qwen3 8B in four-bit form on GPU 1. It cannot execute arbitrary SQL or send a reply.
-- Call transcription: Whisper large v3 turbo, asynchronous and disabled until audio processing is approved.
-- PII: deterministic patterns and approved dictionaries first, fine-tuned XLM-R NER as an additional detector.
-- Forecast: seasonal naive baseline plus CatBoost or LightGBM candidate.
+- Кандидат на маршрутизацию: настроенная база XLM-RoBERTa с иерархическими головками с несколькими метками.
+- Базовая линия маршрутизации: символ TF-IDF плюс калиброванный линейный классификатор.
+- Поиск: эмбеддинги BGE-M3 с гибридным поиском BM25 и pgvector.
+- Реранкинг: реранкер BGE v2 м3.
+- Дубликаты: калиброванная парная модель с использованием показателей поиска, географии, времени, темы и услуги; правила высокой точности остаются доступными.
+- Анализ черновика и управляемого намерения: Qwen3 8B в четырехбитной форме на GPU 1. Он не может выполнить произвольный SQL или отправить ответ.
+- Транскрипция вызовов: Whisper big v3 Turbo, асинхронная и отключенная до тех пор, пока не будет одобрена обработка звука.
+- PII: сначала детерминированные шаблоны и утвержденные словари, дообучение XLM-R NER в качестве дополнительного детектора.
+- Прогноз: сезонный базовый уровень плюс кандидат CatBoost или LightGBM.
 
-The inference service must expose model-agnostic contracts. Model names and runtime libraries are configuration, not domain dependencies.
+Служба вывода должна предоставлять контракты, не зависящие от модели. Имена моделей и библиотеки исполняемого контура — это конфигурация, а не зависимости домена.
 
-## 6 Domain invariants and data ownership
+## 6 Инварианты предметной области и владение данными
 
-### 6.1 Appeal and incident
+### 6.1 Обращение и инцидент
 
-- `appeal_id` is a Pulse UUID and never changes.
-- `source_system`, `source_request_id` and `source_payload_hash` provide idempotency and provenance.
-- An incident is a separate aggregate. Membership is versioned and requires actor, reason and evidence.
-- Linking appeals to an incident never collapses records, histories, assignments or SLA clocks.
-- Current state is a projection derived from append-only events. Corrections add a new event.
+- `appeal_id` — это UUID Pulse, который никогда не меняется.
+- `source_system`, `source_request_id` и `source_payload_hash` обеспечивают идемпотентность и происхождение.
+- Инцидент — это отдельная совокупность. Членство является версионным и требует действующего лица, причины и доказательств.
+- Привязка обращений к инциденту никогда не разрушает записи, истории, задания или часы SLA.
+- Текущее состояние — это проекция, полученная на основе событий, доступных только для добавления. Исправления добавляют новое событие.
 
-### 6.2 Time
+### 6.2 Время
 
-Store at least:
+Храните как минимум:
 
-- `occurred_at`: business time asserted by the source; nullable;
-- `observed_at`: time Pulse 109 received the record; required UTC;
-- `source_timezone`: source timezone or null;
-- `time_quality`: `exact`, `source_tz_assumed`, `date_only`, `missing` or approved extension;
-- `effective_from` and `effective_to`: for catalog and policy versions;
-- `data_cutoff`: for every analytic result and export.
+- `occurred_at`: рабочее время, заявленное источником; обнуляемый;
+- `observed_at`: время Pulse 109 получило запись; требуется UTC;
+- `source_timezone`: часовой пояс источника или ноль;
+- `time_quality`: `exact`, `source_tz_assumed`, `date_only`, `missing` или утвержденное расширение;
+- `effective_from` и `effective_to`: для версий каталога и политики;
+- `data_cutoff`: для каждого результата анализа и экспорта.
 
-When `occurred_at` cannot be established, keep it null. Operational lists may sort by `observed_at` while visibly labelling the time source. Temporal training, validation and backtesting must exclude events whose order cannot be recovered safely.
+Если `occurred_at` невозможно установить, оставьте его нулевым. Операционные списки могут сортироваться по `observed_at` с видимой маркировкой источника времени. Временное обучение, валидация и бэктестирование должны исключать события, порядок которых не может быть безопасно восстановлен.
 
-### 6.3 Suggested PostgreSQL schemas
+### 6.3 Рекомендуемые схемы PostgreSQL
 
-| Schema | Key tables |
-| --- | --- |
+| Схема | Ключевые таблицы |
+| Схема | Ключевые таблицы |
+| `appeals` | `appeal`, `appeal_event`, `source_record`, `attachment_ref` |
 | `appeals` | `appeal`, `appeal_event`, `source_record`, `attachment_ref` |
 | `triage` | `recommendation`, `recommendation_candidate`, `operator_decision`, `reassignment` |
 | `catalog` | `topic_version`, `service_version`, `service_topic`, `required_field`, `sla_policy_version` |
 | `incidents` | `incident`, `incident_member_version`, `duplicate_candidate`, `membership_decision` |
 | `integration` | `source_system`, `source_schema_version`, `status_mapping`, `outbox`, `delivery_attempt`, `checkpoint`, `dead_letter` |
-| `analytics` | `metric_definition`, `metric_result`, `alert`, `alert_review`, materialized read models |
+| `analytics` | `metric_definition`, `metric_result`, `alert`, `alert_review`, модели материализованного чтения |
 | `reports` | `report_job`, `report_artifact` |
-| `audit` | `audit_event` in append-only, restricted storage |
-| `privacy` | identifier vault or token map when approved; never exposed to ordinary analytics |
+| `audit` | `audit_event` только для добавления, ограниченное хранилище |
+| `privacy` | хранилище идентификаторов или карта токенов при утверждении; никогда не сталкивался с обычной аналитикой |
+Важные индексы включают уникальный идентификатор источника, идентификатор события, ключ идемпотентности, статус и доступность исходящих сообщений, регион и состояние обращения, действующие окна каталога, геометрию PostGIS, векторный HNSW после эталонного индекса и полнотекстовые индексы GIN.
 
-Important indexes include unique source identity, event identity, idempotency key, outbox status and availability, appeal region and state, effective catalog windows, PostGIS geometry, vector HNSW after benchmark and full-text GIN indexes.
+## 7 Правила контракта
 
-## 7 Contract rules
+Реализуйте `contracts/openapi.yaml` в качестве базового алгоритма. Не изменяйте семантику запроса или ответа молча.
 
-Implement `contracts/openapi.yaml` as the baseline. Do not alter request or response semantics silently.
+- В версии API используется `/v1`; Дополнительные изменения остаются совместимыми, а критические изменения требуют новой основной версии.
+- Для всех операций создания требуется ключ идемпотентности или идентификатор исходного события.
+- Для каждой ошибки используется стабильный машинный код, безопасное для человека сообщение и идентификатор трассировки. Никогда не раскрывайте следы стека или секреты.
+- Используйте временные метки RFC 3339 с явным смещением в API и UTC внутри, сохраняя метаданные часового пояса источника.
+- Для изменения коллекций нумерация страниц должна быть ограничена и основана на курсоре.
+- Оптимистический параллелизм необходим для человеческих решений, назначений и смены статусов.
+- Каждая рекомендация включает `model_version`, `preprocess_version`, `taxonomy_version`, достоверность, состояние ООД и ссылки на доказательства.
+- Analytics принимает идентификаторы метрик из белого списка и типизированные фильтры. LLM может создавать объект с ограниченным намерением, который необходимо проверить перед выполнением.
 
-- API versioning uses `/v1`; additive changes remain compatible and breaking changes require a new major version.
-- All create operations require an idempotency key or source event identity.
-- Every error uses stable machine code, human-safe message and trace ID. Never expose stack traces or secrets.
-- Use RFC 3339 timestamps with explicit offset in APIs and UTC internally while preserving source timezone metadata.
-- Pagination must be bounded and cursor-based for changing collections.
-- Optimistic concurrency is required for human decisions, assignments and status transitions.
-- Every recommendation includes `model_version`, `preprocess_version`, `taxonomy_version`, confidence, OOD state and evidence references.
-- Analytics accepts allowlisted Metric IDs and typed filters. The LLM may produce a constrained intent object, which must be validated before execution.
+Доставка события осуществляется хотя бы один раз; бизнес-эффекты должны быть эффективными один раз. Потребители выполняют дедупликацию по идентификатору события или команды. Адаптер никогда не должен подтверждать успех до тех пор, пока исходная система не предоставит необходимое подтверждение.
 
-Event delivery is at least once; business effects must be effectively once. Consumers deduplicate by event or command ID. An adapter must never acknowledge success before its source system provides the required confirmation.
+## 8 конвейер данных
 
-## 8 Data pipeline
+### 8.1 Слои
 
-### 8.1 Layers
+1. `raw`: неизменяемая ссылка на файл или полезную нагрузку, байтовый хэш, исходная схема и метаданные получения.
+2. `private`: отдельные прямые идентификаторы, полный адрес, необработанный голос и утвержденные средства управления доступом.
+3. `silver`: канонические обращения и события жизненного цикла после проверки схемы; отклоненные строки отправляются в карантин.
+4. `gold`: утвержденные метрики, помеченные представления обучения, корпус поиска и снимки функций.
+5. `registry`: манифесты наборов данных, артефакты моделей, оценки и утверждения.
 
-1. `raw`: immutable file or payload reference, bytes hash, source schema and acquisition metadata.
-2. `private`: separated direct identifiers, full address, raw voice and approved access controls.
-3. `silver`: canonical appeals and lifecycle events after schema validation; rejected rows go to quarantine.
-4. `gold`: approved metrics, labelled training views, retrieval corpus and feature snapshots.
-5. `registry`: dataset manifests, model artifacts, evaluations and approvals.
+### 8.2 Поведение импорта
 
-### 8.2 Import behavior
+Каждый запуск импорта записывает источник, регион, идентификатор файла или потока, версию схемы, количество строк, количество принятых, количество помещенных в карантин, количество дубликатов, хэш, версию анализатора и ограничение.
 
-Every import run records source, region, file or stream identity, schema version, row count, accepted count, quarantined count, duplicate count, hash, parser version and cutoff.
+Ворота качества данных должны обнаруживать:
 
-Data-quality gates must detect:
+- дублирующиеся исходные идентификаторы с конфликтующими хэшами;
+- неизвестные или смещенные столбцы;
+- смешанный статус или семейства каналов;
+- невозможно упорядочить время и отсутствует часовой пояс;
+- неожиданный PII в журналах, экспорте или представлениях объектов;
+- устаревшие источники и отсутствующие регионы;
+- поля, которые появляются только после маршрутизации или выполнения.
 
-- duplicate source identities with conflicting hashes;
-- unknown or shifted columns;
-- mixed status or channel families;
-- impossible time ordering and missing timezone;
-- unexpected PII in logs, exports or feature views;
-- stale sources and absent regions;
-- fields that appear only after routing or execution.
+Карантин — это первоклассное состояние со ссылкой на исходную строку, кодом ошибки и результатом проверки. Никогда не отказывайтесь молча от искаженной записи.
 
-Quarantine is a first-class state with source row reference, error code and review outcome. Never discard a malformed record silently.
+### 8.3 Манифест обучения
 
-### 8.3 Training manifest
+Каждый тренировочный забег должен обязательно включать:
 
-Every training run must bind:
+- версии источника и набора данных;
+- точная обрезка;
+- список разрешенных функций;
+- политика маркировки;
+- аудит исключений и утечек;
+- политика разделения и случайное начальное число;
+- предварительная обработка хешей;
+- юридическая ссылка или ссылка на одобрение;
+- фиксация кода и хэш блокировки зависимостей.
 
-- source and dataset versions;
-- exact cutoff;
-- feature allowlist;
-- label policy;
-- exclusions and leakage audit;
-- split policy and random seed;
-- preprocessing hashes;
-- legal or approval reference;
-- code commit and dependency lock hash.
+Храните все снимки одного и того же исходного обращения, повторяющейся группы и кластера инцидентов в одном разделении. Отдавайте предпочтение временным окнам тестирования и добавляйте оценку с исключением одной области. Не позволяйте объему Павлодара доминировать над сообщаемым результатом; публиковать макросы и фрагменты по регионам.
 
-Keep all snapshots of the same source appeal, duplicate group and incident cluster in one split. Prefer time-based test windows and add leave-one-region-out evaluation. Do not let Pavlodar's volume dominate the reported result; publish macro and per-region slices.
+## 9 ML подача и оценка
 
-## 9 ML serving and evaluation
+### 9.1 GPU размещение
 
-### 9.1 GPU placement
+- GPU 0: маршрутизация XLM-R, эмбеддинг BGE-M3 и переранжирование BGE с ограниченной пакетной обработкой.
+- GPU 1: Qwen3 8B и Whisper по требованию, тренировка претендентов вне пиковой нагрузки, режим горячего резервирования, когда это практически возможно.
+- CPU: API, правила, разрешение адресов, отчеты, прогноз, лексический поиск и резервная маршрутизация ONNX.
 
-- GPU 0: XLM-R routing, BGE-M3 embeddings and BGE reranker with bounded batching.
-- GPU 1: Qwen3 8B and Whisper on demand, challenger training outside peak, hot-spare behavior when practical.
-- CPU: API, rules, address resolution, reports, forecast, lexical retrieval and ONNX routing fallback.
+### 9.2 Обслуживание ответа
 
-### 9.2 Serving response
+Каждый вывод возвращает отслеживаемый конверт, содержащий задачу, псевдоним модели, версию неизменяемого артефакта, версию входного контракта, версию предварительной обработки, выходные данные, оценку или калиброванную достоверность, состояние OOD, задержку и идентификатор трассировки. Не возвращайте необработанные внутренние данные модели в пользовательский интерфейс оператора.
 
-Every inference returns a traceable envelope containing task, model alias, immutable artifact version, input contract version, preprocessing version, output, score or calibrated confidence, OOD state, latency and trace ID. Do not return raw model internals to the operator UI.
+### 9.3 Ворота продвижения
 
-### 9.3 Promotion gates
+Кандидат может стать чемпионом только после:
 
-The candidate may become champion only after:
+1. Воспроизводимое обучение на основе неизменяемого манифеста.
+2. Утечка и раздельный аудит.
+3. Сравнение с простым утвержденным базовым уровнем.
+4. Оценка по языку, региону, теме, каналу, длине, редкому классу и классу безопасности.
+5. Калибровка на наборе, отдельном от окончательного испытательного набора.
+6. Карточка модели, проверка лицензии и утверждение безопасности.
+7. Теневая оценка, за которой следует ограниченная канарейка.
+8. Протестированный псевдоним отката.
 
-1. Reproducible training from an immutable manifest.
-2. Leakage and split audit.
-3. Comparison with a simple approved baseline.
-4. Evaluation by language, region, topic, channel, length, rare class and safety class.
-5. Calibration on a set separate from the final test set.
-6. Model card, license review and security approval.
-7. Shadow evaluation followed by limited canary.
-8. A tested rollback alias.
+Предложенные пилотные шлюзы остаются предварительными до тех пор, пока владелец процесса их не одобрит: маршрутизация должна существенно превосходить линейный базовый уровень, критический отзыв не должен регрессировать, предложения дублирования должны иметь приоритет высокой точности, извлечение должно сообщать об отзыве на уровне 10 и задержке, а генерация должна выдавать нулевые неподтвержденные фактические утверждения в наборе релизов.
 
-Proposed pilot gates remain provisional until the process owner approves them: routing should materially beat the linear baseline, critical recall should not regress, duplicate suggestions should prioritize high precision, retrieval should report Recall at 10 and latency, and generation should produce zero unsupported factual claims on the release set.
+## 10 Требования к интерфейсу
 
-## 10 Frontend requirements
+### 10.1 Рабочее место оператора
 
-### 10.1 Operator workspace
+На основном экране должно отображаться:
 
-The primary screen must show:
+- идентичность обращения, источник, регион, канал и явное качество времени;
+- текст обращения гражданина или стенограмма только для авторизованных ролей;
+- обязательные недостающие поля и одно целевое уточнение за раз;
+- три лучших кандидата на темы и услуги с краткими доказательствами;
+- ООД или состояние с низкой степенью достоверности и доступ к каталогу вручную;
+- похожие решенные обращения и почему каждая из них актуальна;
+- дублировать кандидатов с указанием текста, расстояния, времени и служебных доказательств;
+- подтвердить и исправить действия с обязательным указанием причины исправления;
+- состояние синхронизации назначения и видимость повторных попыток;
+- временная шкала только для добавления.
 
-- appeal identity, source, region, channel and explicit time quality;
-- citizen text or transcript only for authorized roles;
-- required missing fields and one targeted clarification at a time;
-- top-three topic and service candidates with concise evidence;
-- OOD or low-confidence state and manual catalog access;
-- similar resolved appeals and why each is relevant;
-- duplicate candidates with text, distance, time and service evidence;
-- confirm and correct actions with mandatory reason for correction;
-- assignment synchronization state and retry visibility;
-- append-only timeline.
+Обязательные состояния включают загрузку, отсутствие рекомендаций, низкий уровень достоверности, ML недоступен, устаревший каталог, ожидание внешней синхронизации, частичный сбой вложения, запрещенную область и восстановленный сеанс. Завершение с клавиатуры и локализация KZ/RU — P0.
 
-Required states include loading, no recommendation, low confidence, ML unavailable, stale catalog, external sync pending, partial attachment failure, forbidden region and recovered session. Keyboard-first completion and KZ/RU localization are P0.
+### 10.2 Ситуационный центр
 
-### 10.2 Situation center
+Покажите охват и свежесть раньше, чем оперативные цифры. Отсутствующие регионы отсутствуют, а не ноль. Каждая карточка включает идентификатор метрики, ограничение и доступ к определениям. Оповещения требуют подтверждения, решения и доказательств. Прогнозы показывают базовый уровень, кандидат, диапазон неопределенности и версию.
 
-Show coverage and freshness before operational numbers. Missing regions are missing, never zero. Every card includes Metric ID, cutoff and definitions access. Alerts require acknowledgement, disposition and evidence. Forecasts show baseline, candidate, uncertainty range and version.
+### 10.3 Администрация
 
-### 10.3 Administration
+Обеспечьте версионную таксономию и сопоставления, состояние источника, проверку карантина, область действия роли и региона, представление реестра модели, рабочий процесс продвижения, флаги функций и поиск аудита. Изменения производственной конфигурации требуют наличия исполнителя, рецензента, эффективного времени и цели отката.
 
-Provide versioned taxonomy and mappings, source health, quarantine review, role and region scope, model registry view, promotion workflow, feature flags and audit search. Production configuration changes require actor, reviewer, effective time and rollback target.
+## 11 Безопасность и конфиденциальность
 
-## 11 Security and privacy
+- Запретить по умолчанию. RBAC определяет действие, а ABAC ограничивает регион, организацию, услугу, цель и класс данных.
+- Проверьте эмитента OIDC, аудиторию, срок действия, роли и претензии региона. Используйте mTLS или утвержденный шлюз для межсистемного трафика.
+- Шифровать базу данных, хранилище объектов и резервные копии в состоянии покоя; использовать TLS при транзите.
+- Храните секреты в утвержденном секретном хранилище, вне источника, изображений и журналов.
+- Регистрируйте идентификатор токена субъекта, цель, идентификатор корреляции и измененные поля для конфиденциальных действий без регистрации конфиденциальных значений.
+- Считайте текст обращения ненадежными данными. Он не может вызывать инструменты, изменять политику, отображать подсказки, получать доступ к SQL или выбирать область авторизации.
+- Создаваемый контент использует утвержденные доказательства и шаблоны. Оператор отправляет.
+- Экспорт обеспечивает соблюдение роли, региона, ограничения строк, маскировки, цели, метаданных водяных знаков и аудита.
+- Выполните SBOM, сканирование зависимостей, секретное сканирование и сканирование контейнера в CI.
+- Хранение и удаление настраиваются по классу данных. Не придумывайте обязательные периоды до юридического одобрения.
 
-- Deny by default. RBAC defines action and ABAC restricts region, organization, service, purpose and data class.
-- Validate OIDC issuer, audience, expiry, roles and region claims. Use mTLS or the approved gateway for system-to-system traffic.
-- Encrypt database, object storage and backups at rest; use TLS in transit.
-- Keep secrets in an approved secret store and out of source, images and logs.
-- Log actor token identity, purpose, correlation ID and changed fields for sensitive actions without logging sensitive values.
-- Treat appeal text as untrusted data. It cannot call tools, modify policy, reveal prompts, access SQL or choose authorization scope.
-- Generated content uses approved evidence and templates. The operator sends it.
-- Exports enforce role, region, row limit, masking, purpose, watermark metadata and audit.
-- Produce an SBOM, dependency scan, secret scan and container scan in CI.
-- Retention and deletion are configurable by data class. Do not invent binding periods before legal approval.
+## 12 Надежность и наблюдаемость
 
-## 12 Reliability and observability
+### 12.1 Поведение при отказе
 
-### 12.1 Failure behavior
+| Неудача | Поведение системы |
+| Отказ | Поведение системы |
+| Один GPU не работает | Сохраняйте ядро; используйте оставшуюся маршрутизацию GPU или CPU; сначала отключите черновики |
+| Один GPU не работает | Сохраняйте ядро; используйте оставшуюся маршрутизацию GPU или CPU; сначала отключи черновики |
+| Все ML терпят неудачу | Сохраняйте прием, ручную маршрутизацию, статус, аудит и существующую аналитику; вывод, подходящий для очереди |
+| Региональная система терпит неудачу | Принять местное решение; показать ожидающую синхронизацию; повторите попытку и согласуйте |
+| Сбой в хранилище объектов | Сохраняйте метаданные и состояние ожидающего вложения только в том случае, если это разрешено политикой. |
+| Прибывает неизвестная схема | Карантин и тревога; сохранить необработанную ссылку |
+| Плохой релиз модели | Сменить псевдоним чемпиона на утвержденную предыдущую версию |
+| Плохая SLA политика | Остановить новую версию политики и восстановить предыдущее эффективное сопоставление |
+### 12.2 Телеметрия
 
-| Failure | System behavior |
-| --- | --- |
-| One GPU fails | Keep core; use remaining GPU or CPU routing; disable drafts first |
-| All ML fails | Keep intake, manual routing, status, audit and existing analytics; queue eligible inference |
-| Regional system fails | Commit local decision; show sync pending; retry and reconcile |
-| Object storage fails | Store metadata and pending attachment state only when policy permits |
-| Unknown schema arrives | Quarantine and alert; preserve raw reference |
-| Bad model release | Switch champion alias to approved prior version |
-| Bad SLA policy | Stop new policy version and restore prior effective mapping |
+Записывайте стабильные показатели скорости и задержки API, насыщенности базы данных, задержки исходящих сообщений, повторных попыток адаптера, недоставленных писем, задержки и ошибок вывода, доверительного покрытия, OOD, актуальности источника, сбоев схемы и частоты исправлений оператора. Не используйте необработанный текст или неограниченные идентификаторы в качестве меток показателей.
 
-### 12.2 Telemetry
+Каждый запрос передает идентификатор корреляции по ядру, рабочему процессу, адаптеру и выводу. Журналы должны быть структурированы и отредактированы. Трассировки должны выполнять безопасную выборку и по умолчанию никогда не включать тела запросов.
 
-Record stable metrics for API rate and latency, database saturation, outbox lag, adapter retries, dead letters, inference latency and error, confidence coverage, OOD, source freshness, schema failures and operator correction rate. Do not use raw text or unbounded IDs as metric labels.
+## 13 этапов реализации
 
-Every request propagates a correlation ID across core, worker, adapter and inference. Logs must be structured and redacted. Traces must sample safely and never include request bodies by default.
+### Фонд репозитория M0
 
-## 13 Implementation milestones
+Доставьте дерево репозитория, блокировки зависимостей, корневые команды, службы Compose, проверки работоспособности, CI, модель конфигурации и граничные тесты архитектуры. Локальная система должна начинаться с синтетических устройств и без внешних учетных данных.
 
-### M0 Repository foundation
+### Контракты M1 и база данных
 
-Deliver the repository tree, dependency locks, root commands, Compose services, health checks, CI, configuration model and architecture boundary tests. The local system should start with synthetic fixtures and no external credentials.
+Подключите OpenAPI и проверку схемы JSON, создайте схемы модулей и первоначальные миграции, реализуйте необработанные ссылки, реестр источников, запуски импорта, канонизацию, карантин, обработку качества времени и исправления исходных данных. Создайте воспроизводимый отчет DQ.
 
-### M1 Contracts and data foundation
+### M2 Ручной критический путь
 
-Wire OpenAPI and JSON Schema validation, create module schemas and initial migrations, implement raw references, source registry, import runs, canonicalization, quarantine, time-quality handling and source fixtures. Generate a reproducible DQ report.
+Внедрите создание обращений, идемпотентность, карточку оператора, каталог с версиями, ручное решение, жизненный цикл только для добавления, аудит и исходящие транзакционные сообщения. Добавьте первый полноценный браузер E2E с отключенным ML.
 
-### M2 Manual critical path
+### M3 Помощь в маршрутизации
 
-Implement appeal creation, idempotency, operator card, versioned catalog, manual decision, append-only lifecycle, audit and transactional outbox. Add the first complete browser E2E with ML disabled.
+Реализуйте контракт вывода, линейный базовый алгоритм, манифест набора данных, сбор обратной связи и макет модели. Выполняйте дообучение XLM-R только при наличии утвержденного необработанного текста и меток. Добавьте калибровку уверенности и поведение OOD, прежде чем предлагать действенные рекомендации.
 
-### M3 Routing assistance
+### M4 Поиск и дублирование предложений
 
-Implement the inference contract, linear baseline, dataset manifest, feedback capture and mock model. Fine-tune XLM-R only when approved raw text and labels exist. Add confidence calibration and OOD behavior before exposing actionable recommendations.
+Реализуйте PostgreSQL FTS, pgvector хранилище, эмбеддинги BGE-M3, гибридное слияние рангов и дополнительное переранжирование. Создайте рабочий процесс с оцененным набором. Добавляйте повторяющиеся предложения и подтверждайте или отклоняйте их вручную, сохраняя при этом идентичность обращения.
 
-### M4 Retrieval and duplicate suggestions
+### Инциденты M5 и первый адаптер
 
-Implement PostgreSQL FTS, pgvector storage, BGE-M3 embeddings, hybrid rank fusion and optional reranking. Create a judged set workflow. Add duplicate proposals and human confirm or reject while preserving appeal identity.
+Внедрите членство в инцидентах, отображение статуса источника, адаптер SDK, адаптер воспроизведения, повторные попытки, недоставленные сообщения и сверку. Заменять или дополнять реплей первым реальным адаптером только после подтверждения исходного контракта.
 
-### M5 Incidents and first adapter
+### М6 Ситуационный центр и отчеты
 
-Implement incident membership, source status mapping, adapter SDK, replay adapter, retries, dead-letter and reconciliation. Replace or supplement replay with the first real adapter only after the source contract is confirmed.
+Внедряйте каталог метрик, читайте модели, охват, актуальность, тенденции, SLA, оповещения, базовый прогноз, управляемое намерение NL и последовательный экспорт PDF или электронных таблиц. Никаких произвольных SQL.
 
-### M6 Situation center and reports
+### M7 Упрочнение разделителя
 
-Implement metric catalog, read models, coverage, freshness, trends, SLA, alerts, forecast baseline, governed NL intent and consistent PDF or spreadsheet exports. No arbitrary SQL.
+Полная интеграция удостоверений, тесты авторизации, нагрузочные тесты, тесты устойчивости, резервное копирование и восстановление, откат модели, информационные панели, модули Runbook, специальные возможности и автономная демонстрация. Заморозьте контракты, псевдонимы моделей и демонстрационные данные перед генеральной репетицией.
 
-### M7 Release hardening
+## 14 Границы параллельной работы
 
-Complete identity integration, authorization tests, load tests, resilience tests, backup and restore, model rollback, dashboards, runbooks, accessibility and offline demo. Freeze contracts, model aliases and demo data before the final rehearsal.
+Распараллеливайте только по границам, которые минимизируют конфликтующие записи:
 
-## 14 Parallel work boundaries
+- Поток А: контракты, база данных и основные модули.
+- Поток B: прием данных, наборы данных DQ и ML.
+- Поток C: выводы и оценка.
+- Поток D: пользовательский интерфейс оператора и ситуации.
+- Поток E: адаптер SDK и интеграция повторов.
+- Поток F: инфраструктура, CI, тесты на наблюдаемость и безопасность.
 
-Parallelize only along boundaries that minimize conflicting writes:
+Корневой агент владеет общими контрактами, порядком интеграции и окончательной проверкой. Ни одна подзадача не может изменять OpenAPI, каноническую схему или общую миграцию без координации с корневым планом.
 
-- Stream A: contracts, database and core modules.
-- Stream B: data ingestion, DQ and ML datasets.
-- Stream C: inference and evaluation.
-- Stream D: operator and situation UI.
-- Stream E: adapter SDK and replay integration.
-- Stream F: infrastructure, CI, observability and security tests.
+## 15 Условия остановки агента
 
-The root agent owns shared contracts, integration order and final verification. No subtask may change OpenAPI, canonical schema or shared migrations without coordinating with the root plan.
+Продолжайте автономно выполнять рутинную обратимую реализацию. Остановитесь и спросите о решении только тогда, когда:
 
-## 15 Agent stop conditions
+- запрошенное поведение требует реального PII или учетных данных, которые недоступны;
+- два авторитетных контракта конфликтуют в общедоступном или хранимом поле;
+- требуется деструктивная миграция или необратимая внешняя запись;
+- должна быть выбрана первая реальная региональная система;
+- Должна быть установлена юридическая политика, политика хранения, SLA или политика автоматического принятия решений;
+- существующее изменение пользователя не может быть безопасно сохранено.
 
-Continue autonomously for routine, reversible implementation. Stop and ask for a decision only when:
+Прежде чем спрашивать, завершите всю незатронутую работу и представьте точные варианты, влияние и рекомендуемый безопасный выбор.
 
-- the requested behavior requires real PII or credentials that are not available;
-- two authoritative contracts conflict on a public or stored field;
-- a destructive migration or irreversible external write is required;
-- the first real regional system must be selected;
-- legal, retention, SLA or automatic-decision policy must be set;
-- an existing user change cannot be preserved safely.
+## 16 Ожидается передача от Кодекса после каждого этапа
 
-Before asking, complete all unaffected work and present the exact options, impact and recommended safe choice.
+Последнее сообщение и `IMPLEMENTATION_STATUS.md` должны содержать:
 
-## 16 Handoff expected from Codex after every milestone
+- достигнутый результат;
+- файлы и контракты изменены;
+- добавлены миграции;
+- команды выполняются и прошли ли они;
+- данные испытаний и контрольных показателей;
+- остальные внешние блокировщики;
+- отработанные резервные меры безопасности;
+- следующая веха и первая выполняемая задача.
 
-The final message and `IMPLEMENTATION_STATUS.md` must state:
-
-- outcome delivered;
-- files and contracts changed;
-- migrations added;
-- commands run and whether they passed;
-- test and benchmark evidence;
-- remaining external blockers;
-- safety fallbacks that were exercised;
-- next milestone and its first executable task.
-
-Do not declare the platform complete while raw text, thirteen regions, the first real API, target identity or production approvals remain unresolved. Declare exactly which pilot capabilities are implemented and verified.
-
+Не объявляйте платформу завершенной, пока необработанный текст, тринадцать регионов, первый настоящий API, целевая идентичность или разрешения на производство остаются неразрешенными. Укажите, какие именно пилотные возможности реализованы и проверены.

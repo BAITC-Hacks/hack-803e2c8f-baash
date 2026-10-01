@@ -1,19 +1,14 @@
-# Call recording and transcription gate
+[Русский](CALL_RECORDING_GATE.md) · [English](CALL_RECORDING_GATE.en.md) · [Қазақша](CALL_RECORDING_GATE.kk.md)
 
-Audio intake, Asterisk ARI event handling, recording, transcription and retention are disabled in
-the pilot until B02, B08 and B10 are resolved. Enabling any part of this path requires all of the
-following evidence:
+# Требования к записи и транскрипции звонков
 
-1. written legal basis, caller notice/consent rules, retention period and deletion owner;
-2. approved Asterisk/ARI endpoint, authentication, network scope and authoritative call identifier;
-3. an object-storage class with encryption, region, access logging and deletion enforcement;
-4. a PII-safe event contract containing immutable audio-object references, never audio or transcript
-   text in logs, metrics or traces;
-5. asynchronous transcription with explicit language/model versions, failure state and manual intake
-   fallback; and
-6. access, deletion, outage, replay and restore tests signed by the security and legal owners.
+Приём аудио, обработка событий Asterisk ARI, запись, транскрипция и хранение отключены в пилоте до решения B02, B08 и B10. Для включения любой части этого пути необходимы все следующие доказательства:
 
-The future adapter must remain a separate process behind the canonical intake contract. A call keeps
-its source identifier and provenance; transcription is an immutable derived artifact and never
-silently replaces the source recording. Loss of Asterisk, object storage, GPUs or transcription must
-not block web/manual appeal registration.
+1. письменное правовое основание, правила уведомления/согласия звонящего, срок хранения и ответственный за удаление;
+2. утверждённые Asterisk/ARI endpoint, аутентификация, сетевой контур и официальный идентификатор звонка;
+3. класс объектного хранилища с шифрованием, регионом, журналом доступа и принудительным удалением;
+4. безопасный для PII контракт событий только с неизменяемыми ссылками на аудиообъекты: аудио и текст транскрипции никогда не попадают в логи, метрики или трассы;
+5. асинхронная транскрипция с явными версиями языка/модели, состоянием ошибки и резервным ручным приёмом; и
+6. тесты доступа, удаления, отказа, воспроизведения и восстановления, подписанные ответственными за безопасность и правовые вопросы.
+
+Будущий адаптер должен оставаться отдельным процессом за каноническим контрактом приёма. Звонок сохраняет исходный идентификатор и происхождение данных; транскрипция — неизменяемый производный артефакт, который никогда не подменяет исходную запись молча. Отказ Asterisk, объектного хранилища, GPU или транскрипции не должен блокировать регистрацию обращений через веб или вручную.

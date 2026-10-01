@@ -1,40 +1,43 @@
-# Pulse 109 Implementation Status
+[Русский](IMPLEMENTATION_STATUS_TEMPLATE.md) · [English](IMPLEMENTATION_STATUS_TEMPLATE.en.md) · [Қазақша](IMPLEMENTATION_STATUS_TEMPLATE.kk.md)
 
-## Current milestone
+> Исторический документ. Не является источником текущего состояния проекта.
 
-- Milestone:
-- Objective:
-- Status: not started | in progress | blocked | complete
-- Commit or working tree state:
+# Pulse 109 Статус реализации
 
-## Delivered behavior
+## Текущая веха
+
+- Этап:
+- Цель:
+- Статус: не запущен | в процессе | заблокирован | полный
+- Состояние фиксации или рабочего дерева:
+
+## Доставленное поведение
 
 -
 
-## Contracts and migrations changed
+## Контракты и миграции изменены
 
 -
 
-## Verification
+## Проверка
 
-| Command | Result | Evidence or note |
-| --- | --- | --- |
+| Команда | Результат | Доказательства или примечание |
+| Команда | Результат | Доказательства или примечание |
 | `make lint` | | |
-| `make typecheck` | | |
-| `make test` | | |
-| `make contract-test` | | |
-| `make e2e` | | |
-| `make build` | | |
-
-## Known limitations and external blockers
-
--
-
-## Decisions recorded
+| `make lint` |  |  |
+| `make typecheck` |  |  |
+| `make test` |  |  |
+| `make contract-test` |  |  |
+| `make e2e` |  |  |
+| `make build` |  |  |
+## Известные ограничения и внешние блокировщики
 
 -
 
-## Next executable task
+## Решения записаны
 
 -
 
+## Следующая выполняемая задача
+
+-

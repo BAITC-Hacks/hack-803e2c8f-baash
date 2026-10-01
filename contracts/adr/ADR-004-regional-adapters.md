@@ -1,25 +1,26 @@
-# ADR 004 Regional Adapter Boundary
+[Русский](ADR-004-regional-adapters.md) · [English](ADR-004-regional-adapters.en.md) · [Қазақша](ADR-004-regional-adapters.kk.md)
 
-Status: accepted
+# ADR 004 Граница регионального адаптера
 
-## Decision
+Статус: принято
 
-All regional information systems exchange data through the Pulse 109 canonical contract. Each adapter maps source identifiers, statuses, service catalogs, attachments and errors. Adapters may use REST, SOAP, events, SFTP or controlled polling, but expose the same internal operations.
+## Решение
 
-## Required adapter operations
+Все региональные информационные системы обмениваются данными через канонический контракт Pulse 109. Каждый адаптер сопоставляет исходные идентификаторы, статусы, каталоги служб, вложения и ошибки. Адаптеры могут использовать REST, SOAP, события, SFTP или управляемый опрос, но предоставляют одинаковые внутренние операции.
 
-- Create or import an appeal.
-- Fetch and push lifecycle status events.
-- Fetch the effective service catalog and required fields.
-- Send an assignment or reassignment.
-- Attach or reference evidence.
-- Report health, lag and last successful checkpoint.
+## Обязательные операции адаптера
 
-## Reliability rules
+- Создать или импортировать обращение.
+- Получать и отправлять события статуса жизненного цикла.
+- Получать действующий каталог служб и обязательные поля.
+- Отправлять назначение или переназначение.
+- Прикреплять доказательства или ссылаться на них.
+- Сообщать состояние, задержку и последнюю успешную контрольную точку.
 
-- Every write carries an idempotency key and source event ID.
-- The core records state and outbox entry in one transaction.
-- Retries use exponential backoff with jitter and a bounded attempt policy.
-- Permanent failures enter a visible dead-letter workflow; they are never silently dropped.
-- Source codes are preserved alongside canonical values for audit and reprocessing.
+## Правила надёжности
 
+- Каждая запись содержит ключ идемпотентности и ID исходного события.
+- Ядро фиксирует состояние и запись outbox в одной транзакции.
+- Повторные попытки используют экспоненциальную задержку со случайным разбросом и ограниченное число попыток.
+- Постоянные ошибки попадают в видимый процесс dead-letter; их нельзя незаметно отбрасывать.
+- Исходные коды сохраняются рядом с каноническими значениями для аудита и повторной обработки.

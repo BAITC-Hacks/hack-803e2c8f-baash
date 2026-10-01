@@ -1,11 +1,12 @@
-# Regional CSV ingest adapter
+[Русский](README.md) · [English](README.en.md) · [Қазақша](README.kk.md)
 
-Maps the seven provided regional exports onto
-`contracts/canonical_request.schema.json` v1.0.0.
+# Адаптер загрузки региональных CSV
 
-Standard library only. No pandas, no added dependency in `pyproject.toml`.
+Сопоставляет семь предоставленных региональных выгрузок с `contracts/canonical_request.schema.json` v1.0.0.
 
-## Run
+Только стандартная библиотека: без pandas и новых зависимостей в `pyproject.toml`.
+
+## Запуск
 
 ```bash
 python adapters/regional_csv/src/pulse109_regional_csv/ingest.py \
@@ -13,23 +14,18 @@ python adapters/regional_csv/src/pulse109_regional_csv/ingest.py \
   --out build/ingest
 ```
 
-The historical 2026-09-13 pass took about 24 seconds on its recorded environment
-for 1 036 858 rows. This is not a current throughput guarantee. Its outputs:
+Исторический прогон 2026-09-13 занял около 24 секунд в зафиксированном окружении для 1 036 858 строк. Это не гарантия текущей производительности. Результаты:
 
-| Output                   | Versioned | Note                                                            |
-| ------------------------ | --------- | --------------------------------------------------------------- |
-| `canonical.jsonl`        | no        | 990 000 records, about 1.7 GB, regenerate on demand             |
-| `retrieval_corpus.jsonl` | yes       | historical 14 397-document artifact; prose now withheld (D-036) |
-| `quarantine.jsonl`       | yes       | 32 historical quarantined rows; source values now withheld      |
-| `dq_report.json`         | yes       | aggregate counters only, no row content, no PII                 |
+| Результат | В Git | Примечание |
+| --- | --- | --- |
+| `canonical.jsonl` | нет | 990 000 записей, около 1.7 GB, создаётся по запросу |
+| `retrieval_corpus.jsonl` | да | исторический артефакт из 14 397 документов; текст теперь скрыт (D-036) |
+| `quarantine.jsonl` | да | 32 исторические карантинные строки; исходные значения теперь скрыты |
+| `dq_report.json` | да | только агрегированные счётчики, без содержания строк и PII |
 
-The corpus and quarantine files retained in Git are withheld placeholders;
-aggregate historical DQ counters remain inspectable. D-036 supersedes D-019
-for source prose and privacy. The raw source and canonical stream belong in
-approved access-controlled storage. A clone cannot reproduce historical
-training from the withheld corpus.
+Файлы корпуса и карантина в Git — заглушки скрытых данных; исторические агрегаты DQ доступны для проверки. D-036 заменяет D-019 в вопросах исходного текста и приватности. Исходные данные и канонический поток должны храниться в утверждённом хранилище с контролем доступа. Clone не позволяет воспроизвести историческое обучение на скрытом корпусе.
 
-## Observed result
+## Наблюдавшийся результат
 
 ```
 input 1 036 858  ->  canonical 990 000
@@ -37,53 +33,40 @@ input 1 036 858  ->  canonical 990 000
   Akmola column-shift rows quarantined          32
 ```
 
-The current accepted total is 990 000. The earlier reconciliation total
-990 032 included the 32 rows later quarantined; the blocker document now uses
-the accepted total and preserves this distinction.
+Принятый итог — 990 000. Прежний итог сверки 990 032 включал 32 строки, позже отправленные в карантин; документ блокеров использует принятый итог и сохраняет это различие.
 
-## Source families
+## Семейства источников
 
-| Region     | Family       | Rows in | Identifier           | Free text |
-| ---------- | ------------ | ------- | -------------------- | --------- |
-| Pavlodar   | appeals      | 666 634 | `id`                 | none      |
-| Karaganda  | karaganda    | 143 954 | absent, synthesized  | none      |
-| Turkestan  | incidents    | 98 876  | `incidentid`         | none      |
-| VKO        | applications | 83 385  | `application_number` | `com_exp` |
-| Kostanay   | incidents    | 20 591  | `incidentid`         | `result`  |
-| Almaty obl | applications | 19 912  | `application_number` | `com_exp` |
-| Akmola     | akmola       | 3 506   | `request_number`     | none      |
+| Регион | Семейство | Входных строк | Идентификатор | Свободный текст |
+| --- | --- | --- | --- | --- |
+| Павлодар | appeals | 666 634 | `id` | нет |
+| Караганда | karaganda | 143 954 | отсутствует, синтезирован | нет |
+| Туркестан | incidents | 98 876 | `incidentid` | нет |
+| ВКО | applications | 83 385 | `application_number` | `com_exp` |
+| Костанай | incidents | 20 591 | `incidentid` | `result` |
+| Алматинская обл. | applications | 19 912 | `application_number` | `com_exp` |
+| Акмола | akmola | 3 506 | `request_number` | нет |
 
-Karaganda carries no request identifier at all. Every Karaganda record receives
-a synthetic id derived from the row content and is flagged
-`SYNTHETIC_SOURCE_ID`. Deduplication and joins inside that region are not
-possible until the source supplies a key.
+Караганда совсем не содержит идентификатора обращения. Каждой записи присваивается синтетический ID из содержимого строки с флагом `SYNTHETIC_SOURCE_ID`. Дедупликация и соединения внутри региона невозможны до предоставления ключа источником.
 
-## Encoded decisions
+## Зафиксированные решения
 
-See `docs/DECISION_LOG.md` entries D-013 through D-018. In short:
+См. D-013–D-018 в `docs/DECISION_LOG.md`. Кратко:
 
-- Karaganda dates parse as M/D/Y. 87 709 rows prove the American order.
-- Turkestan collapses by `incidentid` to the latest `updateddate`.
-- Pavlodar parts concatenate. They share zero identifiers.
-- Akmola column-shift rows are quarantined, never repaired by heuristic.
-- `location.normalization_status` is `missing` for nearly every record.
-  Coordinates exist in 23 of 20 591 Kostanay rows and 264 of 98 876 Turkestan rows.
+- Даты Караганды читаются как M/D/Y; 87 709 строк подтверждают американский порядок.
+- Туркестан сворачивается по `incidentid` до последнего `updateddate`.
+- Части Павлодара объединяются; общих идентификаторов нет.
+- Строки Акмолы со сдвигом колонок отправляются в карантин, без эвристического исправления.
+- `location.normalization_status` почти везде `missing`. Координаты есть в 23 из 20 591 строк Костаная и 264 из 98 876 строк Туркестана.
 
-## What the data does not contain
+## Чего нет в данных
 
-No citizen text in any of the eight files. The only free text is written by the
-executor after closure. Pure Kazakh is absent: 96.9 percent of records are
-Russian, 3.0 percent mixed, 0.1 percent unknown, and zero are `kk`.
+Ни один из восьми файлов не содержит текста гражданина. Единственный свободный текст записан исполнителем после закрытия. Чистый казахский отсутствует: 96.9% записей русские, 3.0% смешанные, 0.1% неизвестные, ни одной `kk`.
 
-This is the evidence behind the request to the data owner for raw appeal text
-and a frozen Kazakh test set.
+Это основание запроса владельцу данных на исходные тексты обращений и закреплённый казахский тестовый набор.
 
-## PII handling
+## Обработка PII
 
-Redaction runs before anything is written, not after. The pass over the real
-exports flagged 10 IIN and 93 phone numbers inside executor free text, plus
-22 347 street values and 6 499 name values in VKO columns.
+Редактирование выполняется до записи, не после. Прогон реальных экспортов обнаружил 10 ИИН и 93 телефона в тексте исполнителя, а также 22 347 значений улиц и 6 499 имён в колонках ВКО.
 
-Direct identifiers never reach the canonical record. Addresses become opaque
-tokens salted from `PULSE109_TOKEN_SALT`, which must come from the secret store
-in any environment other than local development.
+Прямые идентификаторы не доходят до канонической записи. Адреса превращаются в непрозрачные токены с солью `PULSE109_TOKEN_SALT`; вне локальной разработки она должна поступать из хранилища секретов.

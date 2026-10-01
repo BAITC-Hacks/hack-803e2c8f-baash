@@ -1,17 +1,19 @@
-# Model governance / Управление моделями
+[Русский](MODEL_GOVERNANCE.md) · [English](MODEL_GOVERNANCE.en.md) · [Қазақша](MODEL_GOVERNANCE.kk.md)
 
-PulseDM and every named external/local candidate begin at **NOT_VALIDATED**. Passing a synthetic evaluator proves the contract and metric code run, not that predictions are useful. A real approved holdout yields **EVALUATION_ONLY** evidence until independent review and signed release decisions occur.
+# Управление моделями
 
-| Gate | Required record | Authority |
+PulseDM и каждый указанный внешний/локальный кандидат начинают с **NOT_VALIDATED**. Синтетический оценщик подтверждает исполнимость контракта и метрик, не полезность предсказаний. Реальный утверждённый holdout даёт **EVALUATION_ONLY** до независимой проверки и подписанных решений о выпуске.
+
+| Этап | Обязательная запись | Кто уполномочен |
 | --- | --- | --- |
-| Data | Lawful basis, retention, redaction review, snapshot hash, gold-label policy, time/group split | Data steward and privacy approval |
-| Model | Pinned artifact/dependency hash, model card, prompt/question and taxonomy versions, training/calibration lineage | ML reviewer |
-| Evaluation | KK/RU/mixed and regional counts, error analysis, calibration/OOD, risk-coverage, latency, comparison to rules/linear baseline | Independent technical review |
-| Operational trial | Shadow/advisory-only monitoring, operator correction and failure analysis, rollback/fallback drill | Product and operations owners |
-| Activation | Approved signed regional configuration, human-governed Decision Gateway, explicit rollout/rollback plan | Authorized regional governance |
+| Данные | Правовое основание, хранение, проверка обезличивания, хеш снимка, политика эталонных меток, временное/групповое разделение | Владелец данных и согласование приватности |
+| Модель | Закреплённый хеш артефакта/зависимостей, паспорт, версии prompt/вопросов и таксономии, происхождение обучения/калибровки | ML reviewer |
+| Оценка | Числа KK/RU/mixed и регионов, разбор ошибок, калибровка/OOD, risk-coverage, задержка, сравнение с правилами/линейным baseline | Независимая техническая проверка |
+| Рабочее испытание | Только shadow/рекомендательный мониторинг, исправления оператора и разбор отказов, проверка отката/резервного пути | Владельцы продукта и эксплуатации |
+| Активация | Утверждённая подписанная региональная конфигурация, управляемый человеком Decision Gateway, явный план выпуска/отката | Уполномоченное региональное управление |
 
-No offline metric alone promotes a model or policy. Unknown mappings, unapproved policy or version mismatch produce review/unavailable states. Recommended topic/service and duplicate evidence never authorize assignment, incident merge, priority change or closure. Model failure falls back to lexical/CPU/manual paths without losing the appeal.
+Офлайн-метрика сама не продвигает модель или политику. Неизвестные сопоставления, неутверждённая политика и несовпадение версий дают проверку/недоступность. Рекомендации темы/службы и доказательства дубля не разрешают назначение, merge инцидента, смену приоритета или закрытие. Отказ модели переключает на lexical/CPU/ручные пути без потери обращения.
 
-Reports must state dataset type, sample counts and limitations. Synthetic results never enter production model-quality dashboards. Maintain immutable audit/provenance for recommendations and operator decisions; monitor fairness by language/region and intervene when confidence calibration or coverage degrades. A rollback restores a previously approved model/policy through the signed control plane, not a database counter decrement.
+Отчёты указывают тип данных, количество и ограничения. Синтетические результаты не входят в панели промышленного качества моделей. Храните неизменяемый аудит/происхождение рекомендаций и решений; контролируйте справедливость по языкам/регионам и реагируйте на ухудшение калибровки уверенности или покрытия. Откат возвращает ранее утверждённую модель/политику через подписанный control plane, а не уменьшением счётчика базы.
 
-Use the [model card template](MODEL_CARD_TEMPLATE.md) for each *implemented* candidate. A candidate named only in [MODEL_CANDIDATES.md](MODEL_CANDIDATES.md) has no model card implying deployment.
+Используйте [шаблон паспорта](MODEL_CARD_TEMPLATE.md) для каждого *реализованного* кандидата. Упоминание только в [MODEL_CANDIDATES.md](MODEL_CANDIDATES.md) не создаёт паспорта, подразумевающего внедрение.

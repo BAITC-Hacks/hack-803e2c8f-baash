@@ -1,15 +1,17 @@
-# Data requirements / Требования к данным
+[Русский](DATA_REQUIREMENTS.md) · [English](DATA_REQUIREMENTS.en.md) · [Қазақша](DATA_REQUIREMENTS.kk.md)
 
-Current repository fixtures are synthetic; historical regional prose is withheld pending privacy review. No approved labeled KK/RU/mixed corpus is available for selecting XLM-R, embedding/reranker candidates or PulseDM. Нельзя превращать существующие synthetic/regional artifacts в подтверждение production-качества.
+# Требования к данным
 
-Before any non-synthetic experiment, obtain and record:
+Текущие fixtures репозитория синтетические; исторический региональный текст скрыт до проверки конфиденциальности. Утверждённого размеченного корпуса KK/RU/mixed для выбора XLM-R, embedding/reranker или PulseDM нет. Существующие синтетические и региональные артефакты не подтверждают промышленное качество.
 
-- Source-system provenance, lawful basis, permitted purpose, regional scope, retention/deletion period and access approval; immutable source reference and decision-time snapshot reference.
-- A **pre-decision** allowlist: approved redacted text and metadata actually available when the operator decided. Separate raw PII/vault storage from feature and evaluation stores. Review addresses, free text and attachments for residual identifiers and memorization risk.
-- Human-adjudicated topic/service/question answers and duplicate/incident labels, with taxonomy version, uncertainty/disagreement and label-observed time. Final owner, operator correction, resolution, later handoff, closure and time-to-resolution are outcomes, not input features.
-- Group keys to keep variants, paraphrases, duplicate appeals and all questions about one incident on one side of a split. Region-specific chronological boundaries and unseen-region tests. Ambiguous business time remains ambiguous; do not invent event time to make a row trainable.
-- Explicit KK, RU and mixed labels plus source-channel, dialect, short/long, typo, OOD and policy-change slices. Track coverage of small groups and approval for any translated or teacher-generated samples.
+До любого несинтетического эксперимента получите и зафиксируйте:
 
-Teacher distributions and synthetic paraphrases must be labeled as auxiliary, not gold truth. A remote Jev/LLM baseline needs separate transfer, privacy and residency approval; until then benchmark only local models on approved minimal data. Never send raw citizen records to an external teacher merely because it is a research candidate.
+- Происхождение исходной системы, правовое основание, разрешённую цель, регионы, срок хранения/удаления и разрешение доступа; неизменяемую исходную ссылку и ссылку на снимок момента решения.
+- Разрешённые признаки **до решения**: утверждённый обезличенный текст и метаданные, реально доступные оператору. Отделите raw PII/vault от хранилищ признаков и оценки. Проверьте адреса, свободный текст и вложения на остаточные идентификаторы и риск запоминания.
+- Согласованные людьми ответы темы/службы/вопроса и метки дубля/инцидента с версией таксономии, неопределённостью/разногласиями и временем наблюдения метки. Итоговый ответственный, исправление оператора, решение проблемы, последующая передача, закрытие и время решения — исходы, не входные признаки.
+- Ключи групп, удерживающие варианты, перефразирования, дубли и все вопросы одного инцидента по одну сторону разделения. Хронологические границы для каждого региона и тесты на новых регионах. Неоднозначное бизнес-время остаётся неоднозначным; не выдумывайте его ради обучения строки.
+- Явные KK, RU и mixed метки и срезы по каналу, диалекту, коротким/длинным текстам, опечаткам, OOD и смене политики. Отслеживайте покрытие малых групп и разрешение переведённых или созданных teacher примеров.
 
-The offline evaluator accepts only pseudonymous keys, timestamps, question options and labels. This limits exposure in reports, but does not by itself make the upstream training corpus safe. Access, retention and leakage review are separate release requirements.
+Распределения teacher и синтетические перефразирования — вспомогательные, не эталон. Удалённый Jev/LLM baseline требует отдельного согласования передачи, конфиденциальности и места хранения; до этого сравнивайте локальные модели на минимальных утверждённых данных. Нельзя отправлять исходные записи граждан внешнему teacher лишь из-за его исследовательского статуса.
+
+Офлайн-оценщик принимает только псевдонимные ключи, временные метки, варианты вопросов и метки. Это ограничивает раскрытие в отчётах, но не делает исходный обучающий корпус безопасным. Доступ, хранение и проверка утечек — отдельные требования выпуска.

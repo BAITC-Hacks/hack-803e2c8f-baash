@@ -1,6 +1,5 @@
-# Open311 compatibility sandbox
+[Русский](README.md) · [English](README.en.md) · [Қазақша](README.kk.md)
 
-This process implements the narrow Open311 v2 `services.json` and `requests.json` shapes needed for
-offline contract testing. It is explicitly synthetic, stores data only in process memory, and is not
-the first regional adapter. A live deployment remains blocked until the target owner, protocol,
-credentials, authoritative service codes, status mappings, and acknowledgement semantics are approved.
+# Песочница совместимости Open311
+
+Этот процесс реализует ограниченные структуры Open311 v2 `services.json` и `requests.json`, необходимые для автономного тестирования контрактов. Он явно синтетический, хранит данные только в памяти процесса и не является первым региональным адаптером. Реальное внедрение зависит от согласования владельца системы, протокола, учётных данных, официальных кодов служб, сопоставлений статусов и семантики подтверждения.

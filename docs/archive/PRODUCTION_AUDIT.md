@@ -1,105 +1,102 @@
-# Pulse 109 — Production Readiness Independent Audit
+[Русский](PRODUCTION_AUDIT.md) · [English](PRODUCTION_AUDIT.en.md) · [Қазақша](PRODUCTION_AUDIT.kk.md)
 
-**Audit Date:** 2026-09-26  
-**Auditor:** Independent Technical Evaluation  
-**Target Branch:** `codex/production-platform-20260923`  
-**HEAD SHA:** `593e7197c43b513b77ce28c11a12faca88faf1c4`  
-**Alembic Head:** `0021_incident_topology`  
-**OpenAPI Operations:** 37 operations, 60 schemas  
-**Test Suite State:** 286 passed, 21 skipped (PostgreSQL tests cleanly skipped in non-container host)  
-**Static Analysis:** Strict mypy clean (122 source files), Ruff check clean, Prettier/ESLint/Next.js 16.3.4 build clean  
+> Исторический документ. Не является источником текущего состояния проекта.
+
+# Pulse 109 — Независимый аудит готовности производства
+
+**Дата аудита:** 26 сентября 2026 г. **Аудитор:** Независимая техническая оценка **Целевая ветвь:** `codex/production-platform-20260923` **HEAD SHA:** `593e7197c43b513b77ce28c11a12faca88faf1c4` **Alembic Head:** `0021_incident_topology` **Операции OpenAPI:** 37 операций, 60 схем **Состояние тестового набора:** 286 пройдено, 21 пропущено (PostgreSQL теста полностью пропущено на хосте, не являющемся контейнером) **Статический анализ:** Строгая очистка mypy (122 исходных файла), очистка проверки Ruff, очистка сборки Prettier/ESLint/Next.js 16.3.4
 
 ---
 
-## 1. Executive Summary
+## 1. Резюме
 
-This independent audit evaluates Pulse 109 as an integrated, federated municipal operations platform. Rather than assessing feature checklists or synthetic test results, this evaluation answers the operational question:
+Этот независимый аудит оценивает Pulse 109 как интегрированную федеративную платформу муниципальных операций. Вместо оценки контрольных списков функций или результатов синтетических испытаний эта оценка отвечает на оперативный вопрос:
 
-> **"Would a municipal dispatch team and city operations center reliably and safely depend on this codebase in production today?"**
+> **"Будут ли муниципальная диспетчерская группа и городской операционный центр надежно и безопасно зависеть от этой кодовой базы в работе сегодня?"**
 
-### Maturity Classification
+### Классификация по зрелости
 
-| Subsystem | Assessment Status | Operational Readiness Justification |
-| :--- | :--- | :--- |
-| **Manual Critical Path** | **PILOT READY** | Core appeal lifecycle, PostgreSQL transactions, advisory locks, and idempotency guarantees operate safely without ML or external CRMs. |
-| **Incident Topology Engine** | **PILOT READY** | Supervised split, merge, reopen, and membership versioning enforce aggregate lineage, cycle prevention, and attachment evidence checks. Verified with transitive merge, split-after-merge, and concurrent conflict tests. |
-| **Identity & Access Boundary** | **PILOT READY** | OIDC/JWKS claim verification, region scoping (`X-Region-Id`), role constraints, and purpose restrictions are strictly enforced; development fallbacks fail closed in pilot/production. |
-| **Attachment Safety & Verification** | **PILOT READY** | Ingestion security (magic bytes, MIME allowlists, executable/script detection) and malware scanning interfaces are wired into `POST /v1/requests/{id}/attachments` and `GET /v1/requests/{id}/attachments`. Quarantined/security-flagged files are rejected from closure evidence. |
-| **Privacy Boundary & PII Access** | **PILOT READY** | Authenticated `POST /v1/privacy/references/{token}/resolve` and `GET /v1/privacy/references/{token}/audits` mounted in `main.py` with zero-PII audit logging. |
-| **Control Plane / Bundle Activation** | **PILOT READY** | Ed25519 signature verification, anti-rollback version/sequence monotonicity, and append-only release history are wired with verifier in `main.py`. Dedicated monotonic rollback bundle creation and CLI command (`pulse109-bundle rollback`) implemented and verified. |
-| **Situation Center & Alerting** | **PILOT READY** | `PostgresAlertStore` persists alerts and reviews in `analytics.alert` and `analytics.alert_review`. `AdapterLagDetector` filters for adapter-targeted events only, preventing false alarms. |
-| **Operator Workspace (Frontend)** | **PILOT READY** | Live appeal queue triage (`GET /v1/requests`) with cursor/limit pagination, status filtering, and region isolation. Web proxy preserves query parameters. Graceful offline fallback. |
-| **Replay Lab Persistence** | **PILOT READY** | `FileSnapshotStore` wired into `PostgresReplayRepository` in `main.py`, preserving raw replay snapshots across process restarts. |
-| **Regional Adapters & Synchronization** | **EXTERNAL DEPENDENCY REQUIRED** | Replay adapter and typed SDK are complete; live CRM connectivity is blocked by B07 (missing municipal sandbox & credentials). |
-| **AI / Decision Gateway** | **EXTERNAL DEPENDENCY REQUIRED** | Pure advisory evaluator and artifact-bound confidence catalog are implemented; operational routing remains blocked by B02/B04/B06/B10. |
+| Подсистема | Статус оценки | Обоснование оперативной готовности |
+| подсистема | Статус оценки | Обоснование оперативной готовности |
+| **Критический путь вручную** | **ПИЛОТ ГОТОВ** | Базовый жизненный цикл обращения, транзакции PostgreSQL, консультативные блокировки и гарантии идемпотентности безопасно работают без ML или внешних CRM. |
+| **Критический путь вручную** | **ПИЛОТ ГОТОВ** | Базовый жизненный цикл обращения, транзакции PostgreSQL, консультативные блокировки и гарантии идемпотентности безопасно работают без ML или внешних CRM. |
+| **Механизм топологии инцидентов** | **ПИЛОТ ГОТОВ** | Контролируемое разделение, слияние, повторное открытие и управление версиями членства обеспечивают совокупную проверку происхождения, предотвращение циклов и проверку доказательств вложений. Проверено с помощью тестов транзитивного слияния, разделения после слияния и параллельных тестов на конфликты. |
+| **Граница идентификации и доступа** | **ПИЛОТ ГОТОВ** | Проверка утверждений OIDC/JWKS, определение области действия (`X-Region-Id`), ограничения ролей и целей строго соблюдаются; резервные варианты разработки не закрываются в пилотном/производственном режиме. |
+| **Безопасность и проверка вложений** | **ПИЛОТ ГОТОВ** | Безопасность приема (магические байты, списки разрешенных MIME, обнаружение исполняемых файлов/скриптов) и интерфейсы сканирования вредоносных программ подключены к `POST /v1/requests/{id}/attachments` и `GET /v1/requests/{id}/attachments`. Файлы, находящиеся на карантине или с пометкой безопасности, отклоняются из свидетельства закрытия. |
+| **Граница конфиденциальности и PII Доступ** | **ПИЛОТ ГОТОВ** | Аутентифицированные `POST /v1/privacy/references/{token}/resolve` и `GET /v1/privacy/references/{token}/audits` установлены в `main.py` с протоколированием аудита с нулевым PII. |
+| **Активация плоскости управления/пакета** | **ПИЛОТ ГОТОВ** | Проверка подписи Ed25519, монотонность версии/последовательности для предотвращения отката и история выпусков только для добавления связаны с верификатором в `main.py`. Реализовано и проверено специальное монотонное создание пакета отката и команда CLI (`pulse109-bundle rollback`). |
+| **Ситуационный центр и оповещения** | **ПИЛОТ ГОТОВ** | `PostgresAlertStore` сохраняет оповещения и отзывы в `analytics.alert` и `analytics.alert_review`. `AdapterLagDetector` фильтрует только события, связанные с адаптером, предотвращая ложные тревоги. |
+| **Рабочая область оператора (интерфейс)** | **ПИЛОТ ГОТОВ** | Сортировка очереди обращений в реальном времени (`GET /v1/requests`) с нумерацией страниц по курсору/ограничению, фильтрацией статуса и изоляцией региона. Веб-прокси сохраняет параметры запроса. Изящный резервный режим оффлайн. |
+| **Replay Lab Стойкость** | **ПИЛОТ ГОТОВ** | `FileSnapshotStore` подключен к `PostgresReplayRepository` в `main.py`, сохраняя необработанные снимки воспроизведения при перезапуске процесса. |
+| **Региональные адаптеры и синхронизация** | **ТРЕБУЕТСЯ ВНЕШНЯЯ ЗАВИСИМОСТЬ** | Адаптер воспроизведения и набранный SDK готовы; Подключение к CRM в реальном времени заблокировано с помощью B07 (отсутствуют муниципальная песочница и учетные данные). |
+| **AI / Decision Gateway** | **ТРЕБУЕТСЯ ВНЕШНЯЯ ЗАВИСИМОСТЬ** | Реализованы чисто консультативный оценщик и каталог достоверности, привязанный к артефактам; Операционная маршрутизация остается заблокированной B02/B04/B06/B10. |
+---
+
+## 2. Разрешенные критические блокаторы (P0)
+
+1. **Проглоченный шов прикрепления [РЕШЕНО]**:
+   - Реализованы `POST /v1/requests/{id}/attachments` и `GET /v1/requests/{id}/attachments` в `manual_path/router.py` и `postgres_path.py`. Обеспечивает проверку магического байта MIME, отклонение исполняемого файла и сканирование вредоносного ПО перед сохранением в `appeals.attachment_ref`.
+2. **Список очереди на обращение (`GET /v1/requests`) [РЕШЕНО]**:
+   - Добавлена разбивка на страницы `GET /v1/requests` конечной точки, поддерживающей фильтрацию состояния, разбиение на страницы по пределам/курсорам и изоляцию регионов. Веб-интерфейс (`page.tsx`) теперь передает потоковые обращения с серверной части.
+3. **Ошибка активации маршрутизатора плоскости управления 503 [РЕШЕНО]**:
+   - Подключил `verifier` к `create_control_plane_router(bundle_repository, verifier=verifier)` в `main.py`. Активация пакета осуществляется через HTTP с проверкой подписи.
+4. **Отключенная служба конфиденциальности [РЕШЕНО]**:
+   - Установлен `pulse109.privacy.create_privacy_router` в `/v1/privacy` в `main.py` с подтвержденным разрешением и журналами аудита доступа.
+5. **Состояние оповещения о нестабильности памяти [РЕШЕНО]**:
+   - Реализовано `PostgresAlertStore` с использованием `psycopg.sql` для сохранения оповещений и отзывов в `analytics.alert` и `analytics.alert_review`, заменив энергозависимое хранилище в памяти.
 
 ---
 
-## 2. Resolved Critical Blockers (P0)
+## 3. Устраненные высокоприоритетные пробелы (P1)
 
-1. **Attachment Ingestion Seam [RESOLVED]**:
-   - Implemented `POST /v1/requests/{id}/attachments` and `GET /v1/requests/{id}/attachments` in `manual_path/router.py` and `postgres_path.py`. Enforces magic byte MIME inspection, executable rejection, and malware scanning before persisting to `appeals.attachment_ref`.
-2. **Appeal Queue Listing (`GET /v1/requests`) [RESOLVED]**:
-   - Added paginated `GET /v1/requests` endpoint supporting status filtering, limit/cursor pagination, and region isolation. Web frontend (`page.tsx`) now streams live appeals from the backend.
-3. **Control Plane Router Activation 503 Failure [RESOLVED]**:
-   - Wired `verifier` into `create_control_plane_router(bundle_repository, verifier=verifier)` in `main.py`. Bundle activation operates over HTTP with signature verification.
-4. **Unmounted Privacy Service [RESOLVED]**:
-   - Mounted `pulse109.privacy.create_privacy_router` at `/v1/privacy` in `main.py` with authenticated resolution and access audit trails.
-5. **In-Memory Volatile Alert State [RESOLVED]**:
-   - Implemented `PostgresAlertStore` using `psycopg.sql` to persist alerts and reviews in `analytics.alert` and `analytics.alert_review`, replacing volatile in-memory storage.
+1. **Эфемерность повтора снимка [РЕШЕНО]**:
+   - Подключил `FileSnapshotStore` к `PostgresReplayRepository` в `main.py`, сохраняя снимки воспроизведения на диске при перезапуске процесса.
+2. **Ложные срабатывания задержек адаптера [РЕШЕНО]**:
+   - Отфильтровано `AdapterLagDetector` для проверки только типов событий, ориентированных на адаптер (`appeal.assigned.v1`, `appeal.reassigned.v1`, `appeal.status.changed.v1`).
+3. **Монотонный поток отката плоскости управления [РЕШЕНО]**:
+   - Добавлены команды `create_rollback_bundle` в `pulse109.control_plane.bundles` и `pulse109-bundle rollback` в `cli.py`, безопасно продвигая монотонную последовательность при повторном подписании целевых заведомо хороших манифестов.
+4. **Отклонение доказательств, помещенных на карантин/инфицированных [РЕШЕНО]**:
+   - Обновлены `outcomes/postgres.py` предварительная проверка и подтверждение для проверки `data_classification` из `appeals.attachment_ref` и отклонения файлов с пометкой безопасности или помещенных в карантин с помощью HTTP 422 `evidence_quarantined`. Повторная проверка во время подтверждения перед атомарным закрытием.
 
 ---
 
-## 3. Resolved High-Priority Gaps (P1)
+## 4. Инженерный долг средней приоритетности (P2)
 
-1. **Replay Snapshot Ephemerality [RESOLVED]**:
-   - Wired `FileSnapshotStore` into `PostgresReplayRepository` in `main.py`, persisting replay snapshots to disk across process restarts.
-2. **Adapter Lag False Positives [RESOLVED]**:
-   - Filtered `AdapterLagDetector` to inspect only adapter-targeted event types (`appeal.assigned.v1`, `appeal.reassigned.v1`, `appeal.status.changed.v1`).
-3. **Control Plane Monotonic Rollback Flow [RESOLVED]**:
-   - Added `create_rollback_bundle` in `pulse109.control_plane.bundles` and `pulse109-bundle rollback` command in `cli.py`, safely advancing monotonic sequence while re-signing target known-good manifests.
-4. **Quarantined / Infected Evidence Rejection [RESOLVED]**:
-   - Updated `outcomes/postgres.py` preflight and confirmation to check `data_classification` from `appeals.attachment_ref` and reject security-flagged or quarantined files with HTTP 422 `evidence_quarantined`. Re-verified during confirmation before atomic closure.
+1. **Макет данных панели администратора**:
+   - `apps/web/app/admin-panel.tsx` содержал статический текст и нефункциональную кнопку поиска аудита.
+2. **Объем организации ABAC в идентичности**:
+   - `ActorContext` принудительно применял роли и региональные масштабы, но не имел детального определения на уровне организации (`organizations: frozenset[str]`) для операторов, закрепленных за конкретными муниципальными департаментами.
 
 ---
 
-## 4. Medium-Priority Engineering Debt (P2)
+## 5. Внешние блокаторы
 
-1. **Admin Panel Mock Data**:
-   - `apps/web/app/admin-panel.tsx` contained static text and a non-functional audit search button.
-2. **ABAC Organization Scope in Identity**:
-   - `ActorContext` enforced role and regional scopes, but lacked granular organization-level scoping (`organizations: frozenset[str]`) for operators assigned to specific municipal departments.
-
----
-
-## 5. External Blockers
-
-These items cannot be resolved without authoritative government or municipal partner artifacts:
-- **B01 (National Manifest & Coverage)**: 13 of 20 regions lack source datasets.
-- **B02 (Raw Citizen Text / Audio)**: All available regional extracts omit raw citizen text; NLP fine-tuning remains blocked.
-- **B06 (Authoritative Taxonomy & SLA Policy)**: Municipal SLA rules and category trees have not been legally ratified.
-- **B07 (Regional CRM Sandbox & Credentials)**: Live adapter testing requires access to regional 109 endpoints.
-- **B08 (Production OIDC Identity Provider)**: Municipal SSO endpoints (Keycloak/IdP) pending deployment infrastructure.
-- **B10 (Legal Basis & Retention Schedule)**: Retention schedules must be formalized before real citizen PII is persisted in production vaults.
+Эти вопросы невозможно решить без авторитетных правительственных или муниципальных партнеров:
+- **B01 (Национальный манифест и охват)**: в 13 из 20 регионов отсутствуют исходные наборы данных.
+- **B02 (Необработанный текст гражданина/аудио)**: во всех доступных региональных фрагментах необработанный текст гражданина отсутствует; Тонкая настройка НЛП остается заблокированной.
+- **B06 (Официальная таксономия и политика SLA)**: Муниципальные правила SLA и деревья категорий не были юридически ратифицированы.
+- **B07 (Региональная песочница CRM и учетные данные)**: для тестирования адаптера в реальном времени требуется доступ к региональным 109 конечным точкам.
+- **B08 (Производственный поставщик удостоверений OIDC)**: Муниципальные конечные точки единого входа (Keycloak/IdP) ожидают развёртывания инфраструктуры.
+- **B10 (Правовая основа и график хранения)**: Графики хранения должны быть формализованы до того, как реальный гражданин PII будет сохранен в производственных хранилищах.
 
 ---
 
-## 6. Misleading Completion Claims in Previous Reports
+## 6. Вводящие в заблуждение заявления о завершении строительства в предыдущих отчетах
 
-- **Claim:** "Security hardening for attachment ingestion: binary magic byte inspection, executable rejection, and pluggable malware scanner."
-  - **Reality:** While functions and tests existed, they were completely disconnected from the HTTP API. No operator or citizen could upload a file.
-- **Claim:** "Control Plane HTTP API: added active and activate endpoints."
-  - **Reality:** Activation always failed with HTTP 503 because the verifier was never instantiated in `main.py`.
-- **Claim:** "Privacy reference boundary and PII access audit."
-  - **Reality:** No router was created or mounted; the service was unused outside unit tests.
-- **Claim:** "Operator UI: dedicated interactive panels wired directly into the workspace."
-  - **Reality:** The queue in `page.tsx` was hardcoded to fake IDs because `GET /v1/requests` did not exist.
+- **Утверждение:** «Усиление безопасности при приеме вложений: проверка двоичных магических байтов, отклонение исполняемых файлов и подключаемый сканер вредоносных программ».
+  - **Реальность:** Хотя функции и тесты существовали, они были полностью отключены от HTTP API. Ни оператор, ни гражданин не смогли загрузить файл.
+- **Утверждение:** «Плоскость управления HTTP API: добавлены активные и активируемые конечные точки».
+  - **Реальность:** Активация всегда завершалась с ошибкой HTTP 503, поскольку экземпляр верификатора никогда не создавался в `main.py`.
+- **Утверждение:** «Граница конфиденциальности и аудит доступа PII».
+  - **Реальность:** Маршрутизатор не был создан или установлен; сервис не использовался вне модульных тестов.
+- **Утверждение:** «Интерфейс оператора: специальные интерактивные панели, подключенные непосредственно к рабочему пространству».
+  - **Реальность:** В очереди `page.tsx` были жестко запрограммированы поддельные идентификаторы, поскольку очереди `GET /v1/requests` не существовало.
 
 ---
 
-## 7. Architecture Decisions Worth Preserving
+## 7. Архитектурные решения, которые стоит сохранить
 
-1. **Single Source of Truth in PostgreSQL**: Domain transactions, audit events, outbox records, and idempotency receipts commit in single atomic database transactions.
-2. **Deterministic Anti-Rollback Monotonicity**: Signed configuration envelopes prevent accidental downgrades or unauthorized configuration tampering.
-3. **Fail-Closed Privacy Guarantees**: Logs, trace attributes, and metric labels strictly reject free text and raw citizen identifiers.
-4. **Human-in-the-Loop AI Boundary**: ML and analytics never autonomously route appeals, merge incidents, or execute external actions.
+1. **Единый источник достоверности в PostgreSQL**: транзакции домена, события аудита, записи исходящих сообщений и уведомления об идемпотентности фиксируются в отдельных атомарных транзакциях базы данных.
+2. **Детерминированная монотонность предотвращения отката**. Подписанные конверты конфигурации предотвращают случайное понижение версии или несанкционированное изменение конфигурации.
+3. **Гарантии конфиденциальности при отказе**: журналы, атрибуты трассировки и метки метрик строго отвергают свободный текст и необработанные идентификаторы граждан.
+4. **Граница искусственного интеллекта «человек в цикле»**: ML, и аналитика никогда не направляет обращения автономно, не объединяет инциденты и не выполняет внешние действия.

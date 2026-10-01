@@ -1,5 +1,5 @@
-# Core database migrations
+[Русский](README.md) · [English](README.en.md) · [Қазақша](README.kk.md)
 
-Run Alembic from `services/core` with `DATABASE_URL` set. The URL may use a
-SQLAlchemy synchronous or asynchronous PostgreSQL driver. Migrations are
-forward-only and must not be edited after they have been applied.
+# Миграции базы данных ядра
+
+Запускайте Alembic из `services/core`, задав `DATABASE_URL`. URL может использовать синхронный или асинхронный драйвер PostgreSQL для SQLAlchemy. Миграции выполняются только вперёд; после применения их нельзя редактировать.

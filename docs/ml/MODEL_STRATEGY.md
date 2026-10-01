@@ -1,31 +1,33 @@
-# Model strategy / Стратегия моделей
+[Русский](MODEL_STRATEGY.md) · [English](MODEL_STRATEGY.en.md) · [Қазақша](MODEL_STRATEGY.kk.md)
 
-**Status: candidate architecture, not production model selection.** Currently running code has a deterministic lexical CPU recommendation, a typed inference boundary, human-governed Decision Gateway, PostgreSQL FTS/retrieval mechanisms, incident rules and Replay Lab. The existing char-TF-IDF/LogReg evaluator is a synthetic research baseline. The approved KK/RU/mixed text, labels, taxonomy and deployment profile needed to choose or train the models below are unavailable.
+# Стратегия моделей
 
-**Статус: архитектура кандидатов, а не выбор production-моделей.** Ручной путь, PostgreSQL, аудит, outbox и worker не зависят от ML. Ни PulseDM, ни внешняя модель не принимают окончательных решений о принадлежности, SLA, назначении, составе инцидента или закрытии.
+**Статус: архитектура кандидатов, а не выбор production-моделей.** В работающем коде есть детерминированные лексические рекомендации на CPU, типизированная граница инференса, контролируемый человеком Decision Gateway, механизмы FTS/поиска PostgreSQL, правила инцидентов и Replay Lab. Существующий оценщик char-TF-IDF/LogReg — это синтетический исследовательский базовый алгоритм. Утверждённые тексты KK/RU/mixed, метки, таксономия и профиль развёртывания, необходимые для выбора или обучения моделей ниже, отсутствуют.
 
-| Task | Current executable path | Conservative candidate A | PulseDM research B | Reference C |
+Ручной резервный путь, PostgreSQL, журнал аудита, транзакционный outbox и worker не зависят от ML. Ни PulseDM, ни внешняя модель не принимают окончательных решений о закреплении ответственности, SLA, назначении, составе инцидента или закрытии.
+
+| Задача | Текущий исполняемый путь | Консервативный кандидат A | Исследование PulseDM B | Эталон C |
 | --- | --- | --- | --- | --- |
-| Topic/service suggestion | Lexical CPU fallback; human decision | TF-IDF+LR baseline, then fine-tuned XLM-R-base if validated | Dynamic Choice question, advisory only | Jev/structured multilingual LLM where data rules allow |
-| Similar appeals | Existing retrieval contract and synthetic evaluation | PostgreSQL FTS + benchmarked Qwen3/BGE/E5 embeddings; optional rerank | Does not replace retrieval | Same frozen judged pairs |
-| Duplicate/incident proposal | Rules and operator confirmation | Pair features + LogReg; XGBoost only if it improves held-out results | One optional pair feature | Benchmark only |
-| Anomaly/recurrence | Deterministic/statistical detectors | Rolling baselines, EWMA/robust statistics | No authority | Not needed for core path |
-| Explanation/reply draft | Templates/manual | Optional local generation after validation | Not a text generator | Structured LLM baseline only |
+| Предложение темы/службы | Резервный лексический путь на CPU; решение человека | Базовый алгоритм TF-IDF+LR, затем fine-tuned XLM-R-base при подтверждении | Динамический вопрос Choice, только рекомендация | Jev/структурированная мультиязычная LLM, если разрешают правила по данным |
+| Похожие обращения | Текущий контракт поиска и синтетическая оценка | PostgreSQL FTS + проверенные эмбеддинги Qwen3/BGE/E5; опциональный rerank | Не заменяет поиск | Те же зафиксированные размеченные пары |
+| Предложение дубликата/инцидента | Правила и подтверждение оператором | Признаки пар + LogReg; XGBoost только при улучшении на отложенной выборке | Один опциональный признак пары | Только для бенчмарка |
+| Аномалия/повторяемость | Детерминированные/статистические детекторы | Скользящие базовые алгоритмы, EWMA/робастная статистика | Без полномочий | Не требуется для критического пути |
+| Объяснение/черновик ответа | Шаблоны/ручной ввод | Опциональная локальная генерация после валидации | Не является генератором текста | Только базовый алгоритм структурированной LLM |
 
 ```mermaid
 flowchart LR
-    Appeal[Appeal at decision time] --> Privacy[Privacy and canonicalization]
-    Privacy --> Rules[Deterministic policy and manual path]
-    Privacy --> A[A: supervised candidate]
-    Privacy --> B[B: PulseDM research]
-    Privacy -. approved minimal data only .-> C[C: external benchmark]
-    A --> Gateway[Decision Gateway: provenance, calibration, OOD]
-    B -. offline comparison until approved .-> Gateway
+    Appeal[Обращение на момент решения] --> Privacy[Приватность и каноникализация]
+    Privacy --> Rules[Детерминированная политика и ручной путь]
+    Privacy --> A[A: supervised-кандидат]
+    Privacy --> B[B: исследование PulseDM]
+    Privacy -. только утверждённые минимальные данные .-> C[C: внешний бенчмарк]
+    A --> Gateway[Decision Gateway: происхождение, калибровка, OOD]
+    B -. офлайн-сравнение до утверждения .-> Gateway
     Rules --> Gateway
-    Gateway --> Human[Operator decision]
-    Human --> Durable[(PostgreSQL audit, outbox, incident history)]
+    Gateway --> Human[Решение оператора]
+    Human --> Durable[(PostgreSQL аудит, outbox, история инцидента)]
 ```
 
-RU: сравниваем A/B/C на **одних и тех же** заранее закреплённых случаях и временных срезах, а не по публичным leaderboard. C никогда не нужен критическому пути. Topic и service остаются рекомендациями; утверждённые справочники и policy ограничивают их. Optional Qwen-class генерация может готовить объяснение/черновик, но не назначать организацию, менять SLA, объединять или закрывать обращения.
+Сравниваем A/B/C на **одних и тех же** заранее закреплённых случаях и временных срезах, а не по публичным leaderboard. Кандидат C никогда не нужен критическому пути. Тема и служба остаются рекомендациями; утверждённые справочники и политика ограничивают их. Опциональная генерация класса Qwen может готовить объяснение или черновик ответа, но не назначать организацию, менять SLA, объединять или закрывать обращения.
 
-EN: CPU/manual fallback remains the availability baseline. GPU 0 could eventually serve embeddings/reranking and GPU 1 an optional generator or a research PulseDM service, subject to measured latency and memory. This is a capacity hypothesis, not a deployment commitment. Candidate selection requires the [evaluation protocol](EVALUATION_PROTOCOL.md) and [governance gates](MODEL_GOVERNANCE.md).
+Резервный путь на CPU и ручной режим остаются базовой гарантией доступности. В будущем GPU 0 может обслуживать эмбеддинги и переранжирование, а GPU 1 — опциональный генератор или исследовательский сервис PulseDM с учётом измеренной задержки и памяти. Это гипотеза о вычислительных ресурсах, а не обязательство по развёртыванию. Выбор кандидата требует соблюдения [протокола оценки](EVALUATION_PROTOCOL.md) и [правил управления моделями](MODEL_GOVERNANCE.md).

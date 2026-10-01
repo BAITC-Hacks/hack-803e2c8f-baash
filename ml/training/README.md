@@ -1,6 +1,7 @@
-# Training
+[Русский](README.md) · [English](README.en.md) · [Қазақша](README.kk.md)
 
-Production training is intentionally absent until approved raw text, labels, and legal basis exist.
+# Обучение
 
-The synthetic baseline evaluator now records risk-coverage/AURC and abstention bands. The generated
-artifacts are fixture diagnostics only and cannot establish production model quality.
+Обучение для промышленного применения намеренно отсутствует до появления утверждённых исходных текстов, меток и правового основания.
+
+Оценщик синтетического базового алгоритма теперь фиксирует risk-coverage/AURC и диапазоны отказа от ответа. Созданные артефакты служат только диагностике тестовых данных и не подтверждают промышленное качество модели.

@@ -1,18 +1,19 @@
-# ADR 002 PostgreSQL Vector Core
+[Русский](ADR-002-postgres-vector-core.md) · [English](ADR-002-postgres-vector-core.en.md) · [Қазақша](ADR-002-postgres-vector-core.kk.md)
 
-Status: accepted with a benchmark gate
+# ADR 002 Векторное ядро PostgreSQL
 
-## Decision
+Статус: принято с обязательным сравнительным испытанием
 
-Use PostgreSQL for operational state and audit metadata, PostGIS for spatial queries and pgvector HNSW for the first retrieval index. Store recordings, media, exports and immutable raw files in S3-compatible object storage.
+## Решение
 
-## Reasons
+Использовать PostgreSQL для оперативного состояния и метаданных аудита, PostGIS для пространственных запросов и pgvector HNSW для первого поискового индекса. Записи, медиа, экспорты и неизменяемые исходные файлы хранить в S3-совместимом объектном хранилище.
 
-- A single transactional core reduces operational complexity and allows region, status and service filters to run with vector retrieval.
-- The available data volume is compatible with a benchmarkable PostgreSQL baseline.
-- The team can introduce a dedicated vector engine later without changing the retrieval API.
+## Причины
 
-## Extraction gate
+- Единое транзакционное ядро снижает эксплуатационную сложность и позволяет применять фильтры региона, статуса и службы вместе с векторным поиском.
+- Доступный объём данных совместим с базовым решением PostgreSQL, которое можно проверить измерениями.
+- Позже команда сможет внедрить отдельный векторный движок без изменения API поиска.
 
-Move vectors to a dedicated engine only when a reproducible test on representative filters shows that PostgreSQL cannot meet the agreed p95 latency, recall and ingestion SLO at the required data size. The benchmark must include index build time, backup, restore, access control and operating effort.
+## Условие выделения
 
+Переносить векторы в отдельный движок можно только после воспроизводимого теста на репрезентативных фильтрах, показавшего, что PostgreSQL не обеспечивает согласованные p95 задержки, полноту поиска и SLO загрузки при нужном объёме данных. Испытание должно учитывать построение индекса, backup, восстановление, контроль доступа и трудозатраты эксплуатации.

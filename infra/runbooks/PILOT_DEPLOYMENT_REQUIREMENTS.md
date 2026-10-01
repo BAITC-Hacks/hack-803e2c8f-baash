@@ -1,26 +1,20 @@
-# Pilot deployment requirements
+[Русский](PILOT_DEPLOYMENT_REQUIREMENTS.md) · [English](PILOT_DEPLOYMENT_REQUIREMENTS.en.md) · [Қазақша](PILOT_DEPLOYMENT_REQUIREMENTS.kk.md)
 
-This is a production-pilot requirements runbook. The separate
-[public demo record](PUBLIC_DEPLOYMENT.md) documents the verified VPS/domain/HTTPS
-instance with synthetic data. It does not supply an operational identity
-provider, approved bucket, regional credential, RPO/RTO, retention or measured
-production performance. Those pilot inputs remain B07/B08/B10.
+# Требования к развёртыванию пилота
 
-## Preconditions owned outside this repository
+Это эксплуатационная инструкция с требованиями к production-пилоту. Отдельный [отчёт о публичном демо](PUBLIC_DEPLOYMENT.md) описывает проверенный VPS/домен/HTTPS стенд с синтетическими данными. Он не предоставляет операционного провайдера идентификации, утверждённого bucket, региональных credentials, RPO/RTO, срока хранения или измеренной production-производительности. Эти входные данные пилота остаются B07/B08/B10.
 
-- A target network and host profile, DNS name and TLS certificate lifecycle.
-- PostgreSQL, object-storage and backup credentials held outside source control.
-- Approved OIDC issuer, audience and JWKS endpoint, plus role and region claim
-  mapping. The API accepts `roles`, `realm_access.roles`, and `regions`,
-  `region_ids`, or `region_id`; every authenticated request is then checked for
-  role and region scope.
-- Privacy/legal basis and retention decision before any non-synthetic appeal or
-  attachment enters the runtime.
-- A named regional API sandbox and credentials before replacing replay delivery.
+## Предварительные условия вне репозитория
 
-## Configuration boundary
+- Целевая сеть и профиль хоста, DNS-имя и жизненный цикл TLS-сертификатов.
+- PostgreSQL, object-storage и backup credentials вне системы контроля версий.
+- Утверждённые OIDC issuer, audience и JWKS endpoint, а также mapping ролей и региональных claims. API принимает `roles`, `realm_access.roles` и `regions`, `region_ids` или `region_id`; каждый аутентифицированный запрос затем проверяется по роли и региону.
+- Решение о privacy/правовом основании и сроках хранения до поступления любого несинтетического обращения или вложения в исполняемый контур.
+- Названный региональный API sandbox и credentials до замены replay-доставки.
 
-Set approved values only through deployment secret management:
+## Граница конфигурации
+
+Задавайте утверждённые значения только через управление секретами развёртывания:
 
 ```dotenv
 PULSE109_ENVIRONMENT=pilot
@@ -35,41 +29,21 @@ PULSE109_APPROVED_LEGAL_BASIS=<approved value>
 PULSE109_APPROVED_RETENTION_CLASS=<approved value>
 ```
 
-`PULSE109_LOCAL_IDENTITY_ENABLED=false` is mandatory outside local, test and
-demo profiles. Missing OIDC configuration fails closed with
-`identity_provider_not_configured`; a missing bearer token fails with
-`authentication_required`.
+`PULSE109_LOCAL_IDENTITY_ENABLED=false` обязателен вне local, test и demo профилей. При отсутствии OIDC конфигурации доступ закрывается с `identity_provider_not_configured`; при отсутствии bearer token возвращается `authentication_required`.
 
-## Object storage boundary
+## Граница объектного хранилища
 
-Attachments and replay snapshots select local filesystem or S3-compatible
-storage through `PULSE109_OBJECT_STORAGE_MODE`. The runtime wiring and adapters
-exist. The verified public demo uses local volumes; a private S3 provider and
-its durability/access properties are not verified on that instance. Attachments already retain immutable object references, SHA-256,
-media metadata and owner appeal references in PostgreSQL. Before a storage
-adapter is accepted, it must verify write/read/restore hashes, preserve object
-immutability, never log object contents, and have integration coverage against
-the approved provider. The existing scanner is a mock, not antivirus.
+Вложения и replay snapshots выбирают локальную файловую систему или S3-compatible storage через `PULSE109_OBJECT_STORAGE_MODE`. Подключение к исполняемому контуру и адаптеры существуют. Проверенное публичное демо использует локальные volumes; частный S3-провайдер и его свойства устойчивости/доступа на этом стенде не проверены. Вложения уже сохраняют неизменяемые ссылки на объекты, SHA-256, медиаметаданные и ссылки на обращение-владельца в PostgreSQL. До принятия storage adapter он должен проверять write/read/restore хеши, сохранять неизменяемость объектов, никогда не журналировать их содержимое и иметь интеграционное покрытие с утверждённым провайдером. Существующий scanner — mock, не антивирус.
 
-## Release, rollback and restore procedure
+## Процедура релиза, отката и восстановления
 
-1. Provision isolated pilot database and object-storage namespace. Do not use
-   demo volumes or a shared integration database.
-2. Apply `alembic -c services/core/alembic.ini upgrade head`; migrations are
-   forward-only. Record the image digest and migration head.
-3. Start Compose services with pilot secrets. Require `/v1/health/ready` to
-   report PostgreSQL readiness before admitting traffic.
-4. Run authenticated smoke checks for a permitted region and verify a denied
-   role/region request returns `403`.
-5. Before each release, take an operator-approved database backup and immutable
-   object manifest. Restore into an isolated environment, check hashes and run
-   the smoke flow there. No repository value claims a backup objective.
-6. Roll back application images only after confirming their schema compatibility.
-   Do not edit or reverse an applied migration. Use a forward repair migration
-   if data shape must change.
+1. Создайте изолированную pilot database и пространство имён object storage. Не используйте demo volumes или общую интеграционную базу.
+2. Выполните `alembic -c services/core/alembic.ini upgrade head`; миграции только вперёд. Зафиксируйте image digest и migration head.
+3. Запустите Compose services с pilot secrets. До допуска трафика требуйте PostgreSQL readiness в `/v1/health/ready`.
+4. Выполните аутентифицированные smoke checks для разрешённого региона и проверьте, что запрос с запрещённой ролью/регионом возвращает `403`.
+5. Перед каждым релизом сделайте одобренный оператором database backup и неизменяемый object manifest. Восстановите их в изолированной среде, проверьте хеши и выполните там smoke flow. Ни одно значение репозитория не задаёт цели резервного копирования.
+6. Откатывайте application images только после подтверждения совместимости схемы. Не редактируйте и не обращайте применённую миграцию. Если форма данных должна измениться, используйте новую корректирующую миграцию вперёд.
 
-## Exit criteria
+## Критерии выхода
 
-Local Compose and the verified public PostgreSQL demo demonstrate runtime
-mechanics with synthetic records. Neither is proof of a production pilot. A pilot deployment needs external owner approval and evidence
-for every precondition above.
+Локальный Compose и проверенное публичное PostgreSQL-демо показывают механизмы исполняемого контура на синтетических записях. Ни одно не доказывает готовность production-пилота. Для пилотного развёртывания нужны одобрение внешнего владельца и доказательства выполнения каждого условия выше.

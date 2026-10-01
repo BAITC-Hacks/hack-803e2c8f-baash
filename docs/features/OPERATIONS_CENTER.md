@@ -1,42 +1,34 @@
+[Русский](OPERATIONS_CENTER.md) · [English](OPERATIONS_CENTER.en.md) · [Қазақша](OPERATIONS_CENTER.kk.md)
+
 # Operations Center
 
-## The question it answers
+## На какой вопрос отвечает
 
-Not "how much work is there", which a dashboard of totals answers, but "where
-does the city need attention right now", which is what a supervisor actually
-has to decide.
+Не только «сколько работы», на что отвечает панель итогов, а «где городу нужно внимание прямо сейчас» — решение, которое должен принять руководитель.
 
-## Shape
+## Состав
 
-`GET /v1/operations/attention-feed` returns two things.
+`GET /v1/operations/attention-feed` возвращает две части.
 
-**City pulse**: counters of records. Open appeals, active incidents, emerging
-patterns, incidents without an owner, queued and failed deliveries. Each is a
-count, never an estimate.
+**Пульс города**: счётчики записей — открытые обращения, активные инциденты, новые закономерности, инциденты без ответственного, доставки в очереди и с ошибкой. Это количества, не оценки.
 
-**Attention feed**: a ranked list where every item names a target that can be
-opened. A signal with nowhere to go is noise, and noise trains people to stop
-reading the screen.
+**Лента внимания**: ранжированный список с открываемой целью для каждого пункта. Сигнал без пути к действию становится шумом и приучает игнорировать экран.
 
-| Kind               | Raised by                                      |
-| ------------------ | ---------------------------------------------- |
-| `emerging_cluster` | an open or under-review cluster from the radar |
-| `unowned_incident` | active past the threshold with no service      |
-| `adapter_lag`      | the oldest undelivered outbox entry            |
-| `closure_review`   | closed appeals carrying no evidence            |
+| Тип | Основание |
+| --- | --- |
+| `emerging_cluster` | открытый или проверяемый кластер Radar |
+| `unowned_incident` | активен дольше порога и не имеет службы |
+| `adapter_lag` | самая старая недоставленная запись outbox |
+| `closure_review` | закрытые обращения без доказательств |
 
-## Severity is reproducible
+## Воспроизводимая серьёзность
 
-Derived from counts and age, never from a model. A supervisor can reproduce the
-ordering by hand, which is the property that makes a triage screen trustworthy.
+Определяется количеством и возрастом, не моделью. Руководитель может воспроизвести порядок вручную — это делает экран приоритизации проверяемым.
 
-## Counters and feed say different things
+## Счётчики и лента сообщают разное
 
-A counter reports state. The feed reports what crossed a threshold. One unowned
-incident can therefore show in the counter while the feed stays quiet, and the
-empty-feed text says exactly that rather than claiming nothing is happening.
+Счётчик показывает состояние, лента — превышение порога. Один инцидент без ответственного может присутствовать в счётчике при пустой ленте. Текст пустого состояния объясняет это, не утверждая, что ничего не происходит.
 
-## Nothing here detects anything new
+## Здесь нет нового детектора
 
-Clusters come from the radar, stuck deliveries from the outbox, unowned
-incidents from the incident table. The value is ranking and routing.
+Кластеры поступают из Radar, застрявшие доставки — из outbox, инциденты без ответственного — из таблицы инцидентов. Ценность модуля — ранжирование и направление к действию.

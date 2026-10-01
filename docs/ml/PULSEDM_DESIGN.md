@@ -1,10 +1,12 @@
-# Pulse Decision Model (PulseDM) — research design / Исследовательский дизайн
+[Русский](PULSEDM_DESIGN.md) · [English](PULSEDM_DESIGN.en.md) · [Қазақша](PULSEDM_DESIGN.kk.md)
 
-**DESIGN ONLY — no trained PulseDM weights, inference endpoint or validated quality exist.** PulseDM is an experimental multilingual, non-generative structured decision model inspired by typed probabilistic decision interfaces. It is neither Jev nor a claim to reproduce Jev's unpublished architecture/training method.
+# Pulse Decision Model (PulseDM) — исследовательский дизайн
 
-## Interface and authority / Интерфейс и полномочия
+**ТОЛЬКО ДИЗАЙН — обученных весов PulseDM, эндпоинта инференса или подтверждённого качества не существует.** PulseDM — это экспериментальная мультиязычная негенеративная модель структурированных решений, вдохновлённая типизированными вероятностными интерфейсами решений. Это не Jev и не попытка воспроизвести неопубликованную архитектуру или метод обучения Jev.
 
-Input is a versioned **pre-decision**, privacy-approved state plus a question and its options. A single state representation may answer several independent Choice, Boolean or Score questions in parallel; options and question wording are inputs, not fixed head numbers. Outputs carry the exact options, probabilities, question ID, model/preprocessing/taxonomy versions, artifact hash, evidence reference and abstention/OOD signal. A Score needs a declared range and calibration method. No free-text generation is required.
+## Интерфейс и полномочия
+
+Входом является версионированное состояние **до принятия решения**, прошедшее проверку приватности, плюс вопрос и варианты ответа. Единое представление состояния может параллельно отвечать на несколько независимых вопросов типа Choice, Boolean или Score; варианты и формулировки вопросов подаются на вход, а не зафиксированы номерами выходных слоёв. Выход содержит точные варианты, вероятности, идентификатор вопроса, версии модели, предобработки и таксономии, хеш артефакта, ссылку на доказательства и сигнал отказа от ответа/OOD. Для Score требуется объявленный диапазон и метод калибровки. Генерация свободного текста не требуется.
 
 ```json
 {
@@ -16,22 +18,22 @@ Input is a versioned **pre-decision**, privacy-approved state plus a question an
 }
 ```
 
-RU: это **пример формата**, а не вывод обученной модели. В частности, `0.64` не является подтверждённой вероятностью. Порог отказа и политика показываются оператору лишь после проверки калибровки на независимом срезе.
+Это **пример формата**, а не вывод обученной модели. В частности, `0.64` не является подтверждённой вероятностью. Порог отказа и политика показываются оператору лишь после проверки калибровки на независимом срезе.
 
-| Advisory question | Allowed | Boundary |
+| Рекомендательный вопрос | Разрешено | Граница |
 | --- | --- | --- |
-| Topic, candidate service, information completeness | Yes | Service proposal constrained by approved catalog/policy |
-| Urgency, escalation or human-review signal | Yes | Cannot set consequential priority or bypass operator |
-| Possible duplicate | Candidate feature only | Hybrid pair model and human confirm/reject own membership |
-| SLA, legal owner, actual assignment, merge, closure | No | Deterministic approved policy and human action |
+| Тема, кандидат на службу, полнота информации | Да | Предложение службы ограничено утверждённым каталогом/политикой |
+| Сигнал срочности, эскалации или проверки человеком | Да | Не может задавать критический приоритет или обходить оператора |
+| Возможный дубликат | Только признак-кандидат | Гибридная парная модель и человек подтверждают/отклоняют включение |
+| SLA, юридический ответственный, фактическое назначение, объединение, закрытие | Нет | Детерминированная утверждённая политика и действие человека |
 
-## Candidate architecture / Архитектура-кандидат
+## Архитектура-кандидат
 
-1. Encode a privacy-approved state once with a multilingual representation backbone.
-2. Encode each dynamic question and option; score state–question–option interactions. A Boolean question is a two-option Choice; ordinal Score uses an explicitly bounded head and a separate loss/metric.
-3. Normalize Choice scores, calibrate on **calibration only**, then return uncertainty/OOD and provenance. Process multiple questions in one batch without autoregressive output.
-4. Compare a BGE-M3-derived encoder path with a carefully adapted Qwen3 embedding representation. Parameter range 300–600M is a **research budget**, not a fixed model size or latency promise.
+1. Однократно закодировать состояние, прошедшее проверку приватности, с помощью мультиязычной базовой модели представлений.
+2. Закодировать каждый динамический вопрос и вариант ответа; оценить взаимодействие «состояние – вопрос – вариант». Вопрос Boolean — это Choice с двумя вариантами; порядковый Score использует явно ограниченный выходной слой и отдельный loss/метрику.
+3. Нормализовать оценки Choice, откалибровать **только на выборке калибровки**, затем вернуть неопределённость/OOD и происхождение данных. Обрабатывать несколько вопросов в одном батче без авторегрессионного вывода.
+4. Сравнить путь энкодера на базе BGE-M3 с аккуратно адаптированным представлением эмбеддингов Qwen3. Диапазон параметров 300–600M — это **исследовательский бюджет**, а не фиксированный размер модели или гарантия задержки.
 
-Training stages are conditional: (0) approved snapshot/label hygiene and grouped temporal split; (1) optional domain adaptation only if held-out benefit justifies it; (2) supervised gold decisions with varied question wording/options; (3) optional teacher soft-label distillation, keeping teacher data separate from human ground truth; (4) temperature/other calibration on calibration data only; (5) held-out selective prediction. Teacher output never becomes a gold label by itself. Synthetic data can test mechanics but cannot certify production quality.
+Этапы обучения применяются при наличии условий: (0) гигиена утверждённого снимка/разметки и групповое временное разбиение; (1) опциональная адаптация к домену, только если выигрыш на отложенной выборке оправдывает её; (2) эталонные решения с участием человека с вариативными формулировками вопросов и вариантов; (3) опциональная дистилляция мягких меток от teacher с отделением данных teacher от эталона разметки человеком; (4) температурная или иная калибровка строго на данных калибровки; (5) выборочное предсказание на отложенной выборке. Вывод teacher никогда сам по себе не становится эталонной меткой. Синтетические данные могут проверять механику, но не подтверждают промышленное качество.
 
-The first runnable [comparison harness](../../ml/evaluation/candidate_compare.py) supports Choice and Boolean *prediction evaluation*, including OOD discrimination; Score training/evaluation, backbone training and live serving remain unimplemented. This boundary prevents a design document from being mistaken for a deployed model.
+Первый исполняемый инструмент сравнения [`ml/evaluation/candidate_compare.py`](../../ml/evaluation/candidate_compare.py) поддерживает *оценку предсказаний* Choice и Boolean, включая дискриминацию OOD; обучение и оценка вопросов Score, обучение базовой модели и онлайн-обслуживание остаются нереализованными. Эта граница предотвращает смешение проектного документа с развёрнутой моделью.

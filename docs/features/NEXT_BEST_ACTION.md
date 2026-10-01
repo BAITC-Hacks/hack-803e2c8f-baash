@@ -1,46 +1,36 @@
+[Русский](NEXT_BEST_ACTION.md) · [English](NEXT_BEST_ACTION.en.md) · [Қазақша](NEXT_BEST_ACTION.kk.md)
+
 # Next Best Action
 
-## What it is
+## Что это
 
-Deterministic rules over one war room snapshot. Each suggestion names the codes
-that fired and the artefacts a reviewer can open.
+Детерминированные правила над одним снимком War Room. Каждая рекомендация называет сработавшие коды и артефакты, которые можно открыть при проверке.
 
-## Why rules and not a model
+## Почему правила, а не модель
 
-Every suggestion has to survive the question "why did you propose that", asked
-months later by somebody auditing a decision. A rule answers with the codes that
-fired and the evidence behind them. A learned scorer, on this data volume and
-with no labelled corpus of good operator moves, answers with a number nobody can
-check. When such a corpus exists, the rules become its baseline.
+Любая рекомендация должна выдержать вопрос «почему это предложено», заданный аудитором спустя месяцы. Правило отвечает кодами и подтверждающими доказательствами. Обученная оценка при таком объёме данных и без размеченного корпуса хороших действий оператора дала бы непроверяемое число. Когда корпус появится, правила станут базовым алгоритмом сравнения.
 
-## The proposals it may make
+## Допустимые рекомендации
 
-| Action              | Fires when                                                 |
-| ------------------- | ---------------------------------------------------------- |
-| `review_owner`      | the resolver has a candidate                               |
-| `resolve_ambiguity` | ownership is ambiguous                                     |
-| `avoid_handoff`     | the record shows loop risk                                 |
-| `expand_incident`   | candidate members are pending                              |
-| `request_evidence`  | a confirmed incident has nothing attached                  |
-| `escalate_unowned`  | it has been active past the policy threshold with no owner |
+| Действие | Условие |
+| --- | --- |
+| `review_owner` | resolver нашёл кандидата |
+| `resolve_ambiguity` | ответственность неоднозначна |
+| `avoid_handoff` | запись показывает риск петли |
+| `expand_incident` | ожидаются кандидатные участники |
+| `request_evidence` | у подтверждённого инцидента нет вложений |
+| `escalate_unowned` | активность без ответственного превысила порог политики |
 
-The set is closed. A suggestion outside it cannot be produced.
+Набор закрытый: рекомендация вне него не может быть создана.
 
-## Confidence
+## Уверенность
 
-A band, not a probability, derived from how many independent supports the record
-holds. Three or more is high, two is medium, one is low. A band says how much
-the record backs the proposal, which is what it can honestly say.
+Это диапазон, а не вероятность, определяемый количеством независимых подтверждений в записи. Три и больше — высокий, два — средний, одно — низкий. Диапазон показывает, насколько запись поддерживает рекомендацию.
 
-## Decision preview
+## Предварительный просмотр решения
 
-Before a handoff, the preview compares candidate targets on recorded facts: the
-ownership rules that matched, rejections that already happened, comparable
-verified outcomes that exist. Its `basis` field is literally
-`recorded_facts_only`, because calling it a forecast would claim knowledge
-nobody has.
+Перед передачей preview сравнивает кандидатов по записанным фактам: совпавшим правилам ответственности, прежним отказам и существующим похожим проверенным исходам. Поле `basis` буквально равно `recorded_facts_only`: назвать это прогнозом означало бы заявить о неизвестном знании.
 
-## The boundary
+## Граница
 
-This module recommends. The Decision Gateway and the human authorize. Every
-suggestion carries `advisory_only: true`, and nothing here can issue a command.
+Модуль рекомендует. Decision Gateway и человек разрешают действие. Каждая рекомендация содержит `advisory_only: true`; модуль не может отправить команду.

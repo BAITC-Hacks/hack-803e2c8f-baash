@@ -1,4 +1,4 @@
-[Русский](README.md) | [English](README.en.md) | [Қазақша](README.kk.md)
+[Русский](README.md) · [English](README.en.md) · [Қазақша](README.kk.md)
 
 # Pulse 109
 

@@ -1,8 +1,10 @@
-# Offline candidate comparison / Офлайн-сравнение кандидатов
+[Русский](README.md) · [English](README.en.md) · [Қазақша](README.kk.md)
 
-The repository currently has **no PulseDM weights or real KK/RU/mixed labeled benchmark**. This directory documents the one shared evaluator; it is not a model-serving stack. The existing synthetic TF-IDF and retrieval experiments remain under `ml/training` and `ml/evaluation`.
+# Офлайн-сравнение кандидатов
 
-Run from the repository root with an approved dataset and locally generated candidate predictions:
+В настоящее время в репозитории **нет весов PulseDM или реального размеченного бенчмарка на KK/RU/mixed**. Этот каталог описывает единый инструмент оценки; это не стек обслуживания моделей. Существующие эксперименты с синтетическим TF-IDF и поиском остаются в `ml/training` и `ml/evaluation`.
+
+Запуск из корня репозитория с утверждённым датасетом и локально сгенерированными предсказаниями кандидатов:
 
 ```text
 uv run python -m ml.evaluation.candidate_compare \
@@ -13,8 +15,8 @@ uv run python -m ml.evaluation.candidate_compare \
   --output /secure/eval/report.json
 ```
 
-On PowerShell, put the command on one line or replace each `\` with PowerShell's line continuation. Keep private evaluation files outside the repository.
+В PowerShell введите команду в одну строку или замените каждый `\` на символ переноса строки PowerShell. Храните приватные файлы оценки вне репозитория.
 
-`manifest.json` has exactly `dataset_id`, `dataset_sha256`, `record_count`, `synthetic_only`, `approval_ref`. `cases.jsonl` has one object per case/question with exactly `case_key`, `group_key` (pseudonymous 64-hex strings), `question_id`, `question_type` (`choice` or `boolean`), `options`, `gold`, `is_ood`, `language` (`ru`, `kk`, `mixed`), `region_id`, `split` (`train`, `calibration`, `test`), `decision_at`, `feature_snapshot_at`, `label_observed_at` (offset timestamps). No text or extra fields are accepted. The dataset hash covers the raw JSONL bytes.
+Файл `manifest.json` содержит строго `dataset_id`, `dataset_sha256`, `record_count`, `synthetic_only`, `approval_ref`. Файл `cases.jsonl` содержит по одному объекту на случай/вопрос со строго заданными полями `case_key`, `group_key` (псевдонимные 64-символьные hex-строки), `question_id`, `question_type` (`choice` или `boolean`), `options`, `gold`, `is_ood`, `language` (`ru`, `kk`, `mixed`), `region_id`, `split` (`train`, `calibration`, `test`), `decision_at`, `feature_snapshot_at`, `label_observed_at` (временные метки со смещением часового пояса). Текстовые или дополнительные поля не принимаются. Хеш датасета вычисляется по необработанным байтам JSONL.
 
-Each submission JSON has exactly `model_id`, `artifact_sha256`, `dataset_sha256`, `predictions`. Every prediction has `case_key`, `question_id`, `probabilities` for **all and only** the declared options summing to one, and `ood_score` in `[0,1]`. Submit exactly one row for every test case/question and none for train/calibration. The evaluator compares candidates on that identical test set, writes no model weights, and never authorizes production use. See [protocol](../docs/ml/EVALUATION_PROTOCOL.md).
+Каждый JSON сабмита содержит строго `model_id`, `artifact_sha256`, `dataset_sha256`, `predictions`. Каждое предсказание содержит `case_key`, `question_id`, `probabilities` для **всех и только** объявленных вариантов с суммой, равной единице, и `ood_score` в диапазоне `[0,1]`. Передавайте ровно по одной строке для каждого тестового случая/вопроса и ни одной строки для train/calibration. Оценщик сравнивает кандидатов на этом идентичном тестовом наборе, не сохраняет веса моделей и никогда не авторизует промышленное использование. См. [протокол](../docs/ml/EVALUATION_PROTOCOL.md).

@@ -1,4 +1,5 @@
-# Dashboards
+[Русский](README.md) · [English](README.en.md) · [Қазақша](README.kk.md)
 
-Operational dashboards will be added with the failure modes introduced by later milestones.
+# Панели мониторинга
 
+Операционные панели будут добавляться вместе со сценариями отказов последующих этапов.

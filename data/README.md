@@ -1,10 +1,10 @@
-# Data Boundary
+[Русский](README.md) · [English](README.en.md) · [Қазақша](README.kk.md)
 
-Only schemas, manifests, and clearly labelled synthetic fixtures belong in Git. Real source payloads,
-appeal text, direct identifiers, voice, media, and addresses must remain in approved access-controlled
-storage outside this repository.
+# Граница данных
 
-- `fixtures/synthetic/` exercises contracts and failure states only.
-- `manifests/` records generator version, seed, purpose, and synthetic status.
-- `reports/` contains synthetic DQ evidence, historical aggregate regional DQ counters and withheld quarantine placeholders; none establishes model quality.
-- `schemas/` is reserved for approved source mappings; unknown fields remain quarantined until review.
+В Git хранятся только схемы, манифесты и явно обозначенные синтетические тестовые данные. Реальные исходные данные, тексты обращений, прямые идентификаторы, голос, медиа и адреса должны оставаться в утверждённом хранилище с контролем доступа вне репозитория.
+
+- `fixtures/synthetic/` проверяет только контракты и состояния отказа.
+- `manifests/` фиксирует версию генератора, seed, цель и синтетический статус.
+- `reports/` содержит синтетические доказательства DQ, исторические агрегированные счётчики регионального DQ и заглушки скрытых карантинных записей; они не подтверждают качество моделей.
+- `schemas/` предназначен для утверждённых сопоставлений источников; неизвестные поля остаются в карантине до проверки.

@@ -1,13 +1,15 @@
-# ML research index / Индекс ML-исследований
+[Русский](README.md) · [English](README.en.md) · [Қазақша](README.kk.md)
 
-This directory describes candidates and evaluation gates. It does **not** describe deployed model weights or approved production quality. Этот раздел фиксирует кандидатов и правила оценки, а не внедрённые веса или подтверждённое качество.
+# Индекс ML-исследований
 
-- [Strategy / Стратегия](MODEL_STRATEGY.md): current path and three candidate tracks.
-- [Candidates / Кандидаты](MODEL_CANDIDATES.md): model IDs, roles and evidence required before selection.
-- [PulseDM design / Дизайн](PULSEDM_DESIGN.md): research interface and possible architecture.
-- [Evaluation protocol / Протокол](EVALUATION_PROTOCOL.md): comparable KK/RU/mixed splits and metrics.
-- [Data requirements / Требования к данным](DATA_REQUIREMENTS.md): provenance, privacy and leakage barriers.
-- [Governance / Управление](MODEL_GOVERNANCE.md): model cards, approval and rollback.
-- [Model card template / Шаблон паспорта](MODEL_CARD_TEMPLATE.md).
+Этот раздел описывает кандидатов и правила оценки. Он **не** описывает развёрнутые веса моделей или подтверждённое промышленное качество.
 
-The runnable offline comparison boundary is [`ml/evaluation/candidate_compare.py`](../../ml/evaluation/candidate_compare.py); [experiment instructions](../../experiments/README.md) show its input contract. Existing synthetic baseline and retrieval reports remain fixture diagnostics.
+- [Стратегия](MODEL_STRATEGY.md): текущий путь и три направления кандидатов.
+- [Кандидаты](MODEL_CANDIDATES.md): идентификаторы моделей, роли и доказательства, необходимые до выбора.
+- [Дизайн PulseDM](PULSEDM_DESIGN.md): исследовательский интерфейс и возможная архитектура.
+- [Протокол оценки](EVALUATION_PROTOCOL.md): сопоставимые KK/RU/mixed разбиения и метрики.
+- [Требования к данным](DATA_REQUIREMENTS.md): происхождение данных, приватность и барьеры утечек.
+- [Управление моделями](MODEL_GOVERNANCE.md): паспорта моделей, утверждение и откат.
+- [Шаблон паспорта модели](MODEL_CARD_TEMPLATE.md).
+
+Исполняемая граница офлайн-сравнения — [`ml/evaluation/candidate_compare.py`](../../ml/evaluation/candidate_compare.py); [инструкции к экспериментам](../../experiments/README.md) описывают её контракт входных данных. Существующие отчёты по синтетическому базовому алгоритму и поиску остаются диагностикой тестовых данных.

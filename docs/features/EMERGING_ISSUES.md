@@ -1,73 +1,47 @@
+[Русский](EMERGING_ISSUES.md) · [English](EMERGING_ISSUES.en.md) · [Қазақша](EMERGING_ISSUES.kk.md)
+
 # Emerging Issues Radar
 
-## The problem it solves
+## Какую проблему решает
 
-A hotline routes against a taxonomy that already exists. A city problem can
-appear before a category for it does. Reports arrive saying the water smells
-odd, tastes metallic, looks cloudy after repairs, and a classifier scatters them
-across water quality, water supply, other and manual review. Nobody sees that
-they are one thing.
+Горячая линия маршрутизирует обращения по существующей таксономии. Городская проблема может появиться раньше категории для неё. Сообщения об необычном запахе воды, металлическом привкусе и мутности после ремонта классификатор распределяет между качеством воды, водоснабжением, прочим и ручной проверкой. Общая проблема остаётся незаметной.
 
-## What it reports
+## Что показывает
 
-That a group of reports arrived close together and fits the existing taxonomy
-poorly. Not what caused it. The radar has no way to know that, and a system that
-says "the water is contaminated" on this evidence is guessing with the city's
-trust.
+Radar показывает, что группа сообщений поступила рядом по месту и времени и плохо соответствует таксономии. Он не устанавливает причину: утверждение «вода загрязнена» на таких данных было бы догадкой, подрывающей доверие города.
 
-## How it works
+## Как работает
 
-`POST /v1/discovery/scans` reads a recent window for one region and links
-reports that are close in three measured ways:
+`POST /v1/discovery/scans` читает недавнее окно одного региона и связывает сообщения по трём измеряемым признакам:
 
-| Signal   | Weight | Source                                     |
-| -------- | ------ | ------------------------------------------ |
-| geo      | 0.45   | recorded coordinates, great-circle metres  |
-| time     | 0.30   | business time, only when it exists         |
-| taxonomy | 0.25   | operator decision topic, when one was made |
+| Признак | Вес | Источник |
+| --- | --- | --- |
+| geo | 0.45 | записанные координаты, расстояние по дуге большого круга в метрах |
+| time | 0.30 | бизнес-время, если оно известно |
+| taxonomy | 0.25 | тема решения оператора, если решение принято |
 
-Linking uses single link agglomeration. A developing city problem spreads along
-a street or a pipe, so its reports form a chain rather than a ball, and single
-link follows a chain. It is deterministic and needs no numerical library, so the
-radar stays available on the CPU-only fallback path.
+Связывание использует агломерацию single link. Развивающаяся проблема распространяется вдоль улицы или трубы; сообщения образуют цепочку, а не шар, и single link отслеживает эту цепочку. Алгоритм детерминирован и не требует численных библиотек, поэтому Radar доступен в резервном CPU-контуре.
 
-A signal that cannot be measured for a pair is removed from the denominator
-rather than scored as zero, so an unmeasurable signal never masquerades as a
-measured mismatch.
+Неизмеримый для пары признак исключается из знаменателя, а не получает ноль. Отсутствие измерения не выглядит как измеренное несовпадение.
 
-## What novelty is, and what it is not
+## Что означает новизна
 
-Novelty measures how poorly one report fits what the taxonomy already knows: a
-report sent to manual review, or routed with low confidence, or carrying no
-topic at all. It gates whether a cluster is worth an alert.
+Новизна измеряет, насколько сообщение плохо вписывается в известную таксономию: ручная проверка, маршрутизация с низкой уверенностью или отсутствие темы. Она определяет, заслуживает ли кластер предупреждения.
 
-It takes no part in linking. Scoring novelty between two reports made any two
-unusual reports look related, and a lighting report duly joined a water cluster
-a kilometre away. That defect was found by looking at a cluster on screen and is
-covered by a regression test.
+Новизна не участвует в связывании. Сравнение новизны двух сообщений делало любые необычные сообщения похожими: обращение об освещении присоединилось к водному кластеру в километре от него. Ошибка обнаружена при просмотре кластера и покрыта регрессионным тестом.
 
-## Thresholds are policy
+## Пороги задаются политикой
 
-`DiscoveryPolicy` carries the window, the distances, the minimum cluster size
-and the minimum cohesion and novelty. A supervisor has to be able to make the
-radar quieter or louder without a release, and every stored cluster keeps the
-policy snapshot that produced it, so a reviewer can reconstruct an alert months
-later.
+`DiscoveryPolicy` содержит окно, расстояния, минимальный размер кластера, связность и новизну. Руководитель может менять чувствительность без нового выпуска. Каждый сохранённый кластер хранит снимок породившей его политики, чтобы спустя месяцы можно было восстановить основание предупреждения.
 
-## Identity
+## Идентичность
 
-A cluster id is derived from its member set, so rescanning the same reports
-returns the same cluster rather than renaming it underneath a reviewer.
+ID кластера выводится из набора участников: повторное сканирование тех же сообщений возвращает тот же кластер, не меняя его имя во время проверки.
 
-## What a human does
+## Действие человека
 
-Promotion to an incident happens on the incident endpoint. The radar records
-that it happened. It cannot open work by itself, and the review endpoint refuses
-a promotion that does not name an incident a human already created.
+Преобразование в инцидент выполняется через endpoint инцидентов; Radar фиксирует результат. Он не открывает работу самостоятельно. Endpoint проверки отклоняет преобразование без указания инцидента, уже созданного человеком.
 
-## Blocked
+## Внешняя зависимость
 
-The semantic signal is designed and not connected. No regional export carries
-the citizen's own words (blocker B02), so a scan reports
-`semantic_status: unavailable, CITIZEN_TEXT_ABSENT`. When text arrives, the
-embedding term plugs into the same weighted affinity.
+Семантический признак спроектирован, но не подключён. Региональные выгрузки не содержат исходных слов гражданина (B02), поэтому сканирование возвращает `semantic_status: unavailable, CITIZEN_TEXT_ABSENT`. После появления текста embedding-компонент войдёт в ту же взвешенную меру близости.

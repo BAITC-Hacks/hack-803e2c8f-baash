@@ -1,5 +1,5 @@
-# Security Notes
+[Русский](README.md) · [English](README.en.md) · [Қазақша](README.kk.md)
 
-The M0/M1 boundary stores only opaque private references in canonical and operational structures.
-Identity, retention, production key management, and deployment controls remain external blockers.
+# Заметки по безопасности
 
+На границе M0/M1 канонические и операционные структуры хранят только непрозрачные приватные ссылки. Идентификация, сроки хранения, управление production-ключами и контроль развёртывания остаются внешними блокерами.

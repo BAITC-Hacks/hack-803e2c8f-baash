@@ -1,52 +1,54 @@
-# Pulse 109 Target Pilot Model Stack
+[Русский](model_stack.md) · [English](model_stack.en.md) · [Қазақша](model_stack.kk.md)
 
-This is a candidate/design document, not a record of deployed model weights.
-Current runtime uses a disclosed CPU lexical/hash-vector fallback and a
-seasonal-naive forecast. Fine-tuned classifier/embedding and named GPU models
-are not validated for citizen-text RU/KK runtime. See
-[FEATURE_STATUS](../docs/FEATURE_STATUS.md) and [MODEL_STRATEGY](../docs/ml/MODEL_STRATEGY.md).
+# Целевой стек моделей пилота Pulse 109
 
-## Decision
+Это документ проекта/кандидата, а не запись о развёрнутых весах моделей.
+Текущий исполняемый контур использует открытый CPU лексический/хэш-векторный резервный путь и
+прогноз seasonal-naive. Дообученный классификатор/эмбеддинги и именованные GPU-модели
+не валидированы для исполнения на текстах граждан RU/KK. См.
+[FEATURE_STATUS](../docs/FEATURE_STATUS.md) и [MODEL_STRATEGY](../docs/ml/MODEL_STRATEGY.md).
 
-The target pilot would use approved task-specific compact models behind versioned inference contracts. No model may write a final route, priority, duplicate membership or citizen response without an operator decision.
+## Решение
 
-## Components
+Целевой пилот предполагает использование утверждённых компактных моделей под конкретные задачи за версионированными контрактами вывода (inference). Ни одна модель не может записать окончательный маршрут, приоритет, принадлежность к дубликатам или ответ гражданину без решения оператора.
 
-| Capability                         | Pilot model                                                              | Serving                               | Required fallback                                        |
+## Компоненты
+
+| Возможность                        | Модель пилота                                                            | Serving                               | Обязательный резервный путь                              |
 | ---------------------------------- | ------------------------------------------------------------------------ | ------------------------------------- | -------------------------------------------------------- |
-| Topic and service routing          | XLM-RoBERTa base fine-tuned with hierarchical multi-label heads          | ONNX Runtime or Transformers on GPU 0 | Character TF-IDF linear baseline and manual catalog      |
-| Language and mixed-language signal | Rules plus a compact classifier; joint XLM-R head only if slices improve | CPU or GPU 0                          | Explicit unknown or mixed label                          |
-| Similar resolutions                | BGE-M3 embeddings with hybrid BM25 and vector retrieval                  | GPU 0, pgvector and PostgreSQL FTS    | Lexical retrieval and exact filters                      |
-| Reranking                          | BGE reranker v2 m3                                                       | GPU 0 with bounded batches            | Use first-stage ranking                                  |
-| Duplicate candidates               | Calibrated pair model over text, geo, time and service                   | GPU 0 or CPU                          | High-precision rules; human confirmation always required |
-| Draft and explanation              | Qwen3 8B in four-bit mode with approved retrieval and templates          | GPU 1                                 | Approved templates or disabled                           |
-| Call transcription                 | Whisper large v3 turbo after audio approval                              | GPU 1, asynchronous                   | Human transcript or no transcription                     |
-| PII detection                      | Regex and approved dictionaries plus fine-tuned XLM-R NER                | CPU or GPU 0                          | Block uncertain export and send to review                |
-| Demand forecast                    | Seasonal naive baseline and CatBoost or LightGBM candidate               | CPU batch                             | Last approved baseline forecast                          |
+| Маршрутизация по теме и службе     | XLM-RoBERTa base, дообученная с иерархическими мультилейбл-головами      | ONNX Runtime или Transformers на GPU 0 | Посимвольный TF-IDF линейный базовый алгоритм и ручной каталог |
+| Языковой сигнал и смешанный язык   | Правила плюс компактный классификатор; совместная голова XLM-R только при улучшении срезов | CPU или GPU 0                          | Явная метка «unknown» или «mixed»                        |
+| Похожие решения                    | Эмбеддинги BGE-M3 с гибридным поиском BM25 и векторным поиском           | GPU 0, pgvector и PostgreSQL FTS      | Лексический поиск и точные фильтры                       |
+| Переранжирование (reranking)       | BGE reranker v2 m3                                                       | GPU 0 с ограниченными батчами         | Использование ранжирования первого этапа                 |
+| Кандидаты в дубликаты              | Калиброванная парная модель по тексту, геоданным, времени и службе       | GPU 0 или CPU                         | Правила высокой точности; всегда требуется подтверждение человеком |
+| Черновик ответа и пояснение        | Qwen3 8B в 4-битном режиме с утверждённым поиском и шаблонами            | GPU 1                                 | Утверждённые шаблоны или отключено                       |
+| Транскрипция звонков               | Whisper large v3 turbo после утверждения обработки аудио                 | GPU 1, асинхронно                     | Стенограмма человека или отсутствие транскрипции         |
+| Обнаружение PII                    | Регулярные выражения и утверждённые словари плюс дообученная XLM-R NER   | CPU или GPU 0                         | Блокировка сомнительного экспорта и отправка на проверку |
+| Прогноз спроса                     | Базовый алгоритм seasonal-naive и кандидат CatBoost или LightGBM         | Пакетный режим на CPU                 | Последний утверждённый базовый прогноз                   |
 
-## GPU Placement
+## Размещение GPU
 
-- GPU 0 serves the operator-critical path: routing, embeddings and reranking.
-- GPU 1 serves Qwen and Whisper on demand, runs challenger training outside peak hours and acts as a hot spare when practical.
-- Loss of either GPU must not block appeal creation, manual routing, status updates or audit recording.
-- Loss of all ML switches the product to manual routing, lexical search and approved response templates.
+- GPU 0 обслуживает критический путь оператора: маршрутизацию, эмбеддинги и переранжирование.
+- GPU 1 обслуживает Qwen и Whisper по запросу, выполняет обучение моделей-претендентов вне пиковых часов и служит горячим резервом при необходимости.
+- Отказ любого из GPU не должен блокировать создание обращений, ручную маршрутизацию, обновления статусов или запись аудита.
+- Отказ всех компонентов ML переключает продукт на ручную маршрутизацию, лексический поиск и утверждённые шаблоны ответов.
 
-## Inference Contracts
+## Контракты вывода (inference)
 
-Every response includes the model name, immutable version, input schema version, preprocessing version, confidence or score, OOD state, latency and trace ID. Models receive redacted text unless an approved task explicitly requires otherwise.
+Каждый ответ включает имя модели, неизменяемую версию, версию входной схемы, версию предобработки, уверенность или оценку, состояние OOD, задержку (latency) и trace ID. Модели получают обезличенный текст, если только утверждённая задача явно не требует иного.
 
-## Promotion Gates
+## Условия продвижения (promotion gates)
 
-1. Reproduce training from a versioned dataset manifest and immutable configuration.
-2. Pass leakage checks and time-aware, region-aware and language-aware evaluation.
-3. Beat the approved baseline on the target metric without degrading critical recall or Kazakh-language slices.
-4. Calibrate confidence on a set separate from the final test set.
-5. Run in shadow mode, then a limited canary with operator review.
-6. Record a model card, license decision, security approval and rollback target before promotion to champion.
+1. Воспроизводимость обучения из версионированного манифеста датасета и неизменяемой конфигурации.
+2. Прохождение проверок на утечки данных (leakage) и валидация с учётом времени, регионов и языков.
+3. Превосходство над утверждённым базовым алгоритмом по целевой метрике без ухудшения критической полноты (recall) или срезов на казахском языке.
+4. Калибровка уверенности на выборке, отдельной от финального тестового набора.
+5. Работа в теневом режиме (shadow mode), затем ограниченный canary-релиз с проверкой оператором.
+6. Фиксация карточки модели (model card), лицензионного решения, одобрения безопасности и цели отката перед продвижением в статус champion.
 
-## Resource Rules
+## Правила использования ресурсов
 
-- Quantization is accepted only after a measured quality regression test.
-- The Qwen component cannot execute arbitrary SQL. It may map an intent to an allowlisted Metric ID and constrained query plan.
-- Raw citizen text must never appear in metric labels, traces or ordinary application logs.
-- Training and serving share no mutable model directory. Deployment uses immutable artifacts and verified hashes.
+- Квантование допускается только после измеренного теста регрессии качества.
+- Компонент Qwen не может выполнять произвольный SQL. Он может сопоставлять intent с разрешённым Metric ID и ограниченным планом запроса.
+- Исходный текст гражданина никогда не должен появляться в метках метрик, трассировках или обычных логах приложения.
+- Обучение и serving не разделяют общую изменяемую директорию моделей. Развёртывание использует неизменяемые артефакты и проверенные хеши.

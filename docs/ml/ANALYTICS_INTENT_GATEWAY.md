@@ -1,47 +1,49 @@
-# Local Ask Pulse inference
+[Русский](ANALYTICS_INTENT_GATEWAY.md) · [English](ANALYTICS_INTENT_GATEWAY.en.md) · [Қазақша](ANALYTICS_INTENT_GATEWAY.kk.md)
 
-`POST /v1/inference/analytics-intent` translates a question into
-`AnalyticsIntent`; it never calculates statistics or reads citizen records.
-The existing `/v1/inference/classify` contract remains available.
+# Локальный инференс Ask Pulse
 
-The gateway receives a bounded question, locale, explicit reference clock and
-scoped `IntentCatalog`. A constrained JSON schema limits model output to the
-existing metrics and the catalog's region/topic/service IDs. Only the question,
-catalog and safe clock/schema instructions reach the local model. Conversation
-follow-ups use the deterministic parser without forwarding prior chat context.
-The business service remains the final authorization and metric policy gate.
+Эндпоинт `POST /v1/inference/analytics-intent` переводит вопрос на естественном языке в
+`AnalyticsIntent`; он никогда не вычисляет статистику и не читает записи граждан.
+Существующий контракт `/v1/inference/classify` остаётся доступным.
 
-Unsafe SQL, PII requests, causal claims and unapproved SLA queries are refused
-before inference. Ambiguous questions retain their clarification. Timeout,
-HTTP failure, truncation, invalid JSON, schema violation and out-of-catalog IDs
-return the CPU parser result. Raw questions, model output and records are never
-added to logs, traces or error envelopes. Redirects and proxy environment
-variables are disabled for model HTTP requests.
+Шлюз принимает ограниченный вопрос, локаль, явные эталонные часы и
+каталог с заданной областью видимости `IntentCatalog`. Ограничивающая схема JSON сужает вывод модели до
+существующих метрик и идентификаторов региона/темы/службы из каталога. Только сам вопрос,
+каталог и безопасные инструкции по часам и схеме передаются локальной модели. Последующие
+уточняющие вопросы в диалоге обрабатываются детерминированным парсером без передачи предшествующего контекста чата.
+Бизнес-сервис остаётся финальным шлюзом авторизации и политики расчёта метрик.
 
-## Registry
+Небезопасный SQL, запросы PII, причинно-следственные утверждения и несогласованные запросы SLA отклоняются
+до выполнения инференса. Неоднозначные вопросы сохраняют статус необходимости уточнения. Таймаут,
+ошибка HTTP, усечение ответа, невалидный JSON, нарушение схемы и идентификаторы вне каталога
+приводят к возврату результата парсера на CPU. Исходные вопросы, вывод модели и записи никогда
+не попадают в логи, трассировки или структуры сообщений об ошибках. Перенаправления (redirects) и переменные
+окружения прокси отключены для HTTP-запросов к модели.
 
-`ml/registry/analytics_intent_registry.json` ships with no model or alias. This
-honestly selects the baseline until real immutable artifacts and approval are
-supplied. `analytics_intent_candidates.json` names Qwen and Gemma proposals;
-all pins, quality and approvals remain absent. No weights are downloaded.
-The Qwen proposal is identified by its author's
-[Qwen3-4B-Instruct-2507 model card](https://huggingface.co/Qwen/Qwen3-4B-Instruct-2507).
-The model card is not local municipal RU/KK evaluation evidence.
+## Реестр
 
-Each registered model requires an immutable model revision, tokenizer revision,
-artifact SHA-256, runtime/version, quantization, prompt/schema versions and a
-private endpoint. `champion` and `rollback` require an approval reference and an
-evaluation reference over approved questions. Synthetic contract reports cannot
-approve them. `challenger` may reference an evaluation artifact and is only used
-when explicitly requested in offline comparisons. The core requests `champion`.
+Файл `ml/registry/analytics_intent_registry.json` поставляется без зарегистрированных моделей или псевдонимов. Это
+честно выбирает базовый алгоритм до тех пор, пока не будут предоставлены реальные неизменяемые артефакты и согласования.
+В `analytics_intent_candidates.json` указаны предложения на базе Qwen и Gemma;
+все фиксации версий, оценки качества и согласования пока отсутствуют. Веса не скачиваются.
+Предложение Qwen идентифицируется ссылкой на
+[паспорт модели Qwen3-4B-Instruct-2507](https://huggingface.co/Qwen/Qwen3-4B-Instruct-2507) от её авторов.
+Паспорт модели не является доказательством качества при оценке на муниципальных данных RU/KK.
 
-Endpoints accept loopback, RFC1918/unique-local addresses or private single-label
-service names. Deploy those names on the approved private network; do not map
-them to an external host. The gateway re-reads the registry for each request.
-Publish registry replacements atomically and keep the previous file for rollback.
+Каждая зарегистрированная модель требует указания неизменяемой ревизии модели, ревизии токенизатора,
+SHA-256 артефакта, среды выполнения (runtime) и её версии, квантования, версий промпта/схемы и
+приватного эндпоинта. Для ролей `champion` и `rollback` требуются ссылка на согласование и
+ссылка на результаты оценки по утверждённому набору вопросов. Синтетические контрактные отчёты не могут
+служить основанием для их утверждения. Роль `challenger` может ссылаться на артефакт оценки и используется
+только при явном запросе в рамках офлайн-сравнений. Ядро системы запрашивает `champion`.
 
-Explicit human approval can prepare a replacement file after health and exact
-served-model ID checks:
+Эндпоинты принимают адреса loopback, адреса RFC1918/unique-local или приватные односоставные
+имена сервисов. Развёртывайте эти сервисы в утверждённой изолированной сети; не привязывайте
+их к внешним хостам. Шлюз перечитывает реестр при каждом запросе.
+Публикуйте обновления реестра атомарно и сохраняйте предыдущий файл для отката.
+
+Явное подтверждение человеком позволяет подготовить файл замены после проверки работоспособности (health check) и
+точного соответствия идентификатора обслуживаемой модели:
 
 ```powershell
 $env:PYTHONPATH = "services/core/src;services/inference/src"
@@ -49,29 +51,29 @@ uv run python -m pulse109_inference.analytics_registry_cli --registry active.jso
 uv run python -m pulse109_inference.analytics_registry_cli --registry active.json --action rollback --approval-ref approved-rollback-reference --output reviewed-rollback.json
 ```
 
-The CLI refuses to overwrite files and does not publish the replacement. Its
-approval reference records an existing human decision; the command does not
-create approval or model quality evidence. Health verifies the endpoint's model
-identifier, while artifact/revision correctness still requires deployment review.
+Интерфейс командной строки (CLI) запрещает перезапись файлов и не публикует замену автоматически. Его
+ссылка на утверждение фиксирует уже принятое решение человека; сама команда не
+создаёт утверждения или подтверждения качества модели. Проверка работоспособности сверяет идентификатор
+модели эндпоинта, тогда как корректность артефакта и ревизии по-прежнему требует проверки при развёртывании.
 
-## Optional model server
+## Опциональный сервер модели
 
-Use `infra/compose/docker-compose.analytics-llm.yml` with the normal Compose
-stack and the `analytics-llm` profile. Supply a reviewed vLLM image **by digest**,
-an approved local artifact directory, served model ID and registry file. This
-overlay uses one GPU, publishes no model-server port, mounts artifacts read-only,
-disables request logging and sets Hub/Transformers offline mode. Runtime and
-quantization must match the artifact evaluated and listed in the registry.
-There is no default image digest or fabricated model revision.
+Используйте `infra/compose/docker-compose.analytics-llm.yml` со стандартным стеком Compose
+и профилем `analytics-llm`. Предоставьте проверенный образ vLLM **по дайджесту**,
+утверждённую локальную директорию артефактов, идентификатор обслуживаемой модели и файл реестра. Этот
+оверлей задействует один GPU, не публикует наружу порт сервера модели, монтирует артефакты только для чтения,
+отключает логирование запросов и переводит Hub/Transformers в офлайн-режим. Среда выполнения и
+квантование должны точно соответствовать артефакту, прошедшему оценку и указанному в реестре.
+Дефолтного дайджеста образа или фиктивной ревизии модели нет.
 
-The gateway uses `response_format.type=json_schema`, documented by the official
-[vLLM structured-output API](https://docs.vllm.ai/en/v0.21.0/features/structured_outputs/)
-and its [current source documentation](https://github.com/vllm-project/vllm/blob/main/docs/features/structured_outputs.md).
-Confirm API compatibility of the reviewed runtime before deployment. Default
-inference readiness still reports `no-model-loaded`; a CPU fallback is ready
-even when the optional GPU server is unavailable.
+Шлюз использует `response_format.type=json_schema`, задокументированный в официальном
+[руководстве по API структурированного вывода vLLM](https://docs.vllm.ai/en/v0.21.0/features/structured_outputs/)
+и его [текущей документации в репозитории](https://github.com/vllm-project/vllm/blob/main/docs/features/structured_outputs.md).
+Подтвердите совместимость API проверяемой среды выполнения до развёртывания. По умолчанию
+готовность инференса возвращает статус `no-model-loaded`; резервный путь на CPU готов к работе,
+даже если опциональный GPU-сервер недоступен.
 
-## Frozen contract checks
+## Проверки неизменяемого контракта
 
 ```powershell
 $env:PYTHONPATH = "services/core/src;services/inference/src"
@@ -79,13 +81,13 @@ uv run python -m ml.evaluation.analytics_intent_benchmark --alias baseline --out
 uv run python -m ml.evaluation.analytics_intent_benchmark --alias challenger --registry reviewed-registry.json --output challenger-contract-report.json
 ```
 
-The frozen fixture includes RU, KK, mixed, adversarial and ambiguous questions,
-an explicit clock and SHA-256 cohort pin. Reports show expected-field agreement,
-schema validity, refusals, fallback metadata and measured local latency. They are
-labelled `synthetic_contract_only`, set `model_quality` and VRAM to null and must
-never be used as measured RU/KK model quality, capacity or promotion evidence.
-Reported token counts come from the runtime; missing counts remain null.
+Неизменяемый тестовый набор включает вопросы на RU, KK, смешанные, состязательные (adversarial) и неоднозначные вопросы,
+явные часы и фиксацию когорты по SHA-256. Отчёты отражают совпадение ожидаемых полей,
+валидность схемы, отказы, метаданные резервного пути и измеренную локальную задержку. Они
+помечены как `synthetic_contract_only`, содержат null для полей `model_quality` и VRAM и ни в коем случае не должны
+использоваться как доказательство качества моделей на RU/KK, их производительности или основание для внедрения.
+Указанное количество токенов поступает из среды выполнения; при отсутствии данных значения остаются null.
 
-B01/B06 authoritative catalogs, B08 approved private hosting/identity profile,
-B09 GPU capacity and real approved RU/KK evaluation remain visible prerequisites.
-This instruction parser does not replace the classifier or retrieval models.
+Авторитетные каталоги B01/B06, утверждённый профиль приватного хостинга/идентификации B08,
+наличие GPU B09 и реальная утверждённая оценка на RU/KK остаются явными обязательными условиями.
+Этот парсер инструкций не заменяет модели классификации или поиска.

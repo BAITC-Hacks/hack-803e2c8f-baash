@@ -1,17 +1,16 @@
-# Failure-mode demonstration
+[Русский](FAILURE_MODE_DEMO.md) · [English](FAILURE_MODE_DEMO.en.md) · [Қазақша](FAILURE_MODE_DEMO.kk.md)
 
-Use only the labelled synthetic fixture.
+# Демонстрация сценариев отказа
 
-1. Start the local topology with `make up`; verify all readiness endpoints.
-2. Submit an appeal and record its Pulse ID and correlation ID.
-3. Request the unavailable production model alias. Verify the API returns a safe `503`, then record
-   a manual routing decision and assignment. The appeal, audit row, and outbox event must exist.
-4. Start the replay adapter in unavailable mode. Verify delivery becomes `retrying`, the appeal shows
-   synchronization pending, and intake/status/audit remain available.
-5. Restore the replay adapter. The durable worker must reclaim the event after `available_at`, obtain
-   an external receipt, record a delivery attempt, and mark the outbox row `published`.
-6. Inject an unknown source status. Verify it enters `mapping_review` and does not change the appeal.
-7. Stop inference entirely and repeat intake, manual decision, assignment, and status update.
-8. Save redacted logs, SQL counts, correlation IDs, and hashes. Never capture request bodies or PII.
+Используйте только помеченные синтетические данные.
 
-Automated equivalents live in `tests/resilience` and `tests/e2e/test_golden_flow.py`.
+1. Запустите локальную топологию через `make up`; проверьте все readiness endpoints.
+2. Создайте обращение и запишите его Pulse ID и correlation ID.
+3. Запросите недоступный production model alias. Проверьте безопасный ответ API `503`, затем запишите ручное решение о маршрутизации и назначение. Обращение, запись аудита и событие outbox должны существовать.
+4. Запустите replay adapter в режиме недоступности. Проверьте, что доставка становится `retrying`, обращение показывает ожидание синхронизации, а приём, статусы и аудит остаются доступны.
+5. Восстановите replay adapter. Устойчивый worker должен забрать событие после `available_at`, получить внешнюю квитанцию, записать попытку доставки и пометить строку outbox как `published`.
+6. Передайте неизвестный исходный статус. Проверьте переход в `mapping_review` без изменения обращения.
+7. Полностью остановите inference и повторите приём, ручное решение, назначение и обновление статуса.
+8. Сохраните обезличенные логи, количества SQL, correlation ID и хеши. Никогда не записывайте тела запросов или PII.
+
+Автоматизированные эквиваленты находятся в `tests/resilience` и `tests/e2e/test_golden_flow.py`.

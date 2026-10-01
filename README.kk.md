@@ -1,12 +1,12 @@
-[Русский](README.md) | [English](README.en.md) | [Қазақша](README.kk.md)
+[Русский](README.md) · [English](README.en.md) · [Қазақша](README.kk.md)
 
 # Pulse 109
 
 > Жеке өтініштерден — қалалық мәселенің тұтас көрінісіне.
 
-109 қызметтеріне арналған зияткерлік қабат: өтініштерді қалалық инциденттерге байланыстырады, операторға шешім қабылдауға көмектеседі және басшыға тексеруге болатын талдау ұсынады.
+109 қызметтеріне арналған зияткерлік қабат: өтініштерді қалалық оқиғаларға байланыстырады, операторға шешім қабылдауға көмектеседі және басшыға тексеруге болатын талдау ұсынады.
 
-[Демоны ашу](https://baash.govtech-kz.com/demo) · [Басты бет](https://baash.govtech-kz.com/) · [Golden Demo](docs/GOLDEN_DEMO.md) · [Архитектура](docs/architecture/README.md)
+[Демоны ашу](https://baash.govtech-kz.com/demo) · [Басты бет](https://baash.govtech-kz.com/) · [Golden Demo](docs/GOLDEN_DEMO.kk.md) · [Архитектура](docs/architecture/README.kk.md)
 
 ![Pulse 109 Operations Center: демонстрациялық деректердегі интерфейс](docs/screenshots/operations-center.png)
 
@@ -14,7 +14,7 @@
 
 ### Жалпыға қолжетімді стенд
 
-**[Басты бет](https://baash.govtech-kz.com/)** пен **[интерактивті демо](https://baash.govtech-kz.com/demo)** ұйымдастырушылардың HTTPS proxy қызметі арқылы бір Next.js қолданбасында жұмыс істейді. Негізінде — FastAPI, PostgreSQL, миграциялар, аудит, outbox және worker. Golden World — синтетикалық ALA қалалық әлемі; сыртқы жеткізуді replay adapter жаңғыртады. PostgreSQL стек ішінде қолжетімді. Параметрлер мен тексерулер [deployment runbook](infra/runbooks/PUBLIC_DEPLOYMENT.md) құжатында.
+**[Басты бет](https://baash.govtech-kz.com/)** пен **[интерактивті демо](https://baash.govtech-kz.com/demo)** ұйымдастырушылардың HTTPS proxy қызметі арқылы бір Next.js қолданбасында жұмыс істейді. Негізінде — FastAPI, PostgreSQL, миграциялар, аудит, outbox және worker. Golden World — синтетикалық ALA қалалық әлемі; сыртқы жеткізуді replay adapter жаңғыртады. PostgreSQL стек ішінде қолжетімді. Параметрлер мен тексерулер [deployment runbook](infra/runbooks/PUBLIC_DEPLOYMENT.kk.md) құжатында.
 
 ## Міндет
 
@@ -32,7 +32,7 @@
 - **Ask Pulse:** RU/KK сұрақтары, PostgreSQL есептеулері, графиктер, деректердің шығу тегі, drill-down, PDF/XLSX және болжам.
 - **Сенімді платформа:** сақталатын шешімдер, аудит, идемпотенттілік, outbox, worker және адаптерлер; ML істемегенде қолмен өңдеу жолы жұмыс істейді.
 
-**ЖИ ұсынады — адам растайды.** Әр өтініштің өз ID нөмірі, тарихы және жеке міндеттемелері сақталады. Инцидент қызметтерді үйлестіру үшін бірнеше өтінішке ортақ контекст береді.
+**ЖИ ұсынады — адам растайды.** Әр өтініштің өз ID нөмірі, тарихы және жеке міндеттемелері сақталады. Оқиға қызметтерді үйлестіру үшін бірнеше өтінішке ортақ контекст береді.
 
 ## GovTech Camp барысында шешім қалай дамыды
 
@@ -41,7 +41,7 @@
 3. **Назарды қалалық жағдайға кеңейттік.** Жеке өтініштерді Radar, Incident және War Room байланыстырды. Жауапкершілік, адам растауы және тапсырманы беру бақылауы мәселені анықтаудан орындауға дейінгі жолды біріктірді; Outcome Memory, Replay Lab және Data Lab кері байланыс қосты.
 4. **Өнімді зерттеуге қолайлы еттік.** Ask Pulse, жаңа интерфейс, карта, 120 күндік Golden World және жалпыға қолжетімді VPS API-ді тұтас демо сценарийіне айналдырды. Соңғы кезең — тұрақтандыру, тексеру және қорғауға дайындық.
 
-Шешімдер мен коммиттер: [даму тарихы](docs/DEVELOPMENT_HISTORY.md) · [Camp журналы](docs/PROJECT_JOURNAL.md) · [Decision Log](docs/DECISION_LOG.md).
+Шешімдер мен коммиттер: [даму тарихы](docs/DEVELOPMENT_HISTORY.kk.md) · [Camp журналы](docs/PROJECT_JOURNAL.kk.md) · [Decision Log](docs/DECISION_LOG.kk.md).
 
 ## Команда және апталар бойынша жұмыс
 
@@ -59,7 +59,7 @@
 | **Baktiyar Ablaikhan (@sronters)**       | Durable workflows, governance, ownership/Decision Gateway, Incident, Ask Pulse, UI/UX, Golden Demo, карталар және VPS deployment      |
 | **Sagyt Shyngyskhan (@Shyngyskhan-333)** | Replay/War Room/storage, Hex UI және жюриге арналған қорытынды құжаттар                                                               |
 
-Кезеңдер мен рөлдер командалық журнал және жоба тарихы бойынша берілген; үлес пен дереккөздердің толық сипаттамасы [PROJECT_JOURNAL](docs/PROJECT_JOURNAL.md) құжатында.
+Кезеңдер мен рөлдер командалық журнал және жоба тарихы бойынша берілген; үлес пен дереккөздердің толық сипаттамасы [PROJECT_JOURNAL](docs/PROJECT_JOURNAL.kk.md) құжатында.
 
 ## Қазір не жұмыс істейді
 
@@ -68,13 +68,13 @@
 | Жалпыға қолжетімді сайт    | Басты бет және интерактивті HTTPS демо                                    | [Басты бет](https://baash.govtech-kz.com/) → [демо](https://baash.govtech-kz.com/demo) |
 | Smart Intake және бағыттау | Қабылдау, ұқсас мәселелер, ұсыныс және қолмен шешім                       | Қабылдау → кезек → шешім                                                               |
 | Radar және карта           | Тақырыпты ескеретін кеңістіктік-уақыттық топтар; кластер → Incident       | Operations → Radar → кластер                                                           |
-| War Room                   | Тарих, құрам, ownership, Next Best Action және Outcome Memory             | Инциденттер → War Room                                                                 |
+| War Room                   | Тарих, құрам, ownership, Next Best Action және Outcome Memory             | Оқиғалар → War Room                                                                 |
 | Ask Pulse                  | RU/KK сұрақтары, есептеулер, графиктер, бастапқы жазбалар, PDF/XLSX       | Operations → Ask Pulse                                                                 |
 | 30/60/90 күндік болжам     | 120 күндік тарихқа негізделген ашық seasonal-naive baseline               | Ask Pulse → 1/2/3 айға болжам                                                          |
 | Data Lab және Replay Lab   | Сапа мен drill-down; сақталған есептер және саясаттарды жиынтық салыстыру | Data Lab / Replay Lab                                                                  |
-| Платформа                  | PostgreSQL, аудит, outbox, worker, адаптерлер және қолмен өңдеу           | Timeline, health, [архитектура](docs/architecture/README.md)                           |
+| Платформа                  | PostgreSQL, аудит, outbox, worker, адаптерлер және қолмен өңдеу           | Timeline, health, [архитектура](docs/architecture/README.kk.md)                           |
 
-Мүмкіндіктердің толық матрицасы — [FEATURE_STATUS](docs/FEATURE_STATUS.md); тексерулердің қазіргі нәтижелері — [DEVELOPMENT](docs/DEVELOPMENT.md).
+Мүмкіндіктердің толық матрицасы — [FEATURE_STATUS](docs/FEATURE_STATUS.kk.md); тексерулердің қазіргі нәтижелері — [DEVELOPMENT](docs/DEVELOPMENT.kk.md).
 
 ## Неліктен Pulse 109: «жіктеуіш тұзағы»
 
@@ -121,9 +121,9 @@ Ask Pulse: сұрақ → есептеу → бастапқы жазбалар �
 4. **Әрекетті растау:** кезектегі өтінішті тағайындау және outbox/worker арқылы сақталатын жеткізуді көрсету.
 5. **Ask Pulse сұрағы:** «Алматыдағы соңғы 7 күннің өтініштерін көрсет» → сан, график, есептеу түсіндірмесі, бастапқы жазбалар және экспорт.
 
-[Толық сценарий](docs/GOLDEN_DEMO.md) · [Жүргізуші нұсқаулығы](docs/DEMO_RUNBOOK.md) · [Демоны жазу](docs/DEMO_RECORDING_SCRIPT.md). Көрсетілім алдында runbook бойынша Golden World уақыт терезесін өзекті етіп дайындаңыз.
+[Толық сценарий](docs/GOLDEN_DEMO.kk.md) · [Жүргізуші нұсқаулығы](docs/DEMO_RUNBOOK.kk.md) · [Демоны жазу](docs/DEMO_RECORDING_SCRIPT.kk.md). Көрсетілім алдында runbook бойынша Golden World уақыт терезесін өзекті етіп дайындаңыз.
 
-[Оператор кезегі](docs/screenshots/operator-queue.png) · [Инциденттер тізілімі](docs/screenshots/incidents-list.png) · [Data Lab](docs/screenshots/data-lab.png) · [Replay Lab](docs/screenshots/replay-lab.png).
+[Оператор кезегі](docs/screenshots/operator-queue.png) · [Оқиғалар тізілімі](docs/screenshots/incidents-list.png) · [Data Lab](docs/screenshots/data-lab.png) · [Replay Lab](docs/screenshots/replay-lab.png).
 
 ## Архитектура және сенімділік
 
@@ -139,12 +139,12 @@ flowchart LR
     DB --> ASK[Ask Pulse / есептеулер мен экспорт]
 ```
 
-- **Қолданыстағы процестерге қосылады:** өңірлік жүйелер адаптерлер мен тұрақты [контракттар](contracts/README.md) арқылы қосылады.
+- **Қолданыстағы процестерге қосылады:** өңірлік жүйелер адаптерлер мен тұрақты [контракттар](contracts/README.kk.md) арқылы қосылады.
 - **Шешімдер мен тапсырмаларды сақтайды:** transactional outbox, `FOR UPDATE SKIP LOCKED`, қайталап жіберу және идемпотентті командалар.
 - **ML болмаса да жұмыс істейді:** inference істемесе, қабылдау, қолмен бағыттау, күйлер және аудит жалғасады.
 - **Тексерілетін сандар береді:** Ask Pulse рұқсат етілген талдау сұраныстарын, ядро есептеулерін және бастапқы жазбаларға сілтемелерді қолданады.
 
-Толық сызбалар мен қолжетімділік шекаралары — [архитектурада](docs/architecture/README.md).
+Толық сызбалар мен қолжетімділік шекаралары — [архитектурада](docs/architecture/README.kk.md).
 
 ## Тексеру және іске қосу
 
@@ -156,17 +156,17 @@ pnpm install --frozen-lockfile
 uv run python scripts/demo_runtime.py prepare
 ```
 
-`prepare` тек жергілікті `pulse109-demo` жобасын қайта құрып, миграцияларды орындайды, Golden World деректерін толтырады және тексереді. Сәтті аяқталу белгісі: `PULSE 109 DEMO READY`. [http://localhost:3000/demo](http://localhost:3000/demo) ашыңыз. Windows: `.\demo.ps1 prepare`. Жалпыға қолжетімді VPS үшін бөлек [runbook](infra/runbooks/PUBLIC_DEPLOYMENT.md) қолданылады.
+`prepare` тек жергілікті `pulse109-demo` жобасын қайта құрып, миграцияларды орындайды, Golden World деректерін толтырады және тексереді. Сәтті аяқталу белгісі: `PULSE 109 DEMO READY`. [http://localhost:3000/demo](http://localhost:3000/demo) ашыңыз. Windows: `.\demo.ps1 prepare`. Жалпыға қолжетімді VPS үшін бөлек [runbook](infra/runbooks/PUBLIC_DEPLOYMENT.kk.md) қолданылады.
 
 ```sh
 make lint typecheck test contract-test e2e build
 ```
 
-PostgreSQL integration `PULSE109_TEST_DATABASE_URL` арқылы [оқшауланған runner](docs/DEVELOPMENT.md) ішінде орындалады. Қазіргі CI нәтижелері [тексеру құжатында](docs/DEVELOPMENT.md) және [GitHub Actions](https://github.com/BAITC-Hacks/hack-803e2c8f-baash/actions) бетінде берілген.
+PostgreSQL integration `PULSE109_TEST_DATABASE_URL` арқылы [оқшауланған runner](docs/DEVELOPMENT.kk.md) ішінде орындалады. Қазіргі CI нәтижелері [тексеру құжатында](docs/DEVELOPMENT.kk.md) және [GitHub Actions](https://github.com/BAITC-Hacks/hack-803e2c8f-baash/actions) бетінде берілген.
 
 **GovTech Camp формасына — baash / Pulse 109:**
 
-> Pulse 109 — бөлек өтініштерді қалалық инциденттерге байланыстыратын, операторға шешім қабылдауға көмектесетін және басшыға тексеруге болатын талдау беретін 109 қызметтеріне арналған зияткерлік қабат.
+> Pulse 109 — бөлек өтініштерді қалалық оқиғаларға байланыстыратын, операторға шешім қабылдауға көмектесетін және басшыға тексеруге болатын талдау беретін 109 қызметтеріне арналған зияткерлік қабат.
 
 ## Қазіргі стендтің шекаралары
 
@@ -176,4 +176,4 @@ PostgreSQL integration `PULSE109_TEST_DATABASE_URL` арқылы [оқшаула
 | Модельдер мен болжам    | Runtime детерминирленген lexical fallback және seasonal-naive болжам қолданады. Fine-tuned үміткерлер рұқсат етілген шешімге дейінгі корпус пен таксономия алынғанша бөлек зерттеу бағытында қалады. Демо каталогында төрт routing тақырыбы мен бес фондық топ бар; 10 тақырыпты, 20 өңірді және нақты өтініштердегі модель сапасын бағалау — келесі кезең. |
 | Replay және пайдалану   | Replay Lab саясаттарды есеп деңгейінде салыстырады; жеке шешімдердің трассасы әзірге жазылмайды. S3 конфигурация арқылы қосылады, VPS жергілікті томдарды қолданады. Production identity, құқықтық негіз, сақтау мерзімі және жұмыс scanner-і пилот үшін келісуді қажет етеді; қазіргі scanner — mock.                                                      |
 
-[Қазіргі күй](docs/FEATURE_STATUS.md) · [Зерттеулер мен кейс талаптары](docs/review/COMPETITION_AUDIT_2026-09-29.md) · [Сыртқы тәуелділіктер](DECISIONS_AND_BLOCKERS.md) · [Құжаттар индексі](docs/README.md).
+[Қазіргі күй](docs/FEATURE_STATUS.kk.md) · [Зерттеулер мен кейс талаптары](docs/review/COMPETITION_AUDIT_2026-09-29.kk.md) · [Сыртқы тәуелділіктер](DECISIONS_AND_BLOCKERS.kk.md) · [Құжаттар индексі](docs/README.kk.md).

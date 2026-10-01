@@ -1,24 +1,23 @@
-# Model and policy rollback
+[Русский](MODEL_POLICY_ROLLBACK.md) · [English](MODEL_POLICY_ROLLBACK.en.md) · [Қазақша](MODEL_POLICY_ROLLBACK.kk.md)
+
+# Откат модели и политики
 
 ## Model alias
 
-1. Freeze new promotion activity and record the triggering evaluation/incident.
-2. Resolve the current champion and rollback alias from the immutable registry manifest.
-3. Verify the rollback artifact hash, model card, input contract, preprocessing version, and license.
-4. Atomically move the serving alias to the approved rollback version; do not replace artifacts.
-5. Run contract, safety-class, calibration, and CPU-fallback smoke tests before restoring traffic.
-6. Preserve both alias changes and the approving actor/reviewer as audit evidence.
+1. Заморозьте продвижение новых версий и зафиксируйте вызвавшие откат оценку/инцидент.
+2. Определите текущий champion и rollback alias по неизменяемому манифесту реестра.
+3. Проверьте хеш rollback-артефакта, model card, входной контракт, версию предобработки и лицензию.
+4. Атомарно переведите serving alias на утверждённую rollback-версию; не заменяйте артефакты.
+5. Перед восстановлением трафика выполните smoke tests контрактов, классов безопасности, калибровки и резервного CPU-пути.
+6. Сохраните оба изменения alias и утверждающего участника/проверяющего как доказательства аудита.
 
-The repository’s MLflow-compatible synthetic manifest exercises this workflow without promoting a
-real model.
+Синтетический MLflow-compatible манифест репозитория проверяет этот процесс без продвижения реальной модели.
 
-## Routing, SLA, or confidence policy
+## Политика маршрутизации, SLA или уверенности
 
-1. Stop activation of the bad version; never edit it in place.
-2. Create an append-only `rollback` review referencing `rollback_version`.
-3. Close the bad effective window and activate the previously approved version at an explicit UTC
-   instant after dual control.
-4. Recompute only derived projections. Do not rewrite historical appeal decisions or SLA clocks.
+1. Остановите активацию плохой версии; никогда не редактируйте её на месте.
+2. Создайте добавляемое без перезаписи ревью `rollback` со ссылкой на `rollback_version`.
+3. Закройте окно действия плохой версии и активируйте ранее утверждённую версию в явно заданный момент UTC после двойного контроля.
+4. Пересчитайте только производные проекции. Не переписывайте исторические решения по обращениям или часы SLA.
 
-No production alias or policy can be changed until the identity, reviewer, and approval references
-are configured.
+Production alias или политику нельзя менять до настройки ссылок на идентификацию, проверяющего и утверждение.

@@ -1,13 +1,12 @@
+[Русский](DATA_LAB.md) · [English](DATA_LAB.en.md) · [Қазақша](DATA_LAB.kk.md)
+
 # Urban Intelligence / Data Lab
 
-## The problem it solves
+## Какую проблему решает
 
-A dashboard tells a supervisor a number. It does not tell them whether to
-believe it, what it leaves out, or which cases produced it. On a service that
-routes citizen reports, a figure nobody can trace is a figure that will be
-misused.
+Панель показывает руководителю число, но не объясняет, можно ли ему верить, что исключено и какие случаи его сформировали. В службе маршрутизации обращений непроверяемый показатель легко использовать неверно.
 
-## Three levels
+## Три уровня
 
 ```
 Data Lab              offline exploration of approved historical datasets
@@ -15,66 +14,41 @@ Operations analytics  what the live platform looks like right now
 Drill-down            from any figure to the appeals behind it
 ```
 
-## Offline exploration
+## Автономное исследование
 
-`make eda` runs `analytics.offline.report` over a canonical dataset and writes
-`CURRENT.md` and `CURRENT.json`. It is reproducible by construction: the same
-file produces the same report, and the report records the content hash of what
-it read, so two runs can be compared honestly.
+`make eda` запускает `analytics.offline.report` на каноническом наборе данных и записывает `CURRENT.md` и `CURRENT.json`. Воспроизводимость встроена: один файл даёт один отчёт, а отчёт фиксирует хеш прочитанного содержимого для корректного сравнения запусков.
 
-Real records never enter the repository. The default target is the committed
-synthetic fixture. Point `INPUT` at an approved dataset outside the repo for the
-real thing.
+Реальные записи не попадают в репозиторий. По умолчанию используется сохранённый синтетический fixture. Для реальных данных укажите в `INPUT` утверждённый набор вне репозитория.
 
 ```bash
 make eda INPUT=/secure/data/canonical.jsonl OUTPUT=/secure/reports/eda
 ```
 
-Every report opens with its provenance: rows, schema versions, mapping versions,
-adapters, regions and the period each one covers. Two notes are generated rather
-than written by hand, when the data warrants them: that the regions cover
-different periods, and that no record carries citizen text.
+Отчёт начинается с происхождения: строки, версии схем и сопоставлений, адаптеры, регионы и охваченные периоды. Если данные дают основание, автоматически добавляются два примечания: регионы охватывают разные периоды; записи не содержат текст гражданина.
 
-## Data quality as dimensions
+## Качество данных по измерениям
 
-Six ratios per region, each with its numerator, denominator and definition:
-completeness, timeliness, uniqueness, schema conformity, consistency and
-provenance.
+Шесть долей по региону с числителем, знаменателем и определением: полнота, своевременность, уникальность, соответствие схеме, согласованность и происхождение.
 
-Not one score. A region at 72 percent could be missing addresses, carrying
-unmapped statuses, or reporting times nobody can trust, and those are three
-different problems with three different owners.
+Один общий балл этого не заменяет. За 72% могут скрываться отсутствующие адреса, несопоставленные статусы или недостоверное время — три проблемы с разными владельцами.
 
-"Look here first" lists only dimensions below 95 percent. A section with that
-heading which opens at a hundred percent has already taught the reader to skim
-past it.
+«Сначала посмотрите сюда» перечисляет только измерения ниже 95%. Если раздел с таким заголовком начинается со 100%, читатель учится его пропускать.
 
-## Trust travels with the chart
+## Доверие сопровождает график
 
-Any count that depends on the hour or the weekday uses only records whose
-business time is trustworthy, and the trusted share is stated beside it. Putting
-a date-only record in an hour bucket places it in a moment nobody observed,
-which is how a plausible chart becomes a false one.
+Подсчёты по часу и дню недели используют только записи с достоверным бизнес-временем; рядом указана доверенная доля. Запись с одной датой в часовом интервале приписала бы ей ненаблюдавшийся момент и сделала правдоподобный график ложным.
 
-## Percentiles, not averages
+## Перцентили вместо средних
 
-`time_to_first_decision` and `time_to_first_assignment` report P50, P75, P90 and
-P95 over appeals with a trustworthy received time. An average is dominated by
-the easy cases and hides exactly the ones an operations manager is judged on.
+`time_to_first_decision` и `time_to_first_assignment` показывают P50, P75, P90 и P95 по обращениям с достоверным временем поступления. Среднее определяется простыми случаями и скрывает проблемные, за которые отвечает руководитель.
 
-Percentiles are nearest-rank, so every value reported is a value some case
-actually had.
+Перцентили рассчитываются методом nearest-rank: каждый результат действительно наблюдался у какого-то случая.
 
-## Drill-down is the point
+## Главное — раскрытие исходных записей
 
-The process panel is a snapshot of independently defined stages, not a
-single-cohort conversion funnel. In particular, resolved appeals are not
-currently `in_progress`; dividing those counts would produce misleading
-percentages above 100%. The API leaves `share_of_previous` and `largest_drop`
-unset for this snapshot, and the UI displays the exact counts and definitions.
+Панель процесса — снимок независимо определённых стадий, а не воронка одной когорты. Решённые обращения сейчас не `in_progress`; деление таких количеств даст вводящие в заблуждение проценты выше 100%. API оставляет `share_of_previous` и `largest_drop` незаданными, а UI показывает точные количества и определения.
 
-Every aggregate carries a key. `GET /v1/datalab/drilldown?key=...` returns the
-appeals behind it.
+Каждый агрегат содержит ключ. `GET /v1/datalab/drilldown?key=...` возвращает исходные обращения.
 
 ```
 timeliness 90%
@@ -84,25 +58,16 @@ quality:timeliness
 demo-109-light-002 · received_at_quality = missing
 ```
 
-The key is matched against a closed mapping in the service and never reaches SQL
-as text. An analytics filter is exactly where somebody would try to reach the
-database, and there is a test for each hostile key shape.
+Сервис сопоставляет ключ с закрытым набором и никогда не передаёт его текст в SQL. Фильтр аналитики — вероятная точка попытки доступа к базе; каждая опасная форма ключа покрыта тестом.
 
-## Explain this metric
+## Объяснение метрики
 
-`GET /v1/datalab/definitions` states, for each metric, its numerator,
-denominator, time basis, what is included and what is excluded. Every definition
-must say what it leaves out, and a test enforces that.
+`GET /v1/datalab/definitions` задаёт числитель, знаменатель, основу времени, включения и исключения каждой метрики. Любое определение должно перечислять исключения; это проверяет тест.
 
-## Data quality reaches the attention feed
+## Качество данных в ленте внимания
 
-When the share of trustworthy business times in a region falls below the floor,
-the operations center raises `BUSINESS_TIME_QUALITY_LOW` with a drill-down key.
-A feed that reports on incidents while the records underneath them decay gives a
-supervisor confidence they have not earned.
+Когда доля достоверного бизнес-времени региона падает ниже порога, Operations Center поднимает `BUSINESS_TIME_QUALITY_LOW` с ключом раскрытия. Лента инцидентов без контроля ухудшения исходных записей давала бы руководителю необоснованную уверенность.
 
-## What this does not claim
+## Границы выводов
 
-Nothing here establishes cause. A difference between two regions is a difference
-in what was recorded, which may be a difference in the city, in the process or in
-the export. The reports say so in their own limits section.
+Модуль не устанавливает причинность. Различие регионов — различие записанных данных, которое может отражать город, процесс или экспорт. Отчёты отмечают это в разделе ограничений.

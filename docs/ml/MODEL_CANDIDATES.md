@@ -1,17 +1,19 @@
-# Model candidates / Кандидаты моделей
+[Русский](MODEL_CANDIDATES.md) · [English](MODEL_CANDIDATES.en.md) · [Қазақша](MODEL_CANDIDATES.kk.md)
 
-All entries are **NOT_VALIDATED for Pulse 109**. Model-card capabilities and public leaderboards are reasons to test, not evidence of KK/RU/mixed municipal quality, safe calibration or acceptable latency. Все имена ниже — кандидаты; ни один из весовых артефактов не подключён к production runtime.
+# Кандидаты моделей
 
-| Role | Baseline / candidate | Planned comparison |
+Все позиции имеют статус **NOT_VALIDATED для Pulse 109**. Возможности из паспортов моделей (model cards) и публичные лидерборды — лишь повод для тестирования, а не подтверждение качества на муниципальных данных KK/RU/mixed, надёжной калибровки или приемлемой задержки. Все названия ниже — кандидаты; ни один весовой артефакт не подключён к исполняемому контуру.
+
+| Роль | Базовый алгоритм / кандидат | Планируемое сравнение |
 | --- | --- | --- |
-| Routing | Existing lexical rules; char+word TF-IDF/LogReg; [XLM-R-base](https://huggingface.co/FacebookAI/xlm-roberta-base) | Topic/service Top-1, Top-3, macro-F1, calibration, OOD, selective risk and CPU p95 |
-| Retrieval | PostgreSQL FTS; [Qwen3-Embedding-0.6B](https://huggingface.co/Qwen/Qwen3-Embedding-0.6B), [BGE-M3](https://huggingface.co/BAAI/bge-m3), [multilingual-e5-large-instruct](https://huggingface.co/intfloat/multilingual-e5-large-instruct) | Recall@5/10/20, MRR, nDCG@10, hybrid gain, memory and latency by language |
-| Reranking | No model baseline; [Qwen3-Reranker-0.6B](https://huggingface.co/Qwen/Qwen3-Reranker-0.6B), [BGE-reranker-v2-m3](https://huggingface.co/BAAI/bge-reranker-v2-m3) | Rerank the same candidates; measure end-to-end retrieval gain and p95 latency |
-| Duplicate/incident | Lexical/geo/time/asset rules; LogReg then optional XGBoost | Pair AUPRC, precision/recall at review budget, false-merge rate; no automatic merge |
-| PulseDM | BGE-M3 shared representation as a straightforward encoder candidate; Qwen3 embedding family as a separate representation experiment | Dynamic Choice/Boolean/Score feasibility, calibration and risk-coverage against XLM-R/linear baselines |
-| External structured reference | [Jev by TypeSafe](https://typesafe.ai/blog/introducing-system-one-models-and-jev), optional structured multilingual LLM | Offline reference/teacher only, after legal/data-residency approval; no claim of open weights or local deployment |
-| Optional generation | Local Qwen-class instruct model, model/version TBD | Schema-valid drafts and factuality/human review; never critical-path authority |
+| Маршрутизация | Существующие лексические правила; посимвольный+пословный TF-IDF/LogReg; [XLM-R-base](https://huggingface.co/FacebookAI/xlm-roberta-base) | Top-1, Top-3 по теме/службе, macro-F1, калибровка, OOD, выборочный риск и p95 на CPU |
+| Поиск | PostgreSQL FTS; [Qwen3-Embedding-0.6B](https://huggingface.co/Qwen/Qwen3-Embedding-0.6B), [BGE-M3](https://huggingface.co/BAAI/bge-m3), [multilingual-e5-large-instruct](https://huggingface.co/intfloat/multilingual-e5-large-instruct) | Recall@5/10/20, MRR, nDCG@10, выигрыш от гибридного поиска, память и задержка по языкам |
+| Переранжирование | Без модельного базового алгоритма; [Qwen3-Reranker-0.6B](https://huggingface.co/Qwen/Qwen3-Reranker-0.6B), [BGE-reranker-v2-m3](https://huggingface.co/BAAI/bge-reranker-v2-m3) | Переранжирование тех же кандидатов; сквозной выигрыш поиска и p95 задержки |
+| Дубликат/инцидент | Лексические/географические/временные правила и активы; LogReg, затем опциональный XGBoost | AUPRC пар, точность/полнота при заданном бюджете ручной проверки, доля ложных объединений; никакого автослияния |
+| PulseDM | Общее представление BGE-M3 как простой кандидат-энкодер; семейство эмбеддингов Qwen3 как отдельный эксперимент с репрезентациями | Возможность реализации динамических Choice/Boolean/Score, калибровка и риск-покрытие относительно XLM-R и линейных базовых алгоритмов |
+| Внешний структурированный эталон | [Jev от TypeSafe](https://typesafe.ai/blog/introducing-system-one-models-and-jev), опциональная структурированная мультиязычная LLM | Только офлайн-эталон/дистилляция после согласования правовых требований и локализации данных; без заявлений об открытых весах или локальном развёртывании |
+| Опциональная генерация | Локальная instruct-модель класса Qwen, модель/версия уточняются | Соответствие схеме черновиков, фактологическая точность и проверка человеком; никогда не имеет полномочий на критическом пути |
 
-The [Qwen3 embedding model config](https://huggingface.co/Qwen/Qwen3-Embedding-0.6B/blob/main/config.json) identifies a Qwen3 causal architecture. It should **not** be assumed to be a drop-in bidirectional encoder for PulseDM; representation reuse requires a specific pooling/training/profiling experiment. BGE-M3 is an alternate encoder starting point, not a preselected winner.
+[Конфигурация эмбеддинг-модели Qwen3](https://huggingface.co/Qwen/Qwen3-Embedding-0.6B/blob/main/config.json) указывает на каузальную архитектуру Qwen3. Её **нельзя** рассматривать как готовый двунаправленный энкодер для PulseDM; повторное использование представлений требует отдельного эксперимента с пулингом, обучением и профилированием. BGE-M3 служит альтернативной стартовой точкой для энкодера, а не заранее выбранным победителем.
 
-Jev's published interface motivates typed probabilistic decisions; its vendor claims do not establish semantic correctness on Pulse data. Neither vendor access nor transfer of citizen data is assumed. The first benchmark can run entirely locally with approved pseudonymous snapshots and locally produced predictions.
+Опубликованный интерфейс Jev мотивирует типизированные вероятностные решения, но заявления вендора не доказывают семантическую корректность на данных Pulse. Ни доступ к вендору, ни передача данных граждан не предполагаются. Первый бенчмарк может быть выполнен полностью локально с использованием утверждённых обезличенных снимков и локально сгенерированных предсказаний.
